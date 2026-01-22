@@ -11,5 +11,5 @@ data class Song (
   val year: Int?,
   val uri: Uri,
   val duration: Long,
-  //val albumArt: ByteArray?
+  val albumArt: ByteArray? = null
 )
