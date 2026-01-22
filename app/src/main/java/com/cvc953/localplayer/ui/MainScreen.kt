@@ -1,5 +1,8 @@
 package com.cvc953.localplayer.ui
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,12 +32,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 @Composable
 fun MusicScreen(viewModel: MainViewModel = viewModel()) {
     val songs by viewModel.songs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
+    LazyColumn {
+        items(songs) { song ->
+            SongItem(
+                song = song,
+                isPlaying = playerState.currentSong?.id == song.id && playerState.isPlaying,
+                onClick = { viewModel.onSongClicked(song) }
+            )
+        }
+    }
 
     // Fondo degradado
     Box(
@@ -42,7 +59,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel()) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFF000000), Color(0xFF1A195B))
+                    colors = listOf(Color(0xFF000000), Color(0xFF000000))
                 )
             )
     ) {
@@ -99,6 +116,25 @@ fun formatDuration(ms: Long): String {
 @Composable
 fun SongItem(song: Song, isPlaying: Boolean, onClick: () -> Unit) {
 
+    val context = LocalContext.current
+    var albumArt by remember { mutableStateOf<Bitmap?>(null) } // aquí se guarda la carátula
+
+    // Este bloque se ejecuta cada vez que el Composable se monta o cambia la canción
+    LaunchedEffect(song.uri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val retriever = MediaMetadataRetriever()
+                retriever.setDataSource(context, song.uri) // URI de la canción
+                retriever.embeddedPicture?.let {
+                    albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                }
+                retriever.release()
+            } catch (_: Exception) {
+
+            }
+        }
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -108,16 +144,15 @@ fun SongItem(song: Song, isPlaying: Boolean, onClick: () -> Unit) {
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+
         Image(
-            painter = rememberAsyncImagePainter(
-                model = song.albumArt,
-                error = painterResource(id = R.drawable.ic_default_album),
-                placeholder = painterResource(id = R.drawable.ic_default_album)
-            ),
-            contentDescription = song.title,
+            painter = albumArt?.let {
+                BitmapPainter(it.asImageBitmap())
+            } ?: painterResource(R.drawable.ic_default_album),
+            contentDescription = null,
             modifier = Modifier
-                .size(65.dp)
-                .clip(RoundedCornerShape(12.dp)),
+                .size(48.dp)
+                .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop
         )
 

@@ -1,5 +1,7 @@
 package com.cvc953.localplayer.preferences
 
+import android.content.Context
+
 class AppPrefs(context: Context) {
 
     private val prefs = context.getSharedPreferences(
