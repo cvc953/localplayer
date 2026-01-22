@@ -2,6 +2,7 @@ package com.cvc953.localplayer.ui
 
 import MiniPlayer
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,44 +25,43 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 
 
-
-
 @Composable
 fun MusicScreen(viewModel: MainViewModel = viewModel()) {
     val songs by viewModel.songs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
+    var showPlayer by remember { mutableStateOf(false) }
+    val showPlayerScreen by viewModel.isPlayerScreenVisible.collectAsState()
+
+
 
     Scaffold(
         containerColor = Color.Black,
-        bottomBar = {
-            playerState.currentSong?.let { song ->
-                MiniPlayer(
-                    song = song,
-                    isPlaying = playerState.isPlaying,
-                    onPlayPause = {
-                        viewModel.togglePlayPause()
-                    },
-                    onClick = {
-                        // más adelante: abrir pantalla completa
-                    }
-                )
+            bottomBar = {
+                if (
+                    playerState.currentSong != null &&
+                    !showPlayerScreen
+                ) {
+                    MiniPlayer(
+                        song = playerState.currentSong!!,
+                        isPlaying = playerState.isPlaying,
+                        onPlayPause = { viewModel.togglePlayPause() },
+                        onClick = { viewModel.openPlayerScreen() },
+                        onNext = { viewModel.playNextSong() }
+                    )
+                }
             }
-        }
-    ) { padding ->
+
+            ) { padding ->
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .background(Color.Black)
-                /*.background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Black, Color.Black)
-                    )
-                )*/
         ) {
 
             Column(modifier = Modifier.fillMaxSize()) {
+
 
                 // Top Bar
                 Row(
@@ -96,11 +96,25 @@ fun MusicScreen(viewModel: MainViewModel = viewModel()) {
                         SongItem(
                             song = song,
                             isPlaying = isCurrent && playerState.isPlaying,
-                            onClick = { viewModel.onSongClicked(song) }
+                            onClick = { viewModel.playSong(song) }
                         )
                     }
                 }
             }
+
+            if (showPlayerScreen) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                        .clickable(enabled = false) {} //BLOQUEA TOQUES
+                ) {
+                    PlayerScreen(
+                        onBack = { viewModel.closePlayerScreen() }
+                    )
+                }
+            }
+
         }
     }
 }

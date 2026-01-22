@@ -12,6 +12,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import com.cvc953.localplayer.model.SongRepository
 import android.media.MediaPlayer
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.update
+import kotlin.text.get
+
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -25,66 +30,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var mediaPlayer: MediaPlayer? = null
 
-    init {
-        viewModelScope.launch {
-            _songs.value = repository.loadSongs()
-        }
-    }
+    private val _isPlayerScreenVisible = MutableStateFlow(false)
+    val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
 
-    fun onSongClicked(song: Song) {
-        val current = _playerState.value.currentSong
-
-        if (current?.id == song.id) {
-            togglePlayPause()
-        } else {
-            playSong(song)
-        }
-    }
-
-    private fun playSong(song: Song) {
-        mediaPlayer?.release()
-        mediaPlayer = MediaPlayer().apply {
-            setDataSource(getApplication(), song.uri)
-            prepare()
-            start()
-        }
-
-        _playerState.value = PlayerState(
-            currentSong = song,
-            isPlaying = true
-        )
-    }
-
-    fun togglePlayPause() {
-        mediaPlayer?.let {
-            if (it.isPlaying) {
-                it.pause()
-                _playerState.value = _playerState.value.copy(isPlaying = false)
-            } else {
-                it.start()
-                _playerState.value = _playerState.value.copy(isPlaying = true)
-            }
-        }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        mediaPlayer?.release()
-        mediaPlayer = null
-    }
-}
+    private var progressJob: Job? = null
 
 
-/*class MainViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = SongRepository(application)
-    private val playerController = PlayerController(application)
-
-    private val _songs = MutableStateFlow<List<Song>>(emptyList())
-    val songs: StateFlow<List<Song>> = _songs
-
-    private val _playerState = MutableStateFlow(PlayerUiState())
-    val playerState: StateFlow<PlayerUiState> = _playerState
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -92,14 +43,136 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onSongClicked(song: Song) {
-        playerController.toggle(song) { currentSong, isPlaying ->
-            _playerState.value = PlayerUiState(currentSong, isPlaying)
+    /** FUNCIÓN ÚNICA PARA REPRODUCIR */
+    /*fun playSong(song: Song) {
+        mediaPlayer?.release()
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(getApplication(), song.uri)
+            prepare()
+            start()
+            //startProgressTracking()
+
+            setOnCompletionListener {
+                playNextSong()
+            }
+            _playerState.value = PlayerState(
+                currentSong = song,
+                isPlaying = true,
+                duration = mediaPlayer?.duration?.toLong() ?: 0L
+            )
+            startPositionUpdates()
+        }
+
+        _playerState.value = PlayerState(
+            currentSong = song,
+            isPlaying = true
+        )
+    }*/
+
+    fun playSong(song: Song) {
+        mediaPlayer?.release()
+
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(getApplication(), song.uri)
+            prepare()
+            start()
+
+            setOnCompletionListener {
+                playNextSong()
+            }
+        }
+
+        _playerState.value = PlayerState(
+            currentSong = song,
+            isPlaying = true,
+            position = 0L,
+            duration = mediaPlayer?.duration?.toLong() ?: 0L
+        )
+
+        startPositionUpdates()
+    }
+
+
+    fun togglePlayPause() {
+        mediaPlayer?.let {
+            if (it.isPlaying) {
+                it.pause()
+                progressJob?.cancel()
+                _playerState.value = _playerState.value.copy(isPlaying = false)
+            } else {
+                it.start()
+                //startProgressTracking()
+                startPositionUpdates()
+                _playerState.value = _playerState.value.copy(isPlaying = true)
+            }
         }
     }
 
+    fun playNextSong() {
+        val list = songs.value
+        val currentSong = playerState.value.currentSong ?: return
+        if (list.isEmpty()) return
+
+        val currentIndex = list.indexOf(currentSong)
+        val nextIndex = (currentIndex + 1) % list.size
+        val nextSong = list[nextIndex]
+
+        playSong(nextSong)
+    }
+
+    fun playPreviousSong() {
+        val list = songs.value
+        val currentSong = playerState.value.currentSong ?: return
+        if (list.isEmpty()) return
+
+        val currentIndex = list.indexOf(currentSong)
+        val nextIndex = (currentIndex - 1) % list.size
+        val previousSong = list[nextIndex]
+
+        playSong(previousSong)
+    }
+
     override fun onCleared() {
-        playerController.release()
+        progressJob?.cancel()
+        mediaPlayer?.release()
+        mediaPlayer = null
         super.onCleared()
     }
-}*/
+
+    fun openPlayerScreen() {
+        _isPlayerScreenVisible.value = true
+    }
+
+    fun closePlayerScreen() {
+        _isPlayerScreenVisible.value = false
+    }
+
+
+    fun seekTo(position: Long) {
+        mediaPlayer?.seekTo(position.toInt())
+        _playerState.update {
+            it.copy(position = position)
+        }
+    }
+
+
+    private var positionJob: Job? = null
+
+    private fun startPositionUpdates() {
+        positionJob?.cancel()
+        positionJob = viewModelScope.launch {
+            while (true) {
+                val player = mediaPlayer ?: break
+                _playerState.update {
+                    it.copy(
+                        position = player.currentPosition.toLong(),
+                        duration = player.duration.toLong()
+                    )
+                }
+                delay(500)
+            }
+        }
+    }
+
+
+}
