@@ -42,7 +42,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel()) {
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFF0E0A3B), Color(0xFF1A195B))
+                    colors = listOf(Color(0xFF000000), Color(0xFF1A195B))
                 )
             )
     ) {
@@ -74,7 +74,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel()) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(songs) { song ->
                     val isCurrent = playerState.currentSong?.id == song.id
@@ -105,7 +105,7 @@ fun SongItem(song: Song, isPlaying: Boolean, onClick: () -> Unit) {
             .clip(RoundedCornerShape(12.dp))
             .background(Color(0x00FFFFFF))
             .clickable { onClick() }
-            .padding(12.dp),
+            .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
@@ -116,8 +116,8 @@ fun SongItem(song: Song, isPlaying: Boolean, onClick: () -> Unit) {
             ),
             contentDescription = song.title,
             modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(8.dp)),
+                .size(65.dp)
+                .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop
         )
 

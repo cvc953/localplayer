@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.player.PlayerController
 import com.cvc953.localplayer.ui.PlayerUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,6 +15,7 @@ import com.cvc953.localplayer.model.SongRepository
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = SongRepository(application)
+    private val playerController = PlayerController(application)
 
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
     val songs: StateFlow<List<Song>> = _songs
@@ -28,11 +30,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onSongClicked(song: Song) {
-        val currentState = _playerState.value
-        if (currentState.currentSong == song) {
-            _playerState.value = currentState.copy(isPlaying = !currentState.isPlaying)
-        } else {
-            _playerState.value = PlayerUiState(currentSong = song, isPlaying = true)
+        playerController.toggle(song) { currentSong, isPlaying ->
+            _playerState.value = PlayerUiState(currentSong, isPlaying)
         }
+    }
+
+    override fun onCleared() {
+        playerController.release()
+        super.onCleared()
     }
 }
