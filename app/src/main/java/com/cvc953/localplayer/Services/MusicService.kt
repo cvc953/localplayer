@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -46,24 +47,29 @@ class MusicService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("MusicService", "onStartCommand - Action: ${intent?.action}")
         
         // Manejar acciones de la notificación - llamar directamente al ViewModel
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
+                Log.d("MusicService", "Play/Pause clicked")
                 MainViewModel.instance?.togglePlayPause()
                 return START_STICKY
             }
             ACTION_PREV -> {
+                Log.d("MusicService", "Previous clicked")
                 MainViewModel.instance?.playPreviousSong()
                 return START_STICKY
             }
             ACTION_NEXT -> {
+                Log.d("MusicService", "Next clicked")
                 MainViewModel.instance?.playNextSong()
                 return START_STICKY
             }
             ACTION_UPDATE_STATE -> {
                 // Actualizar el estado de reproducción
                 isPlaying = intent.getBooleanExtra("IS_PLAYING", false)
+                Log.d("MusicService", "Update state - isPlaying: $isPlaying")
                 updateNotification()
                 return START_STICKY
             }
@@ -80,6 +86,8 @@ class MusicService : Service() {
                 title = newTitle ?: "Reproduciendo"
                 artist = newArtist ?: ""
                 isPlaying = true
+                
+                Log.d("MusicService", "Loading new song: $title by $artist")
                 
                 // Cargar carátula
                 loadAlbumArt(newUri)
@@ -106,6 +114,11 @@ class MusicService : Service() {
             .setLargeIcon(artworkBitmap)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setStyle(
+                androidx.media.app.NotificationCompat.MediaStyle()
+                    .setShowActionsInCompactView(0, 1, 2)
+            )
             .addAction(
                 android.R.drawable.ic_media_previous,
                 "Anterior",
@@ -156,6 +169,7 @@ class MusicService : Service() {
             ).apply {
                 description = "Controles de reproducción"
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
             notificationManager.createNotificationChannel(channel)
         }
