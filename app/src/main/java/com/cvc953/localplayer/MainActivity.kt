@@ -14,7 +14,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         setContent {
-            val vm: MainViewModel = viewModel()
+            // Usar la instancia singleton si existe, sino crear una nueva
+            val vm: MainViewModel = MainViewModel.instance ?: viewModel()
             MainMusicScreen(vm) { }
         }
     }

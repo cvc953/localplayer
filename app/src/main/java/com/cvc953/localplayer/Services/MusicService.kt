@@ -170,11 +170,23 @@ class MusicService : Service() {
             BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
         }
 
+        // Intent para abrir la app sin reiniciarla
+        val contentIntent = Intent(this, com.cvc953.localplayer.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val contentPendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            contentIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(if (title.isBlank()) "Reproduciendo" else title)
             .setContentText(artist)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setLargeIcon(artworkBitmap)
+            .setContentIntent(contentPendingIntent)
             .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
                 .setMediaSession(mediaSession.sessionToken)
                 .setShowActionsInCompactView(0, 1, 2))
