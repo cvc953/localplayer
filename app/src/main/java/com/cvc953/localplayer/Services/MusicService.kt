@@ -34,6 +34,7 @@ class MusicService : Service() {
     private var artist: String = ""
     private var albumArt: Bitmap? = null
     private var isPlaying: Boolean = false
+    private var currentSongUri: String = ""
     
     private lateinit var mediaSession: MediaSessionCompat
 
@@ -114,8 +115,13 @@ class MusicService : Service() {
             title = songTitle ?: "Reproduciendo"
             artist = songArtist ?: ""
             isPlaying = true
+            currentSongUri = songUri
             
             Log.e("MusicService", "✓ Song loaded: $title by $artist")
+            
+            // Limpiar carátula anterior
+            albumArt?.recycle()
+            albumArt = null
             
             loadAlbumArt(songUri)
             updateMediaSession()
@@ -222,19 +228,42 @@ class MusicService : Service() {
     private fun loadAlbumArt(uri: String) {
         Thread {
             try {
+                // Si cambió la canción mientras se estaba cargando, cancela
+                if (currentSongUri != uri) {
+                    Log.e("MusicService", "✓ Song changed, skipping old art load")
+                    return@Thread
+                }
+                
                 val retriever = MediaMetadataRetriever()
                 retriever.setDataSource(this, Uri.parse(uri))
                 val art = retriever.embeddedPicture
                 retriever.release()
 
+                // Verificar nuevamente si la canción cambió
+                if (currentSongUri != uri) {
+                    Log.e("MusicService", "✓ Song changed after loading art")
+                    return@Thread
+                }
+
                 if (art != null && art.isNotEmpty()) {
                     val bitmap = BitmapFactory.decodeByteArray(art, 0, art.size)
                     if (bitmap != null) {
-                        albumArt = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
-                        if (bitmap != albumArt) bitmap.recycle()
+                        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
+                        
+                        // Reciclar la anterior si es diferente
+                        if (albumArt != null && albumArt != scaledBitmap) {
+                            albumArt!!.recycle()
+                        }
+                        
+                        albumArt = scaledBitmap
+                        if (bitmap != scaledBitmap) bitmap.recycle()
+                        
+                        Log.e("MusicService", "✓ Album art loaded and scaled")
+                        updateMediaSession()
                         updateNotification()
                     }
                 } else {
+                    Log.e("MusicService", "✓ No embedded picture found")
                     albumArt = null
                 }
             } catch (e: Exception) {
