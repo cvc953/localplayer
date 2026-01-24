@@ -28,6 +28,7 @@ class MusicService : Service() {
     private var currentUri: String? = null
     private var title: String = "Reproduciendo"
     private var artist: String = ""
+    private var albumArt: Bitmap? = null
 
 
     companion object {
@@ -78,6 +79,7 @@ class MusicService : Service() {
             })
         }
 
+        updatePlaybackState()
         startForeground(NOTIF_ID, buildNotification())
     }
 
@@ -98,6 +100,9 @@ class MusicService : Service() {
                     player.setMediaItem(MediaItem.fromUri(uri))
                     player.prepare()
                     player.play()
+                    
+                    // Cargar la carátula del álbum
+                    loadAlbumArt(uri)
                 }
             }
         }
@@ -110,17 +115,19 @@ class MusicService : Service() {
     private fun buildNotification(): Notification {
         val isPlaying = player.isPlaying
 
-        val albumArtBitmap = BitmapFactory.decodeResource(
+        // Usar la carátula cargada o una carátula por defecto
+        val defaultAlbumArt = BitmapFactory.decodeResource(
             resources,
             R.drawable.ic_launcher_foreground
         )
+        val displayAlbumArt = albumArt ?: defaultAlbumArt
 
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentTitle(title)
             .setContentText(artist)
-            .setLargeIcon(albumArtBitmap)
+            .setLargeIcon(displayAlbumArt)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
@@ -191,18 +198,18 @@ class MusicService : Service() {
         super.onDestroy()
     }
 
-    private fun loadAlbumArt(uri: String): Bitmap? {
-        return try {
+    private fun loadAlbumArt(uri: String) {
+        try {
             val retriever = android.media.MediaMetadataRetriever()
             retriever.setDataSource(this, Uri.parse(uri))
             val art = retriever.embeddedPicture
             retriever.release()
 
-            art?.let {
+            albumArt = art?.let {
                 BitmapFactory.decodeByteArray(it, 0, it.size)
             }
         } catch (e: Exception) {
-            null
+            albumArt = null
         }
     }
 
