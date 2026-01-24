@@ -104,6 +104,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _queue.value = list
     }
 
+    fun moveQueueItem(fromIndex: Int, toIndex: Int) {
+        val list = _queue.value.toMutableList()
+        if (fromIndex !in list.indices || toIndex !in list.indices) return
+        val item = list.removeAt(fromIndex)
+        list.add(toIndex, item)
+        _queue.value = list
+    }
+
     fun getUpcomingSongs(): List<Song> {
         val current = playerState.value.currentSong ?: return _queue.value
         val base = songs.value

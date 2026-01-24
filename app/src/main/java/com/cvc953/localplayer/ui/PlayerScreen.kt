@@ -74,6 +74,10 @@ fun PlayerScreen(
     val upcoming = remember(queue, playerState, songs, isShuffle, repeatMode) {
         viewModel.getUpcomingSongs()
     }
+    val queueSize = queue.size
+    val libraryUpcoming = remember(upcoming, queueSize) {
+        if (queueSize <= upcoming.size) upcoming.drop(queueSize) else emptyList()
+    }
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
@@ -292,7 +296,7 @@ fun PlayerScreen(
 
                             Spacer(Modifier.height(12.dp))
 
-                            if (upcoming.isEmpty()) {
+                            if (queue.isEmpty()) {
                                 Text(
                                     text = "No hay canciones en cola",
                                     color = Color(0xFFB0B0B0),
@@ -303,7 +307,8 @@ fun PlayerScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    items(upcoming) { queuedSong ->
+                                    items(queue.indices.toList()) { idx ->
+                                        val queuedSong = queue[idx]
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically
@@ -325,11 +330,64 @@ fun PlayerScreen(
                                                 )
                                             }
 
-                                            Icon(
-                                                imageVector = Icons.Default.PlaylistAdd,
-                                                contentDescription = null,
-                                                tint = Color(0xFF2ECC71),
-                                                modifier = Modifier.size(20.dp)
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                IconButton(
+                                                    onClick = { viewModel.moveQueueItem(idx, idx - 1) },
+                                                    enabled = idx > 0
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.KeyboardArrowUp,
+                                                        contentDescription = "Mover arriba",
+                                                        tint = if (idx > 0) Color.White else Color(0xFF555555)
+                                                    )
+                                                }
+
+                                                IconButton(
+                                                    onClick = { viewModel.moveQueueItem(idx, idx + 1) },
+                                                    enabled = idx < queue.lastIndex
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                                        contentDescription = "Mover abajo",
+                                                        tint = if (idx < queue.lastIndex) Color.White else Color(0xFF555555)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (libraryUpcoming.isNotEmpty()) {
+                                Spacer(Modifier.height(20.dp))
+                                Text(
+                                    text = "A continuación",
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+
+                                Spacer(Modifier.height(10.dp))
+
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(libraryUpcoming) { queuedSong ->
+                                        Column {
+                                            Text(
+                                                text = queuedSong.title,
+                                                color = Color.White,
+                                                fontSize = 16.sp,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = queuedSong.artist,
+                                                color = Color(0xFFB0B0B0),
+                                                fontSize = 13.sp,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         }
                                     }
