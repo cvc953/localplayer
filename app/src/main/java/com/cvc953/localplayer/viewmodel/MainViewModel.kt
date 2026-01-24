@@ -181,6 +181,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         playSong(nextSong)
+        startService(getApplication(), nextSong)
     }
 
 
@@ -213,6 +214,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         playSong(previousSong)
+        startService(getApplication(), previousSong)
     }
 
 
