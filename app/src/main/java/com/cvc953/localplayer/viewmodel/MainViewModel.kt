@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cvc953.localplayer.model.Song
@@ -40,6 +41,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         var instance: MainViewModel? = null
+        private const val PREFS_NAME = "music_prefs"
+        private const val LAST_SONG_URI = "last_song_uri"
+        private const val LAST_SONG_TITLE = "last_song_title"
+        private const val LAST_SONG_ARTIST = "last_song_artist"
     }
     
     init {
@@ -47,6 +52,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val repository = SongRepository(application)
+    private val prefs: SharedPreferences = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     // Lista de canciones
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
@@ -94,6 +100,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _songs.value = repository.loadSongs().sortedBy { it.title }
 
             _isScanning.value = false
+            
+            // Cargar última canción reproducida
+            loadLastSong()
         }
     }
 
@@ -327,6 +336,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             putExtra("TITLE", song.title)
             putExtra("ARTIST", song.artist)
         })
+        
+        // Guardar como última canción reproducida
+        saveLastSong(song)
+    }
+    
+    private fun saveLastSong(song: Song) {
+        prefs.edit().apply {
+            putString(LAST_SONG_URI, song.uri.toString())
+            putString(LAST_SONG_TITLE, song.title)
+            putString(LAST_SONG_ARTIST, song.artist)
+            apply()
+        }
+    }
+    
+    private fun loadLastSong() {
+        val lastUri = prefs.getString(LAST_SONG_URI, null) ?: return
+        val lastTitle = prefs.getString(LAST_SONG_TITLE, "Reproduciendo") ?: "Reproduciendo"
+        val lastArtist = prefs.getString(LAST_SONG_ARTIST, "") ?: ""
+        
+        // Buscar la canción en la lista
+        val song = _songs.value.find { it.uri.toString() == lastUri }
+        
+        if (song != null) {
+            // Cargar la canción sin reproducir
+            _playerState.update { 
+                it.copy(
+                    currentSong = song,
+                    isPlaying = false
+                )
+            }
+        }
     }
 }
 
