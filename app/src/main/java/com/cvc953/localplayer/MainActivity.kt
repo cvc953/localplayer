@@ -11,8 +11,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import com.cvc953.localplayer.services.MusicService
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 
 
 
@@ -38,19 +36,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val vm: MainViewModel = viewModel()
             viewModel = vm
-            
             MainMusicScreen(vm) { }
-        }
-        
-        // Observar cambios en el estado del player y actualizar el servicio
-        lifecycleScope.launch {
-            viewModel?.playerState?.collect { state ->
-                val intent = Intent(this@MainActivity, MusicService::class.java).apply {
-                    action = MusicService.ACTION_UPDATE_STATE
-                    putExtra("IS_PLAYING", state.isPlaying)
-                }
-                startService(intent)
-            }
         }
     }
 

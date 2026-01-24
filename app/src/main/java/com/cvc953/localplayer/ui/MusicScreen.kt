@@ -2,6 +2,7 @@ package com.cvc953.localplayer.ui
 
 import MiniPlayer
 import android.app.Activity
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -41,6 +42,14 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
     val activity = context as? Activity
     val listState = rememberLazyListState()
 
+    // Actualizar el servicio cuando cambia el estado del player
+    LaunchedEffect(playerState.isPlaying) {
+        val intent = Intent(context, com.cvc953.localplayer.services.MusicService::class.java).apply {
+            action = com.cvc953.localplayer.services.MusicService.ACTION_UPDATE_STATE
+            putExtra("IS_PLAYING", playerState.isPlaying)
+        }
+        context.startService(intent)
+    }
 
     BackHandler {
         activity?.moveTaskToBack(true)
