@@ -153,9 +153,9 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.Gray,
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.White,
+                        unfocusedIndicatorColor = Color.Gray,
                         cursorColor = Color.White,
                         focusedTextColor = Color.White,
                         unfocusedTextColor = Color.White
