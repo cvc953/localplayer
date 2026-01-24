@@ -27,7 +27,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.io.File
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.withContext
@@ -103,6 +102,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val list = _queue.value.toMutableList()
         list.add(song)
         _queue.value = list
+    }
+
+    fun getUpcomingSongs(): List<Song> {
+        val current = playerState.value.currentSong ?: return _queue.value
+        val base = songs.value
+        val upcoming = mutableListOf<Song>()
+
+        // Primero la cola explícita
+        upcoming.addAll(_queue.value)
+
+        val remaining = when {
+            _isShuffle.value -> base.filter { it != current }.shuffled()
+            _repeatMode.value == RepeatMode.ALL -> {
+                val idx = base.indexOf(current)
+                if (idx == -1) base else base.drop(idx + 1) + base.take(idx)
+            }
+            else -> {
+                val idx = base.indexOf(current)
+                if (idx == -1) emptyList() else base.drop(idx + 1)
+            }
+        }
+
+        upcoming.addAll(remaining)
+        return upcoming
     }
 
     private fun popQueue(): Song? {

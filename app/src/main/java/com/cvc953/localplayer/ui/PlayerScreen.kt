@@ -48,7 +48,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.material3.ExperimentalMaterial3Api
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
@@ -58,6 +57,9 @@ fun PlayerScreen(
     val showLyrics by viewModel.showLyrics.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
     val queue by viewModel.queue.collectAsState()
+    val songs by viewModel.songs.collectAsState()
+    val isShuffle by viewModel.isShuffle.collectAsState()
+    val repeatMode by viewModel.repeatMode.collectAsState()
     val song = playerState.currentSong ?: return
     val offsetY = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -69,6 +71,9 @@ fun PlayerScreen(
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
     var showQueue by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val upcoming = remember(queue, playerState, songs, isShuffle, repeatMode) {
+        viewModel.getUpcomingSongs()
+    }
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
@@ -287,7 +292,7 @@ fun PlayerScreen(
 
                             Spacer(Modifier.height(12.dp))
 
-                            if (queue.isEmpty()) {
+                            if (upcoming.isEmpty()) {
                                 Text(
                                     text = "No hay canciones en cola",
                                     color = Color(0xFFB0B0B0),
@@ -298,7 +303,7 @@ fun PlayerScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    items(queue) { queuedSong ->
+                                    items(upcoming) { queuedSong ->
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically
