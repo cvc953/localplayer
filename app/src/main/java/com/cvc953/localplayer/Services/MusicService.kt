@@ -99,6 +99,43 @@ class MusicService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
+        when (intent?.action) {
+            "ACTION_PLAY_PAUSE" -> {
+                if (player.isPlaying) {
+                    player.pause()
+                } else {
+                    player.play()
+                }
+                updatePlaybackState()
+                updateNotification()
+                return START_STICKY
+            }
+            "ACTION_NEXT" -> {
+                try {
+                    if (player.hasNextMediaItem()) {
+                        player.seekToNext()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                updatePlaybackState()
+                updateNotification()
+                return START_STICKY
+            }
+            "ACTION_PREVIOUS" -> {
+                try {
+                    if (player.hasPreviousMediaItem()) {
+                        player.seekToPrevious()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                updatePlaybackState()
+                updateNotification()
+                return START_STICKY
+            }
+        }
+
         intent?.let {
             title = it.getStringExtra("TITLE") ?: title
             artist = it.getStringExtra("ARTIST") ?: artist
@@ -134,6 +171,36 @@ class MusicService : Service() {
         )
         val displayAlbumArt = albumArt ?: defaultAlbumArt
 
+        // Crear PendingIntents para los botones
+        val previousIntent = Intent(this, MusicService::class.java).apply {
+            action = "ACTION_PREVIOUS"
+        }
+        val previousPendingIntent = PendingIntent.getService(
+            this,
+            1,
+            previousIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val playPauseIntent = Intent(this, MusicService::class.java).apply {
+            action = "ACTION_PLAY_PAUSE"
+        }
+        val playPausePendingIntent = PendingIntent.getService(
+            this,
+            2,
+            playPauseIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val nextIntent = Intent(this, MusicService::class.java).apply {
+            action = "ACTION_NEXT"
+        }
+        val nextPendingIntent = PendingIntent.getService(
+            this,
+            3,
+            nextIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_media_play)
@@ -150,10 +217,7 @@ class MusicService : Service() {
                 NotificationCompat.Action(
                     android.R.drawable.ic_media_previous,
                     "Prev",
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(
-                        this,
-                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                    )
+                    previousPendingIntent
                 )
             )
             .addAction(
@@ -161,20 +225,14 @@ class MusicService : Service() {
                     if (isPlaying) android.R.drawable.ic_media_pause
                     else android.R.drawable.ic_media_play,
                     "PlayPause",
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(
-                        this,
-                        PlaybackStateCompat.ACTION_PLAY_PAUSE
-                    )
+                    playPausePendingIntent
                 )
             )
             .addAction(
                 NotificationCompat.Action(
                     android.R.drawable.ic_media_next,
                     "Next",
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(
-                        this,
-                        PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                    )
+                    nextPendingIntent
                 )
             )
             .setOnlyAlertOnce(true)
@@ -211,24 +269,28 @@ class MusicService : Service() {
     }
 
     private fun loadAlbumArt(uri: String) {
-        try {
-            val retriever = android.media.MediaMetadataRetriever()
-            retriever.setDataSource(this, Uri.parse(uri))
-            val art = retriever.embeddedPicture
-            retriever.release()
+        Thread {
+            try {
+                val retriever = android.media.MediaMetadataRetriever()
+                retriever.setDataSource(this, Uri.parse(uri))
+                val art = retriever.embeddedPicture
+                retriever.release()
 
-            albumArt = art?.let {
-                val originalBitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
-                // Escalar a un tamaño razonable (512x512) para evitar que se vea pixelada
-                if (originalBitmap != null) {
-                    Bitmap.createScaledBitmap(originalBitmap, 512, 512, true)
-                } else {
-                    null
+                albumArt = art?.let {
+                    val originalBitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                    // Escalar a un tamaño razonable (512x512) para evitar que se vea pixelada
+                    if (originalBitmap != null) {
+                        Bitmap.createScaledBitmap(originalBitmap, 512, 512, true)
+                    } else {
+                        null
+                    }
                 }
+                // Actualizar la notificación después de cargar la imagen
+                updateNotification()
+            } catch (e: Exception) {
+                albumArt = null
             }
-        } catch (e: Exception) {
-            albumArt = null
-        }
+        }.start()
     }
 
     private fun updatePlaybackState() {
