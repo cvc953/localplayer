@@ -35,6 +35,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.util.StoragePermissionHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.launch
 
 
 
@@ -66,6 +69,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
     val context = LocalContext.current
     val activity = context as? Activity
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
     // Actualizar el servicio cuando cambia el estado del player
     LaunchedEffect(playerState.isPlaying) {
@@ -263,7 +267,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                                                 shape = RoundedCornerShape(12.dp),
                                                 clip = true
                                             )
-                                            .background(Color(0xFF2ECC71))
+                                            .background(Color(0xFF2196F3))
                                             .padding(horizontal = 16.dp, vertical = 12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
@@ -297,7 +301,40 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                 }
             }
 
-
+            // Barra de scroll alfabético
+            if (sortMode == SortMode.TITLE_ASC || sortMode == SortMode.TITLE_DESC) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 4.dp)
+                        .width(24.dp)
+                        .fillMaxHeight(0.7f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    ('A'..'Z').forEach { letter ->
+                        Text(
+                            text = letter.toString(),
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .clickable {
+                                    val index = sortedSongs.indexOfFirst {
+                                        it.title.firstOrNull()?.uppercaseChar() == letter
+                                    }
+                                    if (index >= 0) {
+                                        scope.launch {
+                                            listState.animateScrollToItem(index)
+                                        }
+                                    }
+                                }
+                                .padding(vertical = 2.dp)
+                        )
+                    }
+                }
+            }
 
             if (showPlayerScreen) {
                 Box(

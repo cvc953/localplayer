@@ -399,7 +399,7 @@ fun PlayerScreen(
                                                 .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp))
                                                 .border(
                                                     width = if (isDragging) 2.dp else 1.dp,
-                                                    color = if (isDragging) Color(0xFF2ECC71) else Color(0xFF2A2A2A),
+                                                    color = if (isDragging) Color(0xFF2196F3) else Color(0xFF2A2A2A),
                                                     shape = RoundedCornerShape(12.dp)
                                                 )
                                                 .padding(horizontal = 12.dp, vertical = 10.dp),
@@ -452,7 +452,7 @@ fun PlayerScreen(
                                             Icon(
                                                 imageVector = Icons.Default.DragHandle,
                                                 contentDescription = "Reordenar",
-                                                tint = if (isDragging) Color(0xFF2ECC71) else Color.White.copy(alpha = 0.7f)
+                                                tint = if (isDragging) Color(0xFF2196F3) else Color.White.copy(alpha = 0.7f)
                                             )
                                         }
                                     }
