@@ -36,7 +36,9 @@ import com.cvc953.localplayer.util.StoragePermissionHandler
 fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit) {
     val songs by viewModel.songs.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMode by rememberSaveable { mutableStateOf(SortMode.TITLE_ASC) }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
 
     val filteredSongs = remember(songs, searchQuery) {
         val q = searchQuery.trim().lowercase()
@@ -133,41 +135,72 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         color = Color.White,
                         modifier = Modifier.weight(1f)
                     )
-                    IconButton(onClick = {
-                        sortMode = sortMode.next()
-                    }) {
-                        Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = Color.White)
+
+                    Box {
+                        IconButton(onClick = { sortMenuExpanded = true }) {
+                            Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = Color.White)
+                        }
+                        DropdownMenu(
+                            expanded = sortMenuExpanded,
+                            onDismissRequest = { sortMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Título A-Z") },
+                                onClick = {
+                                    sortMode = SortMode.TITLE_ASC
+                                    sortMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Título Z-A") },
+                                onClick = {
+                                    sortMode = SortMode.TITLE_DESC
+                                    sortMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Artista A-Z") },
+                                onClick = {
+                                    sortMode = SortMode.ARTIST_ASC
+                                    sortMenuExpanded = false
+                                }
+                            )
+                        }
                     }
+
                     IconButton(onClick = {
-                        searchQuery = ""
+                        showSearchBar = !showSearchBar
+                        if (!showSearchBar) searchQuery = ""
                     }) {
                         Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White)
                     }
                 }
 
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    singleLine = true,
-                    placeholder = { Text("Buscar por título o artista") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedIndicatorColor = Color.White,
-                        unfocusedIndicatorColor = Color.Gray,
-                        cursorColor = Color.White,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    ),
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.White)
+                if (showSearchBar) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        singleLine = true,
+                        placeholder = { Text("Buscar por título o artista") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedIndicatorColor = Color.White,
+                            unfocusedIndicatorColor = Color.Gray,
+                            cursorColor = Color.White,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.White)
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
 
                 // Lista de canciones
                 LazyColumn(
