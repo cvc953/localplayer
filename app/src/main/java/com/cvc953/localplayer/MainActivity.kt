@@ -10,43 +10,47 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import androidx.activity.result.contract.ActivityResultContracts
 import com.cvc953.localplayer.services.MusicService
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 
 
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var viewModel: MainViewModel
+    private var viewModel: MainViewModel? = null
     private val controlReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                MusicService.ACTION_PLAY_PAUSE -> viewModel.togglePlayPause()
-                MusicService.ACTION_NEXT -> viewModel.playNextSong()
-                MusicService.ACTION_PREV -> viewModel.playPreviousSong()
+            viewModel?.let { vm ->
+                when (intent?.action) {
+                    MusicService.ACTION_PLAY_PAUSE -> vm.togglePlayPause()
+                    MusicService.ACTION_NEXT -> vm.playNextSong()
+                    MusicService.ACTION_PREV -> vm.playPreviousSong()
+                }
             }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
         setContent {
-            viewModel = viewModel()
+            val vm: MainViewModel = viewModel()
+            viewModel = vm
             
-            // Observar cambios en el estado del player y actualizar el servicio
-            viewModel.playerState.onEach { state ->
-                val intent = Intent(this, MusicService::class.java).apply {
+            MainMusicScreen(vm) { }
+        }
+        
+        // Observar cambios en el estado del player y actualizar el servicio
+        lifecycleScope.launch {
+            viewModel?.playerState?.collect { state ->
+                val intent = Intent(this@MainActivity, MusicService::class.java).apply {
                     action = MusicService.ACTION_UPDATE_STATE
                     putExtra("IS_PLAYING", state.isPlaying)
                 }
                 startService(intent)
-            }.launchIn(lifecycleScope)
-            
-            MainMusicScreen(viewModel) { }
+            }
         }
     }
 
