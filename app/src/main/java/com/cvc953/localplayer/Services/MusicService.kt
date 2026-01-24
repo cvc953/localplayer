@@ -15,6 +15,7 @@ import android.net.Uri
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.session.MediaButtonReceiver
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import com.cvc953.localplayer.R
 
 
@@ -43,10 +44,17 @@ class MusicService : Service() {
         super.onCreate()
 
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
         createNotificationChannel()
 
         player = ExoPlayer.Builder(this).build()
+        
+        // Agregar listener para actualizar la notificación cuando cambia el estado
+        player.addListener(object : Player.Listener {
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                updatePlaybackState()
+                updateNotification()
+            }
+        })
 
         mediaSession = MediaSessionCompat(this, "LocalPlayer").apply {
             isActive = true
@@ -54,39 +62,19 @@ class MusicService : Service() {
 
                 override fun onPlay() {
                     player.play()
-                    updatePlaybackState()
-                    updateNotification()
                 }
 
                 override fun onPause() {
                     player.pause()
-                    updatePlaybackState()
-                    updateNotification()
                 }
 
                 override fun onSkipToNext() {
-                    // acá luego llamaremos al ViewModel o cola
-                    try {
-                        if (player.hasNextMediaItem()) {
-                            player.seekToNext()
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    updatePlaybackState()
-                    updateNotification()
+                    // Por ahora no hacemos nada, más adelante se agregará cola
                 }
 
                 override fun onSkipToPrevious() {
-                    try {
-                        if (player.hasPreviousMediaItem()) {
-                            player.seekToPrevious()
-                        }
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                    updatePlaybackState()
-                    updateNotification()
+                    // Por ahora reinicia la canción
+                    player.seekTo(0)
                 }
             })
         }
@@ -98,61 +86,46 @@ class MusicService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
+        
+        // Manejar acciones de la notificación
         when (intent?.action) {
-            "ACTION_PLAY_PAUSE" -> {
+            ACTION_PLAY_PAUSE -> {
                 if (player.isPlaying) {
                     player.pause()
                 } else {
                     player.play()
                 }
-                updatePlaybackState()
-                updateNotification()
                 return START_STICKY
             }
-            "ACTION_NEXT" -> {
-                try {
-                    if (player.hasNextMediaItem()) {
-                        player.seekToNext()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                updatePlaybackState()
-                updateNotification()
+            ACTION_PREV -> {
+                player.seekTo(0)
                 return START_STICKY
             }
-            "ACTION_PREVIOUS" -> {
-                try {
-                    if (player.hasPreviousMediaItem()) {
-                        player.seekToPrevious()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-                updatePlaybackState()
-                updateNotification()
+            ACTION_NEXT -> {
+                // Por ahora no hacemos nada
                 return START_STICKY
             }
         }
 
+        // Cargar nueva canción
         intent?.let {
-            title = it.getStringExtra("TITLE") ?: title
-            artist = it.getStringExtra("ARTIST") ?: artist
+            val newTitle = it.getStringExtra("TITLE")
+            val newArtist = it.getStringExtra("ARTIST")
+            val newUri = it.getStringExtra("SONG_URI")
 
-            it.getStringExtra("SONG_URI")?.let { uri ->
-                // Solo cambiar la canción si es diferente a la actual
-                if (uri != currentUri) {
-                    currentUri = uri
-                    player.stop()
-                    player.clearMediaItems()
-                    player.setMediaItem(MediaItem.fromUri(uri))
-                    player.prepare()
-                    player.play()
-                    
-                    // Cargar la carátula del álbum
-                    loadAlbumArt(uri)
-                }
+            if (newUri != null && newUri != currentUri) {
+                currentUri = newUri
+                title = newTitle ?: "Reproduciendo"
+                artist = newArtist ?: ""
+                
+                player.stop()
+                player.clearMediaItems()
+                player.setMediaItem(MediaItem.fromUri(newUri))
+                player.prepare()
+                player.play()
+                
+                // Cargar carátula
+                loadAlbumArt(newUri)
             }
         }
 
@@ -164,130 +137,105 @@ class MusicService : Service() {
     private fun buildNotification(): Notification {
         val isPlaying = player.isPlaying
 
-        // Usar la carátula cargada o una carátula por defecto
-        val defaultAlbumArt = BitmapFactory.decodeResource(
-            resources,
-            R.drawable.ic_launcher_foreground
-        )
-        val displayAlbumArt = albumArt ?: defaultAlbumArt
-
-        // Crear PendingIntents para los botones
-        val previousIntent = Intent(this, MusicService::class.java).apply {
-            action = "ACTION_PREVIOUS"
+        // Carátula del álbum
+        val artworkBitmap = if (albumArt != null && albumArt!!.width > 0) {
+            albumArt
+        } else {
+            BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
         }
-        val previousPendingIntent = PendingIntent.getService(
-            this,
-            1,
-            previousIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val playPauseIntent = Intent(this, MusicService::class.java).apply {
-            action = "ACTION_PLAY_PAUSE"
-        }
-        val playPausePendingIntent = PendingIntent.getService(
-            this,
-            2,
-            playPauseIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val nextIntent = Intent(this, MusicService::class.java).apply {
-            action = "ACTION_NEXT"
-        }
-        val nextPendingIntent = PendingIntent.getService(
-            this,
-            3,
-            nextIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(artist)
-            .setLargeIcon(displayAlbumArt)
+            .setLargeIcon(artworkBitmap)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setStyle(
                 androidx.media.app.NotificationCompat.MediaStyle()
                     .setMediaSession(mediaSession.sessionToken)
                     .setShowActionsInCompactView(0, 1, 2)
             )
             .addAction(
-                NotificationCompat.Action(
-                    android.R.drawable.ic_media_previous,
-                    "Prev",
-                    previousPendingIntent
-                )
+                android.R.drawable.ic_media_previous,
+                "Anterior",
+                getPendingIntent(ACTION_PREV)
             )
             .addAction(
-                NotificationCompat.Action(
-                    if (isPlaying) android.R.drawable.ic_media_pause
-                    else android.R.drawable.ic_media_play,
-                    "PlayPause",
-                    playPausePendingIntent
-                )
+                if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+                if (isPlaying) "Pausar" else "Reproducir",
+                getPendingIntent(ACTION_PLAY_PAUSE)
             )
             .addAction(
-                NotificationCompat.Action(
-                    android.R.drawable.ic_media_next,
-                    "Next",
-                    nextPendingIntent
-                )
+                android.R.drawable.ic_media_next,
+                "Siguiente",
+                getPendingIntent(ACTION_NEXT)
             )
             .setOnlyAlertOnce(true)
             .setOngoing(isPlaying)
+            .setShowWhen(false)
             .build()
     }
 
-
-
-    private fun updateNotification() {
-        notificationManager.notify(NOTIF_ID, buildNotification())
+    private fun getPendingIntent(action: String): PendingIntent {
+        val intent = Intent(this, MusicService::class.java).apply {
+            this.action = action
+        }
+        return PendingIntent.getService(
+            this,
+            action.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 
-    private fun getPendingIntent(action: String): PendingIntent {
-        val intent = Intent(this, MusicService::class.java).apply { this.action = action }
-        return PendingIntent.getService(this, action.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    private fun updateNotification() {
+        try {
+            notificationManager.notify(NOTIF_ID, buildNotification())
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun createNotificationChannel() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, "Reproducción", NotificationManager.IMPORTANCE_LOW)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "Reproducción de música",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Controles de reproducción"
+                setShowBadge(false)
+            }
             notificationManager.createNotificationChannel(channel)
-
-            getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)        }
-    }
-
-
-
-    override fun onDestroy() {
-        player.release()
-        mediaSession.release()
-        super.onDestroy()
+        }
     }
 
     private fun loadAlbumArt(uri: String) {
         Thread {
             try {
-                val retriever = android.media.MediaMetadataRetriever()
+                val retriever = MediaMetadataRetriever()
                 retriever.setDataSource(this, Uri.parse(uri))
                 val art = retriever.embeddedPicture
                 retriever.release()
 
-                albumArt = art?.let {
-                    val originalBitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
-                    // Escalar a un tamaño razonable (512x512) para evitar que se vea pixelada
-                    if (originalBitmap != null) {
-                        Bitmap.createScaledBitmap(originalBitmap, 512, 512, true)
-                    } else {
-                        null
+                if (art != null) {
+                    val bitmap = BitmapFactory.decodeByteArray(art, 0, art.size)
+                    if (bitmap != null) {
+                        // Escalar a 512x512 manteniendo aspecto
+                        val size = 512
+                        albumArt = Bitmap.createScaledBitmap(bitmap, size, size, true)
+                        if (bitmap != albumArt) {
+                            bitmap.recycle()
+                        }
+                        // Actualizar notificación con la nueva carátula
+                        updateNotification()
                     }
+                } else {
+                    albumArt = null
                 }
-                // Actualizar la notificación después de cargar la imagen
-                updateNotification()
             } catch (e: Exception) {
+                e.printStackTrace()
                 albumArt = null
             }
         }.start()
