@@ -113,7 +113,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setUpcomingOrder(newOrder: List<Song>) {
-        _queue.value = newOrder
+        // Solo guardamos las canciones que están en la cola actual,
+        // manteniendo el orden del reordenamiento pero filtrando
+        // las que vienen de la biblioteca automática
+        val currentQueue = _queue.value
+        val reorderedQueue = newOrder.filter { it in currentQueue }
+        _queue.value = reorderedQueue
     }
 
     fun getUpcomingSongs(): List<Song> {
