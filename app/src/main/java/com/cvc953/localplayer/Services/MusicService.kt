@@ -66,13 +66,25 @@ class MusicService : Service() {
 
                 override fun onSkipToNext() {
                     // acá luego llamaremos al ViewModel o cola
-                    player.seekToNext()
+                    try {
+                        if (player.hasNextMediaItem()) {
+                            player.seekToNext()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                     updatePlaybackState()
                     updateNotification()
                 }
 
                 override fun onSkipToPrevious() {
-                    player.seekToPrevious()
+                    try {
+                        if (player.hasPreviousMediaItem()) {
+                            player.seekToPrevious()
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                     updatePlaybackState()
                     updateNotification()
                 }
@@ -206,7 +218,13 @@ class MusicService : Service() {
             retriever.release()
 
             albumArt = art?.let {
-                BitmapFactory.decodeByteArray(it, 0, it.size)
+                val originalBitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                // Escalar a un tamaño razonable (512x512) para evitar que se vea pixelada
+                if (originalBitmap != null) {
+                    Bitmap.createScaledBitmap(originalBitmap, 512, 512, true)
+                } else {
+                    null
+                }
             }
         } catch (e: Exception) {
             albumArt = null
