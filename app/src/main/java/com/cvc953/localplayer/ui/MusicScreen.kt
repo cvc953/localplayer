@@ -331,7 +331,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                     }
                     if (index >= 0) {
                         scope.launch {
-                            listState.animateScrollToItem(index)
+                            listState.scrollToItem(index)
                         }
                     }
                 }
