@@ -112,6 +112,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _queue.value = list
     }
 
+    fun setUpcomingOrder(newOrder: List<Song>) {
+        _queue.value = newOrder
+    }
+
     fun getUpcomingSongs(): List<Song> {
         val current = playerState.value.currentSong ?: return _queue.value
         val base = songs.value

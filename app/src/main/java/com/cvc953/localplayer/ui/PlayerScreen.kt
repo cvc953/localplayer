@@ -9,9 +9,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -74,10 +77,13 @@ fun PlayerScreen(
     val upcoming = remember(queue, playerState, songs, isShuffle, repeatMode) {
         viewModel.getUpcomingSongs()
     }
-    val queueSize = queue.size
-    val libraryUpcoming = remember(upcoming, queueSize) {
-        if (queueSize <= upcoming.size) upcoming.drop(queueSize) else emptyList()
+    val listState = rememberLazyListState()
+    val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
+    LaunchedEffect(upcoming) {
+        dragList.clear()
+        dragList.addAll(upcoming)
     }
+    var draggingIndex by remember { mutableStateOf<Int?>(null) }
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
@@ -296,19 +302,49 @@ fun PlayerScreen(
 
                             Spacer(Modifier.height(12.dp))
 
-                            if (queue.isEmpty()) {
+                            if (dragList.isEmpty()) {
                                 Text(
                                     text = "No hay canciones en cola",
                                     color = Color(0xFFB0B0B0),
                                     fontSize = 14.sp
                                 )
                             } else {
+                                val layoutInfo = listState.layoutInfo
+                                fun itemIndexAt(offset: Float): Int? {
+                                    val y = offset.toInt()
+                                    return layoutInfo.visibleItemsInfo.firstOrNull { y in it.offset..(it.offset + it.size) }?.index
+                                }
+
                                 LazyColumn(
+                                    state = listState,
                                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .pointerInput(dragList) {
+                                            detectDragGesturesAfterLongPress(
+                                                onDragStart = { pos ->
+                                                    draggingIndex = itemIndexAt(pos.y)
+                                                },
+                                                onDrag = { change, _ ->
+                                                    change.consume()
+                                                    val target = itemIndexAt(change.position.y)
+                                                    val from = draggingIndex
+                                                    if (from != null && target != null && target != from) {
+                                                        val item = dragList.removeAt(from)
+                                                        val newIndex = if (target >= dragList.size) dragList.size else target
+                                                        dragList.add(newIndex, item)
+                                                        draggingIndex = newIndex
+                                                    }
+                                                },
+                                                onDragEnd = {
+                                                    draggingIndex = null
+                                                    viewModel.setUpcomingOrder(dragList.toList())
+                                                },
+                                                onDragCancel = { draggingIndex = null }
+                                            )
+                                        }
                                 ) {
-                                    items(queue.indices.toList()) { idx ->
-                                        val queuedSong = queue[idx]
+                                    itemsIndexed(dragList) { idx, queuedSong ->
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
                                             verticalAlignment = Alignment.CenterVertically
@@ -330,65 +366,19 @@ fun PlayerScreen(
                                                 )
                                             }
 
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                IconButton(
-                                                    onClick = { viewModel.moveQueueItem(idx, idx - 1) },
-                                                    enabled = idx > 0
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.KeyboardArrowUp,
-                                                        contentDescription = "Mover arriba",
-                                                        tint = if (idx > 0) Color.White else Color(0xFF555555)
-                                                    )
-                                                }
-
-                                                IconButton(
-                                                    onClick = { viewModel.moveQueueItem(idx, idx + 1) },
-                                                    enabled = idx < queue.lastIndex
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.KeyboardArrowDown,
-                                                        contentDescription = "Mover abajo",
-                                                        tint = if (idx < queue.lastIndex) Color.White else Color(0xFF555555)
-                                                    )
-                                                }
+                                            if (draggingIndex == idx) {
+                                                Icon(
+                                                    imageVector = Icons.Default.DragHandle,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF2ECC71)
+                                                )
+                                            } else {
+                                                Icon(
+                                                    imageVector = Icons.Default.DragHandle,
+                                                    contentDescription = null,
+                                                    tint = Color.White.copy(alpha = 0.6f)
+                                                )
                                             }
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (libraryUpcoming.isNotEmpty()) {
-                                Spacer(Modifier.height(20.dp))
-                                Text(
-                                    text = "A continuación",
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-
-                                Spacer(Modifier.height(10.dp))
-
-                                LazyColumn(
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    items(libraryUpcoming) { queuedSong ->
-                                        Column {
-                                            Text(
-                                                text = queuedSong.title,
-                                                color = Color.White,
-                                                fontSize = 16.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
-                                            Text(
-                                                text = queuedSong.artist,
-                                                color = Color(0xFFB0B0B0),
-                                                fontSize = 13.sp,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
                                         }
                                     }
                                 }
