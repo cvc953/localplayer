@@ -40,6 +40,7 @@ import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.util.StoragePermissionHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.launch
 
@@ -74,6 +75,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
     val activity = context as? Activity
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    var currentScrollLetter by remember { mutableStateOf<String?>(null) }
 
     // Actualizar el servicio cuando cambia el estado del player
     LaunchedEffect(playerState.isPlaying) {
@@ -312,6 +314,11 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                 val density = LocalDensity.current
 
                 fun scrollToLetter(letter: String) {
+                    currentScrollLetter = letter
+                    scope.launch {
+                        kotlinx.coroutines.delay(800)
+                        currentScrollLetter = null
+                    }
                     val index = if (letter == "#") {
                         sortedSongs.indexOfFirst {
                             val firstChar = it.title.firstOrNull()?.uppercaseChar()
@@ -360,17 +367,40 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                     verticalArrangement = Arrangement.SpaceEvenly
                 ) {
                     alphabet.forEach { letter ->
+                        val isActive = currentScrollLetter == letter
                         Text(
                             text = letter,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium,
+                            color = if (isActive) Color(0xFF2196F3) else Color.White.copy(alpha = 0.7f),
+                            fontSize = if (isActive) 12.sp else 10.sp,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .clickable { scrollToLetter(letter) }
                                 .padding(vertical = 1.5.dp)
                         )
                     }
+                }
+            }
+
+            // Overlay de letra grande para feedback
+            currentScrollLetter?.let { letter ->
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(100.dp)
+                        .background(
+                            Color.Black.copy(alpha = 0.8f),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .border(2.dp, Color(0xFF2196F3), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = letter,
+                        color = Color.White,
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
