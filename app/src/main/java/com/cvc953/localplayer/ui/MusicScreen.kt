@@ -157,7 +157,8 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         focusedBorderColor = Color.White,
                         unfocusedBorderColor = Color.Gray,
                         cursorColor = Color.White,
-                        textColor = Color.White
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
                     ),
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
