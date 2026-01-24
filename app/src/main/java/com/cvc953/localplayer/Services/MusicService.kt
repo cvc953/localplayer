@@ -114,7 +114,7 @@ class MusicService : Service() {
         if (!songUri.isNullOrEmpty()) {
             title = songTitle ?: "Reproduciendo"
             artist = songArtist ?: ""
-            isPlaying = true
+            isPlaying = intent?.getBooleanExtra("IS_PLAYING", true) ?: true
             currentSongUri = songUri
             
             Log.e("MusicService", "✓ Song loaded: $title by $artist")

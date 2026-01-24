@@ -45,6 +45,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val LAST_SONG_URI = "last_song_uri"
         private const val LAST_SONG_TITLE = "last_song_title"
         private const val LAST_SONG_ARTIST = "last_song_artist"
+        private const val LAST_IS_PLAYING = "last_is_playing"
     }
     
     init {
@@ -106,14 +107,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun playSong(song: Song) {
+    fun playSong(song: Song, autoPlay: Boolean = true) {
         mediaPlayer?.release()
 
         try {
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(getApplication(), song.uri)
                 prepare()
-                start()
+                if (autoPlay) start()
 
                 setOnCompletionListener {
                     if (_repeatMode.value == RepeatMode.ONE) {
@@ -130,12 +131,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             _playerState.value = PlayerState(
                 currentSong = song,
-                isPlaying = true,
+                isPlaying = autoPlay,
                 position = 0L,
                 duration = mediaPlayer?.duration?.toLong() ?: 0L
             )
 
-            startPositionUpdates()
+            if (autoPlay) startPositionUpdates() else progressJob?.cancel()
             loadLyricsForSong(song)
 
         } catch (e: Exception){
@@ -150,11 +151,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 it.pause()
                 progressJob?.cancel()
                 _playerState.value = _playerState.value.copy(isPlaying = false)
+                _playerState.value.currentSong?.let { song -> saveLastSong(song, false) }
             } else {
                 it.start()
                 //startProgressTracking()
                 startPositionUpdates()
                 _playerState.value = _playerState.value.copy(isPlaying = true)
+                _playerState.value.currentSong?.let { song -> saveLastSong(song, true) }
             }
         }
     }
@@ -328,24 +331,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun startService(context: Context, song: Song) {
-        //val intent = Intent(context, MusicService::class.java)
-
+    fun startService(context: Context, song: Song, isPlaying: Boolean = true) {
         ContextCompat.startForegroundService(context, Intent(context, MusicService::class.java).apply {
             putExtra("SONG_URI", song.uri.toString())
             putExtra("TITLE", song.title)
             putExtra("ARTIST", song.artist)
+            putExtra("IS_PLAYING", isPlaying)
         })
-        
-        // Guardar como última canción reproducida
-        saveLastSong(song)
+        saveLastSong(song, isPlaying)
     }
-    
-    private fun saveLastSong(song: Song) {
+
+    private fun saveLastSong(song: Song, isPlaying: Boolean) {
         prefs.edit().apply {
             putString(LAST_SONG_URI, song.uri.toString())
             putString(LAST_SONG_TITLE, song.title)
             putString(LAST_SONG_ARTIST, song.artist)
+            putBoolean(LAST_IS_PLAYING, isPlaying)
             apply()
         }
     }
@@ -354,13 +355,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val lastUri = prefs.getString(LAST_SONG_URI, null) ?: return
         val lastTitle = prefs.getString(LAST_SONG_TITLE, "Reproduciendo") ?: "Reproduciendo"
         val lastArtist = prefs.getString(LAST_SONG_ARTIST, "") ?: ""
+        val lastIsPlaying = prefs.getBoolean(LAST_IS_PLAYING, false)
         
         // Buscar la canción en la lista
         val song = _songs.value.find { it.uri.toString() == lastUri }
         
         if (song != null) {
-            // Reproducir automáticamente la última canción
-            playSong(song)
+            // Reproducir o preparar según estado previo
+            playSong(song, autoPlay = lastIsPlaying)
+            startService(getApplication(), song, lastIsPlaying)
         }
     }
 }
