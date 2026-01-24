@@ -242,25 +242,28 @@ class MusicService : Service() {
     }
 
     private fun updatePlaybackState() {
-        val state = if (player.isPlaying)
+        val state = if (player.isPlaying) {
             PlaybackStateCompat.STATE_PLAYING
-        else
+        } else {
             PlaybackStateCompat.STATE_PAUSED
+        }
 
-        mediaSession.setPlaybackState(
-            PlaybackStateCompat.Builder()
-                .setActions(
-                    PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                            PlaybackStateCompat.ACTION_PLAY or
-                            PlaybackStateCompat.ACTION_PAUSE or
-                            PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-                )
-                .setState(state, player.currentPosition, 1f)
-                .build()
-        )
+        val stateBuilder = PlaybackStateCompat.Builder()
+            .setActions(
+                PlaybackStateCompat.ACTION_PLAY_PAUSE or
+                        PlaybackStateCompat.ACTION_PLAY or
+                        PlaybackStateCompat.ACTION_PAUSE or
+                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            )
+            .setState(state, player.currentPosition, 1f)
+
+        mediaSession.setPlaybackState(stateBuilder.build())
     }
 
-
-
+    override fun onDestroy() {
+        player.release()
+        mediaSession.release()
+        albumArt?.recycle()
+        super.onDestroy()
+    }
 }
