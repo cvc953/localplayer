@@ -6,17 +6,12 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.IBinder
-import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
-import androidx.media3.exoplayer.ExoPlayer
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
-import android.support.v4.media.session.PlaybackStateCompat
-import androidx.media.session.MediaButtonReceiver
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.viewmodel.MainViewModel
 
 
 class MusicService : Service() {
@@ -52,18 +47,18 @@ class MusicService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         
-        // Manejar acciones de la notificación - enviar broadcasts
+        // Manejar acciones de la notificación - llamar directamente al ViewModel
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
-                sendBroadcast(Intent(ACTION_PLAY_PAUSE))
+                MainViewModel.instance?.togglePlayPause()
                 return START_STICKY
             }
             ACTION_PREV -> {
-                sendBroadcast(Intent(ACTION_PREV))
+                MainViewModel.instance?.playPreviousSong()
                 return START_STICKY
             }
             ACTION_NEXT -> {
-                sendBroadcast(Intent(ACTION_NEXT))
+                MainViewModel.instance?.playNextSong()
                 return START_STICKY
             }
             ACTION_UPDATE_STATE -> {

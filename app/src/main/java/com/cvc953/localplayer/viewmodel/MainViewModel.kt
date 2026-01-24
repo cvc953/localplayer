@@ -38,6 +38,14 @@ data class LyricLine(val timeMs: Long, val text: String)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    companion object {
+        var instance: MainViewModel? = null
+    }
+    
+    init {
+        instance = this
+    }
+
     private val repository = SongRepository(application)
 
     // Lista de canciones
