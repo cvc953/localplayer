@@ -89,6 +89,7 @@ fun PlayerScreen(
         dragList.addAll(upcoming)
     }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
+    var dragOffset by remember { mutableStateOf(0f) }
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
@@ -329,9 +330,11 @@ fun PlayerScreen(
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = { pos ->
                                                     draggingIndex = itemIndexAt(pos.y)
+                                                    dragOffset = 0f
                                                 },
-                                                onDrag = { change, _ ->
+                                                onDrag = { change, dragAmount ->
                                                     change.consume()
+                                                    dragOffset += dragAmount.y
                                                     val target = itemIndexAt(change.position.y)
                                                     val from = draggingIndex
                                                     if (from != null && target != null && target != from) {
@@ -339,43 +342,92 @@ fun PlayerScreen(
                                                         val newIndex = target.coerceIn(0, dragList.size)
                                                         dragList.add(newIndex, item)
                                                         draggingIndex = newIndex
+                                                        dragOffset = 0f
                                                     }
                                                 },
                                                 onDragEnd = {
                                                     draggingIndex = null
+                                                    dragOffset = 0f
                                                     viewModel.setUpcomingOrder(dragList.toList())
                                                 },
-                                                onDragCancel = { draggingIndex = null }
+                                                onDragCancel = {
+                                                    draggingIndex = null
+                                                    dragOffset = 0f
+                                                }
                                             )
                                         }
                                 ) {
                                     itemsIndexed(dragList) { idx, queuedSong ->
                                         val isDragging = draggingIndex == idx
-                                        val elevation by animateDpAsState(if (isDragging) 6.dp else 0.dp, label = "drag-elev")
-                                        val scale by animateFloatAsState(if (isDragging) 1.02f else 1f, label = "drag-scale")
+                                        val elevation by animateDpAsState(
+                                            if (isDragging) 8.dp else 0.dp,
+                                            label = "drag-elev"
+                                        )
+                                        val scale by animateFloatAsState(
+                                            if (isDragging) 1.03f else 1f,
+                                            label = "drag-scale"
+                                        )
+                                        val offsetDp = with(LocalDensity.current) { dragOffset.toDp() }
+                                        val animatedOffset by animateDpAsState(
+                                            if (isDragging) offsetDp else 0.dp,
+                                            label = "drag-offset"
+                                        )
+
+                                        var albumArtBitmap by remember(queuedSong.uri) { mutableStateOf<Bitmap?>(null) }
+                                        LaunchedEffect(queuedSong.uri) {
+                                            albumArtBitmap = withContext(Dispatchers.IO) {
+                                                try {
+                                                    val retriever = MediaMetadataRetriever()
+                                                    retriever.setDataSource(context, queuedSong.uri)
+                                                    val picture = retriever.embeddedPicture
+                                                    retriever.release()
+                                                    picture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                                                } catch (_: Exception) { null }
+                                            }
+                                        }
 
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .graphicsLayer(scaleX = scale, scaleY = scale)
+                                                .offset(y = if (isDragging) animatedOffset else 0.dp)
+                                                .graphicsLayer(
+                                                    scaleX = scale,
+                                                    scaleY = scale,
+                                                    shadowElevation = elevation.value
+                                                )
                                                 .shadow(elevation, RoundedCornerShape(12.dp), clip = true)
                                                 .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp))
-                                                .border(1.dp, Color(0xFF2A2A2A), RoundedCornerShape(12.dp))
+                                                .border(
+                                                    width = if (isDragging) 2.dp else 1.dp,
+                                                    color = if (isDragging) Color(0xFF2ECC71) else Color(0xFF2A2A2A),
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
                                                 .padding(horizontal = 12.dp, vertical = 10.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Box(
                                                 modifier = Modifier
-                                                    .size(28.dp)
-                                                    .background(Color(0xFF2ECC71), RoundedCornerShape(8.dp)),
-                                                contentAlignment = Alignment.Center
+                                                    .size(48.dp)
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(Color(0xFF2A2A2A))
                                             ) {
-                                                Text(
-                                                    text = "${idx + 1}",
-                                                    color = Color.Black,
-                                                    fontSize = 13.sp,
-                                                    fontWeight = FontWeight.Bold
-                                                )
+                                                if (albumArtBitmap != null) {
+                                                    Image(
+                                                        painter = BitmapPainter(albumArtBitmap!!.asImageBitmap()),
+                                                        contentDescription = null,
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                } else {
+                                                    Icon(
+                                                        imageVector = Icons.Default.MusicNote,
+                                                        contentDescription = null,
+                                                        tint = Color.White.copy(alpha = 0.5f),
+                                                        modifier = Modifier
+                                                            .size(24.dp)
+                                                            .align(Alignment.Center)
+                                                    )
+                                                }
                                             }
 
                                             Spacer(Modifier.width(12.dp))
