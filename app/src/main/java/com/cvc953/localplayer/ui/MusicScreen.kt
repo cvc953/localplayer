@@ -228,10 +228,6 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         val dragState = rememberDraggableState { delta ->
                             dragOffsetX = (dragOffsetX + delta).coerceIn(0f, maxOffsetPx)
                         }
-                        val animatedOffset by androidx.compose.animation.core.animateDpAsState(
-                            targetValue = dragOffsetX.dp,
-                            label = "songRowOffset"
-                        )
                         val progress = (dragOffsetX / maxOffsetPx).coerceIn(0f, 1f)
 
                         Box(
@@ -248,26 +244,27 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                                     }
                                 )
                         ) {
-                            // Fondo estilo Apple Music: pill verde con icono y texto
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 16.dp)
-                                    .heightIn(min = 60.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (progress > 0f) {
+                            // Fondo estilo Apple Music: ocupa todo el alto de la fila
+                            if (progress > 0f) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
                                     Row(
                                         modifier = Modifier
+                                            .fillMaxWidth()
+                                            .heightIn(min = 68.dp)
                                             .graphicsLayer(
                                                 alpha = progress,
                                                 scaleX = 0.9f + 0.1f * progress,
                                                 scaleY = 0.9f + 0.1f * progress,
-                                                shape = RoundedCornerShape(20.dp),
+                                                shape = RoundedCornerShape(12.dp),
                                                 clip = true
                                             )
                                             .background(Color(0xFF2ECC71))
-                                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                                            .padding(horizontal = 16.dp, vertical = 12.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
@@ -275,13 +272,14 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                                             contentDescription = null,
                                             tint = Color.White
                                         )
-                                        Spacer(Modifier.width(8.dp))
+                                        Spacer(Modifier.width(10.dp))
                                         Text("Añadir como siguiente", color = Color.White)
                                     }
                                 }
                             }
 
-                            Box(modifier = Modifier.offset(x = animatedOffset)) {
+                            val offsetDp = with(density) { dragOffsetX.toDp() }
+                            Box(modifier = Modifier.offset(x = offsetDp)) {
                                 SongItem(
                                     song = song,
                                     isPlaying = isCurrent && playerState.isPlaying,
