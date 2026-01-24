@@ -21,23 +21,22 @@ import com.cvc953.localplayer.R
 
 class MusicService : Service() {
 
-    lateinit var player: ExoPlayer
-    lateinit var mediaSession: MediaSessionCompat
     private lateinit var notificationManager: NotificationManager
-
 
     private var currentUri: String? = null
     private var title: String = "Reproduciendo"
     private var artist: String = ""
     private var albumArt: Bitmap? = null
+    private var isPlaying: Boolean = false
 
 
     companion object {
         const val CHANNEL_ID = "playback_channel"
         const val NOTIF_ID = 1
-        const val ACTION_PLAY_PAUSE = "ACTION_PLAY_PAUSE"
-        const val ACTION_NEXT = "ACTION_NEXT"
-        const val ACTION_PREV = "ACTION_PREV"
+        const val ACTION_PLAY_PAUSE = "com.cvc953.localplayer.ACTION_PLAY_PAUSE"
+        const val ACTION_NEXT = "com.cvc953.localplayer.ACTION_NEXT"
+        const val ACTION_PREV = "com.cvc953.localplayer.ACTION_PREV"
+        const val ACTION_UPDATE_STATE = "com.cvc953.localplayer.ACTION_UPDATE_STATE"
     }
 
     override fun onCreate() {
@@ -46,40 +45,6 @@ class MusicService : Service() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
 
-        player = ExoPlayer.Builder(this).build()
-        
-        // Agregar listener para actualizar la notificación cuando cambia el estado
-        player.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                updatePlaybackState()
-                updateNotification()
-            }
-        })
-
-        mediaSession = MediaSessionCompat(this, "LocalPlayer").apply {
-            isActive = true
-            setCallback(object : MediaSessionCompat.Callback() {
-
-                override fun onPlay() {
-                    player.play()
-                }
-
-                override fun onPause() {
-                    player.pause()
-                }
-
-                override fun onSkipToNext() {
-                    // Por ahora no hacemos nada, más adelante se agregará cola
-                }
-
-                override fun onSkipToPrevious() {
-                    // Por ahora reinicia la canción
-                    player.seekTo(0)
-                }
-            })
-        }
-
-        updatePlaybackState()
         startForeground(NOTIF_ID, buildNotification())
     }
 
@@ -87,22 +52,24 @@ class MusicService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         
-        // Manejar acciones de la notificación
+        // Manejar acciones de la notificación - enviar broadcasts
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
-                if (player.isPlaying) {
-                    player.pause()
-                } else {
-                    player.play()
-                }
+                sendBroadcast(Intent(ACTION_PLAY_PAUSE))
                 return START_STICKY
             }
             ACTION_PREV -> {
-                player.seekTo(0)
+                sendBroadcast(Intent(ACTION_PREV))
                 return START_STICKY
             }
             ACTION_NEXT -> {
-                // Por ahora no hacemos nada
+                sendBroadcast(Intent(ACTION_NEXT))
+                return START_STICKY
+            }
+            ACTION_UPDATE_STATE -> {
+                // Actualizar el estado de reproducción
+                isPlaying = intent.getBooleanExtra("IS_PLAYING", false)
+                updateNotification()
                 return START_STICKY
             }
         }
@@ -117,26 +84,19 @@ class MusicService : Service() {
                 currentUri = newUri
                 title = newTitle ?: "Reproduciendo"
                 artist = newArtist ?: ""
-                
-                player.stop()
-                player.clearMediaItems()
-                player.setMediaItem(MediaItem.fromUri(newUri))
-                player.prepare()
-                player.play()
+                isPlaying = true
                 
                 // Cargar carátula
                 loadAlbumArt(newUri)
+                updateNotification()
             }
         }
 
-        updateNotification()
         return START_STICKY
     }
 
 
     private fun buildNotification(): Notification {
-        val isPlaying = player.isPlaying
-
         // Carátula del álbum
         val artworkBitmap = if (albumArt != null && albumArt!!.width > 0) {
             albumArt
@@ -151,11 +111,6 @@ class MusicService : Service() {
             .setLargeIcon(artworkBitmap)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setStyle(
-                androidx.media.app.NotificationCompat.MediaStyle()
-                    .setMediaSession(mediaSession.sessionToken)
-                    .setShowActionsInCompactView(0, 1, 2)
-            )
             .addAction(
                 android.R.drawable.ic_media_previous,
                 "Anterior",
@@ -241,28 +196,7 @@ class MusicService : Service() {
         }.start()
     }
 
-    private fun updatePlaybackState() {
-        val state = if (player.isPlaying) {
-            PlaybackStateCompat.STATE_PLAYING
-        } else {
-            PlaybackStateCompat.STATE_PAUSED
-        }
-
-        val stateBuilder = PlaybackStateCompat.Builder()
-            .setActions(
-                PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                        PlaybackStateCompat.ACTION_PLAY or
-                        PlaybackStateCompat.ACTION_PAUSE or
-                        PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-            )
-            .setState(state, player.currentPosition, 1f)
-
-        mediaSession.setPlaybackState(stateBuilder.build())
-    }
-
     override fun onDestroy() {
-        player.release()
-        mediaSession.release()
         albumArt?.recycle()
         super.onDestroy()
     }

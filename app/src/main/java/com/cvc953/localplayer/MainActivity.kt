@@ -11,7 +11,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.activity.result.contract.ActivityResultContracts
-import android.content.Context.RECEIVER_NOT_EXPORTED
+import com.cvc953.localplayer.services.MusicService
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 
 
@@ -22,8 +25,9 @@ class MainActivity : ComponentActivity() {
     private val controlReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                "ACTION_NEXT_SONG" -> viewModel.playNextSong()
-                "ACTION_PREV_SONG" -> viewModel.playPreviousSong()
+                MusicService.ACTION_PLAY_PAUSE -> viewModel.togglePlayPause()
+                MusicService.ACTION_NEXT -> viewModel.playNextSong()
+                MusicService.ACTION_PREV -> viewModel.playPreviousSong()
             }
         }
     }
@@ -31,7 +35,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val viewModel: MainViewModel = viewModel()
+            viewModel = viewModel()
+            
+            // Observar cambios en el estado del player y actualizar el servicio
+            viewModel.playerState.onEach { state ->
+                val intent = Intent(this, MusicService::class.java).apply {
+                    action = MusicService.ACTION_UPDATE_STATE
+                    putExtra("IS_PLAYING", state.isPlaying)
+                }
+                startService(intent)
+            }.launchIn(lifecycleScope)
+            
             MainMusicScreen(viewModel) { }
         }
     }
@@ -40,8 +54,9 @@ class MainActivity : ComponentActivity() {
         super.onStart()
 
         val filter = IntentFilter().apply {
-            addAction("ACTION_NEXT_SONG")
-            addAction("ACTION_PREV_SONG")
+            addAction(MusicService.ACTION_PLAY_PAUSE)
+            addAction(MusicService.ACTION_NEXT)
+            addAction(MusicService.ACTION_PREV)
         }
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
