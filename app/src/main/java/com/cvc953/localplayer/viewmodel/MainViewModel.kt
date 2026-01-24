@@ -89,6 +89,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _scanProgress = mutableStateOf(0f)
     val scanProgress: State<Float> = _scanProgress
 
+    // Cola de reproducción
+    private val _queue = MutableStateFlow<List<Song>>(emptyList())
+    val queue: StateFlow<List<Song>> = _queue
+
+    fun addToQueueNext(song: Song) {
+        val list = _queue.value.toMutableList()
+        list.add(0, song)
+        _queue.value = list
+    }
+
+    fun addToQueueEnd(song: Song) {
+        val list = _queue.value.toMutableList()
+        list.add(song)
+        _queue.value = list
+    }
+
+    private fun popQueue(): Song? {
+        val current = _queue.value
+        if (current.isEmpty()) return null
+        val list = current.toMutableList()
+        val next = list.removeAt(0)
+        _queue.value = list
+        return next
+    }
 
 
     init {
@@ -166,6 +190,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val list = songs.value
         val currentSong = playerState.value.currentSong ?: return
         if (list.isEmpty()) return
+
+        // Priorizar canciones en cola
+        popQueue()?.let { queued ->
+            playSong(queued)
+            startService(getApplication(), queued)
+            return
+        }
 
         val nextSong = when {
             _isShuffle.value -> {

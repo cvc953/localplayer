@@ -10,10 +10,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,7 +46,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SongItem(song: Song, isPlaying: Boolean, onClick: () -> Unit) {
+fun SongItem(
+    song: Song,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    onQueueNext: () -> Unit,
+    onQueueEnd: () -> Unit
+) {
 
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) } // aquí se guarda la carátula
@@ -93,5 +106,26 @@ fun SongItem(song: Song, isPlaying: Boolean, onClick: () -> Unit) {
             color = Color(0xFFCCCCCC),
             fontSize = 12.sp
         )
+
+        var menuExpanded by remember { mutableStateOf(false) }
+        Box {
+            IconButton(onClick = { menuExpanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Más opciones", tint = Color.White)
+            }
+            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                DropdownMenuItem(text = { Text("Reproducir ahora") }, onClick = {
+                    menuExpanded = false
+                    onClick()
+                })
+                DropdownMenuItem(text = { Text("Añadir como siguiente") }, onClick = {
+                    menuExpanded = false
+                    onQueueNext()
+                })
+                DropdownMenuItem(text = { Text("Añadir al final") }, onClick = {
+                    menuExpanded = false
+                    onQueueEnd()
+                })
+            }
+        }
     }
 }

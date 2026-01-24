@@ -221,7 +221,9 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                                 viewModel.playSong(song)
                                 viewModel.startService(context, song)
                                 onOpenPlayer()
-                            }
+                            },
+                            onQueueNext = { viewModel.addToQueueNext(song) },
+                            onQueueEnd = { viewModel.addToQueueEnd(song) }
                         )
                     }
                 }
