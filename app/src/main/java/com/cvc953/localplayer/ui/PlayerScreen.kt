@@ -10,6 +10,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -53,6 +55,7 @@ fun PlayerScreen(
 ) {
     val showLyrics by viewModel.showLyrics.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
+    val queue by viewModel.queue.collectAsState()
     val song = playerState.currentSong ?: return
     val offsetY = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -62,6 +65,8 @@ fun PlayerScreen(
     }
     val lyrics by viewModel.lyrics.collectAsState()
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
+    var showQueue by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
@@ -176,6 +181,30 @@ fun PlayerScreen(
                 )
 
                 Spacer(Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { showQueue = true }) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = "Ver cola",
+                            tint = Color.White
+                        )
+                    }
+
+                    Spacer(Modifier.width(16.dp))
+
+                    IconButton(onClick = { viewModel.toggleLyrics() }) {
+                        Icon(
+                            imageVector = Icons.Default.Lyrics,
+                            contentDescription = "Mostrar letras",
+                            tint = Color.White
+                        )
+                    }
+                }
             }
         } else {
             // CONTENIDO REAL
@@ -212,14 +241,99 @@ fun PlayerScreen(
 
                 Spacer(Modifier.height(31.dp))
 
-                IconButton(onClick = { viewModel.toggleLyrics() }) {
-                    Icon(
-                        imageVector = Icons.Default.Lyrics,
-                        contentDescription = "Mostrar letras", tint = Color.White
-                    )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    IconButton(onClick = { showQueue = true }) {
+                        Icon(
+                            imageVector = Icons.Default.QueueMusic,
+                            contentDescription = "Ver cola",
+                            tint = Color.White
+                        )
+                    }
+
+                    Spacer(Modifier.width(16.dp))
+
+                    IconButton(onClick = { viewModel.toggleLyrics() }) {
+                        Icon(
+                            imageVector = Icons.Default.Lyrics,
+                            contentDescription = "Mostrar letras", tint = Color.White
+                        )
+                    }
                 }
 
             }
+
+                if (showQueue) {
+                    ModalBottomSheet(
+                        onDismissRequest = { showQueue = false },
+                        sheetState = sheetState,
+                        containerColor = Color(0xFF121212)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 16.dp)
+                        ) {
+                            Text(
+                                text = "En cola",
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(Modifier.height(12.dp))
+
+                            if (queue.isEmpty()) {
+                                Text(
+                                    text = "No hay canciones en cola",
+                                    color = Color(0xFFB0B0B0),
+                                    fontSize = 14.sp
+                                )
+                            } else {
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(queue) { queuedSong ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = queuedSong.title,
+                                                    color = Color.White,
+                                                    fontSize = 16.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    text = queuedSong.artist,
+                                                    color = Color(0xFFB0B0B0),
+                                                    fontSize = 13.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+
+                                            Icon(
+                                                imageVector = Icons.Default.PlaylistAdd,
+                                                contentDescription = null,
+                                                tint = Color(0xFF2ECC71),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(Modifier.height(12.dp))
+                        }
+                    }
+                }
+
         }
     }
 
