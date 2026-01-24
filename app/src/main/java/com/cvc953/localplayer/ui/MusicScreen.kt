@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +33,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.util.StoragePermissionHandler
@@ -303,34 +307,68 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
 
             // Barra de scroll alfabético
             if (sortMode == SortMode.TITLE_ASC || sortMode == SortMode.TITLE_DESC) {
+                val alphabet = listOf("#") + ('A'..'Z').map { it.toString() }
+                var columnHeight by remember { mutableStateOf(0f) }
+                val density = LocalDensity.current
+
+                fun scrollToLetter(letter: String) {
+                    val index = if (letter == "#") {
+                        sortedSongs.indexOfFirst {
+                            val firstChar = it.title.firstOrNull()?.uppercaseChar()
+                            firstChar == null || !firstChar.isLetter()
+                        }
+                    } else {
+                        sortedSongs.indexOfFirst {
+                            it.title.firstOrNull()?.uppercaseChar() == letter[0]
+                        }
+                    }
+                    if (index >= 0) {
+                        scope.launch {
+                            listState.animateScrollToItem(index)
+                        }
+                    }
+                }
+
                 Column(
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .padding(end = 4.dp)
-                        .width(24.dp)
-                        .fillMaxHeight(0.7f),
+                        .width(28.dp)
+                        .fillMaxHeight(0.75f)
+                        .onGloballyPositioned { coords ->
+                            columnHeight = coords.size.height.toFloat()
+                        }
+                        .pointerInput(Unit) {
+                            detectDragGestures(
+                                onDragStart = { offset ->
+                                    val index = ((offset.y / columnHeight) * alphabet.size)
+                                        .toInt()
+                                        .coerceIn(0, alphabet.lastIndex)
+                                    scrollToLetter(alphabet[index])
+                                },
+                                onDrag = { change, _ ->
+                                    change.consume()
+                                    val y = change.position.y.coerceIn(0f, columnHeight)
+                                    val index = ((y / columnHeight) * alphabet.size)
+                                        .toInt()
+                                        .coerceIn(0, alphabet.lastIndex)
+                                    scrollToLetter(alphabet[index])
+                                }
+                            )
+                        },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    ('A'..'Z').forEach { letter ->
+                    alphabet.forEach { letter ->
                         Text(
-                            text = letter.toString(),
+                            text = letter,
                             color = Color.White.copy(alpha = 0.7f),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .clickable {
-                                    val index = sortedSongs.indexOfFirst {
-                                        it.title.firstOrNull()?.uppercaseChar() == letter
-                                    }
-                                    if (index >= 0) {
-                                        scope.launch {
-                                            listState.animateScrollToItem(index)
-                                        }
-                                    }
-                                }
-                                .padding(vertical = 2.dp)
+                                .clickable { scrollToLetter(letter) }
+                                .padding(vertical = 1.5.dp)
                         )
                     }
                 }
