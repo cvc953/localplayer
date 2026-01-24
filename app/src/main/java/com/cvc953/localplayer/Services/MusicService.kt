@@ -14,6 +14,9 @@ import android.net.Uri
 import androidx.core.content.ContextCompat
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.viewmodel.MainViewModel
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
+import android.support.v4.media.MediaMetadataCompat
 
 
 class MusicService : Service() {
@@ -31,12 +34,15 @@ class MusicService : Service() {
     private var artist: String = ""
     private var albumArt: Bitmap? = null
     private var isPlaying: Boolean = false
+    
+    private lateinit var mediaSession: MediaSessionCompat
 
     override fun onCreate() {
         super.onCreate()
         Log.e("MusicService", "✓ onCreate() called")
         
         createNotificationChannel()
+        initMediaSession()
         
         val notification = createNotification()
         try {
@@ -45,6 +51,34 @@ class MusicService : Service() {
         } catch (e: Exception) {
             Log.e("MusicService", "✗ startForeground() failed: ${e.message}", e)
         }
+    }
+    
+    private fun initMediaSession() {
+        mediaSession = MediaSessionCompat(this, "MusicService")
+        mediaSession.setFlags(
+            MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
+            MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
+        )
+        
+        mediaSession.setCallback(object : MediaSessionCompat.Callback() {
+            override fun onPlay() {
+                MainViewModel.instance?.togglePlayPause()
+            }
+            
+            override fun onPause() {
+                MainViewModel.instance?.togglePlayPause()
+            }
+            
+            override fun onSkipToNext() {
+                MainViewModel.instance?.playNextSong()
+            }
+            
+            override fun onSkipToPrevious() {
+                MainViewModel.instance?.playPreviousSong()
+            }
+        })
+        
+        mediaSession.isActive = true
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -65,6 +99,7 @@ class MusicService : Service() {
             }
             ACTION_UPDATE_STATE -> {
                 isPlaying = intent.getBooleanExtra("IS_PLAYING", false)
+                updateMediaSession()
                 updateNotification()
                 return START_STICKY
             }
@@ -83,10 +118,34 @@ class MusicService : Service() {
             Log.e("MusicService", "✓ Song loaded: $title by $artist")
             
             loadAlbumArt(songUri)
+            updateMediaSession()
             updateNotification()
         }
 
         return START_STICKY
+    }
+    
+    private fun updateMediaSession() {
+        val metadata = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
+            .putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, albumArt)
+            .build()
+        
+        mediaSession.setMetadata(metadata)
+        
+        val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        val playbackState = PlaybackStateCompat.Builder()
+            .setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
+            .setActions(
+                PlaybackStateCompat.ACTION_PLAY or
+                PlaybackStateCompat.ACTION_PAUSE or
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            )
+            .build()
+        
+        mediaSession.setPlaybackState(playbackState)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -110,7 +169,9 @@ class MusicService : Service() {
             .setContentText(artist)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setLargeIcon(artworkBitmap)
-            .setStyle(androidx.media.app.NotificationCompat.MediaStyle())
+            .setStyle(androidx.media.app.NotificationCompat.MediaStyle()
+                .setMediaSession(mediaSession.sessionToken)
+                .setShowActionsInCompactView(0, 1, 2))
             .addAction(android.R.drawable.ic_media_previous, "Anterior", getPendingIntent(ACTION_PREV))
             .addAction(
                 if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
@@ -119,6 +180,7 @@ class MusicService : Service() {
             )
             .addAction(android.R.drawable.ic_media_next, "Siguiente", getPendingIntent(ACTION_NEXT))
             .setOngoing(isPlaying)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
     }
 
@@ -184,6 +246,8 @@ class MusicService : Service() {
 
     override fun onDestroy() {
         albumArt?.recycle()
+        mediaSession.isActive = false
+        mediaSession.release()
         super.onDestroy()
     }
 }
