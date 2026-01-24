@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
 
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
@@ -23,7 +23,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Localplayer">
+        android:theme="@style/Theme.Localplayer"
+        android:name=".LocalPlayerApp">
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -37,9 +38,18 @@
         </activity>
 
         <service
-            android:name=".player.PlaybackService"
+            android:name=".services.MusicService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
+
+        <receiver
+            android:name="androidx.media.session.MediaButtonReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+
 
     </application>
 

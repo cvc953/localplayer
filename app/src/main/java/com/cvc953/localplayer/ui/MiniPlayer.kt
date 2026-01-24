@@ -62,7 +62,7 @@ fun MiniPlayer(
             .fillMaxWidth()
             .background(Color(0xFF121212)) // color similar a la app
             .clickable { onClick() }
-            .padding(8.dp),
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
 

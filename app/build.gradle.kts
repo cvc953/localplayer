@@ -46,6 +46,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.ui.unit)
+    implementation(libs.androidx.compose.foundation.layout)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.firebase.crashlytics.buildtools)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -57,15 +61,28 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
+    implementation("androidx.media3:media3-session:1.2.1")
+
+
+
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.media3:media3-exoplayer:1.2.1")
+    implementation("androidx.media3:media3-ui:1.2.1")
+
+    // MediaSession y compatibilidad con notificaciones
+    implementation("androidx.media:media:1.7.0")
+// ExoPlayer
+    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
+// Para PendingIntent y compatibilidad
+    implementation("androidx.core:core-ktx:1.12.0")
+
 
     // ViewModel + Compose
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation ("androidx.activity:activity-compose:1.9.3")
-    implementation ("androidx.compose.ui:ui:1.5.3")
-    implementation ("androidx.compose.material3:material3:1.2.1")
-    implementation ("androidx.compose.ui:ui-tooling-preview:1.5.3")
-    debugImplementation ("androidx.compose.ui:ui-tooling:1.5.3")
+
+
 
 // StateFlow + collectAsState
     implementation("androidx.compose.runtime:runtime-livedata")

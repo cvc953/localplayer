@@ -1,4 +1,70 @@
 package com.cvc953.localplayer.ui
 
-class LyricsScreen {
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.cvc953.localplayer.util.LrcLine
+
+@Composable
+fun LyricsView(
+    lyrics: List<LrcLine>,
+    currentPosition: Long,
+    modifier: Modifier = Modifier
+) {
+    val listState = rememberLazyListState()
+
+    val currentIndex = remember(currentPosition) {
+        lyrics.indexOfLast { it.timeMs <= currentPosition }
+            .coerceAtLeast(0)
+    }
+
+    // Scroll automático centrado
+    LaunchedEffect(currentIndex) {
+        listState.animateScrollToItem(
+            index = currentIndex,
+            scrollOffset = -listState.layoutInfo.viewportSize.height / 6
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF0D0D0D),
+                        Color.Black,
+                        Color(0xFF0D0D0D)
+                    )
+                )
+            )
+    ) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(vertical = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            itemsIndexed(lyrics) { index, line ->
+                LyricLine(
+                    text = line.text,
+                    active = index == currentIndex
+                )
+
+
+            }
+        }
+    }
 }
