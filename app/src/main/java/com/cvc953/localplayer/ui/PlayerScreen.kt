@@ -315,27 +315,31 @@ fun PlayerScreen(
                                     fontSize = 14.sp
                                 )
                             } else {
-                                val layoutInfo = listState.layoutInfo
-                                fun itemIndexAt(offset: Float): Int? {
-                                    val y = offset.toInt()
-                                    return layoutInfo.visibleItemsInfo.firstOrNull { y in it.offset..(it.offset + it.size) }?.index
-                                }
+                                var itemPositions by remember { mutableStateOf(mapOf<Int, Pair<Int, Int>>()) }
 
                                 LazyColumn(
                                     state = listState,
                                     verticalArrangement = Arrangement.spacedBy(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .pointerInput(dragList) {
+                                        .pointerInput(dragList, itemPositions) {
                                             detectDragGesturesAfterLongPress(
                                                 onDragStart = { pos ->
-                                                    draggingIndex = itemIndexAt(pos.y)
+                                                    val layoutInfo = listState.layoutInfo
+                                                    val visibleY = pos.y.toInt()
+                                                    draggingIndex = layoutInfo.visibleItemsInfo.firstOrNull { item ->
+                                                        visibleY >= item.offset && visibleY <= item.offset + item.size
+                                                    }?.index
                                                     dragOffset = 0f
                                                 },
                                                 onDrag = { change, dragAmount ->
                                                     change.consume()
                                                     dragOffset += dragAmount.y
-                                                    val target = itemIndexAt(change.position.y)
+                                                    val layoutInfo = listState.layoutInfo
+                                                    val visibleY = change.position.y.toInt()
+                                                    val target = layoutInfo.visibleItemsInfo.firstOrNull { item ->
+                                                        visibleY >= item.offset && visibleY <= item.offset + item.size
+                                                    }?.index
                                                     val from = draggingIndex
                                                     if (from != null && target != null && target != from) {
                                                         val item = dragList.removeAt(from)
