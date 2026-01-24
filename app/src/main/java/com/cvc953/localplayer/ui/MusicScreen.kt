@@ -48,7 +48,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
             action = com.cvc953.localplayer.services.MusicService.ACTION_UPDATE_STATE
             putExtra("IS_PLAYING", playerState.isPlaying)
         }
-        context.startService(intent)
+        androidx.core.content.ContextCompat.startForegroundService(context, intent)
     }
 
     BackHandler {

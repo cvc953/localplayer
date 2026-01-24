@@ -18,141 +18,112 @@ import com.cvc953.localplayer.viewmodel.MainViewModel
 
 class MusicService : Service() {
 
-    private lateinit var notificationManager: NotificationManager
-
-    private var currentUri: String? = null
-    private var title: String = "Reproduciendo"
-    private var artist: String = ""
-    private var albumArt: Bitmap? = null
-    private var isPlaying: Boolean = false
-
-
     companion object {
-        const val CHANNEL_ID = "playback_channel"
-        const val NOTIF_ID = 1
+        const val CHANNEL_ID = "music_playback"
+        const val NOTIF_ID = 2001
         const val ACTION_PLAY_PAUSE = "com.cvc953.localplayer.ACTION_PLAY_PAUSE"
         const val ACTION_NEXT = "com.cvc953.localplayer.ACTION_NEXT"
         const val ACTION_PREV = "com.cvc953.localplayer.ACTION_PREV"
         const val ACTION_UPDATE_STATE = "com.cvc953.localplayer.ACTION_UPDATE_STATE"
     }
 
+    private var title: String = "Reproduciendo"
+    private var artist: String = ""
+    private var albumArt: Bitmap? = null
+    private var isPlaying: Boolean = false
+
     override fun onCreate() {
         super.onCreate()
-        Log.d("MusicService", "onCreate()")
+        Log.e("MusicService", "✓ onCreate() called")
         
-        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
         
-        // Crear notificación inicial
+        val notification = createNotification()
         try {
-            startForeground(NOTIF_ID, buildNotification())
-            Log.d("MusicService", "startForeground() called")
+            startForeground(NOTIF_ID, notification)
+            Log.e("MusicService", "✓ startForeground() successful")
         } catch (e: Exception) {
-            Log.e("MusicService", "Error starting foreground: ${e.message}")
-            e.printStackTrace()
+            Log.e("MusicService", "✗ startForeground() failed: ${e.message}", e)
         }
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d("MusicService", "onStartCommand() - Action: ${intent?.action}")
+        Log.e("MusicService", "✓ onStartCommand() - action: ${intent?.action}")
         
-        // Manejar acciones de la notificación
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
-                Log.d("MusicService", "ACTION_PLAY_PAUSE clicked")
                 MainViewModel.instance?.togglePlayPause()
                 return START_STICKY
             }
             ACTION_PREV -> {
-                Log.d("MusicService", "ACTION_PREV clicked")
                 MainViewModel.instance?.playPreviousSong()
                 return START_STICKY
             }
             ACTION_NEXT -> {
-                Log.d("MusicService", "ACTION_NEXT clicked")
                 MainViewModel.instance?.playNextSong()
                 return START_STICKY
             }
             ACTION_UPDATE_STATE -> {
-                isPlaying = intent?.getBooleanExtra("IS_PLAYING", false) ?: false
-                Log.d("MusicService", "ACTION_UPDATE_STATE - isPlaying: $isPlaying")
+                isPlaying = intent.getBooleanExtra("IS_PLAYING", false)
                 updateNotification()
                 return START_STICKY
             }
         }
 
-        // Cargar nueva canción
-        val newTitle = intent?.getStringExtra("TITLE")
-        val newArtist = intent?.getStringExtra("ARTIST")
-        val newUri = intent?.getStringExtra("SONG_URI")
+        // Nueva canción
+        val songTitle = intent?.getStringExtra("TITLE")
+        val songArtist = intent?.getStringExtra("ARTIST")
+        val songUri = intent?.getStringExtra("SONG_URI")
 
-        if (newUri != null && newUri != currentUri) {
-            currentUri = newUri
-            title = newTitle ?: "Reproduciendo"
-            artist = newArtist ?: ""
+        if (!songUri.isNullOrEmpty()) {
+            title = songTitle ?: "Reproduciendo"
+            artist = songArtist ?: ""
             isPlaying = true
             
-            Log.d("MusicService", "New song: $title by $artist")
+            Log.e("MusicService", "✓ Song loaded: $title by $artist")
             
-            // Cargar carátula
-            loadAlbumArt(newUri)
-            
-            // Actualizar la notificación
+            loadAlbumArt(songUri)
             updateNotification()
         }
 
         return START_STICKY
     }
 
-    private fun buildNotification(): Notification {
-        Log.d("MusicService", "buildNotification() - title: $title, artist: $artist, isPlaying: $isPlaying")
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun createNotification(): Notification {
+        Log.e("MusicService", "Creating notification: '$title' by '$artist', playing: $isPlaying")
         
-        val artworkBitmap = if (albumArt != null && albumArt!!.width > 0) {
-            Log.d("MusicService", "Using loaded album art")
-            albumArt
-        } else {
-            Log.d("MusicService", "Using default album art")
+        val artworkBitmap = try {
+            if (albumArt != null && albumArt!!.width > 0) {
+                albumArt
+            } else {
+                BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
+            }
+        } catch (e: Exception) {
+            Log.e("MusicService", "Error getting artwork: ${e.message}")
             BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
         }
 
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle(if (title.isEmpty()) "Reproduciendo" else title)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(if (title.isBlank()) "Reproduciendo" else title)
             .setContentText(artist)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setLargeIcon(artworkBitmap)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setStyle(
-                androidx.media.app.NotificationCompat.MediaStyle()
-                    .setShowActionsInCompactView(0, 1, 2)
-            )
-            .addAction(
-                android.R.drawable.ic_media_previous,
-                "Anterior",
-                getPendingIntent(ACTION_PREV)
-            )
+            .setStyle(androidx.media.app.NotificationCompat.MediaStyle())
+            .addAction(android.R.drawable.ic_media_previous, "Anterior", getPendingIntent(ACTION_PREV))
             .addAction(
                 if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
                 if (isPlaying) "Pausar" else "Reproducir",
                 getPendingIntent(ACTION_PLAY_PAUSE)
             )
-            .addAction(
-                android.R.drawable.ic_media_next,
-                "Siguiente",
-                getPendingIntent(ACTION_NEXT)
-            )
-            .setOnlyAlertOnce(false)
+            .addAction(android.R.drawable.ic_media_next, "Siguiente", getPendingIntent(ACTION_NEXT))
             .setOngoing(isPlaying)
-
-        return builder.build()
+            .build()
     }
 
     private fun getPendingIntent(action: String): PendingIntent {
-        val intent = Intent(this, MusicService::class.java).apply {
-            this.action = action
-        }
+        val intent = Intent(this, MusicService::class.java).apply { this.action = action }
         return PendingIntent.getService(
             this,
             action.hashCode(),
@@ -162,27 +133,27 @@ class MusicService : Service() {
     }
 
     private fun updateNotification() {
-        Log.d("MusicService", "updateNotification()")
         try {
-            notificationManager.notify(NOTIF_ID, buildNotification())
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.notify(NOTIF_ID, createNotification())
+            Log.e("MusicService", "✓ Notification updated")
         } catch (e: Exception) {
-            Log.e("MusicService", "Error updating notification: ${e.message}")
-            e.printStackTrace()
+            Log.e("MusicService", "✗ updateNotification error: ${e.message}", e)
         }
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Reproducción",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Controles de reproducción"
-                setShowBadge(false)
-            }
-            notificationManager.createNotificationChannel(channel)
-            Log.d("MusicService", "Notification channel created")
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+        try {
+            val channel = NotificationChannel(CHANNEL_ID, "Reproducción", NotificationManager.IMPORTANCE_LOW)
+            channel.setShowBadge(false)
+            
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+            Log.e("MusicService", "✓ Notification channel created")
+        } catch (e: Exception) {
+            Log.e("MusicService", "✗ createNotificationChannel error: ${e.message}", e)
         }
     }
 
@@ -194,18 +165,14 @@ class MusicService : Service() {
                 val art = retriever.embeddedPicture
                 retriever.release()
 
-                if (art != null) {
+                if (art != null && art.isNotEmpty()) {
                     val bitmap = BitmapFactory.decodeByteArray(art, 0, art.size)
                     if (bitmap != null) {
                         albumArt = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
-                        if (bitmap != albumArt) {
-                            bitmap.recycle()
-                        }
-                        Log.d("MusicService", "Album art loaded and scaled")
+                        if (bitmap != albumArt) bitmap.recycle()
                         updateNotification()
                     }
                 } else {
-                    Log.d("MusicService", "No embedded picture found")
                     albumArt = null
                 }
             } catch (e: Exception) {
@@ -216,7 +183,6 @@ class MusicService : Service() {
     }
 
     override fun onDestroy() {
-        Log.d("MusicService", "onDestroy()")
         albumArt?.recycle()
         super.onDestroy()
     }
