@@ -359,13 +359,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val song = _songs.value.find { it.uri.toString() == lastUri }
         
         if (song != null) {
-            // Cargar la canción sin reproducir
-            _playerState.update { 
-                it.copy(
-                    currentSong = song,
-                    isPlaying = false
-                )
-            }
+            // Reproducir automáticamente la última canción
+            playSong(song)
         }
     }
 }
