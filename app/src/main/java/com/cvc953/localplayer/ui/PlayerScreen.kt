@@ -4,9 +4,12 @@ package com.cvc953.localplayer.ui
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -24,9 +27,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -294,7 +299,7 @@ fun PlayerScreen(
                                 .padding(horizontal = 20.dp, vertical = 16.dp)
                         ) {
                             Text(
-                                text = "En cola",
+                                text = "Próximas canciones",
                                 color = Color.White,
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold
@@ -304,7 +309,7 @@ fun PlayerScreen(
 
                             if (dragList.isEmpty()) {
                                 Text(
-                                    text = "No hay canciones en cola",
+                                    text = "No hay próximas canciones",
                                     color = Color(0xFFB0B0B0),
                                     fontSize = 14.sp
                                 )
@@ -317,7 +322,7 @@ fun PlayerScreen(
 
                                 LazyColumn(
                                     state = listState,
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .pointerInput(dragList) {
@@ -331,7 +336,7 @@ fun PlayerScreen(
                                                     val from = draggingIndex
                                                     if (from != null && target != null && target != from) {
                                                         val item = dragList.removeAt(from)
-                                                        val newIndex = if (target >= dragList.size) dragList.size else target
+                                                        val newIndex = target.coerceIn(0, dragList.size)
                                                         dragList.add(newIndex, item)
                                                         draggingIndex = newIndex
                                                     }
@@ -345,10 +350,36 @@ fun PlayerScreen(
                                         }
                                 ) {
                                     itemsIndexed(dragList) { idx, queuedSong ->
+                                        val isDragging = draggingIndex == idx
+                                        val elevation by animateDpAsState(if (isDragging) 6.dp else 0.dp, label = "drag-elev")
+                                        val scale by animateFloatAsState(if (isDragging) 1.02f else 1f, label = "drag-scale")
+
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .graphicsLayer(scaleX = scale, scaleY = scale)
+                                                .shadow(elevation, RoundedCornerShape(12.dp), clip = true)
+                                                .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp))
+                                                .border(1.dp, Color(0xFF2A2A2A), RoundedCornerShape(12.dp))
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(28.dp)
+                                                    .background(Color(0xFF2ECC71), RoundedCornerShape(8.dp)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "${idx + 1}",
+                                                    color = Color.Black,
+                                                    fontSize = 13.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+
+                                            Spacer(Modifier.width(12.dp))
+
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
                                                     text = queuedSong.title,
@@ -366,19 +397,11 @@ fun PlayerScreen(
                                                 )
                                             }
 
-                                            if (draggingIndex == idx) {
-                                                Icon(
-                                                    imageVector = Icons.Default.DragHandle,
-                                                    contentDescription = null,
-                                                    tint = Color(0xFF2ECC71)
-                                                )
-                                            } else {
-                                                Icon(
-                                                    imageVector = Icons.Default.DragHandle,
-                                                    contentDescription = null,
-                                                    tint = Color.White.copy(alpha = 0.6f)
-                                                )
-                                            }
+                                            Icon(
+                                                imageVector = Icons.Default.DragHandle,
+                                                contentDescription = "Reordenar",
+                                                tint = if (isDragging) Color(0xFF2ECC71) else Color.White.copy(alpha = 0.7f)
+                                            )
                                         }
                                     }
                                 }
