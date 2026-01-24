@@ -17,6 +17,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -214,17 +216,60 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                 ) {
                     items(sortedSongs) { song ->
                         val isCurrent = playerState.currentSong?.id == song.id
-                        SongItem(
-                            song = song,
-                            isPlaying = isCurrent && playerState.isPlaying,
-                            onClick = {
-                                viewModel.playSong(song)
-                                viewModel.startService(context, song)
-                                onOpenPlayer()
-                            },
-                            onQueueNext = { viewModel.addToQueueNext(song) },
-                            onQueueEnd = { viewModel.addToQueueEnd(song) }
-                        )
+                        var dragOffsetX by remember { mutableStateOf(0f) }
+                        val density = androidx.compose.ui.platform.LocalDensity.current
+                        val thresholdPx = with(density) { 80.dp.toPx() }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .pointerInput(song.id) {
+                                    androidx.compose.foundation.gestures.detectHorizontalDragGestures(
+                                        onHorizontalDrag = { _, delta ->
+                                            dragOffsetX = (dragOffsetX + delta).coerceAtLeast(0f)
+                                        },
+                                        onDragEnd = {
+                                            if (dragOffsetX > thresholdPx) {
+                                                viewModel.addToQueueNext(song)
+                                            }
+                                            dragOffsetX = 0f
+                                        }
+                                    )
+                                }
+                        ) {
+                            // Indicador de fondo cuando se arrastra a la derecha
+                            if (dragOffsetX > 0f) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(Color(0xFF1B5E20))
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PlaylistAdd,
+                                        contentDescription = null,
+                                        tint = Color.White
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("Añadir como siguiente", color = Color.White)
+                                }
+                            }
+
+                            Box(modifier = Modifier.offset(x = dragOffsetX.dp)) {
+                                SongItem(
+                                    song = song,
+                                    isPlaying = isCurrent && playerState.isPlaying,
+                                    onClick = {
+                                        viewModel.playSong(song)
+                                        viewModel.startService(context, song)
+                                        onOpenPlayer()
+                                    },
+                                    onQueueNext = { viewModel.addToQueueNext(song) },
+                                    onQueueEnd = { viewModel.addToQueueEnd(song) }
+                                )
+                            }
+                        }
                     }
                 }
             }
