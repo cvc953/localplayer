@@ -17,7 +17,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -218,45 +222,66 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         val isCurrent = playerState.currentSong?.id == song.id
                         var dragOffsetX by remember { mutableStateOf(0f) }
                         val density = androidx.compose.ui.platform.LocalDensity.current
-                        val thresholdPx = with(density) { 80.dp.toPx() }
+                        val thresholdPx = with(density) { 72.dp.toPx() }
+                        val maxOffsetPx = with(density) { 120.dp.toPx() }
+
+                        val dragState = rememberDraggableState { delta ->
+                            dragOffsetX = (dragOffsetX + delta).coerceIn(0f, maxOffsetPx)
+                        }
+                        val animatedOffset by androidx.compose.animation.core.animateDpAsState(
+                            targetValue = dragOffsetX.dp,
+                            label = "songRowOffset"
+                        )
+                        val progress = (dragOffsetX / maxOffsetPx).coerceIn(0f, 1f)
 
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .pointerInput(song.id) {
-                                    androidx.compose.foundation.gestures.detectHorizontalDragGestures(
-                                        onHorizontalDrag = { _, delta ->
-                                            dragOffsetX = (dragOffsetX + delta).coerceAtLeast(0f)
-                                        },
-                                        onDragEnd = {
-                                            if (dragOffsetX > thresholdPx) {
-                                                viewModel.addToQueueNext(song)
-                                            }
-                                            dragOffsetX = 0f
+                                .draggable(
+                                    state = dragState,
+                                    orientation = Orientation.Horizontal,
+                                    onDragStopped = {
+                                        if (dragOffsetX > thresholdPx) {
+                                            viewModel.addToQueueNext(song)
                                         }
-                                    )
-                                }
+                                        dragOffsetX = 0f
+                                    }
+                                )
                         ) {
-                            // Indicador de fondo cuando se arrastra a la derecha
-                            if (dragOffsetX > 0f) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFF1B5E20))
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.PlaylistAdd,
-                                        contentDescription = null,
-                                        tint = Color.White
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("Añadir como siguiente", color = Color.White)
+                            // Fondo estilo Apple Music: pill verde con icono y texto
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp)
+                                    .heightIn(min = 60.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (progress > 0f) {
+                                    Row(
+                                        modifier = Modifier
+                                            .graphicsLayer(
+                                                alpha = progress,
+                                                scaleX = 0.9f + 0.1f * progress,
+                                                scaleY = 0.9f + 0.1f * progress,
+                                                shape = RoundedCornerShape(20.dp),
+                                                clip = true
+                                            )
+                                            .background(Color(0xFF2ECC71))
+                                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PlaylistAdd,
+                                            contentDescription = null,
+                                            tint = Color.White
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Añadir como siguiente", color = Color.White)
+                                    }
                                 }
                             }
 
-                            Box(modifier = Modifier.offset(x = dragOffsetX.dp)) {
+                            Box(modifier = Modifier.offset(x = animatedOffset)) {
                                 SongItem(
                                     song = song,
                                     isPlaying = isCurrent && playerState.isPlaying,
