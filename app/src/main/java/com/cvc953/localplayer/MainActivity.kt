@@ -14,9 +14,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         setContent {
-            // Usar la instancia singleton si existe, sino crear una nueva
-            val vm: MainViewModel = MainViewModel.instance ?: viewModel()
-            MainMusicScreen(vm) { }
+            // Crear la pantalla principal; el ViewModel se inicializará
+            // dentro del bloque de permisos cuando sea necesario.
+                MainMusicScreen { }
         }
     }
 }

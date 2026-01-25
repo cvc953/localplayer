@@ -422,9 +422,10 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
 }
 
 @Composable
-fun MainMusicScreen(viewModel: MainViewModel, onOpenPlayer: () -> Unit) {
+fun MainMusicScreen(onOpenPlayer: () -> Unit) {
     StoragePermissionHandler {
-        MusicScreen(viewModel, onOpenPlayer)
+        val vm: MainViewModel = MainViewModel.instance ?: viewModel()
+        MusicScreen(vm, onOpenPlayer)
     }
 }
 
