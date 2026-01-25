@@ -37,12 +37,11 @@ fun StoragePermissionHandler(
         )
     }*/
 
-    val isGranted = rememberSaveable { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        isGranted.value =
+    val isGranted = rememberSaveable {
+        mutableStateOf(
             ContextCompat.checkSelfPermission(context, permission) ==
                     PackageManager.PERMISSION_GRANTED
+        )
     }
 
 
