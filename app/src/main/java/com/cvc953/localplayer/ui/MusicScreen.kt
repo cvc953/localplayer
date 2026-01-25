@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.unit.sp
@@ -232,8 +233,9 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         val isCurrent = playerState.currentSong?.id == song.id
                         var dragOffsetX by remember { mutableStateOf(0f) }
                         val density = androidx.compose.ui.platform.LocalDensity.current
-                        val thresholdPx = with(density) { 72.dp.toPx() }
-                        val maxOffsetPx = with(density) { 120.dp.toPx() }
+                        var rowWidthPx by remember { mutableStateOf(0) }
+                        val maxOffsetPx = if (rowWidthPx > 0) rowWidthPx.toFloat() else with(density) { 120.dp.toPx() }
+                        val thresholdPx = if (rowWidthPx > 0) (rowWidthPx * 0.4f) else with(density) { 72.dp.toPx() }
 
                         val dragState = rememberDraggableState { delta ->
                             dragOffsetX = (dragOffsetX + delta).coerceIn(0f, maxOffsetPx)
@@ -243,6 +245,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .onSizeChanged { rowWidthPx = it.width }
                                 .draggable(
                                     state = dragState,
                                     orientation = Orientation.Horizontal,
@@ -254,7 +257,6 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                                     }
                                 )
                         ) {
-                            // Fondo estilo Apple Music: ocupa todo el alto de la fila
                             if (progress > 0f) {
                                 Box(
                                     modifier = Modifier
@@ -283,7 +285,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                                             tint = Color.White
                                         )
                                         Spacer(Modifier.width(10.dp))
-                                        Text("Añadir como siguiente", color = Color.White)
+                                        //Text("Añadir como siguiente", color = Color.White)
                                     }
                                 }
                             }
