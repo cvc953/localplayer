@@ -94,6 +94,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Cache para el orden aleatorio persistente mientras shuffle esté activo
     private var cachedShuffledRemaining: List<Song>? = null
+    // Historial de reproducción para soportar "Anterior" respetando el orden
+    private val playHistory: MutableList<Song> = mutableListOf()
 
     fun addToQueueNext(song: Song) {
         val list = _queue.value.toMutableList()
@@ -253,6 +255,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         // Priorizar canciones en cola
         popQueue()?.let { queued ->
+            // push current to history
+            playHistory.add(currentSong)
             playSong(queued)
             startService(getApplication(), queued)
             return
@@ -260,13 +264,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         val nextSong = when {
             _isShuffle.value -> {
-                // Aleatorio diferente al actual
-                if (list.size == 1) currentSong else {
-                    var randomSong: Song
-                    do {
-                        randomSong = list.random()
-                    } while (randomSong == currentSong)
-                    randomSong
+                // Respetar el orden aleatorio persistente generado al activar shuffle
+                if (cachedShuffledRemaining == null) {
+                    val excluded = mutableSetOf<Song>()
+                    excluded.addAll(_queue.value)
+                    excluded.add(currentSong)
+                    cachedShuffledRemaining = list.filter { it !in excluded }.shuffled()
+                }
+                val next = cachedShuffledRemaining?.firstOrNull()
+                if (next != null) {
+                    // consumir el primero de la caché
+                    cachedShuffledRemaining = cachedShuffledRemaining?.drop(1)
+                    next
+                } else {
+                    // fallback: elige cualquiera distinto
+                    if (list.size == 1) currentSong else {
+                        var randomSong: Song
+                        do {
+                            randomSong = list.random()
+                        } while (randomSong == currentSong)
+                        randomSong
+                    }
                 }
             }
             _repeatMode.value == RepeatMode.ONE -> {
@@ -283,6 +301,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        // push current to history
+        playHistory.add(currentSong)
         playSong(nextSong)
         startService(getApplication(), nextSong)
     }
@@ -293,9 +313,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val list = songs.value
         val currentSong = playerState.value.currentSong ?: return
         if (list.isEmpty()) return
+        // Si hay historial, regresar a la última canción reproducida
+        if (playHistory.isNotEmpty()) {
+            val prev = playHistory.removeAt(playHistory.lastIndex)
+            playSong(prev)
+            startService(getApplication(), prev)
+            return
+        }
 
         val previousSong = when {
             _isShuffle.value -> {
+                // Si no hay historial, intentar tomar la última consumida de la caché
+                // (no es trivial recuperar la "anterior" en shuffle sin historial)
                 if (list.size == 1) currentSong else {
                     var randomSong: Song
                     do {
