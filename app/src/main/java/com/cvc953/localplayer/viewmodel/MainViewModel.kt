@@ -92,16 +92,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _queue = MutableStateFlow<List<Song>>(emptyList())
     val queue: StateFlow<List<Song>> = _queue
 
+    // Cache para el orden aleatorio persistente mientras shuffle esté activo
+    private var cachedShuffledRemaining: List<Song>? = null
+
     fun addToQueueNext(song: Song) {
         val list = _queue.value.toMutableList()
         list.add(0, song)
         _queue.value = list
+        // si hay caché de shuffle, quitar la canción añadida
+        cachedShuffledRemaining = cachedShuffledRemaining?.filter { it != song }
     }
 
     fun addToQueueEnd(song: Song) {
         val list = _queue.value.toMutableList()
         list.add(song)
         _queue.value = list
+        cachedShuffledRemaining = cachedShuffledRemaining?.filter { it != song }
     }
 
     fun moveQueueItem(fromIndex: Int, toIndex: Int) {
@@ -110,6 +116,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val item = list.removeAt(fromIndex)
         list.add(toIndex, item)
         _queue.value = list
+        // reordenar la caché no es necesario; el cache contiene sólo el resto
     }
 
     fun setUpcomingOrder(newOrder: List<Song>) {
@@ -119,6 +126,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val currentQueue = _queue.value
         val reorderedQueue = newOrder.filter { it in currentQueue }
         _queue.value = reorderedQueue
+        // eliminar de la caché cualquier canción que ahora esté en la cola explícita
+        cachedShuffledRemaining = cachedShuffledRemaining?.filter { it !in _queue.value }
     }
 
     fun getUpcomingSongs(): List<Song> {
@@ -130,7 +139,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         upcoming.addAll(_queue.value)
 
         val remaining = when {
-            _isShuffle.value -> base.filter { it != current }.shuffled()
+            _isShuffle.value -> {
+                // Usar caché si existe, si no generarla en este momento
+                if (cachedShuffledRemaining == null) {
+                    val excluded = mutableSetOf<Song>()
+                    excluded.addAll(_queue.value)
+                    excluded.add(current)
+                    cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
+                }
+                // Asegurarnos de quitar cualquier canción que ahora esté en la cola
+                cachedShuffledRemaining = cachedShuffledRemaining?.filter { it !in _queue.value }
+                cachedShuffledRemaining ?: emptyList()
+            }
             _repeatMode.value == RepeatMode.ALL -> {
                 val idx = base.indexOf(current)
                 if (idx == -1) base else base.drop(idx + 1) + base.take(idx)
@@ -347,6 +367,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Cambiar aleatorio
     fun toggleShuffle() {
         _isShuffle.value = !_isShuffle.value
+        if (_isShuffle.value) {
+            // Generar y mantener un orden aleatorio en el momento de activar shuffle
+            val current = _playerState.value.currentSong
+            val base = songs.value
+            val excluded = mutableSetOf<Song>()
+            current?.let { excluded.add(it) }
+            excluded.addAll(_queue.value)
+            cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
+        } else {
+            // Al desactivar shuffle limpiamos la caché
+            cachedShuffledRemaining = null
+        }
     }
 
     // Cambiar repetición
