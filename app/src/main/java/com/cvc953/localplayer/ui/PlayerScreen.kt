@@ -84,12 +84,18 @@ fun PlayerScreen(
     }
     val listState = rememberLazyListState()
     val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
-    LaunchedEffect(upcoming) {
-        dragList.clear()
-        dragList.addAll(upcoming)
-    }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
+
+    LaunchedEffect(showQueue, queue) {
+        // Only initialize/update the draggable list when the sheet is opened
+        // or when the explicit queue changes. This prevents frequent updates
+        // caused by shuffle reordering the upcoming list every second.
+        if (showQueue && draggingIndex == null) {
+            dragList.clear()
+            dragList.addAll(upcoming)
+        }
+    }
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
