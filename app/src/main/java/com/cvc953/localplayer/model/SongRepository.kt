@@ -233,6 +233,77 @@ class SongRepository(private val context: Context) {
         return list
     }
 
+    /**
+     * Variante del escaneo que notifica cada canción encontrada.
+     * Llama a [onSongFound] por cada canción y a [onProgress] durante el proceso.
+     */
+    fun scanSongsStreaming(
+        onSongFound: (Song) -> Unit,
+        onProgress: (current: Int, total: Int) -> Unit
+    ): List<Song> {
+        val projection = arrayOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.YEAR,
+            MediaStore.Audio.Media.DURATION
+        )
+
+        val total = countSongs()
+        var current = 0
+        val list = mutableListOf<Song>()
+
+        val cursor = context.contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            MediaStore.Audio.Media.IS_MUSIC + "!= 0",
+            null,
+            null
+        ) ?: return emptyList()
+
+        cursor.use {
+            val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+            val titleCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+            val artistCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+            val albumCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+            val yearCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
+            val durCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+
+            while (it.moveToNext()) {
+                val id = it.getLong(idCol)
+                val uri = Uri.withAppendedPath(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    id.toString()
+                )
+
+                val song = Song(
+                    id = id,
+                    title = it.getString(titleCol),
+                    artist = it.getString(artistCol),
+                    album = it.getString(albumCol),
+                    year = it.getInt(yearCol),
+                    uri = uri,
+                    duration = it.getLong(durCol),
+                    albumArt = null
+                )
+
+                list.add(song)
+                onSongFound(song)
+
+                current++
+                onProgress(current, total)
+            }
+        }
+
+        if (list.isNotEmpty()) {
+            saveSongsToCache(list)
+            prefs.setFirstScanDone()
+        }
+
+        return list
+    }
+
 
 
 }

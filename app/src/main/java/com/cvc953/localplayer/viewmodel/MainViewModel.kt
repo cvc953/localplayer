@@ -181,13 +181,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             // Solo mostrar indicador si es la primera vez
             val firstScan = !repository.isFirstScanDone()
-            if (firstScan) _isScanning.value = true
+            if (firstScan) {
+                _isScanning.value = true
+                val temp = mutableListOf<Song>()
+                // Escaneo incremental: actualizamos _songs a medida que se encuentran canciones
+                repository.scanSongsStreaming(
+                    onSongFound = { song ->
+                        temp.add(song)
+                        _songs.value = temp.sortedBy { it.title }
+                    },
+                    onProgress = { current, total ->
+                        _scanProgress.value = if (total > 0) current.toFloat() / total else 0f
+                    }
+                )
+                _isScanning.value = false
+            } else {
+                val loaded = withContext(Dispatchers.IO) { repository.loadSongs() }
+                _songs.value = loaded.sortedBy { it.title }
+            }
 
-            val loadedSongs = withContext(Dispatchers.IO) { repository.loadSongs() }
-            _songs.value = repository.loadSongs().sortedBy { it.title }
-
-            _isScanning.value = false
-            
             // Cargar última canción reproducida
             loadLastSong()
         }
