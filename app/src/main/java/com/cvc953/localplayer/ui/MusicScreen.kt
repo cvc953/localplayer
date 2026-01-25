@@ -202,16 +202,16 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                         colors = TextFieldDefaults.colors(
-                            focusedIndicatorColor = Color.White,
-                            unfocusedIndicatorColor = Color.Gray,
-                            cursorColor = Color.White,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            focusedIndicatorColor = Color.Black,
+                            unfocusedIndicatorColor = Color.Black,
+                            cursorColor = Color.Black,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black
                         ),
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.White)
+                                    Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.Black)
                                 }
                             }
                         }
