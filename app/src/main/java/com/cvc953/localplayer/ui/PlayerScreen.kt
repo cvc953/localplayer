@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.material3.ExperimentalMaterial3Api
+import MiniPlayer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,10 +168,7 @@ fun PlayerScreen(
         if (showLyrics) {
 
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier = Modifier.fillMaxSize()
             ) {
 
                 // ZONA DE LETRAS
@@ -197,44 +195,14 @@ fun PlayerScreen(
                     }
                 }
 
-                Spacer(Modifier.height(25.dp))
-
-                SongTitleSection(title = song.title, artist = song.artist)
-
-
-                Spacer(Modifier.height(25.dp))
-
-                PlayerControls(
-                    viewModel = viewModel,
+                // MiniPlayer al final
+                MiniPlayer(
+                    song = song,
                     isPlaying = playerState.isPlaying,
-                    onClick = { viewModel.togglePlayPause() }
+                    onPlayPause = { viewModel.togglePlayPause() },
+                    onClick = { viewModel.toggleLyrics() },
+                    onNext = { viewModel.playNextSong() }
                 )
-
-                Spacer(Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { showQueue = true }) {
-                        Icon(
-                            imageVector = Icons.Default.QueueMusic,
-                            contentDescription = "Ver cola",
-                            tint = Color.White
-                        )
-                    }
-
-                    Spacer(Modifier.width(16.dp))
-
-                    IconButton(onClick = { viewModel.toggleLyrics() }) {
-                        Icon(
-                            imageVector = Icons.Default.Lyrics,
-                            contentDescription = "Mostrar letras",
-                            tint = Color.White
-                        )
-                    }
-                }
             }
         } else {
             // CONTENIDO REAL
@@ -242,7 +210,8 @@ fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
 
                 Spacer(Modifier.height(16.dp))
@@ -261,7 +230,6 @@ fun PlayerScreen(
 
                 SongTitleSection(title = song.title, artist = song.artist)
 
-
                 Spacer(Modifier.height(32.dp))
 
                 PlayerControls(
@@ -269,7 +237,7 @@ fun PlayerScreen(
                     isPlaying = playerState.isPlaying,
                     onClick = { viewModel.togglePlayPause() })
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(24.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
