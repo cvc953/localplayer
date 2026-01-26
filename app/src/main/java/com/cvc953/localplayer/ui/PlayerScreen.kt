@@ -78,6 +78,7 @@ fun PlayerScreen(
     }
     val lyrics by viewModel.lyrics.collectAsState()
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
+    var dominantColor by remember { mutableStateOf(Color(0xFF0F0F0F)) }
     var showQueue by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val upcoming = remember(queue, playerState, songs, isShuffle, repeatMode) {
@@ -144,7 +145,33 @@ fun PlayerScreen(
                 retriever.setDataSource(context, song.uri)
                 val picture = retriever.embeddedPicture
                 retriever.release()
-                picture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                picture?.let { 
+                    val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                    // Extraer color dominante
+                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 50, 50, true)
+                    var redSum = 0L
+                    var greenSum = 0L
+                    var blueSum = 0L
+                    var pixelCount = 0
+                    
+                    for (x in 0 until scaledBitmap.width) {
+                        for (y in 0 until scaledBitmap.height) {
+                            val pixel = scaledBitmap.getPixel(x, y)
+                            redSum += android.graphics.Color.red(pixel)
+                            greenSum += android.graphics.Color.green(pixel)
+                            blueSum += android.graphics.Color.blue(pixel)
+                            pixelCount++
+                        }
+                    }
+                    
+                    val avgRed = (redSum / pixelCount).toInt()
+                    val avgGreen = (greenSum / pixelCount).toInt()
+                    val avgBlue = (blueSum / pixelCount).toInt()
+                    
+                    dominantColor = Color(avgRed, avgGreen, avgBlue).copy(alpha = 0.3f)
+                    scaledBitmap.recycle()
+                    bitmap
+                }
             } catch (_: Exception) {
                 null
             }
@@ -167,19 +194,43 @@ fun PlayerScreen(
         modifier = Modifier
             .fillMaxSize()
             .offset { IntOffset(0, offsetY.value.toInt()) }
-            .background(
-                Brush.verticalGradient(listOf(Color(0xFF0F0F0F), Color.Black))
-            )
+            .background(Color.Black)
     ) {
+        // Fondo con blur basado en el color de la carátula
+        albumArt?.let { art ->
+            Image(
+                painter = BitmapPainter(art.asImageBitmap()),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        alpha = 0.3f
+                        scaleX = 1.5f
+                        scaleY = 1.5f
+                    },
+                contentScale = ContentScale.Crop
+            )
+            // Capa de gradiente oscuro encima
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                dominantColor.copy(alpha = 0.6f),
+                                Color.Black.copy(alpha = 0.85f),
+                                Color.Black
+                            )
+                        )
+                    )
+            )
+        }
 
         // Barra de drag
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .offset { IntOffset(0, offsetY.value.toInt()) }
-                .background(
-                    Brush.verticalGradient(listOf(Color(0xFF0F0F0F), Color.Black))
-                )
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
                         onVerticalDrag = { _, dragAmount ->
