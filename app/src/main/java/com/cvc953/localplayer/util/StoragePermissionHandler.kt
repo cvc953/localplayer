@@ -73,7 +73,12 @@ fun StoragePermissionHandler(
                 color = Color.White
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { launcher.launch(permission) }) {
+            Button(
+                onClick = { launcher.launch(permission) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2196F3)
+                )
+            ) {
                 Text("Dar permiso")
             }
         }
