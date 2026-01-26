@@ -87,6 +87,7 @@ fun PlayerScreen(
     val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
+    var dragUpAccum by remember { mutableStateOf(0f) }
     
     // Extraer información de formato de audio
     var audioFormat by remember { mutableStateOf("") }
@@ -183,12 +184,21 @@ fun PlayerScreen(
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
                         onVerticalDrag = { _, dragAmount ->
+                            // dragAmount > 0 is downward, < 0 is upward
+                            if (!showLyrics && dragAmount < 0f) {
+                                dragUpAccum += dragAmount
+                                if (dragUpAccum <= -120f) {
+                                    dragUpAccum = 0f
+                                    viewModel.toggleLyrics()
+                                }
+                            }
                             scope.launch {
                                 offsetY.snapTo((offsetY.value + dragAmount).coerceAtLeast(0f))
                             }
 
                         },
                         onDragEnd = {
+                            dragUpAccum = 0f
                             scope.launch {
                                 if (offsetY.value > screenHeightPx * 0.25f) {
                                     offsetY.animateTo(screenHeightPx, tween(250))
