@@ -55,6 +55,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
     var sortMode by rememberSaveable { mutableStateOf(SortMode.TITLE_ASC) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
 
     val filteredSongs = remember(songs, searchQuery) {
         val q = searchQuery.trim().lowercase()
@@ -193,8 +194,22 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White)
                     }
 
-                    IconButton(onClick = { showAbout = true }) {
-                        Icon(Icons.Default.Info, contentDescription = "Acerca de", tint = Color.White)
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Más opciones", tint = Color.White)
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Acerca de") },
+                                onClick = {
+                                    showAbout = true
+                                    menuExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
 
