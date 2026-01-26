@@ -169,7 +169,8 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
                 // ZONA DE LETRAS
@@ -240,11 +241,11 @@ fun PlayerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(23.dp),
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                Spacer(Modifier.height(31.dp))
+                Spacer(Modifier.height(16.dp))
 
                 Image(
                     painter = albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
@@ -256,19 +257,19 @@ fun PlayerScreen(
                     contentScale = ContentScale.Crop
                 )
 
-                Spacer(Modifier.height(23.dp))
+                Spacer(Modifier.height(32.dp))
 
                 SongTitleSection(title = song.title, artist = song.artist)
 
 
-                Spacer(Modifier.height(31.dp))
+                Spacer(Modifier.height(32.dp))
 
                 PlayerControls(
                     viewModel = viewModel,
                     isPlaying = playerState.isPlaying,
                     onClick = { viewModel.togglePlayPause() })
 
-                Spacer(Modifier.height(31.dp))
+                Spacer(Modifier.height(32.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -540,7 +541,7 @@ fun PlayerControls(
                 modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
-                    activeTrackColor = Color(0xFF1DB954),
+                    activeTrackColor = Color(0xFF2196F3),
                     inactiveTrackColor = Color(0xFF404040)
                 )
             )
