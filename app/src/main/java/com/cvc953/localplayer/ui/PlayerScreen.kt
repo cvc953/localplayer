@@ -538,7 +538,9 @@ fun PlayerControls(
                 value = playerState.position.toFloat(),
                 onValueChange = { viewModel.seekTo(it.toLong()) },
                 valueRange = 0f..playerState.duration.toFloat(),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(20.dp),
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
                     activeTrackColor = Color(0xFF2196F3),
@@ -556,18 +558,17 @@ fun PlayerControls(
                 Text(
                     text = formatDuration(playerState.position),
                     color = Color(0xFFB0B0B0),
-                    fontSize = 11.sp
+                    fontSize = 10.sp
                 )
                 Text(
                     text = formatDuration(playerState.duration),
                     color = Color(0xFFB0B0B0),
-                    fontSize = 11.sp
+                    fontSize = 10.sp
                 )
             }
         }
 
-
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(12.dp))
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
