@@ -105,7 +105,13 @@ fun SongItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            Text(text = song.artist, color = Color(0xFFCCCCCC), fontSize = 12.sp)
+            Text(
+                text = song.artist,
+                color = Color(0xFFCCCCCC),
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
 
         Text(
