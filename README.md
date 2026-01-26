@@ -169,7 +169,3 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 - Comunidad de Android
 
 ---
-
-<p align="center">
-  Hecho con por Cristian Villalobos
-</p>
