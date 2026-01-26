@@ -5,9 +5,7 @@ plugins {
 
 android {
     namespace = "com.cvc953.localplayer"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.cvc953.localplayer"
