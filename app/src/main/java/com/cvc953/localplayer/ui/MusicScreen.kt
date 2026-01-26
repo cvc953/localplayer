@@ -54,6 +54,7 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMode by rememberSaveable { mutableStateOf(SortMode.TITLE_ASC) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
 
     val filteredSongs = remember(songs, searchQuery) {
         val q = searchQuery.trim().lowercase()
@@ -190,6 +191,10 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         if (!showSearchBar) searchQuery = ""
                     }) {
                         Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White)
+                    }
+
+                    IconButton(onClick = { showAbout = true }) {
+                        Icon(Icons.Default.Info, contentDescription = "Acerca de", tint = Color.White)
                     }
                 }
 
@@ -415,6 +420,18 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                     PlayerScreen(
                         viewModel = viewModel,
                         onBack = { viewModel.closePlayerScreen() }
+                    )
+                }
+            }
+
+            if (showAbout) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .zIndex(2f)
+                ) {
+                    AboutScreen(
+                        onBack = { showAbout = false }
                     )
                 }
             }
