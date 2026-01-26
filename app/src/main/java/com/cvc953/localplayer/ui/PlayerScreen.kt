@@ -198,37 +198,16 @@ fun PlayerScreen(
         modifier = Modifier
             .fillMaxSize()
             .offset { IntOffset(0, offsetY.value.toInt()) }
-            .background(Color.Black)
-    ) {
-        // Fondo con blur basado en el color de la carátula
-        albumArt?.let { art ->
-            Image(
-                painter = BitmapPainter(art.asImageBitmap()),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        alpha = 0.3f
-                        scaleX = 1.5f
-                        scaleY = 1.5f
-                    },
-                contentScale = ContentScale.Crop
-            )
-            // Capa de gradiente oscuro encima
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                dominantColor.copy(alpha = 0.6f),
-                                Color.Black.copy(alpha = 0.85f),
-                                Color.Black
-                            )
-                        )
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        dominantColor.copy(alpha = 0.8f),
+                        Color.Black.copy(alpha = 0.9f),
+                        Color.Black
                     )
+                )
             )
-        }
+    ) {
 
         // Barra de drag
         Box(
