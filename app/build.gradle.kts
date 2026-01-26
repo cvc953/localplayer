@@ -33,6 +33,28 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Signing config for Release using environment variables provided by CI
+    val keystorePath = System.getenv("ANDROID_SIGNING_STORE_FILE")
+    val keystorePassword = System.getenv("ANDROID_SIGNING_STORE_PASSWORD")
+    val keyAlias = System.getenv("ANDROID_SIGNING_KEY_ALIAS")
+    val keyPassword = System.getenv("ANDROID_SIGNING_KEY_PASSWORD")
+
+    if (!keystorePath.isNullOrBlank() && !keystorePassword.isNullOrBlank() && !keyAlias.isNullOrBlank() && !keyPassword.isNullOrBlank()) {
+        signingConfigs {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPassword
+            }
+        }
+        buildTypes {
+            getByName("release") {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
 }
 
 dependencies {

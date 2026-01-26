@@ -31,6 +31,21 @@ jobs:
       
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+
+      - name: Prepare signing keystore
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+        run: |
+          if [[ -n "$SIGNING_KEYSTORE_BASE64" ]]; then
+            echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/release.keystore
+            echo "ANDROID_SIGNING_STORE_FILE=app/release.keystore" >> $GITHUB_ENV
+          fi
+          if [[ -n "$ANDROID_SIGNING_STORE_PASSWORD" ]]; then echo "ANDROID_SIGNING_STORE_PASSWORD=$ANDROID_SIGNING_STORE_PASSWORD" >> $GITHUB_ENV; fi
+          if [[ -n "$ANDROID_SIGNING_KEY_ALIAS" ]]; then echo "ANDROID_SIGNING_KEY_ALIAS=$ANDROID_SIGNING_KEY_ALIAS" >> $GITHUB_ENV; fi
+          if [[ -n "$ANDROID_SIGNING_KEY_PASSWORD" ]]; then echo "ANDROID_SIGNING_KEY_PASSWORD=$ANDROID_SIGNING_KEY_PASSWORD" >> $GITHUB_ENV; fi
       
       - name: Extract version from tag
         id: extract_version
@@ -46,12 +61,22 @@ jobs:
           echo "Building version: $VERSION"
       
       - name: Build Release APK
-        run: ./gradlew assembleRelease
+        run: |
+          if [[ -n "$ANDROID_SIGNING_STORE_FILE" && -n "$ANDROID_SIGNING_STORE_PASSWORD" && -n "$ANDROID_SIGNING_KEY_ALIAS" && -n "$ANDROID_SIGNING_KEY_PASSWORD" ]]; then
+            ./gradlew assembleRelease
+          else
+            echo "Signing secrets missing; building Debug APK as fallback" >&2
+            ./gradlew assembleDebug
+          fi
         
       - name: Collect APK and checksums
         run: |
           mkdir -p release
-          APK_PATH=$(find app/build/outputs/apk/release -type f -name "*.apk" | head -n 1)
+          # Prefer signed release APK; fallback to debug if release not built
+          APK_PATH=$(find app/build/outputs/apk/release -type f -name "*.apk" ! -name "*unsigned*" | head -n 1)
+          if [[ -z "$APK_PATH" ]]; then
+            APK_PATH=$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -n 1)
+          fi
           if [[ -z "$APK_PATH" ]]; then
             echo "No APK produced under app/build/outputs/apk/release" >&2
             exit 1
