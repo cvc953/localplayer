@@ -41,7 +41,7 @@ jobs:
         run: |
           if [[ -n "$SIGNING_KEYSTORE_BASE64" ]]; then
             echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/release.keystore
-            echo "ANDROID_SIGNING_STORE_FILE=app/release.keystore" >> $GITHUB_ENV
+            echo "ANDROID_SIGNING_STORE_FILE=release.keystore" >> $GITHUB_ENV
           fi
           if [[ -n "$ANDROID_SIGNING_STORE_PASSWORD" ]]; then echo "ANDROID_SIGNING_STORE_PASSWORD=$ANDROID_SIGNING_STORE_PASSWORD" >> $GITHUB_ENV; fi
           if [[ -n "$ANDROID_SIGNING_KEY_ALIAS" ]]; then echo "ANDROID_SIGNING_KEY_ALIAS=$ANDROID_SIGNING_KEY_ALIAS" >> $GITHUB_ENV; fi

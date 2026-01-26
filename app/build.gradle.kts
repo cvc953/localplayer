@@ -41,9 +41,10 @@ android {
     val keyPassword = System.getenv("ANDROID_SIGNING_KEY_PASSWORD")
 
     if (!keystorePath.isNullOrBlank() && !keystorePassword.isNullOrBlank() && !keyAlias.isNullOrBlank() && !keyPassword.isNullOrBlank()) {
+        val resolvedKeystorePath = if (keystorePath.startsWith("app/")) keystorePath.removePrefix("app/") else keystorePath
         signingConfigs {
             create("release") {
-                storeFile = file(keystorePath)
+                storeFile = file(resolvedKeystorePath)
                 storePassword = keystorePassword
                 this.keyAlias = keyAlias
                 this.keyPassword = keyPassword
