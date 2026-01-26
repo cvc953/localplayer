@@ -39,10 +39,16 @@ jobs:
       - name: Build Release APK
         run: ./gradlew assembleRelease
         
-      - name: Rename APK
+      - name: Collect APK and checksums
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/release/app-release.apk release/LocalPlayer-${{ steps.extract_version.outputs.VERSION }}.apk
+          APK_PATH=$(find app/build/outputs/apk/release -type f -name "*.apk" | head -n 1)
+          if [[ -z "$APK_PATH" ]]; then
+            echo "No APK produced under app/build/outputs/apk/release" >&2
+            exit 1
+          fi
+          cp "$APK_PATH" "release/LocalPlayer-${{ steps.extract_version.outputs.VERSION }}.apk"
+          (cd release && sha256sum "LocalPlayer-${{ steps.extract_version.outputs.VERSION }}.apk" > checksums.txt)
        
       
       - name: Upload APK artifact
