@@ -528,21 +528,41 @@ fun PlayerControls(
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(8.dp)
+                .padding(horizontal = 16.dp)
         ) {
             Slider(
                 value = playerState.position.toFloat(),
                 onValueChange = { viewModel.seekTo(it.toLong()) },
                 valueRange = 0f..playerState.duration.toFloat(),
+                modifier = Modifier.fillMaxWidth(),
                 colors = SliderDefaults.colors(
                     thumbColor = Color.White,
-                    activeTrackColor = Color(0xFF2196F3),
-                    inactiveTrackColor = Color.White
+                    activeTrackColor = Color(0xFF1DB954),
+                    inactiveTrackColor = Color(0xFF404040)
                 )
             )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = formatDuration(playerState.position),
+                    color = Color(0xFFB0B0B0),
+                    fontSize = 11.sp
+                )
+                Text(
+                    text = formatDuration(playerState.duration),
+                    color = Color(0xFFB0B0B0),
+                    fontSize = 11.sp
+                )
+            }
         }
 
 
