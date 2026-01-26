@@ -228,7 +228,10 @@ fun PlayerScreen(
                         LyricsView(
                             lyrics = lyrics,
                             currentPosition = playerState.position,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            onLineClick = { targetMs ->
+                                viewModel.seekTo(targetMs)
+                            }
                         )
                     }
                 }

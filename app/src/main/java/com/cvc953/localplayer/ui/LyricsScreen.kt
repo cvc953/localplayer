@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +22,8 @@ import com.cvc953.localplayer.util.LrcLine
 fun LyricsView(
     lyrics: List<LrcLine>,
     currentPosition: Long,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLineClick: (Long) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
 
@@ -58,12 +60,16 @@ fun LyricsView(
             modifier = Modifier.fillMaxSize()
         ) {
             itemsIndexed(lyrics) { index, line ->
-                LyricLine(
-                    text = line.text,
-                    active = index == currentIndex
-                )
-
-
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { onLineClick(line.timeMs) }
+                ) {
+                    LyricLine(
+                        text = line.text,
+                        active = index == currentIndex
+                    )
+                }
             }
         }
     }
