@@ -63,13 +63,14 @@ fun StoragePermissionHandler(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Color.Black)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = "La app necesita permiso para acceder a tu música",
-                color = MaterialTheme.colorScheme.onBackground
+                color = Color.White
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { launcher.launch(permission) }) {
