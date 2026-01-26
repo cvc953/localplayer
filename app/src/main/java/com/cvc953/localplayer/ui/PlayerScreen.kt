@@ -139,6 +139,10 @@ fun PlayerScreen(
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
+        // Limpiar imagen anterior
+        albumArt = null
+        dominantColor = Color(0xFF0F0F0F)
+        
         albumArt = withContext(Dispatchers.IO) {
             try {
                 val retriever = MediaMetadataRetriever()
