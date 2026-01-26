@@ -203,6 +203,13 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                             onDismissRequest = { menuExpanded = false }
                         ) {
                             DropdownMenuItem(
+                                text = { Text("Actualizar biblioteca") },
+                                onClick = {
+                                    viewModel.manualRefreshLibrary()
+                                    menuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
                                 text = { Text("Acerca de") },
                                 onClick = {
                                     showAbout = true

@@ -5,6 +5,9 @@ import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cvc953.localplayer.model.Song
@@ -97,6 +100,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Historial de reproducción para soportar "Anterior" respetando el orden
     private val playHistory: MutableList<Song> = mutableListOf()
 
+    // Observer para detectar cambios en la biblioteca de música
+    private val mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            super.onChange(selfChange)
+            // Detectar cambios en la biblioteca y refrescar
+            refreshMusicLibrary()
+        }
+    }
+
+    private fun refreshMusicLibrary() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val newSongs = repository.loadSongs()
+                val currentSongs = _songs.value
+                
+                // Solo actualizar si hay cambios (nuevas canciones o eliminadas)
+                if (newSongs.size != currentSongs.size) {
+                    _songs.value = newSongs.sortedBy { it.title }
+                }
+            } catch (e: Exception) {
+                // Silenciosamente ignorar errores de lectura
+            }
+        }
+    }
+    
+    fun manualRefreshLibrary() {
+        refreshMusicLibrary()
+    }
+
+
     fun addToQueueNext(song: Song) {
         val list = _queue.value.toMutableList()
         list.add(0, song)
@@ -178,6 +211,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 
     init {
+        // Registrar el observer para detectar cambios en la biblioteca
+        getApplication<Application>().contentResolver.registerContentObserver(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            true,
+            mediaStoreObserver
+        )
+
         viewModelScope.launch(Dispatchers.IO) {
             // Solo mostrar indicador si es la primera vez
             val firstScan = !repository.isFirstScanDone()
@@ -367,6 +407,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         progressJob?.cancel()
         mediaPlayer?.release()
         mediaPlayer = null
+        // Deregistrar el observer cuando el ViewModel se destruye
+        getApplication<Application>().contentResolver.unregisterContentObserver(mediaStoreObserver)
         super.onCleared()
     }
 
