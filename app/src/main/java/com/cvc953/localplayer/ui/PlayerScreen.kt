@@ -211,38 +211,7 @@ fun PlayerScreen(
                     )
                 }
         )
-        // Indicador visual de progreso del arrastre hacia arriba
-        if (!showLyrics && dragUpAccum < 0f) {
-            val progress = (-dragUpAccum / 250f).coerceIn(0f, 1f)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 80.dp)
-                    .graphicsLayer {
-                        alpha = progress
-                        translationY = (1f - progress) * 50f
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.8f),
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Text(
-                        text = "Desliza para ver letras",
-                        color = Color.White.copy(alpha = 0.8f),
-                        fontSize = 14.sp
-                    )
-                }
-            }
-        }
+
         if (showLyrics) {
 
             Column(
