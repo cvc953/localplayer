@@ -159,7 +159,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Christian",
+                    text = "Cristian Villalobos C.",
                     fontSize = 14.sp,
                     color = Color(0xFFCCCCCC)
                 )
