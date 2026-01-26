@@ -160,7 +160,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 
 ## 👤 Autor
 
-**Christian** - [@cvc953](https://github.com/cvc953)
+**Cristian** - [@cvc953](https://github.com/cvc953)
 
 ## 🙏 Agradecimientos
 
