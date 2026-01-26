@@ -87,6 +87,44 @@ fun PlayerScreen(
     val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableStateOf(0f) }
+    
+    // Extraer información de formato de audio
+    var audioFormat by remember { mutableStateOf("") }
+    var audioBitrate by remember { mutableStateOf("") }
+    
+    LaunchedEffect(song.uri) {
+        withContext(Dispatchers.IO) {
+            try {
+                val retriever = MediaMetadataRetriever()
+                retriever.setDataSource(context, song.uri)
+                
+                // Obtener mime type para el formato
+                val mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
+                audioFormat = when {
+                    mimeType?.contains("flac", ignoreCase = true) == true -> "FLAC"
+                    mimeType?.contains("mpeg", ignoreCase = true) == true -> "MP3"
+                    mimeType?.contains("mp4", ignoreCase = true) == true -> "M4A"
+                    mimeType?.contains("ogg", ignoreCase = true) == true -> "OGG"
+                    mimeType?.contains("wav", ignoreCase = true) == true -> "WAV"
+                    else -> mimeType?.substringAfterLast("/")?.uppercase() ?: "Unknown"
+                }
+                
+                // Obtener bitrate
+                val bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
+                audioBitrate = if (bitrate != null) {
+                    val kbps = bitrate.toInt() / 1000
+                    "${kbps} kbps"
+                } else {
+                    ""
+                }
+                
+                retriever.release()
+            } catch (_: Exception) {
+                audioFormat = ""
+                audioBitrate = ""
+            }
+        }
+    }
 
     LaunchedEffect(showQueue, queue) {
         // Only initialize/update the draggable list when the sheet is opened
@@ -235,7 +273,10 @@ fun PlayerScreen(
                 PlayerControls(
                     viewModel = viewModel,
                     isPlaying = playerState.isPlaying,
-                    onClick = { viewModel.togglePlayPause() })
+                    onClick = { viewModel.togglePlayPause() },
+                    audioFormat = audioFormat,
+                    audioBitrate = audioBitrate
+                )
 
                 Spacer(Modifier.height(24.dp))
 
@@ -489,6 +530,8 @@ fun PlayerControls(
     viewModel: MainViewModel = viewModel(),
     isPlaying: Boolean,
     onClick: () -> Unit,
+    audioFormat: String = "",
+    audioBitrate: String = ""
 ) {
 
     val playerState by viewModel.playerState.collectAsState()
@@ -594,6 +637,21 @@ fun PlayerControls(
                     modifier = Modifier.size(32.dp)
                 )
             }
+        }
+        
+        // Información de formato de audio
+        if (audioFormat.isNotEmpty() || audioBitrate.isNotEmpty()) {
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = buildString {
+                    if (audioFormat.isNotEmpty()) append(audioFormat)
+                    if (audioFormat.isNotEmpty() && audioBitrate.isNotEmpty()) append(" • ")
+                    if (audioBitrate.isNotEmpty()) append(audioBitrate)
+                },
+                color = Color(0xFF808080),
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
