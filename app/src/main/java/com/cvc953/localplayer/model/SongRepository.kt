@@ -15,6 +15,54 @@ class SongRepository(private val context: Context) {
 
     private val prefs = AppPrefs(context)
 
+    /**
+     * Lista de rutas que deben ser excluidas del escaneo.
+     * Esto incluye directorios de apps de mensajería y otras apps que almacenan audio
+     * pero que no son canciones de música.
+     */
+    private fun isExcludedPath(filePath: String?): Boolean {
+        if (filePath == null) return false
+        
+        val excludedPaths = listOf(
+            "/WhatsApp/",
+            "/Telegram/",
+            "/Snapchat/",
+            "/TikTok/",
+            "/Instagram/",
+            "/facebook/",
+            "/Discord/",
+            "/Viber/",
+            "/Signal/",
+            "/Skype/",
+            "/Messenger/",
+            "/.telegram/",
+            "/Android/data/com.whatsapp/",
+            "/Android/data/com.telegram/",
+            "/Android/data/com.snapchat/",
+            "/Android/data/com.tiktok/",
+            "/Android/data/com.instagram/",
+            "/Android/data/com.facebook/",
+            "/Android/data/com.discord/",
+            "/Android/data/com.viber/",
+            "/Android/data/org.signal/",
+            "/Android/data/com.skype/",
+            "/Android/data/com.facebook.orca/",
+            "/Android/media/com.whatsapp/",
+            "/Android/media/com.telegram/",
+            "/Android/media/com.snapchat/",
+            "/Android/media/com.tiktok/",
+            "/Android/media/com.instagram/",
+            "/Android/media/com.facebook/",
+            "/Android/media/com.discord/",
+            "/Android/media/com.viber/",
+            "/Android/media/org.signal/",
+            "/Android/media/com.skype/",
+            "/Android/media/com.facebook.orca/"
+        )
+        
+        return excludedPaths.any { filePath.contains(it, ignoreCase = true) }
+    }
+
     fun loadSongs(): List<Song> {
         if (prefs.isFirstScanDone()) {
             val cached = loadSongsFromCache()
@@ -83,6 +131,11 @@ class SongRepository(private val context: Context) {
                     id.toString()
                 )
                 val filePath = it.getString(dataCol)
+
+                // Excluir archivos de WhatsApp y otras apps de mensajería
+                if (isExcludedPath(filePath)) {
+                    continue
+                }
 
                 // Cargar la carátula
                 val albumArt = try {
@@ -231,6 +284,11 @@ class SongRepository(private val context: Context) {
                 )
                 val filePath = it.getString(dataCol)
 
+                // Excluir archivos de WhatsApp y otras apps de mensajería
+                if (isExcludedPath(filePath)) {
+                    continue
+                }
+
                 val song = Song(
                     id = id,
                     title = it.getString(titleCol),
@@ -290,6 +348,7 @@ class SongRepository(private val context: Context) {
             val albumCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
             val yearCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
             val durCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
@@ -297,6 +356,12 @@ class SongRepository(private val context: Context) {
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     id.toString()
                 )
+                val filePath = it.getString(dataCol)
+
+                // Excluir archivos de WhatsApp y otras apps de mensajería
+                if (isExcludedPath(filePath)) {
+                    continue
+                }
 
                 val song = Song(
                     id = id,
