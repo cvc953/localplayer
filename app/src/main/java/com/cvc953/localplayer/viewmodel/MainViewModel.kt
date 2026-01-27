@@ -480,25 +480,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun loadLyricsForSong(song: Song) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                android.util.Log.d("LyricsDebug", "Cargando lyrics para: ${song.title}")
+                android.util.Log.d("LyricsDebug", "FilePath: ${song.filePath}")
+                
                 // Si tenemos la ruta del archivo, usarla directamente
                 if (!song.filePath.isNullOrEmpty()) {
                     val audioFile = File(song.filePath)
                     val audioDir = audioFile.parentFile
                     val audioNameWithoutExt = audioFile.nameWithoutExtension
                     
+                    android.util.Log.d("LyricsDebug", "Archivo: ${audioFile.absolutePath}")
+                    android.util.Log.d("LyricsDebug", "Directorio: ${audioDir?.absolutePath}")
+                    android.util.Log.d("LyricsDebug", "Nombre sin ext: $audioNameWithoutExt")
+                    
                     if (audioDir != null) {
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
+                        android.util.Log.d("LyricsDebug", "Buscando: ${lrcFile.absolutePath}")
+                        android.util.Log.d("LyricsDebug", "Existe: ${lrcFile.exists()}")
+                        
                         if (lrcFile.exists()) {
                             try {
                                 val text = lrcFile.readText()
+                                android.util.Log.d("LyricsDebug", "Archivo leído: ${text.length} chars")
                                 _lyrics.value = parseLrc(text)
+                                android.util.Log.d("LyricsDebug", "Lyrics parseadas: ${_lyrics.value.size} líneas")
                                 return@launch
                             } catch (e: Exception) {
-                                // Continuar con búsqueda en BD
+                                android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                             }
                         }
                     }
                 }
+                
+                android.util.Log.d("LyricsDebug", "Fallback: búsqueda en MediaStore")
                 
                 // Fallback: buscar en la BD de MediaStore
                 val resolver = getApplication<Application>().contentResolver
@@ -510,6 +524,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
                 val selection = "${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
                 val selectionArgs = arrayOf("$baseName.lrc")
+
+                android.util.Log.d("LyricsDebug", "Buscando: $baseName.lrc")
 
                 val uri = MediaStore.Files.getContentUri("external")
 
@@ -525,17 +541,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (it.moveToFirst()) {
                         val id = it.getLong(0)
                         val lrcUri = ContentUris.withAppendedId(uri, id)
+                        android.util.Log.d("LyricsDebug", "Encontrado en BD: $lrcUri")
 
                         val text = resolver.openInputStream(lrcUri)
                             ?.bufferedReader()
                             ?.use { r -> r.readText() }
 
                         _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
+                        android.util.Log.d("LyricsDebug", "Lyrics cargadas desde BD: ${_lyrics.value.size} líneas")
                     } else {
+                        android.util.Log.d("LyricsDebug", "No encontrado en BD")
                         _lyrics.value = emptyList()
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("LyricsDebug", "Excepción general", e)
                 _lyrics.value = emptyList()
             }
         }
