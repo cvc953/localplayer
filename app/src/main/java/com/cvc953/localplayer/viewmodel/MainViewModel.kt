@@ -480,32 +480,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun loadLyricsForSong(song: Song) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Intentar cargar desde la ruta del archivo de audio directamente
-                val audioPath = song.uri.path ?: ""
-                val lrcPath = audioPath.substringBeforeLast('.') + ".lrc"
-                
-                val lrcFile = File(lrcPath)
-                if (lrcFile.exists()) {
-                    val text = lrcFile.readText()
-                    _lyrics.value = parseLrc(text)
-                    return@launch
-                }
-                
-                // Si no existe en la ruta directa, buscar en la base de datos con criterios exactos
                 val resolver = getApplication<Application>().contentResolver
                 val baseName = song.title
+                
+                // Primero intentar busca exacta por nombre del archivo
                 val projection = arrayOf(
                     MediaStore.Files.FileColumns._ID,
                     MediaStore.Files.FileColumns.DISPLAY_NAME,
                     MediaStore.Files.FileColumns.DATA
                 )
 
+                // Búsqueda exacta: titulo.lrc
                 val selection = "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ?"
                 val selectionArgs = arrayOf("$baseName.lrc")
 
                 val uri = MediaStore.Files.getContentUri("external")
 
-                val cursor = resolver.query(
+                var cursor = resolver.query(
                     uri,
                     projection,
                     selection,
@@ -513,18 +504,71 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     null
                 )
 
+                var found = false
                 cursor?.use {
                     if (it.moveToFirst()) {
+                        found = true
+                        val dataCol = it.getColumnIndex(MediaStore.Files.FileColumns.DATA)
+                        if (dataCol >= 0) {
+                            val filePath = it.getString(dataCol)
+                            try {
+                                val text = File(filePath).readText()
+                                _lyrics.value = parseLrc(text)
+                                return@launch
+                            } catch (_: Exception) {
+                                // Continuar con método alternativo
+                            }
+                        }
+                        
+                        // Si falla lectura por ruta, intentar por ContentUri
                         val id = it.getLong(0)
                         val lrcUri = ContentUris.withAppendedId(uri, id)
-
                         val text = resolver.openInputStream(lrcUri)
                             ?.bufferedReader()
                             ?.use { r -> r.readText() }
-
+                        
                         _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
-                    } else {
-                        _lyrics.value = emptyList()
+                        return@launch
+                    }
+                }
+                
+                // Si no encontró por búsqueda exacta, intentar con LIKE como fallback
+                if (!found) {
+                    val selectionLike = "${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
+                    val selectionArgsLike = arrayOf("$baseName.lrc")
+                    
+                    cursor = resolver.query(
+                        uri,
+                        projection,
+                        selectionLike,
+                        selectionArgsLike,
+                        null
+                    )
+                    
+                    cursor?.use {
+                        if (it.moveToFirst()) {
+                            val dataCol = it.getColumnIndex(MediaStore.Files.FileColumns.DATA)
+                            if (dataCol >= 0) {
+                                val filePath = it.getString(dataCol)
+                                try {
+                                    val text = File(filePath).readText()
+                                    _lyrics.value = parseLrc(text)
+                                    return@launch
+                                } catch (_: Exception) {
+                                    // Continuar
+                                }
+                            }
+                            
+                            val id = it.getLong(0)
+                            val lrcUri = ContentUris.withAppendedId(uri, id)
+                            val text = resolver.openInputStream(lrcUri)
+                                ?.bufferedReader()
+                                ?.use { r -> r.readText() }
+                            
+                            _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
+                        } else {
+                            _lyrics.value = emptyList()
+                        }
                     }
                 }
             } catch (e: Exception) {
