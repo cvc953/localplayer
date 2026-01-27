@@ -494,6 +494,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     android.util.Log.d("LyricsDebug", "Nombre sin ext: $audioNameWithoutExt")
                     
                     if (audioDir != null) {
+                        // Intentar con el nombre exacto del archivo
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
                         android.util.Log.d("LyricsDebug", "Buscando: ${lrcFile.absolutePath}")
                         android.util.Log.d("LyricsDebug", "Existe: ${lrcFile.exists()}")
@@ -509,6 +510,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                             }
                         }
+                        
+                        // Si no existe, buscar cualquier .lrc en el directorio que coincida parcialmente
+                        android.util.Log.d("LyricsDebug", "Buscando en directorio...")
+                        audioDir.listFiles { _, name -> name.endsWith(".lrc") }?.forEach { file ->
+                            android.util.Log.d("LyricsDebug", "Encontrado: ${file.name}")
+                            val lrcNameWithoutExt = file.nameWithoutExtension
+                            // Comparar ignorando mayúsculas y caracteres problemáticos
+                            val audioClean = audioNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").trim()
+                            val lrcClean = lrcNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").trim()
+                            
+                            if (audioClean.equals(lrcClean, ignoreCase = true)) {
+                                try {
+                                    val text = file.readText()
+                                    android.util.Log.d("LyricsDebug", "Match encontrado: ${file.name}")
+                                    _lyrics.value = parseLrc(text)
+                                    return@launch
+                                } catch (e: Exception) {
+                                    android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
+                                }
+                            }
+                        }
                     }
                 }
                 
@@ -519,13 +541,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val baseName = song.title
                 val projection = arrayOf(
                     MediaStore.Files.FileColumns._ID,
-                    MediaStore.Files.FileColumns.DISPLAY_NAME
+                    MediaStore.Files.FileColumns.DISPLAY_NAME,
+                    MediaStore.Files.FileColumns.DATA
                 )
 
-                val selection = "${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
-                val selectionArgs = arrayOf("$baseName.lrc")
+                val selection = "${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ? AND ${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
+                val selectionArgs = arrayOf("%.lrc", "%${baseName.take(20)}%")
 
-                android.util.Log.d("LyricsDebug", "Buscando: $baseName.lrc")
+                android.util.Log.d("LyricsDebug", "Buscando: %.lrc con nombre similar a ${baseName.take(20)}")
 
                 val uri = MediaStore.Files.getContentUri("external")
 
@@ -538,21 +561,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 cursor?.use {
-                    if (it.moveToFirst()) {
-                        val id = it.getLong(0)
-                        val lrcUri = ContentUris.withAppendedId(uri, id)
-                        android.util.Log.d("LyricsDebug", "Encontrado en BD: $lrcUri")
+                    while (it.moveToNext()) {
+                        val fileName = it.getString(it.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME))
+                        android.util.Log.d("LyricsDebug", "Candidato: $fileName")
+                        
+                        // Verificar si el nombre coincide (ignorando caracteres especiales)
+                        val fileNameClean = fileName.replace(Regex("[:\\\\/*?\"<>|]"), "").replace(".lrc", "", ignoreCase = true).trim()
+                        val baseNameClean = baseName.replace(Regex("[:\\\\/*?\"<>|]"), "").trim()
+                        
+                        if (fileNameClean.equals(baseNameClean, ignoreCase = true)) {
+                            val id = it.getLong(0)
+                            val lrcUri = ContentUris.withAppendedId(uri, id)
+                            android.util.Log.d("LyricsDebug", "Encontrado en BD: $fileName")
 
-                        val text = resolver.openInputStream(lrcUri)
-                            ?.bufferedReader()
-                            ?.use { r -> r.readText() }
+                            val text = resolver.openInputStream(lrcUri)
+                                ?.bufferedReader()
+                                ?.use { r -> r.readText() }
 
-                        _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
-                        android.util.Log.d("LyricsDebug", "Lyrics cargadas desde BD: ${_lyrics.value.size} líneas")
-                    } else {
-                        android.util.Log.d("LyricsDebug", "No encontrado en BD")
-                        _lyrics.value = emptyList()
+                            _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
+                            android.util.Log.d("LyricsDebug", "Lyrics cargadas desde BD: ${_lyrics.value.size} líneas")
+                            return@launch
+                        }
                     }
+                    android.util.Log.d("LyricsDebug", "No encontrado en BD")
+                    _lyrics.value = emptyList()
                 }
             } catch (e: Exception) {
                 android.util.Log.e("LyricsDebug", "Excepción general", e)
