@@ -210,6 +210,7 @@ class SongRepository(private val context: Context) {
             val albumCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
             val yearCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
             val durCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
@@ -217,6 +218,7 @@ class SongRepository(private val context: Context) {
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     id.toString()
                 )
+                val filePath = it.getString(dataCol)
 
                 val song = Song(
                     id = id,
@@ -226,7 +228,8 @@ class SongRepository(private val context: Context) {
                     year = it.getInt(yearCol),
                     uri = uri,
                     duration = it.getLong(durCol),
-                    albumArt = null // o cargarla si quieres
+                    albumArt = null,
+                    filePath = filePath
                 )
 
                 list.add(song)
@@ -253,7 +256,8 @@ class SongRepository(private val context: Context) {
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.YEAR,
-            MediaStore.Audio.Media.DURATION
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.DATA
         )
 
         val total = countSongs()
