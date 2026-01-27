@@ -117,52 +117,63 @@ class SongRepository(private val context: Context) {
     // Cache
     // -------------------------
     private fun saveSongsToCache(songs: List<Song>) {
-        val json = JSONArray()
+        try {
+            val json = JSONArray()
 
-        songs.forEach {
-            json.put(
-                JSONObject().apply {
-                    put("id", it.id)
-                    put("title", it.title)
-                    put("artist", it.artist)
-                    put("album", it.album)
-                    put("year", it.year)
-                    put("uri", it.uri.toString())
-                    put("duration", it.duration)
-                    put("filePath", it.filePath)
-                }
-            )
+            songs.forEach {
+                json.put(
+                    JSONObject().apply {
+                        put("id", it.id)
+                        put("title", it.title)
+                        put("artist", it.artist)
+                        put("album", it.album)
+                        put("year", it.year)
+                        put("uri", it.uri.toString())
+                        put("duration", it.duration)
+                        put("filePath", it.filePath ?: "")
+                    }
+                )
+            }
+
+            context.openFileOutput("songs_cache.json", Context.MODE_PRIVATE)
+                .use { it.write(json.toString().toByteArray()) }
+        } catch (e: Exception) {
+            android.util.Log.e("SongRepository", "Error saving cache", e)
         }
-
-        context.openFileOutput("songs_cache.json", Context.MODE_PRIVATE)
-            .use { it.write(json.toString().toByteArray()) }
     }
 
     private fun loadSongsFromCache(): List<Song> {
-        val text = context.openFileInput("songs_cache.json")
-            .bufferedReader()
-            .use { it.readText() }
+        try {
+            val text = context.openFileInput("songs_cache.json")
+                .bufferedReader()
+                .use { it.readText() }
 
-        val json = JSONArray(text)
-        val list = mutableListOf<Song>()
+            val json = JSONArray(text)
+            val list = mutableListOf<Song>()
 
-        for (i in 0 until json.length()) {
-            val o = json.getJSONObject(i)
-            list.add(
-                Song(
-                    id = o.getLong("id"),
-                    title = o.getString("title"),
-                    artist = o.getString("artist"),
-                    album = o.getString("album"),
-                    year = o.getInt("year"),
-                    uri = Uri.parse(o.getString("uri")),
-                    duration = o.getLong("duration"),
-                    filePath = o.optString("filePath", null).takeIf { it.isNotEmpty() }
+            for (i in 0 until json.length()) {
+                val o = json.getJSONObject(i)
+                list.add(
+                    Song(
+                        id = o.getLong("id"),
+                        title = o.getString("title"),
+                        artist = o.getString("artist"),
+                        album = o.getString("album"),
+                        year = o.getInt("year"),
+                        uri = Uri.parse(o.getString("uri")),
+                        duration = o.getLong("duration"),
+                        filePath = o.optString("filePath", null).takeIf { it.isNotEmpty() }
+                    )
                 )
-            )
-        }
+            }
 
-        return list
+            return list
+        } catch (e: Exception) {
+            // Si hay error al cargar la caché (archivo corrupto, no existe, etc.)
+            // retornar lista vacía para forzar un re-escaneo
+            android.util.Log.e("SongRepository", "Error loading cache", e)
+            return emptyList()
+        }
     }
 
     fun isFirstScanDone(): Boolean = prefs.isFirstScanDone()
