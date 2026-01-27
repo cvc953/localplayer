@@ -71,6 +71,12 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
             SortMode.ARTIST_ASC -> filteredSongs.sortedBy { it.artist.lowercase() }
         }
     }
+    
+    // Notificar al ViewModel del orden actual para reproducción secuencial
+    LaunchedEffect(sortedSongs) {
+        viewModel.updateDisplayOrder(sortedSongs)
+    }
+    
     val playerState by viewModel.playerState.collectAsState()
     var showPlayer by remember { mutableStateOf(false) }
     val showPlayerScreen by viewModel.isPlayerScreenVisible.collectAsState()
