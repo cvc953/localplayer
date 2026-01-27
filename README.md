@@ -151,7 +151,6 @@ Si encuentras algún bug o tienes una sugerencia, por favor abre un [issue](http
 - [ ] Temas personalizables
 - [ ] Escaneo de carpetas específicas
 - [ ] Importar/Exportar configuración
-- [ ] Soporte para podcasts
 - [ ] Sleep timer
 
 ## 📄 Licencia
