@@ -481,11 +481,37 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 android.util.Log.d("LyricsDebug", "Cargando lyrics para: ${song.title}")
-                android.util.Log.d("LyricsDebug", "FilePath: ${song.filePath}")
                 
-                // Si tenemos la ruta del archivo, usarla directamente
-                if (!song.filePath.isNullOrEmpty()) {
-                    val audioFile = File(song.filePath)
+                // Obtener la ruta del archivo (desde song.filePath o desde ContentResolver)
+                var audioFilePath = song.filePath
+                
+                if (audioFilePath.isNullOrEmpty()) {
+                    android.util.Log.d("LyricsDebug", "FilePath vacío, consultando ContentResolver")
+                    // Si no tenemos filePath, obtenerlo del ContentResolver
+                    val resolver = getApplication<Application>().contentResolver
+                    val projection = arrayOf(MediaStore.Audio.Media.DATA)
+                    resolver.query(
+                        song.uri,
+                        projection,
+                        null,
+                        null,
+                        null
+                    )?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+                            if (dataCol >= 0) {
+                                audioFilePath = cursor.getString(dataCol)
+                                android.util.Log.d("LyricsDebug", "FilePath obtenido: $audioFilePath")
+                            }
+                        }
+                    }
+                }
+                
+                android.util.Log.d("LyricsDebug", "FilePath final: $audioFilePath")
+                
+                // Si tenemos la ruta del archivo, buscar .lrc en el mismo directorio
+                if (!audioFilePath.isNullOrEmpty()) {
+                    val audioFile = File(audioFilePath)
                     val audioDir = audioFile.parentFile
                     val audioNameWithoutExt = audioFile.nameWithoutExtension
                     
@@ -493,101 +519,63 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     android.util.Log.d("LyricsDebug", "Directorio: ${audioDir?.absolutePath}")
                     android.util.Log.d("LyricsDebug", "Nombre sin ext: $audioNameWithoutExt")
                     
-                    if (audioDir != null) {
+                    if (audioDir != null && audioDir.exists()) {
+                        android.util.Log.d("LyricsDebug", "Listando archivos en directorio...")
+                        
                         // Intentar con el nombre exacto del archivo
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
-                        android.util.Log.d("LyricsDebug", "Buscando: ${lrcFile.absolutePath}")
-                        android.util.Log.d("LyricsDebug", "Existe: ${lrcFile.exists()}")
+                        android.util.Log.d("LyricsDebug", "Buscando: ${lrcFile.name}")
                         
                         if (lrcFile.exists()) {
                             try {
                                 val text = lrcFile.readText()
-                                android.util.Log.d("LyricsDebug", "Archivo leído: ${text.length} chars")
+                                android.util.Log.d("LyricsDebug", "✓ Archivo encontrado: ${lrcFile.name}, ${text.length} chars")
                                 _lyrics.value = parseLrc(text)
-                                android.util.Log.d("LyricsDebug", "Lyrics parseadas: ${_lyrics.value.size} líneas")
+                                android.util.Log.d("LyricsDebug", "✓ Lyrics parseadas: ${_lyrics.value.size} líneas")
                                 return@launch
                             } catch (e: Exception) {
                                 android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                             }
                         }
                         
-                        // Si no existe, buscar cualquier .lrc en el directorio que coincida parcialmente
-                        android.util.Log.d("LyricsDebug", "Buscando en directorio...")
-                        audioDir.listFiles { _, name -> name.endsWith(".lrc") }?.forEach { file ->
-                            android.util.Log.d("LyricsDebug", "Encontrado: ${file.name}")
+                        // Si no existe, buscar cualquier .lrc en el directorio
+                        val lrcFiles = audioDir.listFiles { _, name -> name.endsWith(".lrc", ignoreCase = true) }
+                        android.util.Log.d("LyricsDebug", "Archivos .lrc encontrados: ${lrcFiles?.size ?: 0}")
+                        
+                        lrcFiles?.forEach { file ->
+                            android.util.Log.d("LyricsDebug", "Evaluando: ${file.name}")
                             val lrcNameWithoutExt = file.nameWithoutExtension
-                            // Comparar ignorando mayúsculas y caracteres problemáticos
-                            val audioClean = audioNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").trim()
-                            val lrcClean = lrcNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").trim()
                             
-                            if (audioClean.equals(lrcClean, ignoreCase = true)) {
+                            // Comparar ignorando caracteres problemáticos
+                            val audioClean = audioNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").lowercase().trim()
+                            val lrcClean = lrcNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").lowercase().trim()
+                            
+                            android.util.Log.d("LyricsDebug", "  Audio clean: '$audioClean'")
+                            android.util.Log.d("LyricsDebug", "  LRC clean: '$lrcClean'")
+                            
+                            if (audioClean == lrcClean) {
                                 try {
                                     val text = file.readText()
-                                    android.util.Log.d("LyricsDebug", "Match encontrado: ${file.name}")
+                                    android.util.Log.d("LyricsDebug", "✓ Match encontrado: ${file.name}")
                                     _lyrics.value = parseLrc(text)
+                                    android.util.Log.d("LyricsDebug", "✓ Lyrics cargadas: ${_lyrics.value.size} líneas")
                                     return@launch
                                 } catch (e: Exception) {
                                     android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                                 }
                             }
                         }
+                        
+                        android.util.Log.d("LyricsDebug", "✗ No se encontró .lrc coincidente")
+                    } else {
+                        android.util.Log.d("LyricsDebug", "✗ Directorio no existe o es null")
                     }
                 }
                 
-                android.util.Log.d("LyricsDebug", "Fallback: búsqueda en MediaStore")
-                
-                // Fallback: buscar en la BD de MediaStore
-                val resolver = getApplication<Application>().contentResolver
-                val baseName = song.title
-                val projection = arrayOf(
-                    MediaStore.Files.FileColumns._ID,
-                    MediaStore.Files.FileColumns.DISPLAY_NAME,
-                    MediaStore.Files.FileColumns.DATA
-                )
-
-                val selection = "${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ? AND ${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
-                val selectionArgs = arrayOf("%.lrc", "%${baseName.take(20)}%")
-
-                android.util.Log.d("LyricsDebug", "Buscando: %.lrc con nombre similar a ${baseName.take(20)}")
-
-                val uri = MediaStore.Files.getContentUri("external")
-
-                val cursor = resolver.query(
-                    uri,
-                    projection,
-                    selection,
-                    selectionArgs,
-                    null
-                )
-
-                cursor?.use {
-                    while (it.moveToNext()) {
-                        val fileName = it.getString(it.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME))
-                        android.util.Log.d("LyricsDebug", "Candidato: $fileName")
-                        
-                        // Verificar si el nombre coincide (ignorando caracteres especiales)
-                        val fileNameClean = fileName.replace(Regex("[:\\\\/*?\"<>|]"), "").replace(".lrc", "", ignoreCase = true).trim()
-                        val baseNameClean = baseName.replace(Regex("[:\\\\/*?\"<>|]"), "").trim()
-                        
-                        if (fileNameClean.equals(baseNameClean, ignoreCase = true)) {
-                            val id = it.getLong(0)
-                            val lrcUri = ContentUris.withAppendedId(uri, id)
-                            android.util.Log.d("LyricsDebug", "Encontrado en BD: $fileName")
-
-                            val text = resolver.openInputStream(lrcUri)
-                                ?.bufferedReader()
-                                ?.use { r -> r.readText() }
-
-                            _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
-                            android.util.Log.d("LyricsDebug", "Lyrics cargadas desde BD: ${_lyrics.value.size} líneas")
-                            return@launch
-                        }
-                    }
-                    android.util.Log.d("LyricsDebug", "No encontrado en BD")
-                    _lyrics.value = emptyList()
-                }
+                android.util.Log.d("LyricsDebug", "✗ No se encontraron letras")
+                _lyrics.value = emptyList()
             } catch (e: Exception) {
-                android.util.Log.e("LyricsDebug", "Excepción general", e)
+                android.util.Log.e("LyricsDebug", "✗ Excepción general", e)
                 _lyrics.value = emptyList()
             }
         }
