@@ -60,6 +60,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Lista de canciones
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
     val songs: StateFlow<List<Song>> = _songs
+    
+    // Orden de visualización actual (usado para next/previous)
+    private val _displayOrder = MutableStateFlow<List<Song>>(emptyList())
+    val displayOrder: StateFlow<List<Song>> = _displayOrder
 
     //Estado del reproductor
     private val _playerState = MutableStateFlow(PlayerState())
@@ -167,7 +171,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getUpcomingSongs(): List<Song> {
         val current = playerState.value.currentSong ?: return _queue.value
-        val base = songs.value
+        // Usar displayOrder si está disponible, sino songs
+        val base = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
         val upcoming = mutableListOf<Song>()
 
         // Primero la cola explícita
@@ -301,7 +306,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun playNextSong() {
-        val list = songs.value
+        // Usar displayOrder si está disponible, sino songs
+        val list = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
         val currentSong = playerState.value.currentSong ?: return
         if (list.isEmpty()) return
 
@@ -362,7 +368,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 
     fun playPreviousSong() {
-        val list = songs.value
+        // Usar displayOrder si está disponible, sino songs
+        val list = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
         val currentSong = playerState.value.currentSong ?: return
         if (list.isEmpty()) return
         // Si hay historial, regresar a la última canción reproducida
@@ -453,7 +460,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_isShuffle.value) {
             // Generar y mantener un orden aleatorio en el momento de activar shuffle
             val current = _playerState.value.currentSong
-            val base = songs.value
+            // Usar displayOrder si está disponible, sino songs
+            val base = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
             val excluded = mutableSetOf<Song>()
             current?.let { excluded.add(it) }
             excluded.addAll(_queue.value)
@@ -475,6 +483,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleLyrics() {
         _showLyrics.value = !_showLyrics.value
+    }
+    
+    fun updateDisplayOrder(orderedSongs: List<Song>) {
+        _displayOrder.value = orderedSongs
     }
 
     fun loadLyricsForSong(song: Song) {
