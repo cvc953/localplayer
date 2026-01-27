@@ -479,40 +479,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadLyricsForSong(song: Song) {
         viewModelScope.launch(Dispatchers.IO) {
-            val resolver = getApplication<Application>().contentResolver
-
-            val baseName = song.title
-            val projection = arrayOf(
-                MediaStore.Files.FileColumns._ID,
-                MediaStore.Files.FileColumns.DISPLAY_NAME
-            )
-
-            val selection = "${MediaStore.Files.FileColumns.DISPLAY_NAME} LIKE ?"
-            val selectionArgs = arrayOf("%$baseName%.lrc")
-
-            val uri = MediaStore.Files.getContentUri("external")
-
-            val cursor = resolver.query(
-                uri,
-                projection,
-                selection,
-                selectionArgs,
-                null
-            )
-
-            cursor?.use {
-                if (it.moveToFirst()) {
-                    val id = it.getLong(0)
-                    val lrcUri = ContentUris.withAppendedId(uri, id)
-
-                    val text = resolver.openInputStream(lrcUri)
-                        ?.bufferedReader()
-                        ?.use { r -> r.readText() }
-
-                    _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
-                } else {
-                    _lyrics.value = emptyList()
+            try {
+                // Intentar cargar desde la ruta del archivo de audio directamente
+                val audioPath = song.uri.path ?: ""
+                val lrcPath = audioPath.substringBeforeLast('.') + ".lrc"
+                
+                val lrcFile = File(lrcPath)
+                if (lrcFile.exists()) {
+                    val text = lrcFile.readText()
+                    _lyrics.value = parseLrc(text)
+                    return@launch
                 }
+                
+                // Si no existe en la ruta directa, buscar en la base de datos con criterios exactos
+                val resolver = getApplication<Application>().contentResolver
+                val baseName = song.title
+                val projection = arrayOf(
+                    MediaStore.Files.FileColumns._ID,
+                    MediaStore.Files.FileColumns.DISPLAY_NAME,
+                    MediaStore.Files.FileColumns.DATA
+                )
+
+                val selection = "${MediaStore.Files.FileColumns.DISPLAY_NAME} = ?"
+                val selectionArgs = arrayOf("$baseName.lrc")
+
+                val uri = MediaStore.Files.getContentUri("external")
+
+                val cursor = resolver.query(
+                    uri,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    null
+                )
+
+                cursor?.use {
+                    if (it.moveToFirst()) {
+                        val id = it.getLong(0)
+                        val lrcUri = ContentUris.withAppendedId(uri, id)
+
+                        val text = resolver.openInputStream(lrcUri)
+                            ?.bufferedReader()
+                            ?.use { r -> r.readText() }
+
+                        _lyrics.value = text?.let { parseLrc(it) } ?: emptyList()
+                    } else {
+                        _lyrics.value = emptyList()
+                    }
+                }
+            } catch (e: Exception) {
+                _lyrics.value = emptyList()
             }
         }
     }
