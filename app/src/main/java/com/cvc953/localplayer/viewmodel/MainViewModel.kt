@@ -1,41 +1,36 @@
 package com.cvc953.localplayer.viewmodel
 
 import android.app.Application
-import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.database.ContentObserver
+import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cvc953.localplayer.model.Song
-import com.cvc953.localplayer.ui.PlayerState
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
 import com.cvc953.localplayer.model.SongRepository
-import android.media.MediaPlayer
-import android.net.Uri
-import android.provider.MediaStore
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
+import com.cvc953.localplayer.services.MusicService
+import com.cvc953.localplayer.ui.PlayerState
 import com.cvc953.localplayer.ui.RepeatMode
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.util.parseLrc
+import java.io.File
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.io.File
-import androidx.compose.runtime.State
-import androidx.core.content.ContextCompat
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.cvc953.localplayer.services.MusicService
-import com.cvc953.localplayer.ui.MusicScreen
-
 
 data class LyricLine(val timeMs: Long, val text: String)
 
@@ -49,23 +44,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val LAST_SONG_ARTIST = "last_song_artist"
         private const val LAST_IS_PLAYING = "last_is_playing"
     }
-    
+
     init {
         instance = this
     }
 
     private val repository = SongRepository(application)
-    private val prefs: SharedPreferences = application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences =
+            application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     // Lista de canciones
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
     val songs: StateFlow<List<Song>> = _songs
-    
+
     // Orden de visualización actual (usado para next/previous)
     private val _displayOrder = MutableStateFlow<List<Song>>(emptyList())
     val displayOrder: StateFlow<List<Song>> = _displayOrder
 
-    //Estado del reproductor
+    // Estado del reproductor
     private val _playerState = MutableStateFlow(PlayerState())
     val playerState: StateFlow<PlayerState> = _playerState
 
@@ -105,20 +101,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val playHistory: MutableList<Song> = mutableListOf()
 
     // Observer para detectar cambios en la biblioteca de música
-    private val mediaStoreObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-        override fun onChange(selfChange: Boolean) {
-            super.onChange(selfChange)
-            // Detectar cambios en la biblioteca y refrescar
-            refreshMusicLibrary()
-        }
-    }
+    private val mediaStoreObserver =
+            object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean) {
+                    super.onChange(selfChange)
+                    // Detectar cambios en la biblioteca y refrescar
+                    refreshMusicLibrary()
+                }
+            }
 
     private fun refreshMusicLibrary() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val newSongs = repository.loadSongs()
                 val currentSongs = _songs.value
-                
+
                 // Solo actualizar si hay cambios (nuevas canciones o eliminadas)
                 if (newSongs.size != currentSongs.size) {
                     _songs.value = newSongs.sortedBy { it.title }
@@ -128,11 +125,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-    
-    fun manualRefreshLibrary() {
-        refreshMusicLibrary()
-    }
 
+    fun manualRefreshLibrary() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                _isScanning.value = true
+                android.util.Log.d("MainViewModel", "Iniciando re-escaneo manual...")
+
+                // Forzar re-escaneo completo ignorando el caché
+                val newSongs = repository.forceRescanSongs()
+
+                android.util.Log.d(
+                        "MainViewModel",
+                        "Re-escaneo completo: ${newSongs.size} canciones"
+                )
+
+                // Actualizar la lista con las nuevas canciones
+                _songs.value = newSongs.sortedBy { it.title }
+
+                _isScanning.value = false
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Error en re-escaneo manual", e)
+                _isScanning.value = false
+            }
+        }
+    }
 
     fun addToQueueNext(song: Song) {
         val list = _queue.value.toMutableList()
@@ -178,28 +195,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // Primero la cola explícita
         upcoming.addAll(_queue.value)
 
-        val remaining = when {
-            _isShuffle.value -> {
-                // Usar caché si existe, si no generarla en este momento
-                if (cachedShuffledRemaining == null) {
-                    val excluded = mutableSetOf<Song>()
-                    excluded.addAll(_queue.value)
-                    excluded.add(current)
-                    cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
+        val remaining =
+                when {
+                    _isShuffle.value -> {
+                        // Usar caché si existe, si no generarla en este momento
+                        if (cachedShuffledRemaining == null) {
+                            val excluded = mutableSetOf<Song>()
+                            excluded.addAll(_queue.value)
+                            excluded.add(current)
+                            cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
+                        }
+                        // Asegurarnos de quitar cualquier canción que ahora esté en la cola
+                        cachedShuffledRemaining =
+                                cachedShuffledRemaining?.filter { it !in _queue.value }
+                        cachedShuffledRemaining ?: emptyList()
+                    }
+                    _repeatMode.value == RepeatMode.ALL -> {
+                        val idx = base.indexOf(current)
+                        if (idx == -1) base else base.drop(idx + 1) + base.take(idx)
+                    }
+                    else -> {
+                        val idx = base.indexOf(current)
+                        if (idx == -1) emptyList() else base.drop(idx + 1)
+                    }
                 }
-                // Asegurarnos de quitar cualquier canción que ahora esté en la cola
-                cachedShuffledRemaining = cachedShuffledRemaining?.filter { it !in _queue.value }
-                cachedShuffledRemaining ?: emptyList()
-            }
-            _repeatMode.value == RepeatMode.ALL -> {
-                val idx = base.indexOf(current)
-                if (idx == -1) base else base.drop(idx + 1) + base.take(idx)
-            }
-            else -> {
-                val idx = base.indexOf(current)
-                if (idx == -1) emptyList() else base.drop(idx + 1)
-            }
-        }
 
         upcoming.addAll(remaining)
         return upcoming
@@ -214,14 +233,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return next
     }
 
-
     init {
         // Registrar el observer para detectar cambios en la biblioteca
-        getApplication<Application>().contentResolver.registerContentObserver(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            true,
-            mediaStoreObserver
-        )
+        getApplication<Application>()
+                .contentResolver
+                .registerContentObserver(
+                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                        true,
+                        mediaStoreObserver
+                )
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -232,13 +252,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val temp = mutableListOf<Song>()
                     // Escaneo incremental: actualizamos _songs a medida que se encuentran canciones
                     repository.scanSongsStreaming(
-                        onSongFound = { song ->
-                            temp.add(song)
-                            _songs.value = temp.sortedBy { it.title }
-                        },
-                        onProgress = { current, total ->
-                            _scanProgress.value = if (total > 0) current.toFloat() / total else 0f
-                        }
+                            onSongFound = { song ->
+                                temp.add(song)
+                                _songs.value = temp.sortedBy { it.title }
+                            },
+                            onProgress = { current, total ->
+                                _scanProgress.value =
+                                        if (total > 0) current.toFloat() / total else 0f
+                            }
                     )
                     _isScanning.value = false
                 } else {
@@ -259,39 +280,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mediaPlayer?.release()
 
         try {
-            mediaPlayer = MediaPlayer().apply {
-                setDataSource(getApplication(), song.uri)
-                prepare()
-                if (autoPlay) start()
+            mediaPlayer =
+                    MediaPlayer().apply {
+                        setDataSource(getApplication(), song.uri)
+                        prepare()
+                        if (autoPlay) start()
 
-                setOnCompletionListener {
-                    if (_repeatMode.value == RepeatMode.ONE) {
-                        // reinicia la misma canción
-                        seekTo(0)
-                        mediaPlayer?.start()
-                        _playerState.update { it.copy(isPlaying = true) }
-                    } else {
-                        playNextSong()
+                        setOnCompletionListener {
+                            if (_repeatMode.value == RepeatMode.ONE) {
+                                // reinicia la misma canción
+                                seekTo(0)
+                                mediaPlayer?.start()
+                                _playerState.update { it.copy(isPlaying = true) }
+                            } else {
+                                playNextSong()
+                            }
+                        }
                     }
-                }
 
-            }
-
-            _playerState.value = PlayerState(
-                currentSong = song,
-                isPlaying = autoPlay,
-                position = 0L,
-                duration = mediaPlayer?.duration?.toLong() ?: 0L
-            )
+            _playerState.value =
+                    PlayerState(
+                            currentSong = song,
+                            isPlaying = autoPlay,
+                            position = 0L,
+                            duration = mediaPlayer?.duration?.toLong() ?: 0L
+                    )
 
             if (autoPlay) startPositionUpdates() else progressJob?.cancel()
             loadLyricsForSong(song)
-
-        } catch (e: Exception){
+        } catch (e: Exception) {
             playNextSong()
         }
     }
-
 
     fun togglePlayPause() {
         mediaPlayer?.let {
@@ -302,7 +322,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _playerState.value.currentSong?.let { song -> saveLastSong(song, false) }
             } else {
                 it.start()
-                //startProgressTracking()
+                // startProgressTracking()
                 startPositionUpdates()
                 _playerState.value = _playerState.value.copy(isPlaying = true)
                 _playerState.value.currentSong?.let { song -> saveLastSong(song, true) }
@@ -325,52 +345,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val nextSong = when {
-            _isShuffle.value -> {
-                // Respetar el orden aleatorio persistente generado al activar shuffle
-                if (cachedShuffledRemaining == null) {
-                    val excluded = mutableSetOf<Song>()
-                    excluded.addAll(_queue.value)
-                    excluded.add(currentSong)
-                    cachedShuffledRemaining = list.filter { it !in excluded }.shuffled()
-                }
-                val next = cachedShuffledRemaining?.firstOrNull()
-                if (next != null) {
-                    // consumir el primero de la caché
-                    cachedShuffledRemaining = cachedShuffledRemaining?.drop(1)
-                    next
-                } else {
-                    // fallback: elige cualquiera distinto
-                    if (list.size == 1) currentSong else {
-                        var randomSong: Song
-                        do {
-                            randomSong = list.random()
-                        } while (randomSong == currentSong)
-                        randomSong
+        val nextSong =
+                when {
+                    _isShuffle.value -> {
+                        // Respetar el orden aleatorio persistente generado al activar shuffle
+                        if (cachedShuffledRemaining == null) {
+                            val excluded = mutableSetOf<Song>()
+                            excluded.addAll(_queue.value)
+                            excluded.add(currentSong)
+                            cachedShuffledRemaining = list.filter { it !in excluded }.shuffled()
+                        }
+                        val next = cachedShuffledRemaining?.firstOrNull()
+                        if (next != null) {
+                            // consumir el primero de la caché
+                            cachedShuffledRemaining = cachedShuffledRemaining?.drop(1)
+                            next
+                        } else {
+                            // fallback: elige cualquiera distinto
+                            if (list.size == 1) currentSong
+                            else {
+                                var randomSong: Song
+                                do {
+                                    randomSong = list.random()
+                                } while (randomSong == currentSong)
+                                randomSong
+                            }
+                        }
+                    }
+                    _repeatMode.value == RepeatMode.ONE -> {
+                        // Repetir la misma canción
+                        currentSong
+                    }
+                    else -> {
+                        // Avanza normalmente
+                        val currentIndex = list.indexOf(currentSong)
+                        val nextIndex = currentIndex + 1
+                        if (nextIndex < list.size) list[nextIndex]
+                        else if (_repeatMode.value == RepeatMode.ALL) list[0]
+                        else return // NO hay siguiente canción si RepeatMode.NONE y estamos al
+                        // final
                     }
                 }
-            }
-            _repeatMode.value == RepeatMode.ONE -> {
-                // Repetir la misma canción
-                currentSong
-            }
-            else -> {
-                // Avanza normalmente
-                val currentIndex = list.indexOf(currentSong)
-                val nextIndex = currentIndex + 1
-                if (nextIndex < list.size) list[nextIndex]
-                else if (_repeatMode.value == RepeatMode.ALL) list[0]
-                else return // NO hay siguiente canción si RepeatMode.NONE y estamos al final
-            }
-        }
 
         // push current to history
         playHistory.add(currentSong)
         playSong(nextSong)
         startService(getApplication(), nextSong)
     }
-
-
 
     fun playPreviousSong() {
         // Usar displayOrder si está disponible, sino songs
@@ -385,35 +406,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val previousSong = when {
-            _isShuffle.value -> {
-                // Si no hay historial, intentar tomar la última consumida de la caché
-                // (no es trivial recuperar la "anterior" en shuffle sin historial)
-                if (list.size == 1) currentSong else {
-                    var randomSong: Song
-                    do {
-                        randomSong = list.random()
-                    } while (randomSong == currentSong)
-                    randomSong
+        val previousSong =
+                when {
+                    _isShuffle.value -> {
+                        // Si no hay historial, intentar tomar la última consumida de la caché
+                        // (no es trivial recuperar la "anterior" en shuffle sin historial)
+                        if (list.size == 1) currentSong
+                        else {
+                            var randomSong: Song
+                            do {
+                                randomSong = list.random()
+                            } while (randomSong == currentSong)
+                            randomSong
+                        }
+                    }
+                    _repeatMode.value == RepeatMode.ONE -> {
+                        currentSong
+                    }
+                    else -> {
+                        val currentIndex = list.indexOf(currentSong)
+                        val prevIndex = currentIndex - 1
+                        if (prevIndex >= 0) list[prevIndex]
+                        else if (_repeatMode.value == RepeatMode.ALL) list.last() else return
+                    }
                 }
-            }
-            _repeatMode.value == RepeatMode.ONE -> {
-                currentSong
-            }
-            else -> {
-                val currentIndex = list.indexOf(currentSong)
-                val prevIndex = currentIndex - 1
-                if (prevIndex >= 0) list[prevIndex]
-                else if (_repeatMode.value == RepeatMode.ALL) list.last()
-                else return
-            }
-        }
 
         playSong(previousSong)
         startService(getApplication(), previousSong)
     }
-
-
 
     override fun onCleared() {
         progressJob?.cancel()
@@ -432,31 +452,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _isPlayerScreenVisible.value = false
     }
 
-
     fun seekTo(position: Long) {
         mediaPlayer?.seekTo(position.toInt())
-        _playerState.update {
-            it.copy(position = position)
-        }
+        _playerState.update { it.copy(position = position) }
     }
-
 
     private var positionJob: Job? = null
 
     private fun startPositionUpdates() {
         positionJob?.cancel()
-        positionJob = viewModelScope.launch {
-            while (true) {
-                val player = mediaPlayer ?: break
-                _playerState.update {
-                    it.copy(
-                        position = player.currentPosition.toLong(),
-                        duration = player.duration.toLong()
-                    )
+        positionJob =
+                viewModelScope.launch {
+                    while (true) {
+                        val player = mediaPlayer ?: break
+                        _playerState.update {
+                            it.copy(
+                                    position = player.currentPosition.toLong(),
+                                    duration = player.duration.toLong()
+                            )
+                        }
+                        delay(50)
+                    }
                 }
-                delay(50)
-            }
-        }
     }
 
     // Cambiar aleatorio
@@ -479,17 +496,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Cambiar repetición
     fun toggleRepeat() {
-        _repeatMode.value = when (_repeatMode.value) {
-            RepeatMode.NONE -> RepeatMode.ONE
-            RepeatMode.ONE -> RepeatMode.ALL
-            RepeatMode.ALL -> RepeatMode.NONE
-        }
+        _repeatMode.value =
+                when (_repeatMode.value) {
+                    RepeatMode.NONE -> RepeatMode.ONE
+                    RepeatMode.ONE -> RepeatMode.ALL
+                    RepeatMode.ALL -> RepeatMode.NONE
+                }
     }
 
     fun toggleLyrics() {
         _showLyrics.value = !_showLyrics.value
     }
-    
+
     fun updateDisplayOrder(orderedSongs: List<Song>) {
         _displayOrder.value = orderedSongs
     }
@@ -498,97 +516,120 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 android.util.Log.d("LyricsDebug", "Cargando lyrics para: ${song.title}")
-                
+
                 // Obtener la ruta del archivo (desde song.filePath o desde ContentResolver)
                 var audioFilePath = song.filePath
-                
+
                 if (audioFilePath.isNullOrEmpty()) {
                     android.util.Log.d("LyricsDebug", "FilePath vacío, consultando ContentResolver")
                     // Si no tenemos filePath, obtenerlo del ContentResolver
                     val resolver = getApplication<Application>().contentResolver
                     val projection = arrayOf(MediaStore.Audio.Media.DATA)
-                    resolver.query(
-                        song.uri,
-                        projection,
-                        null,
-                        null,
-                        null
-                    )?.use { cursor ->
+                    resolver.query(song.uri, projection, null, null, null)?.use { cursor ->
                         if (cursor.moveToFirst()) {
                             val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
                             if (dataCol >= 0) {
                                 audioFilePath = cursor.getString(dataCol)
-                                android.util.Log.d("LyricsDebug", "FilePath obtenido: $audioFilePath")
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "FilePath obtenido: $audioFilePath"
+                                )
                             }
                         }
                     }
                 }
-                
+
                 android.util.Log.d("LyricsDebug", "FilePath final: $audioFilePath")
-                
+
                 // Si tenemos la ruta del archivo, buscar .lrc en el mismo directorio
                 if (!audioFilePath.isNullOrEmpty()) {
                     val audioFile = File(audioFilePath)
                     val audioDir = audioFile.parentFile
                     val audioNameWithoutExt = audioFile.nameWithoutExtension
-                    
+
                     android.util.Log.d("LyricsDebug", "Archivo: ${audioFile.absolutePath}")
                     android.util.Log.d("LyricsDebug", "Directorio: ${audioDir?.absolutePath}")
                     android.util.Log.d("LyricsDebug", "Nombre sin ext: $audioNameWithoutExt")
-                    
+
                     if (audioDir != null && audioDir.exists()) {
                         android.util.Log.d("LyricsDebug", "Listando archivos en directorio...")
-                        
+
                         // Intentar con el nombre exacto del archivo
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
                         android.util.Log.d("LyricsDebug", "Buscando: ${lrcFile.name}")
-                        
+
                         if (lrcFile.exists()) {
                             try {
                                 val text = lrcFile.readText()
-                                android.util.Log.d("LyricsDebug", "✓ Archivo encontrado: ${lrcFile.name}, ${text.length} chars")
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ Archivo encontrado: ${lrcFile.name}, ${text.length} chars"
+                                )
                                 _lyrics.value = parseLrc(text)
-                                android.util.Log.d("LyricsDebug", "✓ Lyrics parseadas: ${_lyrics.value.size} líneas")
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ Lyrics parseadas: ${_lyrics.value.size} líneas"
+                                )
                                 return@launch
                             } catch (e: Exception) {
                                 android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                             }
                         }
-                        
+
                         // Si no existe, buscar cualquier .lrc en el directorio
-                        val lrcFiles = audioDir.listFiles { _, name -> name.endsWith(".lrc", ignoreCase = true) }
-                        android.util.Log.d("LyricsDebug", "Archivos .lrc encontrados: ${lrcFiles?.size ?: 0}")
-                        
+                        val lrcFiles =
+                                audioDir.listFiles { _, name ->
+                                    name.endsWith(".lrc", ignoreCase = true)
+                                }
+                        android.util.Log.d(
+                                "LyricsDebug",
+                                "Archivos .lrc encontrados: ${lrcFiles?.size ?: 0}"
+                        )
+
                         lrcFiles?.forEach { file ->
                             android.util.Log.d("LyricsDebug", "Evaluando: ${file.name}")
                             val lrcNameWithoutExt = file.nameWithoutExtension
-                            
+
                             // Comparar ignorando caracteres problemáticos
-                            val audioClean = audioNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").lowercase().trim()
-                            val lrcClean = lrcNameWithoutExt.replace(Regex("[:\\\\/*?\"<>|]"), "").lowercase().trim()
-                            
+                            val audioClean =
+                                    audioNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
+                            val lrcClean =
+                                    lrcNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
+
                             android.util.Log.d("LyricsDebug", "  Audio clean: '$audioClean'")
                             android.util.Log.d("LyricsDebug", "  LRC clean: '$lrcClean'")
-                            
+
                             if (audioClean == lrcClean) {
                                 try {
                                     val text = file.readText()
-                                    android.util.Log.d("LyricsDebug", "✓ Match encontrado: ${file.name}")
+                                    android.util.Log.d(
+                                            "LyricsDebug",
+                                            "✓ Match encontrado: ${file.name}"
+                                    )
                                     _lyrics.value = parseLrc(text)
-                                    android.util.Log.d("LyricsDebug", "✓ Lyrics cargadas: ${_lyrics.value.size} líneas")
+                                    android.util.Log.d(
+                                            "LyricsDebug",
+                                            "✓ Lyrics cargadas: ${_lyrics.value.size} líneas"
+                                    )
                                     return@launch
                                 } catch (e: Exception) {
                                     android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                                 }
                             }
                         }
-                        
+
                         android.util.Log.d("LyricsDebug", "✗ No se encontró .lrc coincidente")
                     } else {
                         android.util.Log.d("LyricsDebug", "✗ Directorio no existe o es null")
                     }
                 }
-                
+
                 android.util.Log.d("LyricsDebug", "✗ No se encontraron letras")
                 _lyrics.value = emptyList()
             } catch (e: Exception) {
@@ -599,12 +640,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun startService(context: Context, song: Song, isPlaying: Boolean = true) {
-        ContextCompat.startForegroundService(context, Intent(context, MusicService::class.java).apply {
-            putExtra("SONG_URI", song.uri.toString())
-            putExtra("TITLE", song.title)
-            putExtra("ARTIST", song.artist)
-            putExtra("IS_PLAYING", isPlaying)
-        })
+        ContextCompat.startForegroundService(
+                context,
+                Intent(context, MusicService::class.java).apply {
+                    putExtra("SONG_URI", song.uri.toString())
+                    putExtra("TITLE", song.title)
+                    putExtra("ARTIST", song.artist)
+                    putExtra("IS_PLAYING", isPlaying)
+                }
+        )
         saveLastSong(song, isPlaying)
     }
 
@@ -617,35 +661,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             apply()
         }
     }
-    
+
     private fun loadLastSong() {
         try {
             val lastUri = prefs.getString(LAST_SONG_URI, null) ?: return
             val lastTitle = prefs.getString(LAST_SONG_TITLE, "Reproduciendo") ?: "Reproduciendo"
             val lastArtist = prefs.getString(LAST_SONG_ARTIST, "") ?: ""
             val lastIsPlaying = prefs.getBoolean(LAST_IS_PLAYING, false)
-            
+
             // Verificar que haya canciones cargadas
             if (_songs.value.isEmpty()) {
-                android.util.Log.d("MainViewModel", "No hay canciones cargadas, no se puede restaurar última canción")
+                android.util.Log.d(
+                        "MainViewModel",
+                        "No hay canciones cargadas, no se puede restaurar última canción"
+                )
                 return
             }
-            
+
             // Buscar la canción en la lista
             val song = _songs.value.find { it.uri.toString() == lastUri }
-            
+
             if (song != null) {
                 // Reproducir o preparar según estado previo
                 playSong(song, autoPlay = lastIsPlaying)
                 startService(getApplication(), song, lastIsPlaying)
             } else {
-                android.util.Log.d("MainViewModel", "Canción guardada ya no existe en la biblioteca")
+                android.util.Log.d(
+                        "MainViewModel",
+                        "Canción guardada ya no existe en la biblioteca"
+                )
             }
         } catch (e: Exception) {
             android.util.Log.e("MainViewModel", "Error al cargar última canción", e)
         }
     }
 }
-
-
-
