@@ -141,9 +141,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 )
 
                 // Actualizar la lista con las nuevas canciones
-                _songs.value = newSongs.sortedBy { it.title }
+                withContext(Dispatchers.Main) {
+                    _songs.value = newSongs.sortedBy { it.title }
+                    android.util.Log.d(
+                            "MainViewModel",
+                            "Lista actualizada en UI: ${_songs.value.size} canciones"
+                    )
+                }
 
                 _isScanning.value = false
+                android.util.Log.d("MainViewModel", "Re-escaneo completado exitosamente")
             } catch (e: Exception) {
                 android.util.Log.e("MainViewModel", "Error en re-escaneo manual", e)
                 _isScanning.value = false

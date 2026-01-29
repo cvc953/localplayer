@@ -367,7 +367,10 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                 }
 
                 // Barra de scroll alfabético
-                if (sortMode == SortMode.TITLE_ASC || sortMode == SortMode.TITLE_DESC) {
+                if (sortMode == SortMode.TITLE_ASC ||
+                                sortMode == SortMode.TITLE_DESC ||
+                                sortMode == SortMode.ARTIST_ASC
+                ) {
                     val alphabet = listOf("#") + ('A'..'Z').map { it.toString() }
                     var columnHeight by remember { mutableStateOf(0f) }
                     val density = LocalDensity.current
@@ -381,12 +384,23 @@ fun MusicScreen(viewModel: MainViewModel = viewModel(), onOpenPlayer: () -> Unit
                         val index =
                                 if (letter == "#") {
                                     sortedSongs.indexOfFirst {
-                                        val firstChar = it.title.firstOrNull()?.uppercaseChar()
+                                        val firstChar =
+                                                when (sortMode) {
+                                                    SortMode.ARTIST_ASC ->
+                                                            it.artist.firstOrNull()?.uppercaseChar()
+                                                    else -> it.title.firstOrNull()?.uppercaseChar()
+                                                }
                                         firstChar == null || !firstChar.isLetter()
                                     }
                                 } else {
                                     sortedSongs.indexOfFirst {
-                                        it.title.firstOrNull()?.uppercaseChar() == letter[0]
+                                        val firstChar =
+                                                when (sortMode) {
+                                                    SortMode.ARTIST_ASC ->
+                                                            it.artist.firstOrNull()?.uppercaseChar()
+                                                    else -> it.title.firstOrNull()?.uppercaseChar()
+                                                }
+                                        firstChar == letter[0]
                                     }
                                 }
                         if (index >= 0) {
