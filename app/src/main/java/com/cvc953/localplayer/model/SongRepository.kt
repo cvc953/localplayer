@@ -2,7 +2,6 @@ package com.cvc953.localplayer.model
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -26,7 +25,6 @@ class SongRepository(private val context: Context) {
                 listOf(
                         // Apps de mensajería y redes sociales
                         "/WhatsApp/",
-                        "/Telegram/",
                         "/Snapchat/",
                         "/TikTok/",
                         "/Instagram/",
@@ -109,10 +107,18 @@ class SongRepository(private val context: Context) {
      * manualmente la biblioteca.
      */
     fun forceRescanSongs(): List<Song> {
+        android.util.Log.d("SongRepository", "Iniciando forceRescanSongs...")
         val songs = scanSongsFromMediaStore()
+        android.util.Log.d(
+                "SongRepository",
+                "Escaneo completado: ${songs.size} canciones encontradas"
+        )
         if (songs.isNotEmpty()) {
             saveSongsToCache(songs)
             prefs.setFirstScanDone()
+            android.util.Log.d("SongRepository", "Caché actualizado")
+        } else {
+            android.util.Log.w("SongRepository", "No se encontraron canciones en el escaneo")
         }
         return songs
     }
@@ -130,6 +136,8 @@ class SongRepository(private val context: Context) {
     // -------------------------
     private fun scanSongsFromMediaStore(): List<Song> {
         val list = mutableListOf<Song>()
+        var totalScanned = 0
+        var excluded = 0
 
         val projection =
                 arrayOf(
@@ -162,6 +170,7 @@ class SongRepository(private val context: Context) {
             val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
             while (it.moveToNext()) {
+                totalScanned++
                 val id = it.getLong(idCol)
                 val uri =
                         Uri.withAppendedPath(
@@ -173,20 +182,19 @@ class SongRepository(private val context: Context) {
 
                 // Excluir archivos de WhatsApp y otras apps de mensajería
                 if (isExcludedPath(filePath)) {
+                    excluded++
                     continue
                 }
 
-                // Cargar la carátula
-                val albumArt =
-                        try {
-                            MediaMetadataRetriever().run {
-                                setDataSource(context, uri)
-                                embeddedPicture.also { release() }
-                            }
-                        } catch (_: Exception) {
-                            null
-                        }
+                // Excluir archivos muy cortos (notificaciones, efectos de sonido)
+                // Duración mínima: 30 segundos (30000 ms)
+                if (duration < 30000) {
+                    excluded++
+                    continue
+                }
 
+                // No cargar carátula durante el escaneo para mayor velocidad
+                // Las carátulas se cargarán bajo demanda cuando se necesiten
                 list.add(
                         Song(
                                 id = id,
@@ -195,14 +203,18 @@ class SongRepository(private val context: Context) {
                                 album = it.getString(albumCol),
                                 year = it.getInt(yearCol),
                                 uri = uri,
-                                duration = it.getLong(durCol),
-                                albumArt = albumArt,
+                                duration = duration,
+                                albumArt = null,
                                 filePath = filePath
                         )
                 )
             }
         }
 
+        android.util.Log.d(
+                "SongRepository",
+                "Escaneo: Total=$totalScanned, Excluidos=$excluded, Agregados=${list.size}"
+        )
         return list
     }
 
