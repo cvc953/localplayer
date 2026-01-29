@@ -6,11 +6,11 @@ import android.media.MediaMetadataRetriever
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,11 +48,11 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun SongItem(
-    song: Song,
-    isPlaying: Boolean,
-    onClick: () -> Unit,
-    onQueueNext: () -> Unit,
-    onQueueEnd: () -> Unit
+        song: Song,
+        isPlaying: Boolean,
+        onClick: () -> Unit,
+        onQueueNext: () -> Unit,
+        onQueueEnd: () -> Unit
 ) {
 
     val context = LocalContext.current
@@ -68,76 +68,84 @@ fun SongItem(
                     albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
                 }
                 retriever.release()
-            } catch (_: Exception) {
-
-            }
+            } catch (_: Exception) {}
         }
     }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0x00FFFFFF))
-            .clickable { onClick() }
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            modifier =
+                    Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0x00FFFFFF))
+                            .clickable { onClick() }
+                            .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
     ) {
-
         Image(
-            painter = albumArt?.let {
-                BitmapPainter(it.asImageBitmap())
-            } ?: painterResource(R.drawable.ic_default_album),
-            contentDescription = null,
-            modifier = Modifier
-                .size(60.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
+                painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) }
+                                ?: painterResource(R.drawable.ic_default_album),
+                contentDescription = null,
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
         )
 
         Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = song.title,
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                    text = song.title,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = song.artist,
-                color = Color(0xFFCCCCCC),
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                    text = song.artist,
+                    color = Color(0xFFCCCCCC),
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
             )
         }
 
-        Text(
-            text = formatDuration(song.duration),
-            color = Color(0xFFCCCCCC),
-            fontSize = 12.sp
-        )
+        Text(text = formatDuration(song.duration), color = Color(0xFFCCCCCC), fontSize = 12.sp)
 
         var menuExpanded by remember { mutableStateOf(false) }
         Box {
             IconButton(onClick = { menuExpanded = true }) {
-                Icon(Icons.Default.MoreVert, contentDescription = "Más opciones", tint = Color.White)
+                Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "Más opciones",
+                        tint = Color.White
+                )
             }
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                DropdownMenuItem(text = { Text("Reproducir ahora") }, onClick = {
-                    menuExpanded = false
-                    onClick()
-                })
-                DropdownMenuItem(text = { Text("Añadir como siguiente") }, onClick = {
-                    menuExpanded = false
-                    onQueueNext()
-                })
-                DropdownMenuItem(text = { Text("Añadir al final") }, onClick = {
-                    menuExpanded = false
-                    onQueueEnd()
-                })
+            DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                    containerColor = Color(0xFF1A1A1A),
+                    modifier = Modifier.background(Color(0xFF1A1A1A))
+            ) {
+                DropdownMenuItem(
+                        text = { Text("Reproducir ahora", color = Color.White) },
+                        onClick = {
+                            menuExpanded = false
+                            onClick()
+                        }
+                )
+                DropdownMenuItem(
+                        text = { Text("Añadir como siguiente", color = Color.White) },
+                        onClick = {
+                            menuExpanded = false
+                            onQueueNext()
+                        }
+                )
+                DropdownMenuItem(
+                        text = { Text("Añadir al final", color = Color.White) },
+                        onClick = {
+                            menuExpanded = false
+                            onQueueEnd()
+                        }
+                )
             }
         }
     }
