@@ -20,54 +20,52 @@ import com.cvc953.localplayer.util.LrcLine
 
 @Composable
 fun LyricsView(
-    lyrics: List<LrcLine>,
-    currentPosition: Long,
-    modifier: Modifier = Modifier,
-    onLineClick: (Long) -> Unit = {}
+        lyrics: List<LrcLine>,
+        currentPosition: Long,
+        modifier: Modifier = Modifier,
+        onLineClick: (Long) -> Unit = {}
 ) {
     val listState = rememberLazyListState()
 
-    val currentIndex = remember(currentPosition) {
-        lyrics.indexOfLast { it.timeMs <= currentPosition }
-            .coerceAtLeast(0)
-    }
+    val currentIndex =
+            remember(currentPosition) {
+                lyrics.indexOfLast { it.timeMs <= currentPosition }.coerceAtLeast(0)
+            }
 
     // Scroll automático centrado
     LaunchedEffect(currentIndex) {
         listState.animateScrollToItem(
-            index = currentIndex,
-            scrollOffset = -listState.layoutInfo.viewportSize.height / 6
+                index = currentIndex,
+                scrollOffset = -listState.layoutInfo.viewportSize.height / 6
         )
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0D0D0D),
-                        Color.Black,
-                        Color(0xFF0D0D0D)
-                    )
-                )
-            )
+            modifier =
+                    modifier.fillMaxSize()
+                            .background(
+                                    Brush.verticalGradient(
+                                            listOf(
+                                                    Color(0xFF0D0D0D),
+                                                    Color.Black,
+                                                    Color(0xFF0D0D0D)
+                                            )
+                                    )
+                            )
     ) {
         LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(vertical = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize()
+                state = listState,
+                contentPadding = PaddingValues(vertical = 120.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize()
         ) {
             itemsIndexed(lyrics) { index, line ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { onLineClick(line.timeMs) }
-                ) {
+                Box(modifier = Modifier.fillMaxSize().clickable { onLineClick(line.timeMs) }) {
                     LyricLine(
-                        text = line.text,
-                        active = index == currentIndex
+                            text = line.text,
+                            words = line.words,
+                            currentPosition = currentPosition,
+                            active = index == currentIndex
                     )
                 }
             }
