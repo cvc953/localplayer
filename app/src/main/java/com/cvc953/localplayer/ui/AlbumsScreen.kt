@@ -264,6 +264,8 @@ fun AlbumDetailScreen(viewModel: MainViewModel, albumName: String, onBack: () ->
                         song = song,
                         isPlaying = isCurrent,
                         onClick = {
+                            // Usar el orden del album como cola de reproduccion
+                            viewModel.updateDisplayOrder(albumSongs)
                             viewModel.playSong(song)
                             viewModel.startService(context, song)
                         },
