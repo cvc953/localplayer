@@ -79,9 +79,6 @@ fun SongsContent(viewModel: MainViewModel) {
                         }
                 }
 
-        // Notificar al ViewModel del orden actual para reproducción secuencial
-        LaunchedEffect(sortedSongs) { viewModel.updateDisplayOrder(sortedSongs) }
-
         val playerState by viewModel.playerState.collectAsState()
         val context = LocalContext.current
         val listState = rememberLazyListState()
@@ -439,6 +436,14 @@ fun SongsContent(viewModel: MainViewModel) {
                                                                                         playerState
                                                                                                 .isPlaying,
                                                                         onClick = {
+                                                                                // Usar el orden
+                                                                                // actual solo al
+                                                                                // reproducir desde
+                                                                                // esta vista
+                                                                                viewModel
+                                                                                        .updateDisplayOrder(
+                                                                                                sortedSongs
+                                                                                        )
                                                                                 viewModel.playSong(
                                                                                         song
                                                                                 )
