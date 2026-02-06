@@ -313,7 +313,11 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                             viewModel.startService(context, song)
                         },
                         onQueueNext = { viewModel.addToQueueNext(song) },
-                        onQueueEnd = { viewModel.addToQueueEnd(song) }
+                        onQueueEnd = { viewModel.addToQueueEnd(song) },
+                        playlists = playlists,
+                        onAddToPlaylist = { targetPlaylistName, songId ->
+                            viewModel.addSongToPlaylist(targetPlaylistName, songId)
+                        }
                 )
             }
         }

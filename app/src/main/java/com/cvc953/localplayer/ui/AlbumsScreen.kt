@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -225,6 +226,7 @@ fun AlbumsScreen(viewModel: MainViewModel, onAlbumClick: (String) -> Unit) {
 fun AlbumDetailScreen(viewModel: MainViewModel, albumName: String, onBack: () -> Unit) {
     val songs by viewModel.songs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
+    val playlists: List<Playlist> by viewModel.playlists.collectAsState()
     val albumSongs = remember(songs, albumName) { songs.filter { it.album == albumName } }
     val context = LocalContext.current
 
@@ -270,7 +272,11 @@ fun AlbumDetailScreen(viewModel: MainViewModel, albumName: String, onBack: () ->
                             viewModel.startService(context, song)
                         },
                         onQueueNext = { viewModel.addToQueueNext(song) },
-                        onQueueEnd = { viewModel.addToQueueEnd(song) }
+                        onQueueEnd = { viewModel.addToQueueEnd(song) },
+                        playlists = playlists,
+                        onAddToPlaylist = { playlistName, songId ->
+                            viewModel.addSongToPlaylist(playlistName, songId)
+                        }
                 )
             }
         }

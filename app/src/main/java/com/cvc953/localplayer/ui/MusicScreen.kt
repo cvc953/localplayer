@@ -49,6 +49,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun SongsContent(viewModel: MainViewModel) {
         val songs by viewModel.songs.collectAsState()
+        val playlists by viewModel.playlists.collectAsState()
         var searchQuery by rememberSaveable { mutableStateOf("") }
         var showSearchBar by rememberSaveable { mutableStateOf(false) }
         var sortMode by rememberSaveable { mutableStateOf(SortMode.TITLE_ASC) }
@@ -463,6 +464,16 @@ fun SongsContent(viewModel: MainViewModel) {
                                                                                 viewModel
                                                                                         .addToQueueEnd(
                                                                                                 song
+                                                                                        )
+                                                                        },
+                                                                        playlists = playlists,
+                                                                        onAddToPlaylist = {
+                                                                                playlistName,
+                                                                                songId ->
+                                                                                viewModel
+                                                                                        .addSongToPlaylist(
+                                                                                                playlistName,
+                                                                                                songId
                                                                                         )
                                                                         }
                                                                 )

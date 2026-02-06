@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -237,6 +238,7 @@ private enum class ArtistSortMode {
 fun ArtistDetailScreen(viewModel: MainViewModel, artistName: String, onBack: () -> Unit) {
     val songs by viewModel.songs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
+    val playlists: List<Playlist> by viewModel.playlists.collectAsState()
     val artistSongs = remember(songs, artistName) { songs.filter { it.artist == artistName } }
     val context = LocalContext.current
 
@@ -282,7 +284,11 @@ fun ArtistDetailScreen(viewModel: MainViewModel, artistName: String, onBack: () 
                             viewModel.startService(context, song)
                         },
                         onQueueNext = { viewModel.addToQueueNext(song) },
-                        onQueueEnd = { viewModel.addToQueueEnd(song) }
+                        onQueueEnd = { viewModel.addToQueueEnd(song) },
+                        playlists = playlists,
+                        onAddToPlaylist = { playlistName, songId ->
+                            viewModel.addSongToPlaylist(playlistName, songId)
+                        }
                 )
             }
         }

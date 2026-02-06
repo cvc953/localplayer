@@ -723,6 +723,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return true
     }
 
+    fun addSongToPlaylist(playlistName: String, songId: Long): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+        
+        // Si la canción ya está en la playlist, no agregarla
+        if (songId in playlist.songIds) return false
+        
+        val updated = _playlists.value.map { p ->
+            if (p.name == playlistName) {
+                p.copy(songIds = p.songIds + songId)
+            } else {
+                p
+            }
+        }
+        
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
     private fun loadPlaylistsFromPrefs(): List<Playlist> {
         val raw = prefs.getString(PLAYLISTS_JSON, null) ?: return emptyList()
         return try {
