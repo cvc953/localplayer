@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.viewmodel.MainViewModel
-import kotlinx.coroutines.Dispatchers
 
 @Composable
 fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit) {
@@ -173,9 +172,10 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                 ) {
                     items(sortedPlaylists) { playlist ->
                         Row(
-                                modifier = Modifier.fillMaxWidth()
-                                        .padding(vertical = 8.dp)
-                                        .clickable { onPlaylistClick(playlist.name) },
+                                modifier =
+                                        Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
+                                            onPlaylistClick(playlist.name)
+                                        },
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
@@ -258,19 +258,18 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
     val songs by viewModel.songs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
     val playlists: List<Playlist> by viewModel.playlists.collectAsState()
-    
-    val playlist = remember(playlists, playlistName) {
-        playlists.find { it.name == playlistName }
-    }
-    
-    val playlistSongs = remember(songs, playlist) {
-        if (playlist != null) {
-            songs.filter { it.id in playlist.songIds }
-        } else {
-            emptyList()
-        }
-    }
-    
+
+    val playlist = remember(playlists, playlistName) { playlists.find { it.name == playlistName } }
+
+    val playlistSongs =
+            remember(songs, playlist) {
+                if (playlist != null) {
+                    songs.filter { it.id in playlist.songIds }
+                } else {
+                    emptyList()
+                }
+            }
+
     val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
