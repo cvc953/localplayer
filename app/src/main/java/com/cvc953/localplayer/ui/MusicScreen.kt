@@ -652,6 +652,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 var selectedTab by rememberSaveable { mutableStateOf(BottomNavItem.Songs.route) }
                 var selectedAlbumName by remember { mutableStateOf<String?>(null) }
                 var selectedArtistName by remember { mutableStateOf<String?>(null) }
+                var selectedPlaylistName by remember { mutableStateOf<String?>(null) }
                 val playerState by vm.playerState.collectAsState()
                 val showPlayerScreen by vm.isPlayerScreenVisible.collectAsState()
                 val context = LocalContext.current
@@ -740,6 +741,14 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                                                                         selectedArtistName =
                                                                                                 null
                                                                                 }
+                                                                                if (item.route !=
+                                                                                                BottomNavItem
+                                                                                                        .Playlists
+                                                                                                        .route
+                                                                                ) {
+                                                                                        selectedPlaylistName =
+                                                                                                null
+                                                                                }
                                                                         },
                                                                         colors =
                                                                                 NavigationBarItemDefaults
@@ -815,7 +824,25 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                                         )
                                                 }
                                         }
-                                        BottomNavItem.Playlists.route -> PlaylistsScreen(vm)
+                                        BottomNavItem.Playlists.route -> {
+                                                val playlistName = selectedPlaylistName
+                                                if (playlistName == null) {
+                                                        PlaylistsScreen(
+                                                                viewModel = vm,
+                                                                onPlaylistClick = {
+                                                                        selectedPlaylistName = it
+                                                                }
+                                                        )
+                                                } else {
+                                                        PlaylistDetailScreen(
+                                                                viewModel = vm,
+                                                                playlistName = playlistName,
+                                                                onBack = {
+                                                                        selectedPlaylistName = null
+                                                                }
+                                                        )
+                                                }
+                                        }
                                 }
 
                                 // PlayerScreen sobre todo el contenido
