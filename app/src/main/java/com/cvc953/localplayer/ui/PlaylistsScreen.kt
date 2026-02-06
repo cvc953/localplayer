@@ -1,10 +1,12 @@
 package com.cvc953.localplayer.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
@@ -28,14 +30,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
 
 @Composable
-fun PlaylistsScreen(viewModel: MainViewModel) {
+fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit) {
     val isScanning by viewModel.isScanning
     val playlists: List<Playlist> by viewModel.playlists.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -169,7 +173,9 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
                 ) {
                     items(sortedPlaylists) { playlist ->
                         Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                        .clickable { onPlaylistClick(playlist.name) },
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
@@ -244,6 +250,74 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
                     ) { Text("Cancelar", color = Color.White) }
                 }
         )
+    }
+}
+
+@Composable
+fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack: () -> Unit) {
+    val songs by viewModel.songs.collectAsState()
+    val playerState by viewModel.playerState.collectAsState()
+    val playlists: List<Playlist> by viewModel.playlists.collectAsState()
+    
+    val playlist = remember(playlists, playlistName) {
+        playlists.find { it.name == playlistName }
+    }
+    
+    val playlistSongs = remember(songs, playlist) {
+        if (playlist != null) {
+            songs.filter { it.id in playlist.songIds }
+        } else {
+            emptyList()
+        }
+    }
+    
+    val context = LocalContext.current
+
+    Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                        text = playlistName,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1
+                )
+                Text(text = "${playlistSongs.size} canciones", color = Color.Gray, fontSize = 12.sp)
+            }
+        }
+
+        LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding =
+                        PaddingValues(start = 16.dp, top = 8.dp, bottom = 16.dp, end = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(playlistSongs) { song ->
+                val isCurrent = playerState.currentSong?.id == song.id
+                SongItem(
+                        song = song,
+                        isPlaying = isCurrent,
+                        onClick = {
+                            // Usar el orden de la playlist como cola de reproduccion
+                            viewModel.updateDisplayOrder(playlistSongs)
+                            viewModel.playSong(song)
+                            viewModel.startService(context, song)
+                        },
+                        onQueueNext = { viewModel.addToQueueNext(song) },
+                        onQueueEnd = { viewModel.addToQueueEnd(song) }
+                )
+            }
+        }
     }
 }
 
