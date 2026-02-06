@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -15,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,30 +30,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.collectAsState
 import com.cvc953.localplayer.viewmodel.MainViewModel
 
 @Composable
 fun PlaylistsScreen(viewModel: MainViewModel) {
     val isScanning by viewModel.isScanning
+    val playlists by viewModel.playlists.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var sortMode by rememberSaveable { mutableStateOf(PlaylistSortMode.TITLE_ASC) }
-
-    val playlists = remember { emptyList<String>() }
+    var showCreateDialog by rememberSaveable { mutableStateOf(false) }
+    var newPlaylistName by rememberSaveable { mutableStateOf("") }
+    var createError by rememberSaveable { mutableStateOf<String?>(null) }
 
     val filteredPlaylists =
             remember(playlists, searchQuery) {
                 val q = searchQuery.trim().lowercase()
-                if (q.isEmpty()) playlists else playlists.filter { it.lowercase().contains(q) }
+                if (q.isEmpty()) playlists
+                else playlists.filter { it.name.lowercase().contains(q) }
             }
 
     val sortedPlaylists =
             remember(filteredPlaylists, sortMode) {
                 when (sortMode) {
-                    PlaylistSortMode.TITLE_ASC -> filteredPlaylists.sortedBy { it.lowercase() }
+                    PlaylistSortMode.TITLE_ASC ->
+                            filteredPlaylists.sortedBy { it.name.lowercase() }
                     PlaylistSortMode.TITLE_DESC ->
-                            filteredPlaylists.sortedByDescending { it.lowercase() }
+                            filteredPlaylists.sortedByDescending { it.name.lowercase() }
                 }
             }
 
@@ -147,7 +154,7 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
                 ) {
                     Text(text = "No hay listas por ahora", color = Color.White)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { /* TODO: crear nueva playlist */}) { Text("Crear lista") }
+                    Button(onClick = { showCreateDialog = true }) { Text("Crear lista") }
                 }
             } else {
                 LazyColumn(
@@ -161,12 +168,91 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
                                 ),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(sortedPlaylists) { playlistName ->
-                        Text(text = playlistName, color = Color.White, fontSize = 16.sp)
+                    items(sortedPlaylists) { playlist ->
+                        Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                        text = playlist.name,
+                                        color = Color.White,
+                                        fontSize = 16.sp
+                                )
+                                Text(
+                                        text = "${playlist.songIds.size} canciones",
+                                        color = Color.Gray,
+                                        fontSize = 12.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (showCreateDialog) {
+        AlertDialog(
+                onDismissRequest = {
+                    showCreateDialog = false
+                    newPlaylistName = ""
+                    createError = null
+                },
+                containerColor = Color(0xFF1A1A1A),
+                title = { Text("Nueva lista", color = Color.White) },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                                value = newPlaylistName,
+                                onValueChange = { newPlaylistName = it },
+                                singleLine = true,
+                                placeholder = { Text("Nombre de la lista") },
+                                colors =
+                                        TextFieldDefaults.colors(
+                                                focusedContainerColor = Color(0xFF1A1A1A),
+                                                unfocusedContainerColor = Color(0xFF1A1A1A),
+                                                focusedIndicatorColor = Color(0xFF2196F3),
+                                                unfocusedIndicatorColor = Color(0xFF404040),
+                                                cursorColor = Color(0xFF2196F3),
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White
+                                        )
+                        )
+                        if (createError != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = createError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                            onClick = {
+                                val ok = viewModel.createPlaylist(newPlaylistName)
+                                if (ok) {
+                                    showCreateDialog = false
+                                    newPlaylistName = ""
+                                    createError = null
+                                } else {
+                                    createError = "Nombre invalido o duplicado"
+                                }
+                            }
+                    ) {
+                        Text("Crear", color = Color(0xFF2196F3))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                            onClick = {
+                                showCreateDialog = false
+                                newPlaylistName = ""
+                                createError = null
+                            }
+                    ) {
+                        Text("Cancelar", color = Color.White)
+                    }
+                }
+        )
     }
 }
 
