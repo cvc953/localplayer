@@ -14,14 +14,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,7 +57,9 @@ fun SongItem(
         isPlaying: Boolean,
         onClick: () -> Unit,
         onQueueNext: () -> Unit,
-        onQueueEnd: () -> Unit
+        onQueueEnd: () -> Unit,
+        playlists: List<Playlist> = emptyList(),
+        onAddToPlaylist: ((String, Long) -> Unit)? = null
 ) {
 
     val context = LocalContext.current
@@ -111,6 +118,8 @@ fun SongItem(
         Text(text = formatDuration(song.duration), color = Color(0xFFCCCCCC), fontSize = 12.sp)
 
         var menuExpanded by remember { mutableStateOf(false) }
+        var showPlaylistDialog by remember { mutableStateOf(false) }
+
         Box {
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(
@@ -146,7 +155,50 @@ fun SongItem(
                             onQueueEnd()
                         }
                 )
+                if (playlists.isNotEmpty() && onAddToPlaylist != null) {
+                    DropdownMenuItem(
+                            text = { Text("Agregar a playlist", color = Color.White) },
+                            onClick = {
+                                menuExpanded = false
+                                showPlaylistDialog = true
+                            }
+                    )
+                }
             }
+        }
+
+        if (showPlaylistDialog && playlists.isNotEmpty()) {
+            AlertDialog(
+                    onDismissRequest = { showPlaylistDialog = false },
+                    containerColor = Color(0xFF1A1A1A),
+                    title = { Text("Agregar a lista", color = Color.White) },
+                    text = {
+                        LazyColumn {
+                            items(playlists) { playlist ->
+                                Text(
+                                        text = playlist.name,
+                                        color = Color.White,
+                                        modifier =
+                                                Modifier.fillMaxWidth()
+                                                        .clickable {
+                                                            onAddToPlaylist?.invoke(
+                                                                    playlist.name,
+                                                                    song.id
+                                                            )
+                                                            showPlaylistDialog = false
+                                                        }
+                                                        .padding(12.dp),
+                                        fontSize = 14.sp
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showPlaylistDialog = false }) {
+                            Text("Cancelar", color = Color(0xFF2196F3))
+                        }
+                    }
+            )
         }
     }
 }
