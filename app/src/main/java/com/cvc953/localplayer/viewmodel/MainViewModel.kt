@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.PlayerState
@@ -30,6 +31,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlinx.coroutines.withContext
 
 data class LyricLine(val timeMs: Long, val text: String)
@@ -43,6 +46,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val LAST_SONG_TITLE = "last_song_title"
         private const val LAST_SONG_ARTIST = "last_song_artist"
         private const val LAST_IS_PLAYING = "last_is_playing"
+        private const val PLAYLISTS_JSON = "playlists_json"
     }
 
     init {
@@ -96,6 +100,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val queue: StateFlow<List<Song>> = _queue
 
     // Cache para el orden aleatorio persistente mientras shuffle esté activo
+    // Playlists
+    private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
+    val playlists: StateFlow<List<Playlist>> = _playlists
     private var cachedShuffledRemaining: List<Song>? = null
     // Historial de reproducción para soportar "Anterior" respetando el orden
     private val playHistory: MutableList<Song> = mutableListOf()
@@ -241,6 +248,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
+        _playlists.value = loadPlaylistsFromPrefs()
         // Registrar el observer para detectar cambios en la biblioteca
         getApplication<Application>()
                 .contentResolver
@@ -702,4 +710,52 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             android.util.Log.e("MainViewModel", "Error al cargar última canción", e)
         }
     }
+    fun createPlaylist(name: String): Boolean {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return false
+
+        val exists = _playlists.value.any { it.name.equals(trimmed, ignoreCase = true) }
+        if (exists) return false
+
+        val updated = _playlists.value + Playlist(name = trimmed)
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    private fun loadPlaylistsFromPrefs(): List<Playlist> {
+        val raw = prefs.getString(PLAYLISTS_JSON, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(raw)
+            val result = mutableListOf<Playlist>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val name = obj.optString("name", "").trim()
+                if (name.isEmpty()) continue
+                val idsArray = obj.optJSONArray("songIds") ?: JSONArray()
+                val ids = mutableListOf<Long>()
+                for (j in 0 until idsArray.length()) {
+                    ids.add(idsArray.optLong(j))
+                }
+                result.add(Playlist(name = name, songIds = ids))
+            }
+            result
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun savePlaylistsToPrefs(playlists: List<Playlist>) {
+        val array = JSONArray()
+        playlists.forEach { playlist ->
+            val idsArray = JSONArray()
+            playlist.songIds.forEach { idsArray.put(it) }
+            val obj = JSONObject()
+            obj.put("name", playlist.name)
+            obj.put("songIds", idsArray)
+            array.put(obj)
+        }
+        prefs.edit().putString(PLAYLISTS_JSON, array.toString()).apply()
+    }
+
 }

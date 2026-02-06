@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,13 +31,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.collectAsState
+import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.viewmodel.MainViewModel
 
 @Composable
 fun PlaylistsScreen(viewModel: MainViewModel) {
     val isScanning by viewModel.isScanning
-    val playlists by viewModel.playlists.collectAsState()
+    val playlists: List<Playlist> by viewModel.playlists.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -48,15 +49,13 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
     val filteredPlaylists =
             remember(playlists, searchQuery) {
                 val q = searchQuery.trim().lowercase()
-                if (q.isEmpty()) playlists
-                else playlists.filter { it.name.lowercase().contains(q) }
+                if (q.isEmpty()) playlists else playlists.filter { it.name.lowercase().contains(q) }
             }
 
     val sortedPlaylists =
             remember(filteredPlaylists, sortMode) {
                 when (sortMode) {
-                    PlaylistSortMode.TITLE_ASC ->
-                            filteredPlaylists.sortedBy { it.name.lowercase() }
+                    PlaylistSortMode.TITLE_ASC -> filteredPlaylists.sortedBy { it.name.lowercase() }
                     PlaylistSortMode.TITLE_DESC ->
                             filteredPlaylists.sortedByDescending { it.name.lowercase() }
                 }
@@ -174,11 +173,7 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                        text = playlist.name,
-                                        color = Color.White,
-                                        fontSize = 16.sp
-                                )
+                                Text(text = playlist.name, color = Color.White, fontSize = 16.sp)
                                 Text(
                                         text = "${playlist.songIds.size} canciones",
                                         color = Color.Gray,
@@ -237,9 +232,7 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
                                     createError = "Nombre invalido o duplicado"
                                 }
                             }
-                    ) {
-                        Text("Crear", color = Color(0xFF2196F3))
-                    }
+                    ) { Text("Crear", color = Color(0xFF2196F3)) }
                 },
                 dismissButton = {
                     TextButton(
@@ -248,9 +241,7 @@ fun PlaylistsScreen(viewModel: MainViewModel) {
                                 newPlaylistName = ""
                                 createError = null
                             }
-                    ) {
-                        Text("Cancelar", color = Color.White)
-                    }
+                    ) { Text("Cancelar", color = Color.White) }
                 }
         )
     }
