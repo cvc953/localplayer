@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,7 +49,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ArtistsScreen(viewModel: MainViewModel) {
+fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
     val songs by viewModel.songs.collectAsState()
     val isScanning by viewModel.isScanning
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -192,7 +193,7 @@ fun ArtistsScreen(viewModel: MainViewModel) {
                     Row(
                             modifier =
                                     Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                                        /* TODO: navegar a detalle del artista */
+                                        onArtistClick(artistName)
                                     },
                             verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -230,4 +231,60 @@ fun ArtistsScreen(viewModel: MainViewModel) {
 private enum class ArtistSortMode {
     TITLE_ASC,
     TITLE_DESC
+}
+
+@Composable
+fun ArtistDetailScreen(viewModel: MainViewModel, artistName: String, onBack: () -> Unit) {
+    val songs by viewModel.songs.collectAsState()
+    val playerState by viewModel.playerState.collectAsState()
+    val artistSongs = remember(songs, artistName) { songs.filter { it.artist == artistName } }
+    val context = LocalContext.current
+
+    Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                        text = artistName,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                )
+                Text(text = "${artistSongs.size} canciones", color = Color.Gray, fontSize = 12.sp)
+            }
+        }
+
+        LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding =
+                        PaddingValues(start = 16.dp, top = 8.dp, bottom = 16.dp, end = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(artistSongs) { song ->
+                val isCurrent = playerState.currentSong?.id == song.id
+                SongItem(
+                        song = song,
+                        isPlaying = isCurrent,
+                        onClick = {
+                            // Usar el orden del artista como cola de reproduccion
+                            viewModel.updateDisplayOrder(artistSongs)
+                            viewModel.playSong(song)
+                            viewModel.startService(context, song)
+                        },
+                        onQueueNext = { viewModel.addToQueueNext(song) },
+                        onQueueEnd = { viewModel.addToQueueEnd(song) }
+                )
+            }
+        }
+    }
 }
