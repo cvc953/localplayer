@@ -210,15 +210,21 @@ object TtmlParser {
             }
         }
 
-        val finalText = textBuilder.toString().trim()
-        if (finalText.isEmpty() && syllabus.isEmpty()) {
+        // Construir el texto de la línea a partir de las sílabas, respetando continuesWord
+        val lineText = buildString {
+            syllabus.forEachIndexed { i, syl ->
+                if (i > 0 && !syl.continuesWord) append(" ")
+                append(syl.text)
+            }
+        }.trim()
+        if (lineText.isEmpty() && syllabus.isEmpty()) {
             return null
         }
 
         return TtmlLine(
             timeMs = timeMs,
             durationMs = durationMs,
-            text = finalText,
+            text = lineText,
             syllabus = syllabus
         )
     }
