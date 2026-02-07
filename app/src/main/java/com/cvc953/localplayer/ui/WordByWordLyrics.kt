@@ -84,8 +84,11 @@ fun BackgroundSyllableLyric(
     isLineActive: Boolean,
     modifier: Modifier = Modifier
 ) {
+    // Solo mostrar si la línea está activa
+    if (!isLineActive) return
+    
     val baseColor = Color(0xFF585858)
-    val baseFontSize = if (isLineActive) 20f else 18f
+    val baseFontSize = 20f
 
     val chars = syllable.text.toCharArray()
     val charCount = chars.size.coerceAtLeast(1)
@@ -95,7 +98,7 @@ fun BackgroundSyllableLyric(
     } else {
         0f
     }
-    val revealCount = if (isLineActive && currentPosition >= syllable.timeMs) {
+    val revealCount = if (currentPosition >= syllable.timeMs) {
         (progress * charCount).toInt().coerceIn(0, charCount)
     } else {
         0
@@ -113,7 +116,7 @@ fun BackgroundSyllableLyric(
                 color = charColor,
                 fontSize = baseFontSize.sp,
                 lineHeight = (baseFontSize + 8f).sp,
-                fontWeight = if (isLineActive) FontWeight.Normal else FontWeight.Light
+                fontWeight = FontWeight.Normal
             )
         }
     }
@@ -152,8 +155,8 @@ fun WordByWordLine(
             }
         }
         
-        // Línea de fondo (más pequeña, debajo)
-        if (backgroundSyllables.isNotEmpty()) {
+        // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
+        if (backgroundSyllables.isNotEmpty() && isActive) {
             Spacer(modifier = Modifier.padding(top = 2.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.Start,
