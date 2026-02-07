@@ -1,8 +1,7 @@
 package com.cvc953.localplayer.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.EaseInOut
-import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -39,36 +38,43 @@ fun SyllableLyric(
             isLineActive -> Color(0xFFE0E0E0) // Gris claro cuando la línea está activa
             else -> Color(0xFF707070) // Gris oscuro cuando no está activo
         },
-        animationSpec = tween(durationMillis = 80, easing = LinearEasing),
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "syllableColor"
     )
 
+    val fontSize by animateFloatAsState(
+        targetValue = if (isActive) 22f else 20f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "syllableFontSize"
+    )
+
     val scale by animateFloatAsState(
-        targetValue = if (isActive) 1.12f else 1f,
-        animationSpec = tween(durationMillis = 100, easing = EaseInOut),
+        targetValue = if (isActive) 1.04f else 1f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "syllableScale"
     )
-    
+
     val alpha by animateFloatAsState(
         targetValue = when {
             isActive -> 1f
-            isLineActive -> 0.95f
-            else -> 0.45f
+            isLineActive -> 0.85f
+            else -> 0.4f
         },
-        animationSpec = tween(durationMillis = 120),
+        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
         label = "syllableAlpha"
     )
-    
+
     val elevation by animateFloatAsState(
-        targetValue = if (isActive) 4f else 0f,
-        animationSpec = tween(durationMillis = 100),
+        targetValue = if (isActive) 2f else 0f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "syllableElevation"
     )
 
     Text(
         text = syllable.text,
         color = color,
-        fontSize = (19f * scale).sp,
+        fontSize = (fontSize * scale).sp,
+        lineHeight = (fontSize + 10f).sp,
         fontWeight = when {
             isActive -> FontWeight.Bold
             isLineActive -> FontWeight.SemiBold
@@ -80,7 +86,7 @@ fun SyllableLyric(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-                translationY = if (isActive) -2f else 0f
+                translationY = if (isActive) -1f else 0f
             }
             .shadow(
                 elevation = elevation.dp,
@@ -101,7 +107,7 @@ fun WordByWordLine(
     modifier: Modifier = Modifier
 ) {
     FlowRow(
-        modifier = modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+        modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
         horizontalArrangement = Arrangement.Center,
         verticalArrangement = Arrangement.Center
     ) {
