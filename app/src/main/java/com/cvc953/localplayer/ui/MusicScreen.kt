@@ -878,7 +878,19 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                         Box(modifier = Modifier.fillMaxSize().zIndex(1f)) {
                                                 PlayerScreen(
                                                         viewModel = vm,
-                                                        onBack = { vm.closePlayerScreen() }
+                                                        onBack = { vm.closePlayerScreen() },
+                                                        onNavigateToArtist = { artistName ->
+                                                                vm.closePlayerScreen()
+                                                                selectedTab =
+                                                                        BottomNavItem.Artists.route
+                                                                selectedArtistName = artistName
+                                                        },
+                                                        onNavigateToAlbum = { albumName ->
+                                                                vm.closePlayerScreen()
+                                                                selectedTab =
+                                                                        BottomNavItem.Albums.route
+                                                                selectedAlbumName = albumName
+                                                        }
                                                 )
                                         }
                                 }

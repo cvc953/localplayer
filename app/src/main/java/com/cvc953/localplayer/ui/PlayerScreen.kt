@@ -60,7 +60,12 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlayerScreen(viewModel: MainViewModel = viewModel(), onBack: () -> Unit) {
+fun PlayerScreen(
+        viewModel: MainViewModel = viewModel(),
+        onBack: () -> Unit,
+        onNavigateToArtist: (String) -> Unit = {},
+        onNavigateToAlbum: (String) -> Unit = {}
+) {
         val showLyrics by viewModel.showLyrics.collectAsState()
         val playerState by viewModel.playerState.collectAsState()
         val queue by viewModel.queue.collectAsState()
@@ -298,8 +303,8 @@ fun PlayerScreen(viewModel: MainViewModel = viewModel(), onBack: () -> Unit) {
                                         title = song.title,
                                         artist = song.artist,
                                         album = song.album,
-                                        onArtistClick = { onBack() },
-                                        onAlbumClick = { onBack() }
+                                        onArtistClick = { onNavigateToArtist(song.artist) },
+                                        onAlbumClick = { onNavigateToAlbum(song.album) }
                                 )
 
                                 Spacer(Modifier.height(32.dp))
