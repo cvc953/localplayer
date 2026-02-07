@@ -44,21 +44,22 @@ fun LyricLine(
     if (text.trim() == "...") {
         val dotCount = 3
         val baseSize = 10f
-        val maxSize = 18f
+        val maxSize = 20f
         val colorSteps = listOf(
-            Color(0xFF888888), // gris oscuro
+            Color(0xFF666666), // gris más oscuro
+            Color(0xFF999999), // gris medio
             Color(0xFFCCCCCC), // gris claro
             Color.White        // blanco
         )
-        val duration = 900 // ms
+        val duration = 1200 // ms
         val currentTime = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(System.currentTimeMillis()) }
         androidx.compose.runtime.LaunchedEffect(active) {
             while (active) {
-                kotlinx.coroutines.delay(100)
+                kotlinx.coroutines.delay(80)
                 currentTime.value = System.currentTimeMillis()
             }
         }
-        val animPhase = ((currentTime.value / (duration / dotCount)) % dotCount).toInt()
+        val animPhase = ((currentTime.value / (duration / (dotCount + 1))) % (dotCount + 1)).toInt()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -67,14 +68,17 @@ fun LyricLine(
             horizontalArrangement = Arrangement.Start
         ) {
             for (i in 0 until dotCount) {
-                val isActiveDot = i == animPhase && active
-                val dotSize by animateFloatAsState(
-                    targetValue = if (isActiveDot) maxSize else baseSize,
-                    label = "dotSize$i"
-                )
+                // El punto más a la izquierda es el primero en animar
+                val progress = (animPhase - i).coerceAtLeast(0)
+                // El color y tamaño cambian progresivamente de oscuro a blanco
+                val colorIndex = progress.coerceIn(0, colorSteps.lastIndex)
                 val dotColor by animateColorAsState(
-                    targetValue = if (isActiveDot) colorSteps[2] else colorSteps[0],
+                    targetValue = colorSteps[colorIndex],
                     label = "dotColor$i"
+                )
+                val dotSize by animateFloatAsState(
+                    targetValue = baseSize + (maxSize - baseSize) * (colorIndex.toFloat() / colorSteps.lastIndex),
+                    label = "dotSize$i"
                 )
                 Box(
                     modifier = Modifier
