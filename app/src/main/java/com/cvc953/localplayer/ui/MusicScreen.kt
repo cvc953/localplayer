@@ -3,6 +3,7 @@ package com.cvc953.localplayer.ui
 import MiniPlayer
 import android.app.Activity
 import android.content.Intent
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -668,6 +669,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 val showPlayerScreen by vm.isPlayerScreenVisible.collectAsState()
                 val context = LocalContext.current
                 val activity = context as? Activity
+                var lastBackPressTime by remember { mutableStateOf(0L) }
 
                 // Actualizar el servicio cuando cambia el estado del player
                 LaunchedEffect(playerState.isPlaying) {
@@ -686,7 +688,22 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                         androidx.core.content.ContextCompat.startForegroundService(context, intent)
                 }
 
-                BackHandler { activity?.moveTaskToBack(true) }
+                BackHandler {
+                        val currentTime = System.currentTimeMillis()
+                        if (currentTime - lastBackPressTime < 1000) {
+                                // Segunda pulsación dentro de 1 segundo
+                                activity?.finish()
+                        } else {
+                                // Primera pulsación
+                                lastBackPressTime = currentTime
+                                Toast.makeText(
+                                                context,
+                                                "Presiona de nuevo para salir",
+                                                Toast.LENGTH_SHORT
+                                        )
+                                        .show()
+                        }
+                }
 
                 val navItems =
                         listOf(

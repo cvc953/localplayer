@@ -4,6 +4,7 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -61,8 +62,17 @@ fun AlbumsScreen(viewModel: MainViewModel, onAlbumClick: (String) -> Unit) {
     var sortMode by rememberSaveable { mutableStateOf(AlbumSortMode.TITLE_ASC) }
     val context = LocalContext.current
     val activity = context as? Activity
+    var lastBackPressTime by remember { mutableStateOf(0L) }
 
-    BackHandler { activity?.moveTaskToBack(true) }
+    BackHandler {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastBackPressTime < 1000) {
+            activity?.finish()
+        } else {
+            lastBackPressTime = currentTime
+            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val albums = remember(songs) { songs.groupBy { it.album.ifBlank { "Desconocido" } }.toList() }
 
