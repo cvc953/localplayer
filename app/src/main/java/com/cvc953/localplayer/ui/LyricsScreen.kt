@@ -121,6 +121,27 @@ fun TtmlLyricsView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize()
         ) {
+            val gapThreshold = 1500L
+
+            if (lines.isNotEmpty()) {
+                val firstLineStart = lines.first().timeMs
+                if (firstLineStart > gapThreshold) {
+                    item {
+                        val isIntroGapActive = currentPosition in 0 until firstLineStart
+                        if (isIntroGapActive) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LoadingDotsAnimation(isVisible = true)
+                            }
+                        }
+                    }
+                }
+            }
+
             itemsIndexed(lines) { index, line ->
                 Box(
                     modifier = Modifier
@@ -143,14 +164,13 @@ fun TtmlLyricsView(
                     }
                 }
 
-                // Detectar gap grande entre esta línea y la siguiente
+                // Detectar gap grande entre esta linea y la siguiente
                 if (index < lines.size - 1) {
                     val currentLineEnd = line.timeMs + line.durationMs
                     val nextLineStart = lines[index + 1].timeMs
                     val gapDuration = nextLineStart - currentLineEnd
 
                     // Si hay un gap > 1500ms, mostrar animación de puntos
-                    val gapThreshold = 1500L
                     if (gapDuration > gapThreshold) {
                         // Mostrar la animacion solo si estamos dentro del gap
                         val isGapActive = currentPosition >= currentLineEnd && currentPosition < nextLineStart
