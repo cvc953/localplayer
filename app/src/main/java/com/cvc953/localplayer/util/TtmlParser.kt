@@ -57,6 +57,24 @@ object TtmlParser {
             eventType = parser.next()
         }
 
+        // --- Nueva lógica para unir palabras entre líneas ---
+        for (i in 1 until lines.size) {
+            val prevLine = lines[i - 1]
+            val currLine = lines[i]
+            if (prevLine.syllabus.isNotEmpty() && currLine.syllabus.isNotEmpty()) {
+                val lastPrev = prevLine.syllabus.last()
+                val firstCurr = currLine.syllabus.first()
+                // Si la última sílaba de la línea anterior y la primera de la actual no terminan ni empiezan con espacio, es una palabra partida
+                if (!lastPrev.text.endsWith(" ") && !firstCurr.text.startsWith(" ")) {
+                    // Marcar la primera sílaba de la línea actual como continuación de palabra
+                    val newFirst = firstCurr.copy(continuesWord = true)
+                    val newSyllabus = currLine.syllabus.toMutableList()
+                    newSyllabus[0] = newFirst
+                    lines[i] = currLine.copy(syllabus = newSyllabus)
+                }
+            }
+        }
+
         return TtmlLyrics(
             type = timingMode,
             metadata = metadata,

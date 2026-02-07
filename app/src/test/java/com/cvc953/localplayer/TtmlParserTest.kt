@@ -82,4 +82,39 @@ class TtmlParserTest {
         // MM:SS.mmm format (5:30.250 = 330250 ms)
         assertEquals(330250L, result.lines[1].timeMs)
     }
+    
+    @Test
+    fun testWordSplitAcrossLines() {
+        val ttml = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <tt xmlns="http://www.w3.org/ns/ttml" 
+                xmlns:itunes="http://music.apple.com/lyric-ttml-internal"
+                itunes:timing="Word">
+              <body>
+                <div>
+                  <p begin="00:00:10.000" end="00:00:12.000">
+                    <span begin="00:00:10.000" end="00:00:11.000">Ro</span>
+                  </p>
+                  <p begin="00:00:12.000" end="00:00:14.000">
+                    <span begin="00:00:12.000" end="00:00:13.000">mance</span>
+                  </p>
+                </div>
+              </body>
+            </tt>
+        """.trimIndent()
+
+        val result = TtmlParser.parseTtml(ttml)
+        assertNotNull(result)
+        assertEquals(2, result.lines.size)
+        val line1 = result.lines[0]
+        val line2 = result.lines[1]
+        assertEquals(1, line1.syllabus.size)
+        assertEquals(1, line2.syllabus.size)
+        val syll1 = line1.syllabus[0]
+        val syll2 = line2.syllabus[0]
+        assertEquals("Ro", syll1.text)
+        assertEquals("mance", syll2.text)
+        // La sílaba de la segunda línea debe marcar continuesWord=true
+        assertTrue(syll2.continuesWord)
+    }
 }
