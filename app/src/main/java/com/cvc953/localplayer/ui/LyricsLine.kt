@@ -47,7 +47,7 @@ fun LyricLine(
         contentAlignment = Alignment.TopStart
     ) {
         Text(
-            text = text,
+            text = text.trimStart(),
             color = if (active) Color.White else Color.Gray,
             fontSize = fontSize.sp,
             fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
