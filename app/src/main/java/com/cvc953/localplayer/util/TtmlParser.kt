@@ -162,8 +162,9 @@ object TtmlParser {
     private fun parseSpan(parser: XmlPullParser): TtmlSyllable? {
         val beginAttr = parser.getAttributeValue(null, "begin")
         val endAttr = parser.getAttributeValue(null, "end")
+        val durAttr = parser.getAttributeValue(null, "dur")
 
-        if (beginAttr == null || endAttr == null) {
+        if (beginAttr == null) {
             // Consumir hasta el cierre del <span>
             var depth = 1
             while (depth > 0) {
@@ -176,8 +177,27 @@ object TtmlParser {
         }
 
         val timeMs = parseTime(beginAttr)
-        val endMs = parseTime(endAttr)
-        val durationMs = endMs - timeMs
+        val endMs: Long
+        val durationMs: Long
+
+        // Soportar tanto 'end' como 'dur'
+        if (endAttr != null) {
+            endMs = parseTime(endAttr)
+            durationMs = endMs - timeMs
+        } else if (durAttr != null) {
+            durationMs = parseDuration(durAttr)
+            endMs = timeMs + durationMs
+        } else {
+            // Sin end ni dur, consumir y retornar null
+            var depth = 1
+            while (depth > 0) {
+                when (parser.next()) {
+                    XmlPullParser.START_TAG -> depth++
+                    XmlPullParser.END_TAG -> depth--
+                }
+            }
+            return null
+        }
 
         val textBuilder = StringBuilder()
         var depth = 1
@@ -233,6 +253,27 @@ object TtmlParser {
                 (minutes * 60_000 + (seconds * 1000).toLong())
             }
             else -> 0
+        }
+    }
+
+    /**
+     * Parsea duraciones en formato "3.917s" o "3917ms"
+     */
+    private fun parseDuration(durStr: String): Long {
+        return when {
+            durStr.endsWith("s") -> {
+                // Formato: "3.917s"
+                val seconds = durStr.removeSuffix("s").toDoubleOrNull() ?: 0.0
+                (seconds * 1000).toLong()
+            }
+            durStr.endsWith("ms") -> {
+                // Formato: "3917ms"
+                durStr.removeSuffix("ms").toLongOrNull() ?: 0L
+            }
+            else -> {
+                // Asumir milisegundos si no hay sufijo
+                durStr.toLongOrNull() ?: 0L
+            }
         }
     }
 }
