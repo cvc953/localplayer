@@ -26,6 +26,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.Shuffle
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Repeat
+import androidx.compose.material.icons.rounded.RepeatOne
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.SkipNext
+import androidx.compose.material.icons.rounded.SkipPrevious
+import androidx.compose.material.icons.sharp.SkipNext
+import androidx.compose.material.icons.sharp.SkipPrevious
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
@@ -1025,16 +1035,16 @@ fun PlayerControls(
                 ) {
                         IconButton(onClick = { viewModel.toggleShuffle() }) {
                                 Icon(
-                                        Icons.Default.Shuffle,
+                                        Icons.Rounded.Shuffle,
                                         contentDescription = "Shuffle",
                                         tint = if (isShuffle) Color(0xFF2196F3) else Color.White,
-                                        modifier = Modifier.size(smallButtonSize)
+                                        modifier = Modifier.size(buttonSize)
                                 )
                         }
 
                         IconButton(onClick = { viewModel.playPreviousSong() }) {
                                 Icon(
-                                        Icons.Default.SkipPrevious,
+                                        Icons.Rounded.SkipPrevious,
                                         null,
                                         tint = Color.White,
                                         modifier = Modifier.size(buttonSize)
@@ -1052,8 +1062,8 @@ fun PlayerControls(
                         ) {
                                 Icon(
                                         imageVector =
-                                                if (isPlaying) Icons.Filled.Pause
-                                                else Icons.Filled.PlayArrow,
+                                                if (isPlaying) Icons.Rounded.Pause
+                                                else Icons.Rounded.PlayArrow,
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier.size(buttonSize * 0.5f)
@@ -1062,7 +1072,7 @@ fun PlayerControls(
 
                         IconButton(onClick = { viewModel.playNextSong() }) {
                                 Icon(
-                                        Icons.Default.SkipNext,
+                                        Icons.Rounded.SkipNext,
                                         null,
                                         tint = Color.White,
                                         modifier = Modifier.size(buttonSize)
@@ -1072,15 +1082,15 @@ fun PlayerControls(
                         IconButton(onClick = { viewModel.toggleRepeat() }) {
                                 Icon(
                                         when (repeatMode) {
-                                                RepeatMode.NONE -> Icons.Default.Repeat
-                                                RepeatMode.ONE -> Icons.Default.RepeatOne
-                                                RepeatMode.ALL -> Icons.Default.Repeat
+                                                RepeatMode.NONE -> Icons.Rounded.Repeat
+                                                RepeatMode.ONE -> Icons.Rounded.RepeatOne
+                                                RepeatMode.ALL -> Icons.Rounded.Repeat
                                         },
                                         contentDescription = "Repeat",
                                         tint =
                                                 if (repeatMode != RepeatMode.NONE) Color(0xFF2196F3)
                                                 else Color.White,
-                                        modifier = Modifier.size(smallButtonSize)
+                                        modifier = Modifier.size(buttonSize)
                                 )
                         }
                 }
