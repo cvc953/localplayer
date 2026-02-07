@@ -102,9 +102,9 @@ fun LyricsView(
 
                 // Detectar gap grande entre esta linea y la siguiente
                 if (index < lyrics.size - 1) {
-                    val currentLineEnd = line.timeMs + line.durationMs
+                    val currentLineEnd = lyrics[index + 1].timeMs
                     val nextLineStart = lyrics[index + 1].timeMs
-                    val gapDuration = nextLineStart - currentLineEnd
+                    val gapDuration = nextLineStart - line.timeMs
 
                     // Si hay un gap > 1500ms, mostrar animación de puntos
                     if (gapDuration > gapThreshold) {
