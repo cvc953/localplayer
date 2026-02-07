@@ -30,7 +30,7 @@ fun SyllableLyric(
     modifier: Modifier = Modifier
 ) {
     val baseColor = Color(0xFF707070)
-    val baseFontSize = if (isLineActive) 21f else 20f
+    val baseFontSize = if (isLineActive) 30f else 28f
 
     val chars = syllable.text.toCharArray()
     val charCount = chars.size.coerceAtLeast(1)

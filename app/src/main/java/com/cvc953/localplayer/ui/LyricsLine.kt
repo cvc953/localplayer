@@ -29,7 +29,7 @@ fun LyricLine(
     var lineCount by remember(text) { mutableStateOf(1) }
 
     val fontSize by animateFloatAsState(
-        targetValue = if (active) 22f else 20f,
+        targetValue = if (active) 30f else 28f,
         label = "fontSize"
     )
 
@@ -43,7 +43,7 @@ fun LyricLine(
         label = "color"
     )
 
-    val textAlign = if (lineCount > 1) TextAlign.Start else TextAlign.Center
+    val textAlign = if (lineCount > 1) TextAlign.Start else TextAlign.Start
 
     Text(
         text = text,
