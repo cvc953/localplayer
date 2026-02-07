@@ -116,6 +116,7 @@ object TtmlParser {
         val syllabus = mutableListOf<TtmlSyllable>()
         val textBuilder = StringBuilder()
         var insideParenthesis = false
+        var previousContinuesWord = false
 
         // Procesar contenido del <p>
         var depth = 1
@@ -138,26 +139,34 @@ object TtmlParser {
                             }
                             
                             // Eliminar paréntesis
-                            val cleanedText = updatedSyllable.text.replace("(", "").replace(")", "")
-                            
+                            var cleanedText = updatedSyllable.text.replace("(", "").replace(")", "")
+
+                            // Si la sílaba anterior continúa palabra, evitar espacios iniciales aquí
+                            if (previousContinuesWord) {
+                                cleanedText = cleanedText.trimStart()
+                            }
+
                             // Detectar si continúa en la siguiente palabra (no termina con espacio)
                             val continuesWord = cleanedText.isNotEmpty() && !cleanedText.endsWith(" ")
-                            
-                            // Si continúa la palabra, eliminar el espacio que pudiera tener
-                            // Si no continúa, mantener el espacio original
+
+                            // Si continúa la palabra, eliminar el espacio final
                             val finalText = if (continuesWord) {
                                 cleanedText.trimEnd()
                             } else {
                                 cleanedText
                             }
-                            
-                            val cleanedSyllable = updatedSyllable.copy(
-                                text = finalText,
-                                continuesWord = continuesWord
-                            )
-                            
-                            syllabus.add(cleanedSyllable)
-                            textBuilder.append(finalText)
+
+                            if (finalText.isNotEmpty()) {
+                                val cleanedSyllable = updatedSyllable.copy(
+                                    text = finalText,
+                                    continuesWord = continuesWord
+                                )
+
+                                syllabus.add(cleanedSyllable)
+                                textBuilder.append(finalText)
+                            }
+
+                            previousContinuesWord = continuesWord
                             
                             // Detectar cierre de paréntesis
                             if (syllable.text.endsWith(")")) {
