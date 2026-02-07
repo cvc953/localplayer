@@ -10,9 +10,11 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -73,6 +75,51 @@ fun SyllableLyric(
 }
 
 /**
+ * Componente para mostrar una silaba de fondo (entre parentesis) mas pequeña
+ */
+@Composable
+fun BackgroundSyllableLyric(
+    syllable: TtmlSyllable,
+    currentPosition: Long,
+    isLineActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val baseColor = Color(0xFF585858)
+    val baseFontSize = if (isLineActive) 20f else 18f
+
+    val chars = syllable.text.toCharArray()
+    val charCount = chars.size.coerceAtLeast(1)
+    val progress = if (syllable.durationMs > 0) {
+        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
+            .coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val revealCount = if (isLineActive && currentPosition >= syllable.timeMs) {
+        (progress * charCount).toInt().coerceIn(0, charCount)
+    } else {
+        0
+    }
+
+    Row(modifier = modifier.padding(horizontal = 1.5.dp)) {
+        chars.forEachIndexed { index, ch ->
+            val charColor by animateColorAsState(
+                targetValue = if (index < revealCount) Color(0xFFB0B0B0) else baseColor,
+                animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
+                label = "charColor"
+            )
+            Text(
+                text = ch.toString(),
+                color = charColor,
+                fontSize = baseFontSize.sp,
+                lineHeight = (baseFontSize + 8f).sp,
+                fontWeight = if (isLineActive) FontWeight.Normal else FontWeight.Light
+            )
+        }
+    }
+}
+
+/**
  * Componente para mostrar una linea completa con palabras sincronizadas
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -83,18 +130,43 @@ fun WordByWordLine(
     isActive: Boolean,
     modifier: Modifier = Modifier
 ) {
-    FlowRow(
+    // Separar sílabas principales de las de fondo (entre paréntesis)
+    val mainSyllables = syllables.filter { !it.isBackground }
+    val backgroundSyllables = syllables.filter { it.isBackground }
+    
+    Column(
         modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
-        horizontalArrangement = Arrangement.Start,
         verticalArrangement = Arrangement.Center
     ) {
-        syllables.forEach { syllable ->
-            // Una silaba esta activa si el tiempo actual esta dentro de su rango
-            SyllableLyric(
-                syllable = syllable,
-                currentPosition = currentPosition,
-                isLineActive = isActive
-            )
+        // Línea principal
+        FlowRow(
+            horizontalArrangement = Arrangement.Start,
+            verticalArrangement = Arrangement.Center
+        ) {
+            mainSyllables.forEach { syllable ->
+                SyllableLyric(
+                    syllable = syllable,
+                    currentPosition = currentPosition,
+                    isLineActive = isActive
+                )
+            }
+        }
+        
+        // Línea de fondo (más pequeña, debajo)
+        if (backgroundSyllables.isNotEmpty()) {
+            Spacer(modifier = Modifier.padding(top = 2.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                backgroundSyllables.forEach { syllable ->
+                    BackgroundSyllableLyric(
+                        syllable = syllable,
+                        currentPosition = currentPosition,
+                        isLineActive = isActive
+                    )
+                }
+            }
         }
     }
 }
