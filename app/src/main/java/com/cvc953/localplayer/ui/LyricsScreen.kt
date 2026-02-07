@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -139,6 +140,31 @@ fun TtmlLyricsView(
                             text = line.text,
                             active = index == currentIndex
                         )
+                    }
+                }
+
+                // Detectar gap grande entre esta línea y la siguiente
+                if (index < lines.size - 1) {
+                    val currentLineEnd = line.timeMs + line.durationMs
+                    val nextLineStart = lines[index + 1].timeMs
+                    val gapDuration = nextLineStart - currentLineEnd
+
+                    // Si hay un gap > 1500ms, mostrar animación de puntos
+                    val gapThreshold = 1500L
+                    if (gapDuration > gapThreshold) {
+                        // Mostrar la animacion solo si estamos dentro del gap
+                        val isGapActive = currentPosition >= currentLineEnd && currentPosition < nextLineStart
+
+                        if (isGapActive) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LoadingDotsAnimation(isVisible = true)
+                            }
+                        }
                     }
                 }
             }
