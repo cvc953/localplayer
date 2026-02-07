@@ -210,7 +210,6 @@ fun LoadingDotsAnimation(
 ) {
     if (!isVisible) return
 
-    // Animación progresiva de puntos: color y tamaño
     val dotCount = 3
     val colorSteps = listOf(
         Color(0xFF505050), // gris oscuro
@@ -220,8 +219,9 @@ fun LoadingDotsAnimation(
     )
     val minSize = 14f
     val maxSize = 22f
-    // El progreso de cada punto es escalonado y cíclico
-    val phase = ((elapsedMs / (durationMs / (dotCount + 1))).toInt()) % (dotCount + 1)
+    val appearDuration = durationMs / (dotCount + 1)
+    val lastDotWhiteThreshold = 500L
+
     Box(
         modifier = modifier
             .padding(horizontal = 24.dp, vertical = 0.dp)
@@ -233,14 +233,35 @@ fun LoadingDotsAnimation(
             verticalAlignment = Alignment.CenterVertically
         ) {
             for (i in 0 until dotCount) {
-                val progress = (phase - i).coerceAtLeast(0)
-                val colorIndex = progress.coerceIn(0, colorSteps.lastIndex)
-                val dotColor = colorSteps[colorIndex]
-                val dotSize = minSize + (maxSize - minSize) * (colorIndex.toFloat() / colorSteps.lastIndex)
+                // Cada punto tiene su propio tiempo de aparición y animación
+                val dotAppear = appearDuration * (i + 1)
+                val dotElapsed = (elapsedMs - dotAppear).coerceAtLeast(0L)
+                val dotProgress = (dotElapsed.toFloat() / appearDuration).coerceIn(0f, 1f)
+
+                // Color animado: de gris oscuro a blanco
+                val colorIndex = (dotProgress * (colorSteps.lastIndex)).toInt().coerceIn(0, colorSteps.lastIndex)
+                val baseColor = colorSteps[colorIndex]
+                // El último punto se vuelve blanco 500ms antes del final
+                val dotColor = if (i == dotCount - 1 && durationMs - elapsedMs <= lastDotWhiteThreshold) Color.White else baseColor
+
+                // Tamaño animado: de min a max
+                val dotSize = minSize + (maxSize - minSize) * dotProgress
+
+                // Animación fluida
+                val animatedSize by androidx.compose.animation.core.animateFloatAsState(
+                    targetValue = dotSize,
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 180),
+                    label = "dotSize$i"
+                )
+                val animatedColor by androidx.compose.animation.animateColorAsState(
+                    targetValue = dotColor,
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 180),
+                    label = "dotColor$i"
+                )
                 Text(
                     text = "●",
-                    color = dotColor,
-                    fontSize = dotSize.sp,
+                    color = animatedColor,
+                    fontSize = animatedSize.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
