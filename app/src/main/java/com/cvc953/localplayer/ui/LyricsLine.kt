@@ -40,12 +40,11 @@ fun LyricLine(
 
     val textAlign = TextAlign.Start
 
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
+        contentAlignment = Alignment.CenterStart
     ) {
         Text(
             text = text,
@@ -61,28 +60,5 @@ fun LyricLine(
                 lineCount = result.lineCount
             },
         )
-    }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Text(
-                text = text,
-                color = if (active) Color.White else Color.Gray,
-                fontSize = fontSize.sp,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
-                textAlign = textAlign,
-                lineHeight = (fontSize + 10).sp,
-                maxLines = Int.MAX_VALUE,
-                softWrap = true,
-                overflow = TextOverflow.Visible,
-                onTextLayout = { result ->
-                    lineCount = result.lineCount
-                },
-            )
-        }
     }
 
