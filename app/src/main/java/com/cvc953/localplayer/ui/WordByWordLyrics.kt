@@ -147,18 +147,34 @@ fun WordByWordLine(
         modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        // Línea principal
+        // Agrupar sílabas que forman una palabra
         FlowRow(
             horizontalArrangement = Arrangement.Start,
             verticalArrangement = Arrangement.Center
         ) {
-            mainSyllables.forEach { syllable ->
-                SyllableLyric(
-                    syllable = syllable,
-                    currentPosition = currentPosition,
-                    isLineActive = isActive
-                )
+            var wordBuffer = mutableListOf<TtmlSyllable>()
+            fun flushWord() {
+                if (wordBuffer.isNotEmpty()) {
+                    Row {
+                        wordBuffer.forEach { syllable ->
+                            SyllableLyric(
+                                syllable = syllable,
+                                currentPosition = currentPosition,
+                                isLineActive = isActive
+                            )
+                        }
+                    }
+                    wordBuffer = mutableListOf()
+                }
             }
+            mainSyllables.forEach { syllable ->
+                wordBuffer.add(syllable)
+                if (!syllable.continuesWord) {
+                    flushWord()
+                }
+            }
+            // Por si la última palabra no se ha vaciado
+            flushWord()
         }
         
         // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
