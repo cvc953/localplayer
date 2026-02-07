@@ -71,7 +71,7 @@ fun SyllableLyric(
                 color = charColor,
                 fontSize = baseFontSize.sp,
                 lineHeight = (baseFontSize + 10f).sp,
-                fontWeight = if (isLineActive) FontWeight.SemiBold else FontWeight.Medium
+                fontWeight = if (isLineActive) FontWeight.Bold else FontWeight.Bold
             )
         }
     }
@@ -122,7 +122,7 @@ fun BackgroundSyllableLyric(
                 color = charColor,
                 fontSize = baseFontSize.sp,
                 lineHeight = (baseFontSize + 8f).sp,
-                fontWeight = FontWeight.Normal
+                fontWeight = FontWeight.Bold
             )
         }
     }
