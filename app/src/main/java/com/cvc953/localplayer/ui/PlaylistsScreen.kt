@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.ui
 
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -56,8 +57,17 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
     var playlistToDelete by remember { mutableStateOf<Playlist?>(null) }
     val context = LocalContext.current
     val activity = context as? Activity
+    var lastBackPressTime by remember { mutableStateOf(0L) }
 
-    BackHandler { activity?.moveTaskToBack(true) }
+    BackHandler {
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastBackPressTime < 1000) {
+            activity?.finish()
+        } else {
+            lastBackPressTime = currentTime
+            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val filteredPlaylists =
             remember(playlists, searchQuery) {
