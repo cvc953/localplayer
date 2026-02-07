@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
@@ -23,6 +26,8 @@ fun LyricLine(
     text: String,
     active: Boolean
 ) {
+    var lineCount by remember(text) { mutableStateOf(1) }
+
     val fontSize by animateFloatAsState(
         targetValue = if (active) 22f else 20f,
         label = "fontSize"
@@ -38,6 +43,8 @@ fun LyricLine(
         label = "color"
     )
 
+    val textAlign = if (lineCount > 1) TextAlign.Start else TextAlign.Center
+
     Text(
         text = text,
         modifier = Modifier
@@ -46,11 +53,14 @@ fun LyricLine(
         color = color,
         fontSize = fontSize.sp,
         fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
-        textAlign = TextAlign.Center,
+        textAlign = textAlign,
         lineHeight = (fontSize + 10).sp,
         maxLines = Int.MAX_VALUE,
         softWrap = true,
         overflow = TextOverflow.Visible,
+        onTextLayout = { result ->
+            lineCount = result.lineCount
+        },
         //alpha = alpha
     )
 }
