@@ -208,21 +208,25 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
         }
     }
 
-    // Botones de importar/exportar
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.End
-    ) {
-        Button(
-            onClick = { showImportDialog = true },
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
-            modifier = Modifier.padding(end = 8.dp)
-        ) { Text("Importar playlist") }
-        Button(
-            onClick = { showExportDialog = true },
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-        ) { Text("Exportar playlist") }
-    }
+    // Los botones deben ir dentro del Box/layout principal
+
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // Botones de importar/exportar
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(
+                    onClick = { showImportDialog = true },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
+                    modifier = Modifier.padding(end = 8.dp)
+                ) { Text("Importar playlist") }
+                Button(
+                    onClick = { showExportDialog = true },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                ) { Text("Exportar playlist") }
+            }
 
     val filteredPlaylists =
             remember(playlists, searchQuery) {
@@ -252,11 +256,9 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                         text = "Listas",
