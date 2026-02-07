@@ -17,13 +17,17 @@ object TtmlParser {
     
     fun parseTtml(content: String): TtmlLyrics {
         return try {
+            android.util.Log.d("TtmlParser", "Iniciando parseo de TTML, ${content.length} chars")
             val factory = XmlPullParserFactory.newInstance()
             factory.isNamespaceAware = true
             val parser = factory.newPullParser()
             parser.setInput(content.reader())
             
-            parseTtmlDocument(parser)
+            val result = parseTtmlDocument(parser)
+            android.util.Log.d("TtmlParser", "✓ Parseado completo: ${result.lines.size} líneas")
+            result
         } catch (e: Exception) {
+            android.util.Log.e("TtmlParser", "✗ Error parseando TTML", e)
             e.printStackTrace()
             TtmlLyrics() // Return empty lyrics on error
         }
@@ -67,17 +71,25 @@ object TtmlParser {
         while (depth > 0) {
             when (parser.next()) {
                 XmlPullParser.START_TAG -> {
-                    depth++
                     if (parser.name == "p") {
-                        parseParagraph(parser)?.let { lines.add(it) }
+                        parseParagraph(parser)?.let { 
+                            lines.add(it)
+                            android.util.Log.d("TtmlParser", "Línea parseada: '${it.text}' con ${it.syllabus.size} sílabas")
+                        }
+                        // parseParagraph ya consumió su END_TAG
+                    } else {
+                        depth++
                     }
                 }
                 XmlPullParser.END_TAG -> {
-                    depth--
+                    if (parser.name == "div") {
+                        depth--
+                    }
                 }
             }
         }
 
+        android.util.Log.d("TtmlParser", "Div parseado: ${lines.size} líneas")
         return lines
     }
 
@@ -85,7 +97,17 @@ object TtmlParser {
         val beginAttr = parser.getAttributeValue(null, "begin")
         val endAttr = parser.getAttributeValue(null, "end")
         
-        if (beginAttr == null || endAttr == null) return null
+        if (beginAttr == null || endAttr == null) {
+            // Consumir hasta el cierre del <p>
+            var depth = 1
+            while (depth > 0) {
+                when (parser.next()) {
+                    XmlPullParser.START_TAG -> depth++
+                    XmlPullParser.END_TAG -> depth--
+                }
+            }
+            return null
+        }
 
         val timeMs = parseTime(beginAttr)
         val endMs = parseTime(endAttr)
@@ -94,32 +116,45 @@ object TtmlParser {
         val syllabus = mutableListOf<TtmlSyllable>()
         val textBuilder = StringBuilder()
 
+        // Procesar contenido del <p>
         var depth = 1
         while (depth > 0) {
             when (parser.next()) {
                 XmlPullParser.START_TAG -> {
-                    depth++
                     if (parser.name == "span") {
                         val syllable = parseSpan(parser)
                         if (syllable != null) {
                             syllabus.add(syllable)
                             textBuilder.append(syllable.text)
                         }
+                        // parseSpan ya consumió su END_TAG
+                    } else {
+                        depth++
                     }
                 }
                 XmlPullParser.TEXT -> {
-                    textBuilder.append(parser.text)
+                    val text = parser.text
+                    if (!text.isNullOrBlank()) {
+                        textBuilder.append(text)
+                    }
                 }
                 XmlPullParser.END_TAG -> {
-                    depth--
+                    if (parser.name == "p") {
+                        depth--
+                    }
                 }
             }
+        }
+
+        val finalText = textBuilder.toString().trim()
+        if (finalText.isEmpty() && syllabus.isEmpty()) {
+            return null
         }
 
         return TtmlLine(
             timeMs = timeMs,
             durationMs = durationMs,
-            text = textBuilder.toString().trim(),
+            text = finalText,
             syllabus = syllabus
         )
     }
@@ -128,7 +163,17 @@ object TtmlParser {
         val beginAttr = parser.getAttributeValue(null, "begin")
         val endAttr = parser.getAttributeValue(null, "end")
 
-        if (beginAttr == null || endAttr == null) return null
+        if (beginAttr == null || endAttr == null) {
+            // Consumir hasta el cierre del <span>
+            var depth = 1
+            while (depth > 0) {
+                when (parser.next()) {
+                    XmlPullParser.START_TAG -> depth++
+                    XmlPullParser.END_TAG -> depth--
+                }
+            }
+            return null
+        }
 
         val timeMs = parseTime(beginAttr)
         val endMs = parseTime(endAttr)
@@ -137,13 +182,21 @@ object TtmlParser {
         val textBuilder = StringBuilder()
         var depth = 1
 
+        // Procesar contenido del <span>
         while (depth > 0) {
             when (parser.next()) {
                 XmlPullParser.TEXT -> {
-                    textBuilder.append(parser.text)
+                    val text = parser.text
+                    if (!text.isNullOrBlank()) {
+                        textBuilder.append(text)
+                    }
                 }
                 XmlPullParser.START_TAG -> depth++
-                XmlPullParser.END_TAG -> depth--
+                XmlPullParser.END_TAG -> {
+                    if (parser.name == "span") {
+                        depth--
+                    }
+                }
             }
         }
 

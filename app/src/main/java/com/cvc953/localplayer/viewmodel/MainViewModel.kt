@@ -583,11 +583,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                         "✓ Archivo TTML encontrado: ${ttmlFile.name}, ${text.length} chars"
                                 )
                                 val parsed = TtmlParser.parseTtml(text)
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ TTML parseado: ${parsed.lines.size} líneas, type=${parsed.type}"
+                                )
+                                parsed.lines.forEachIndexed { i, line ->
+                                    android.util.Log.d("LyricsDebug", "  Línea $i: '${line.text}' (${line.syllabus.size} sílabas)")
+                                }
                                 _ttmlLyrics.value = parsed
                                 _lyrics.value = emptyList() // Limpiar letras LRC
                                 android.util.Log.d(
                                         "LyricsDebug",
-                                        "✓ TTML parseado: ${parsed.lines.size} líneas"
+                                        "✓ StateFlow actualizado con TTML"
                                 )
                                 return@launch
                             } catch (e: Exception) {
