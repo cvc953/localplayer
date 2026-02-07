@@ -7,14 +7,13 @@ import android.graphics.Canvas
 import android.media.MediaMetadataRetriever
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -33,15 +32,16 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -56,10 +56,7 @@ import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-private fun createCombinedAlbumArt(
-    bitmaps: List<Bitmap?>,
-    size: Int = 256
-): Bitmap {
+private fun createCombinedAlbumArt(bitmaps: List<Bitmap?>, size: Int = 256): Bitmap {
     val canvas = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvasDrawer = Canvas(canvas)
     val quadSize = size / 2
@@ -78,10 +75,10 @@ private fun createCombinedAlbumArt(
 
 @Composable
 fun PlaylistAlbumArt(
-    playlistSongIds: List<Long>,
-    songs: List<Song>,
-    context: android.content.Context,
-    modifier: Modifier = Modifier
+        playlistSongIds: List<Long>,
+        songs: List<Song>,
+        context: android.content.Context,
+        modifier: Modifier = Modifier
 ) {
     var combinedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
@@ -92,9 +89,8 @@ fun PlaylistAlbumArt(
         }
 
         val bitmaps = mutableListOf<Bitmap?>()
-        val firstFourSongs = playlistSongIds.take(4).mapNotNull { songId -> 
-            songs.find { it.id == songId } 
-        }
+        val firstFourSongs =
+                playlistSongIds.take(4).mapNotNull { songId -> songs.find { it.id == songId } }
 
         firstFourSongs.forEach { song ->
             try {
@@ -116,30 +112,24 @@ fun PlaylistAlbumArt(
         }
 
         if (bitmaps.isNotEmpty()) {
-            withContext(Dispatchers.Default) {
-                combinedBitmap = createCombinedAlbumArt(bitmaps)
-            }
+            withContext(Dispatchers.Default) { combinedBitmap = createCombinedAlbumArt(bitmaps) }
         }
     }
 
     if (combinedBitmap != null) {
         Image(
-            painter = BitmapPainter(combinedBitmap!!.asImageBitmap()),
-            contentDescription = "Carátula de la playlist",
-            modifier = modifier
-                .size(60.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
+                painter = BitmapPainter(combinedBitmap!!.asImageBitmap()),
+                contentDescription = "Carátula de la playlist",
+                modifier = modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
         )
     } else {
         Box(
-            modifier = modifier
-                .size(60.dp)
-                .background(Color(0xFF404040), RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text("🎵", fontSize = 32.sp)
-        }
+                modifier =
+                        modifier.size(60.dp)
+                                .background(Color(0xFF404040), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+        ) { Text("🎵", fontSize = 32.sp) }
     }
 }
 
@@ -319,9 +309,7 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                                     playlistSongIds = playlist.songIds,
                                     songs = songs,
                                     context = LocalContext.current,
-                                    modifier = Modifier.clickable {
-                                        onPlaylistClick(playlist.name)
-                                    }
+                                    modifier = Modifier.clickable { onPlaylistClick(playlist.name) }
                             )
 
                             Spacer(modifier = Modifier.width(12.dp))
@@ -515,7 +503,7 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                             playlistSongs.map { it.id }.toSet()
                                         }
                             }
-                    ) { Text(if (allSelected) "Limpiar" else "Seleccionar todo") }
+                    ) { Text(if (allSelected) "Limpiar" else "Seleccionar todo", color = Color(0xFF2196F3)) }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                             onClick = {
@@ -538,10 +526,13 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                             }
                     ) { Text("Cancelar", color = Color(0xFF2196F3)) }
                 } else {
-                    Button(onClick = { showAddSongsDialog = true },  colors =
-                        androidx.compose.material3.ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2196F3)
-                        )) { Text("Agregar") }
+                    Button(
+                            onClick = { showAddSongsDialog = true },
+                            colors =
+                                    androidx.compose.material3.ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2196F3)
+                                    )
+                    ) { Text("Agregar") }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                             onClick = {
@@ -605,7 +596,12 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                                     selectedSongsToRemove - song.id
                                                 }
                                     },
-                                    modifier = Modifier.padding(end = 8.dp)
+                                    modifier = Modifier.padding(end = 8.dp),
+                                    colors = androidx.compose.material3.CheckboxDefaults.colors(
+                                            checkedColor = Color(0xFF2196F3),
+                                            uncheckedColor = Color(0xFF808080),
+                                            checkmarkColor = Color.White
+                                    )
                             )
                         }
 
@@ -664,7 +660,7 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                                         availableSongs.map { it.id }.toSet()
                                                     }
                                         }
-                                ) { Text(if (allSelected) "Limpiar" else "Seleccionar todo") }
+                                ) { Text(if (allSelected) "Limpiar" else "Seleccionar todo", color = Color(0xFF2196F3)) }
                             }
                             LazyColumn {
                                 items(availableSongs) { song ->
@@ -700,7 +696,12 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                                                 selectedSongsToAdd - song.id
                                                             }
                                                 },
-                                                modifier = Modifier.padding(end = 8.dp)
+                                                modifier = Modifier.padding(end = 8.dp),
+                                                colors = androidx.compose.material3.CheckboxDefaults.colors(
+                                                        checkedColor = Color(0xFF2196F3),
+                                                        uncheckedColor = Color(0xFF808080),
+                                                        checkmarkColor = Color.White
+                                                )
                                         )
                                         Text(
                                                 text = song.title,
@@ -726,7 +727,11 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                     showAddSongsDialog = false
                                 }
                             },
-                            enabled = selectedSongsToAdd.isNotEmpty()
+                            enabled = selectedSongsToAdd.isNotEmpty(),
+                            colors =
+                                    androidx.compose.material3.ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2196F3)
+                                    )
                     ) { Text("Agregar (${selectedSongsToAdd.size})") }
                 },
                 dismissButton = {
