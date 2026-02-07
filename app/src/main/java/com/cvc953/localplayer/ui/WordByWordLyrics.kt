@@ -56,7 +56,10 @@ fun SyllableLyric(
         0
     }
 
-    Row(modifier = modifier.padding(horizontal = 1.5.dp)) {
+    // Reducir padding si la sílaba continúa en la siguiente palabra
+    val horizontalPadding = if (syllable.continuesWord) 0.dp else 1.5.dp
+
+    Row(modifier = modifier.padding(horizontal = horizontalPadding)) {
         chars.forEachIndexed { index, ch ->
             val charColor by animateColorAsState(
                 targetValue = if (index < revealCount) Color.White else baseColor,
@@ -104,7 +107,10 @@ fun BackgroundSyllableLyric(
         0
     }
 
-    Row(modifier = modifier.padding(horizontal = 1.5.dp)) {
+    // Reducir padding si la sílaba continúa en la siguiente palabra
+    val horizontalPadding = if (syllable.continuesWord) 0.dp else 1.5.dp
+
+    Row(modifier = modifier.padding(horizontal = horizontalPadding)) {
         chars.forEachIndexed { index, ch ->
             val charColor by animateColorAsState(
                 targetValue = if (index < revealCount) Color(0xFFB0B0B0) else baseColor,
