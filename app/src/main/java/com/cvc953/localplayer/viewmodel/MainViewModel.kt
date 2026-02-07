@@ -42,53 +42,6 @@ data class LyricLine(val timeMs: Long, val text: String)
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Exportar playlists a archivo JSON
-    fun exportPlaylistsToFile(path: String, context: Context): Boolean {
-        return try {
-            val array = JSONArray()
-            _playlists.value.forEach { playlist ->
-                val idsArray = JSONArray()
-                playlist.songIds.forEach { idsArray.put(it) }
-                val obj = JSONObject()
-                obj.put("name", playlist.name)
-                obj.put("songIds", idsArray)
-                array.put(obj)
-            }
-            val file = java.io.File(path)
-            file.writeText(array.toString(2))
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    // Importar playlists desde archivo JSON
-    fun importPlaylistsFromFile(path: String, context: Context): Boolean {
-        return try {
-            val file = java.io.File(path)
-            if (!file.exists()) return false
-            val raw = file.readText()
-            val array = JSONArray(raw)
-            val result = mutableListOf<Playlist>()
-            for (i in 0 until array.length()) {
-                val obj = array.getJSONObject(i)
-                val name = obj.optString("name", "").trim()
-                if (name.isEmpty()) continue
-                val idsArray = obj.optJSONArray("songIds") ?: JSONArray()
-                val ids = mutableListOf<Long>()
-                for (j in 0 until idsArray.length()) {
-                    ids.add(idsArray.optLong(j))
-                }
-                result.add(Playlist(name = name, songIds = ids))
-            }
-            _playlists.value = result
-            savePlaylistsToPrefs(result)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-
     companion object {
         var instance: MainViewModel? = null
         private const val PREFS_NAME = "music_prefs"
