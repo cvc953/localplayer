@@ -59,7 +59,8 @@ fun SongItem(
         onQueueNext: () -> Unit,
         onQueueEnd: () -> Unit,
         playlists: List<Playlist> = emptyList(),
-        onAddToPlaylist: ((String, Long) -> Unit)? = null
+        onAddToPlaylist: ((String, Long) -> Unit)? = null,
+        onRemoveFromPlaylist: (() -> Unit)? = null
 ) {
 
     val context = LocalContext.current
@@ -155,6 +156,15 @@ fun SongItem(
                             onQueueEnd()
                         }
                 )
+                if (onRemoveFromPlaylist != null) {
+                    DropdownMenuItem(
+                            text = { Text("Quitar de la lista", color = Color.White) },
+                            onClick = {
+                                menuExpanded = false
+                                onRemoveFromPlaylist()
+                            }
+                    )
+                }
                 if (playlists.isNotEmpty() && onAddToPlaylist != null) {
                     DropdownMenuItem(
                             text = { Text("Agregar a playlist", color = Color.White) },

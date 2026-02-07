@@ -722,6 +722,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         savePlaylistsToPrefs(updated)
         return true
     }
+    fun deletePlaylist(name: String): Boolean {
+        val updated = _playlists.value.filterNot { it.name == name }
+        if (updated.size == _playlists.value.size) return false
+        
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
 
     fun addSongToPlaylist(playlistName: String, songId: Long): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
@@ -737,6 +746,61 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
         
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun removeSongFromPlaylist(playlistName: String, songId: Long): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+        if (songId !in playlist.songIds) return false
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds.filterNot { it == songId })
+                    } else {
+                        p
+                    }
+                }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun addSongsToPlaylist(playlistName: String, songIds: List<Long>): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+
+        val newSongIds = songIds.filterNot { it in playlist.songIds }
+        if (newSongIds.isEmpty()) return false
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds + newSongIds)
+                    } else {
+                        p
+                    }
+                }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun removeSongsFromPlaylist(playlistName: String, songIds: List<Long>): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds.filterNot { it in songIds })
+                    } else {
+                        p
+                    }
+                }
+
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
