@@ -860,4 +860,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString(PLAYLISTS_JSON, array.toString()).apply()
     }
 
+    fun isSongInPlaylist(playlistName: String, songId: Long): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+        return songId in playlist.songIds
+    }
+
 }
