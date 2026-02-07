@@ -190,14 +190,6 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
 
-    // Estado para importar/exportar
-    var showImportDialog by remember { mutableStateOf(false) }
-    var showExportDialog by remember { mutableStateOf(false) }
-    var importError by remember { mutableStateOf<String?>(null) }
-    var exportSuccess by remember { mutableStateOf<String?>(null) }
-    var importPath by remember { mutableStateOf("") }
-    var exportPath by remember { mutableStateOf("") }
-
     BackHandler {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastBackPressTime < 1500) {
@@ -207,26 +199,6 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
             Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
         }
     }
-
-    // Los botones deben ir dentro del Box/layout principal
-
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Botones de importar/exportar
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = { showImportDialog = true },
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3)),
-                    modifier = Modifier.padding(end = 8.dp)
-                ) { Text("Importar playlist") }
-                Button(
-                    onClick = { showExportDialog = true },
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-                ) { Text("Exportar playlist") }
-            }
 
     val filteredPlaylists =
             remember(playlists, searchQuery) {
@@ -256,9 +228,11 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
         return
     }
 
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                         text = "Listas",
@@ -523,101 +497,6 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                             }
                     ) { Text("Cancelar", color = Color.White) }
                 }
-        )
-    }
-
-    // Diálogo de exportar
-    if (showExportDialog) {
-        AlertDialog(
-            onDismissRequest = { showExportDialog = false; exportSuccess = null },
-            containerColor = Color(0xFF1A1A1A),
-            title = { Text("Exportar playlists", color = Color.White) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = exportPath,
-                        onValueChange = { exportPath = it },
-                        singleLine = true,
-                        placeholder = { Text("Ruta de archivo .json") },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFF1A1A1A),
-                            unfocusedContainerColor = Color(0xFF1A1A1A),
-                            focusedIndicatorColor = Color(0xFF2196F3),
-                            unfocusedIndicatorColor = Color(0xFF404040),
-                            cursorColor = Color(0xFF2196F3),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        )
-                    )
-                    if (exportSuccess != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = exportSuccess!!, color = Color(0xFF4CAF50), fontSize = 12.sp)
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val ok = viewModel.exportPlaylistsToFile(exportPath, context)
-                        exportSuccess = if (ok) "Exportado correctamente" else "Error al exportar"
-                    }
-                ) { Text("Exportar", color = Color(0xFF2196F3)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showExportDialog = false; exportSuccess = null }) {
-                    Text("Cancelar", color = Color.White)
-                }
-            }
-        )
-    }
-
-    // Diálogo de importar
-    if (showImportDialog) {
-        AlertDialog(
-            onDismissRequest = { showImportDialog = false; importError = null },
-            containerColor = Color(0xFF1A1A1A),
-            title = { Text("Importar playlists", color = Color.White) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = importPath,
-                        onValueChange = { importPath = it },
-                        singleLine = true,
-                        placeholder = { Text("Ruta de archivo .json") },
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFF1A1A1A),
-                            unfocusedContainerColor = Color(0xFF1A1A1A),
-                            focusedIndicatorColor = Color(0xFF2196F3),
-                            unfocusedIndicatorColor = Color(0xFF404040),
-                            cursorColor = Color(0xFF2196F3),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        )
-                    )
-                    if (importError != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = importError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val ok = viewModel.importPlaylistsFromFile(importPath, context)
-                        if (ok) {
-                            showImportDialog = false
-                            importError = null
-                        } else {
-                            importError = "Error al importar archivo"
-                        }
-                    }
-                ) { Text("Importar", color = Color(0xFF2196F3)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { showImportDialog = false; importError = null }) {
-                    Text("Cancelar", color = Color.White)
-                }
-            }
         )
     }
 
