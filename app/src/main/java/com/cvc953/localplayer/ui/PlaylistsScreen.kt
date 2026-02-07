@@ -1,14 +1,20 @@
 package com.cvc953.localplayer.ui
 
 import android.app.Activity
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.media.MediaMetadataRetriever
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -33,20 +39,115 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.model.Playlist
+import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+private fun createCombinedAlbumArt(
+    bitmaps: List<Bitmap?>,
+    size: Int = 256
+): Bitmap {
+    val canvas = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    val canvasDrawer = Canvas(canvas)
+    val quadSize = size / 2
+
+    // Redimensionar y dibujar hasta 4 imágenes en una cuadrícula de 2x2
+    for (i in 0 until minOf(4, bitmaps.size)) {
+        val bitmap = bitmaps[i] ?: continue
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, quadSize, quadSize, true)
+        val x = (i % 2) * quadSize
+        val y = (i / 2) * quadSize
+        canvasDrawer.drawBitmap(scaledBitmap, x.toFloat(), y.toFloat(), null)
+    }
+
+    return canvas
+}
+
+@Composable
+fun PlaylistAlbumArt(
+    playlistSongIds: List<Long>,
+    songs: List<Song>,
+    context: android.content.Context,
+    modifier: Modifier = Modifier
+) {
+    var combinedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    LaunchedEffect(playlistSongIds) {
+        if (playlistSongIds.isEmpty()) {
+            combinedBitmap = null
+            return@LaunchedEffect
+        }
+
+        val bitmaps = mutableListOf<Bitmap?>()
+        val firstFourSongs = playlistSongIds.take(4).mapNotNull { songId -> 
+            songs.find { it.id == songId } 
+        }
+
+        firstFourSongs.forEach { song ->
+            try {
+                val retriever = MediaMetadataRetriever()
+                retriever.setDataSource(context, song.uri)
+                retriever.embeddedPicture?.let {
+                    val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                    bitmaps.add(bitmap)
+                }
+                retriever.release()
+            } catch (_: Exception) {
+                bitmaps.add(null)
+            }
+        }
+
+        // Rellenar con nulls si hay menos de 4 canciones
+        while (bitmaps.size < minOf(4, firstFourSongs.size)) {
+            bitmaps.add(null)
+        }
+
+        if (bitmaps.isNotEmpty()) {
+            withContext(Dispatchers.Default) {
+                combinedBitmap = createCombinedAlbumArt(bitmaps)
+            }
+        }
+    }
+
+    if (combinedBitmap != null) {
+        Image(
+            painter = BitmapPainter(combinedBitmap!!.asImageBitmap()),
+            contentDescription = "Carátula de la playlist",
+            modifier = modifier
+                .size(60.dp)
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Box(
+            modifier = modifier
+                .size(60.dp)
+                .background(Color(0xFF404040), RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("🎵", fontSize = 32.sp)
+        }
+    }
+}
 
 @Composable
 fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit) {
     val isScanning by viewModel.isScanning
     val playlists: List<Playlist> by viewModel.playlists.collectAsState()
+    val songs by viewModel.songs.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -214,6 +315,17 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                         ) {
+                            PlaylistAlbumArt(
+                                    playlistSongIds = playlist.songIds,
+                                    songs = songs,
+                                    context = LocalContext.current,
+                                    modifier = Modifier.clickable {
+                                        onPlaylistClick(playlist.name)
+                                    }
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
                             Column(
                                     modifier =
                                             Modifier.weight(1f).clickable {
@@ -426,7 +538,10 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                             }
                     ) { Text("Cancelar", color = Color(0xFF2196F3)) }
                 } else {
-                    Button(onClick = { showAddSongsDialog = true }) { Text("Agregar") }
+                    Button(onClick = { showAddSongsDialog = true },  colors =
+                        androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2196F3)
+                        )) { Text("Agregar") }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                             onClick = {
