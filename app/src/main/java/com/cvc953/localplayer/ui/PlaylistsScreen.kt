@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
@@ -146,6 +146,11 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
     var newPlaylistName by rememberSaveable { mutableStateOf("") }
     var createError by rememberSaveable { mutableStateOf<String?>(null) }
     var playlistToDelete by remember { mutableStateOf<Playlist?>(null) }
+    var playlistToRename by remember { mutableStateOf<Playlist?>(null) }
+    var showRenameDialog by rememberSaveable { mutableStateOf(false) }
+    var renamePlaylistName by rememberSaveable { mutableStateOf("") }
+    var renameError by rememberSaveable { mutableStateOf<String?>(null) }
+    var menuExpandedPlaylistId by remember { mutableStateOf<Long?>(null) }
     val context = LocalContext.current
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
@@ -327,12 +332,47 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                                         fontSize = 12.sp
                                 )
                             }
-                            IconButton(onClick = { playlistToDelete = playlist }) {
-                                Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Eliminar",
-                                        tint = Color(0xFFFF6B6B)
-                                )
+                            Box {
+                                IconButton(
+                                        onClick = {
+                                            menuExpandedPlaylistId =
+                                                    if (menuExpandedPlaylistId ==
+                                                                    playlist.hashCode().toLong()
+                                                    )
+                                                            null
+                                                    else playlist.hashCode().toLong()
+                                        }
+                                ) {
+                                    Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = "Opciones",
+                                            tint = Color(0xFF2196F3)
+                                    )
+                                }
+                                DropdownMenu(
+                                        expanded =
+                                                menuExpandedPlaylistId ==
+                                                        playlist.hashCode().toLong(),
+                                        onDismissRequest = { menuExpandedPlaylistId = null },
+                                        containerColor = Color(0xFF1A1A1A)
+                                ) {
+                                    DropdownMenuItem(
+                                            text = { Text("Renombrar", color = Color.White) },
+                                            onClick = {
+                                                playlistToRename = playlist
+                                                renamePlaylistName = playlist.name
+                                                showRenameDialog = true
+                                                menuExpandedPlaylistId = null
+                                            }
+                                    )
+                                    DropdownMenuItem(
+                                            text = { Text("Eliminar", color = Color(0xFFFF6B6B)) },
+                                            onClick = {
+                                                playlistToDelete = playlist
+                                                menuExpandedPlaylistId = null
+                                            }
+                                    )
+                                }
                             }
                         }
                     }
@@ -424,6 +464,71 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                 }
         )
     }
+
+    if (showRenameDialog && playlistToRename != null) {
+        AlertDialog(
+                onDismissRequest = {
+                    showRenameDialog = false
+                    renamePlaylistName = ""
+                    renameError = null
+                },
+                containerColor = Color(0xFF1A1A1A),
+                title = { Text("Renombrar lista", color = Color.White) },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                                value = renamePlaylistName,
+                                onValueChange = { renamePlaylistName = it },
+                                singleLine = true,
+                                placeholder = { Text("Nombre de la lista") },
+                                colors =
+                                        TextFieldDefaults.colors(
+                                                focusedContainerColor = Color(0xFF1A1A1A),
+                                                unfocusedContainerColor = Color(0xFF1A1A1A),
+                                                focusedIndicatorColor = Color(0xFF2196F3),
+                                                unfocusedIndicatorColor = Color(0xFF404040),
+                                                cursorColor = Color(0xFF2196F3),
+                                                focusedTextColor = Color.White,
+                                                unfocusedTextColor = Color.White
+                                        )
+                        )
+                        if (renameError != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = renameError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                            onClick = {
+                                val ok =
+                                        viewModel.renamePlaylist(
+                                                playlistToRename!!.name,
+                                                renamePlaylistName
+                                        )
+                                if (ok) {
+                                    showRenameDialog = false
+                                    renamePlaylistName = ""
+                                    renameError = null
+                                    playlistToRename = null
+                                } else {
+                                    renameError = "Nombre inválido o duplicado"
+                                }
+                            }
+                    ) { Text("Renombrar", color = Color(0xFF2196F3)) }
+                },
+                dismissButton = {
+                    TextButton(
+                            onClick = {
+                                showRenameDialog = false
+                                renamePlaylistName = ""
+                                renameError = null
+                                playlistToRename = null
+                            }
+                    ) { Text("Cancelar", color = Color.White) }
+                }
+        )
+    }
 }
 
 @Composable
@@ -503,7 +608,12 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                             playlistSongs.map { it.id }.toSet()
                                         }
                             }
-                    ) { Text(if (allSelected) "Limpiar" else "Seleccionar todo", color = Color(0xFF2196F3)) }
+                    ) {
+                        Text(
+                                if (allSelected) "Limpiar" else "Seleccionar todo",
+                                color = Color(0xFF2196F3)
+                        )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                             onClick = {
@@ -597,11 +707,12 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                                 }
                                     },
                                     modifier = Modifier.padding(end = 8.dp),
-                                    colors = androidx.compose.material3.CheckboxDefaults.colors(
-                                            checkedColor = Color(0xFF2196F3),
-                                            uncheckedColor = Color(0xFF808080),
-                                            checkmarkColor = Color.White
-                                    )
+                                    colors =
+                                            androidx.compose.material3.CheckboxDefaults.colors(
+                                                    checkedColor = Color(0xFF2196F3),
+                                                    uncheckedColor = Color(0xFF808080),
+                                                    checkmarkColor = Color.White
+                                            )
                             )
                         }
 
@@ -660,7 +771,12 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                                         availableSongs.map { it.id }.toSet()
                                                     }
                                         }
-                                ) { Text(if (allSelected) "Limpiar" else "Seleccionar todo", color = Color(0xFF2196F3)) }
+                                ) {
+                                    Text(
+                                            if (allSelected) "Limpiar" else "Seleccionar todo",
+                                            color = Color(0xFF2196F3)
+                                    )
+                                }
                             }
                             LazyColumn {
                                 items(availableSongs) { song ->
@@ -697,11 +813,15 @@ fun PlaylistDetailScreen(viewModel: MainViewModel, playlistName: String, onBack:
                                                             }
                                                 },
                                                 modifier = Modifier.padding(end = 8.dp),
-                                                colors = androidx.compose.material3.CheckboxDefaults.colors(
-                                                        checkedColor = Color(0xFF2196F3),
-                                                        uncheckedColor = Color(0xFF808080),
-                                                        checkmarkColor = Color.White
-                                                )
+                                                colors =
+                                                        androidx.compose.material3.CheckboxDefaults
+                                                                .colors(
+                                                                        checkedColor =
+                                                                                Color(0xFF2196F3),
+                                                                        uncheckedColor =
+                                                                                Color(0xFF808080),
+                                                                        checkmarkColor = Color.White
+                                                                )
                                         )
                                         Text(
                                                 text = song.title,
