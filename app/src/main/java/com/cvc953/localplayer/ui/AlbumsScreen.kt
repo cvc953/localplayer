@@ -8,10 +8,13 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -31,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,10 +43,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +59,8 @@ import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -90,6 +101,9 @@ fun AlbumsScreen(viewModel: MainViewModel, onAlbumClick: (String) -> Unit) {
                             filteredAlbums.sortedByDescending { it.first.lowercase() }
                 }
             }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    var currentScrollLetter by remember { mutableStateOf<String?>(null) }
 
     if (isScanning) {
         Column(
@@ -175,62 +189,190 @@ fun AlbumsScreen(viewModel: MainViewModel, onAlbumClick: (String) -> Unit) {
                 )
             }
 
-            LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding =
-                            PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(sortedAlbums) { (albumName, albumSongs) ->
-                    val context = LocalContext.current
-                    val firstSong = albumSongs.firstOrNull()
-                    var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
+            Box(modifier = Modifier.fillMaxSize()) {
+                LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = listState,
+                        contentPadding =
+                                PaddingValues(
+                                        start = 16.dp,
+                                        top = 16.dp,
+                                        bottom = 16.dp,
+                                        end = 4.dp
+                                ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(sortedAlbums) { (albumName, albumSongs) ->
+                        val context = LocalContext.current
+                        val firstSong = albumSongs.firstOrNull()
+                        var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
-                    LaunchedEffect(firstSong?.uri) {
-                        withContext(Dispatchers.IO) {
-                            try {
-                                val uri = firstSong?.uri ?: return@withContext
-                                val retriever = MediaMetadataRetriever()
-                                retriever.setDataSource(context, uri)
-                                retriever.embeddedPicture?.let {
-                                    albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                        LaunchedEffect(firstSong?.uri) {
+                            withContext(Dispatchers.IO) {
+                                try {
+                                    val uri = firstSong?.uri ?: return@withContext
+                                    val retriever = MediaMetadataRetriever()
+                                    retriever.setDataSource(context, uri)
+                                    retriever.embeddedPicture?.let {
+                                        albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                                    }
+                                    retriever.release()
+                                } catch (_: Exception) {}
+                            }
+                        }
+
+                        Row(
+                                modifier =
+                                        Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
+                                            onAlbumClick(albumName)
+                                        },
+                                verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                    painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) }
+                                                    ?: painterResource(R.drawable.ic_default_album),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                        text = albumName,
+                                        color = Color.White,
+                                        fontSize = 16.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                        text = "${albumSongs.size} canciones",
+                                        color = Color.Gray,
+                                        fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (sortedAlbums.isNotEmpty()) {
+                    val alphabet = listOf("#") + ('A'..'Z').map { it.toString() }
+                    var columnHeight by remember { mutableStateOf(0f) }
+
+                    fun scrollToLetter(letter: String) {
+                        currentScrollLetter = letter
+                        scope.launch {
+                            delay(800)
+                            currentScrollLetter = null
+                        }
+                        val index =
+                                if (letter == "#") {
+                                    sortedAlbums.indexOfFirst { (albumName, _) ->
+                                        val firstChar = albumName.firstOrNull()?.uppercaseChar()
+                                        firstChar == null || !firstChar.isLetter()
+                                    }
+                                } else {
+                                    sortedAlbums.indexOfFirst { (albumName, _) ->
+                                        albumName.firstOrNull()?.uppercaseChar() == letter[0]
+                                    }
                                 }
-                                retriever.release()
-                            } catch (_: Exception) {}
+                        if (index >= 0) {
+                            scope.launch { listState.scrollToItem(index) }
                         }
                     }
 
-                    Row(
+                    Column(
                             modifier =
-                                    Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                                        onAlbumClick(albumName)
-                                    },
-                            verticalAlignment = Alignment.CenterVertically
+                                    Modifier.align(Alignment.CenterEnd)
+                                            .padding(end = 4.dp)
+                                            .width(28.dp)
+                                            .fillMaxHeight(0.75f)
+                                            .onGloballyPositioned { coords ->
+                                                columnHeight = coords.size.height.toFloat()
+                                            }
+                                            .pointerInput(Unit) {
+                                                detectDragGestures(
+                                                        onDragStart = { offset ->
+                                                            val index =
+                                                                    ((offset.y / columnHeight) *
+                                                                                    alphabet.size)
+                                                                            .toInt()
+                                                                            .coerceIn(
+                                                                                    0,
+                                                                                    alphabet.lastIndex
+                                                                            )
+                                                            scrollToLetter(alphabet[index])
+                                                        },
+                                                        onDrag = { change, _ ->
+                                                            change.consume()
+                                                            val y =
+                                                                    change.position.y.coerceIn(
+                                                                            0f,
+                                                                            columnHeight
+                                                                    )
+                                                            val index =
+                                                                    ((y / columnHeight) *
+                                                                                    alphabet.size)
+                                                                            .toInt()
+                                                                            .coerceIn(
+                                                                                    0,
+                                                                                    alphabet.lastIndex
+                                                                            )
+                                                            scrollToLetter(alphabet[index])
+                                                        }
+                                                )
+                                            },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Image(
-                                painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) }
-                                                ?: painterResource(R.drawable.ic_default_album),
-                                contentDescription = null,
-                                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-                                contentScale = ContentScale.Crop
-                        )
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
+                        alphabet.forEach { letter ->
+                            val isActive = currentScrollLetter == letter
                             Text(
-                                    text = albumName,
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                    text = "${albumSongs.size} canciones",
-                                    color = Color.Gray,
-                                    fontSize = 12.sp
+                                    text = letter,
+                                    color =
+                                            if (isActive) Color(0xFF2196F3)
+                                            else Color.White.copy(alpha = 0.7f),
+                                    fontSize = if (isActive) 12.sp else 10.sp,
+                                    fontWeight =
+                                            if (isActive) FontWeight.Bold else FontWeight.Medium,
+                                    textAlign = TextAlign.Center,
+                                    modifier =
+                                            Modifier.clickable { scrollToLetter(letter) }
+                                                    .padding(vertical = 1.5.dp)
                             )
                         }
+                    }
+                }
+
+                currentScrollLetter?.let { letter ->
+                    Box(
+                            modifier =
+                                    Modifier.align(Alignment.Center)
+                                            .size(
+                                                    with(LocalDensity.current) {
+                                                        LocalConfiguration.current
+                                                                .screenWidthDp
+                                                                .dp * 0.25f
+                                                    }
+                                            )
+                                            .background(
+                                                    Color.Black.copy(alpha = 0.8f),
+                                                    RoundedCornerShape(16.dp)
+                                            )
+                                            .border(
+                                                    2.dp,
+                                                    Color(0xFF2196F3),
+                                                    RoundedCornerShape(16.dp)
+                                            ),
+                            contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                                text = letter,
+                                color = Color.White,
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
