@@ -203,56 +203,21 @@ fun WordByWordLine(
 @Composable
 fun LoadingDotsAnimation(
     modifier: Modifier = Modifier,
-    isVisible: Boolean = true
+    isVisible: Boolean = true,
+    durationMs: Long = 1000L, // Duración total del gap instrumental
+    elapsedMs: Long = 0L // Tiempo transcurrido actual
 ) {
     if (!isVisible) return
 
-    val transition = rememberInfiniteTransition(label = "dots")
+    // Calcular el progreso de cada punto
+    val progress = (elapsedMs.toFloat() / durationMs.coerceAtLeast(1)).coerceIn(0f, 1f)
+    // Cada punto se vuelve blanco en tercios
+    val dot1Active = progress >= 1f / 3f
+    val dot2Active = progress >= 2f / 3f
+    val dot3Active = progress >= 1f
 
-    val dot1 by transition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0.6f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 900
-                0.6f at 0
-                1.2f at 300
-                0.6f at 900
-            },
-            initialStartOffset = StartOffset(0)
-        ),
-        label = "dot1"
-    )
-
-    val dot2 by transition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0.6f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 900
-                0.6f at 0
-                1.2f at 300
-                0.6f at 900
-            },
-            initialStartOffset = StartOffset(150)
-        ),
-        label = "dot2"
-    )
-
-    val dot3 by transition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0.6f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 900
-                0.6f at 0
-                1.2f at 300
-                0.6f at 900
-            },
-            initialStartOffset = StartOffset(300)
-        ),
-        label = "dot3"
-    )
+    val baseColor = Color(0xFF505050)
+    val activeColor = Color.White
 
     Box(
         modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
@@ -264,30 +229,24 @@ fun LoadingDotsAnimation(
         ) {
             Text(
                 text = "●",
-                color = Color(0xFF505050),
+                color = if (dot1Active) activeColor else baseColor,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .scale(dot1)
-                    .padding(horizontal = 6.dp)
+                modifier = Modifier.padding(horizontal = 6.dp)
             )
             Text(
                 text = "●",
-                color = Color(0xFF505050),
+                color = if (dot2Active) activeColor else baseColor,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .scale(dot2)
-                    .padding(horizontal = 6.dp)
+                modifier = Modifier.padding(horizontal = 6.dp)
             )
             Text(
                 text = "●",
-                color = Color(0xFF505050),
+                color = if (dot3Active) activeColor else baseColor,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .scale(dot3)
-                    .padding(horizontal = 6.dp)
+                modifier = Modifier.padding(horizontal = 6.dp)
             )
         }
     }
