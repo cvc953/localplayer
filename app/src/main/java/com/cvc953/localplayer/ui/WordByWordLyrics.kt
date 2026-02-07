@@ -153,6 +153,7 @@ fun WordByWordLine(
             verticalArrangement = Arrangement.Center
         ) {
             var wordBuffer = mutableListOf<TtmlSyllable>()
+            @Composable
             fun flushWord() {
                 if (wordBuffer.isNotEmpty()) {
                     Row {
