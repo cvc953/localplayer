@@ -29,10 +29,8 @@ fun SyllableLyric(
     isLineActive: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val baseColor = when {
-        isLineActive -> Color(0xFFE0E0E0)
-        else -> Color(0xFF707070)
-    }
+    val baseColor = Color(0xFF707070)
+    val baseFontSize = if (isLineActive) 21f else 20f
 
     val chars = syllable.text.toCharArray()
     val charCount = chars.size.coerceAtLeast(1)
@@ -58,8 +56,8 @@ fun SyllableLyric(
             Text(
                 text = ch.toString(),
                 color = charColor,
-                fontSize = 20.sp,
-                lineHeight = 30.sp,
+                fontSize = baseFontSize.sp,
+                lineHeight = (baseFontSize + 10f).sp,
                 fontWeight = if (isLineActive) FontWeight.SemiBold else FontWeight.Medium
             )
         }
