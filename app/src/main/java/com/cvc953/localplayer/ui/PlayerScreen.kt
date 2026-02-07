@@ -927,16 +927,14 @@ fun SongTitleSection(
                                 color = Color(0xFFAAAAAA),
                                 fontSize = 14.sp,
                                 maxLines = 1,
-                                modifier = Modifier.clickable {
-                                        menuTarget = "info"
-                                        showMenu = true
-                                }
+                                modifier =
+                                        Modifier.clickable {
+                                                menuTarget = "info"
+                                                showMenu = true
+                                        }
                         )
 
-                        DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
-                        ) {
+                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
                                 DropdownMenuItem(
                                         text = { Text("Ir al artista") },
                                         onClick = {
