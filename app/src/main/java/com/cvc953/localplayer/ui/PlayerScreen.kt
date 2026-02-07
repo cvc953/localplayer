@@ -428,12 +428,14 @@ fun PlayerScreen(
                         if (showAddToPlaylistDialog) {
                                 AlertDialog(
                                         onDismissRequest = { showAddToPlaylistDialog = false },
-                                        title = { Text("Agregar a Playlist") },
+                                        containerColor = Color(0xFF1A1A1A),
+                                        title = { Text("Agregar a Playlist", color = Color.White) },
                                         text = {
                                                 LazyColumn {
                                                         items(playlists) { playlist ->
                                                                 Text(
                                                                         text = playlist.name,
+                                                                        color = Color.White,
                                                                         modifier =
                                                                                 Modifier.fillMaxWidth()
                                                                                         .clickable {
@@ -452,8 +454,9 @@ fun PlayerScreen(
                                                                                                         false
                                                                                         }
                                                                                         .padding(
-                                                                                                8.dp
-                                                                                        )
+                                                                                                12.dp
+                                                                                        ),
+                                                                        fontSize = 14.sp
                                                                 )
                                                         }
                                                 }
@@ -463,7 +466,7 @@ fun PlayerScreen(
                                                         onClick = {
                                                                 showAddToPlaylistDialog = false
                                                         }
-                                                ) { Text("Cancelar") }
+                                                ) { Text("Cancelar", color = Color(0xFF2196F3)) }
                                         }
                                 )
                         }
