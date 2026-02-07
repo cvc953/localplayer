@@ -115,6 +115,7 @@ object TtmlParser {
 
         val syllabus = mutableListOf<TtmlSyllable>()
         val textBuilder = StringBuilder()
+        var insideParenthesis = false
 
         // Procesar contenido del <p>
         var depth = 1
@@ -122,10 +123,27 @@ object TtmlParser {
             when (parser.next()) {
                 XmlPullParser.START_TAG -> {
                     if (parser.name == "span") {
-                        val syllable = parseSpan(parser)
+                        val syllable = parseSpan(parser, insideParenthesis)
                         if (syllable != null) {
-                            syllabus.add(syllable)
-                            textBuilder.append(syllable.text)
+                            // Detectar apertura de paréntesis
+                            if (syllable.text.startsWith("(")) {
+                                insideParenthesis = true
+                            }
+                            
+                            // Actualizar isBackground si estamos dentro de paréntesis
+                            val updatedSyllable = if (insideParenthesis) {
+                                syllable.copy(isBackground = true)
+                            } else {
+                                syllable
+                            }
+                            
+                            syllabus.add(updatedSyllable)
+                            textBuilder.append(updatedSyllable.text)
+                            
+                            // Detectar cierre de paréntesis
+                            if (syllable.text.endsWith(")")) {
+                                insideParenthesis = false
+                            }
                         }
                         // parseSpan ya consumió su END_TAG
                     } else {
@@ -159,7 +177,7 @@ object TtmlParser {
         )
     }
 
-    private fun parseSpan(parser: XmlPullParser): TtmlSyllable? {
+    private fun parseSpan(parser: XmlPullParser, isBackground: Boolean = false): TtmlSyllable? {
         val beginAttr = parser.getAttributeValue(null, "begin")
         val endAttr = parser.getAttributeValue(null, "end")
         val durAttr = parser.getAttributeValue(null, "dur")
@@ -226,7 +244,8 @@ object TtmlParser {
         return TtmlSyllable(
             text = text,
             timeMs = timeMs,
-            durationMs = durationMs
+            durationMs = durationMs,
+            isBackground = isBackground
         )
     }
 
