@@ -40,62 +40,75 @@ fun LyricLine(
 
     val textAlign = TextAlign.Start
 
-    // Puntos animados a la izquierda
-    val dotCount = 4
-    val baseSize = 8f
-    val maxSize = 18f
-    val colorSteps = listOf(
-        Color(0xFF888888), // gris oscuro
-        Color(0xFFAAAAAA), // gris medio
-        Color(0xFFCCCCCC), // gris claro
-        Color.White        // blanco
-    )
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        // Animar los puntos
-        for (i in 0 until dotCount) {
-            val dotProgress = if (active) (i + 1).toFloat() / dotCount else 0f
-            val dotSize by animateFloatAsState(
-                targetValue = baseSize + (maxSize - baseSize) * dotProgress,
-                label = "dotSize$i"
-            )
-            val dotColor by animateColorAsState(
-                targetValue = if (active) colorSteps[i] else colorSteps[0],
-                label = "dotColor$i"
-            )
-            Box(
-                modifier = Modifier
-                    .size(dotSize.dp)
-                    .graphicsLayer {
-                        alpha = if (active) 1f else 0.5f
+    // Animación de tres puntos para instrumental
+    if (text.trim() == "...") {
+        val dotCount = 3
+        val baseSize = 10f
+        val maxSize = 18f
+        val colorSteps = listOf(
+            Color(0xFF888888), // gris oscuro
+            Color(0xFFCCCCCC), // gris claro
+            Color.White        // blanco
+        )
+        val duration = 900 // ms
+        val currentTime = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(System.currentTimeMillis()) }
+        androidx.compose.runtime.LaunchedEffect(active) {
+            while (active) {
+                kotlinx.coroutines.delay(100)
+                currentTime.value = System.currentTimeMillis()
+            }
+        }
+        val animPhase = ((currentTime.value / (duration / dotCount)) % dotCount).toInt()
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            for (i in 0 until dotCount) {
+                val isActiveDot = i == animPhase && active
+                val dotSize by animateFloatAsState(
+                    targetValue = if (isActiveDot) maxSize else baseSize,
+                    label = "dotSize$i"
+                )
+                val dotColor by animateColorAsState(
+                    targetValue = if (isActiveDot) colorSteps[2] else colorSteps[0],
+                    label = "dotColor$i"
+                )
+                Box(
+                    modifier = Modifier
+                        .size(dotSize.dp)
+                        .padding(end = 4.dp)
+                ) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxWidth()) {
+                        drawCircle(color = dotColor)
                     }
-                    .padding(end = 2.dp)
-            ) {
-                androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxWidth()) {
-                    drawCircle(color = dotColor)
                 }
             }
         }
-        Spacer(modifier = Modifier.size(8.dp))
-        Text(
-            text = text,
-            color = if (active) Color.White else Color.Gray,
-            fontSize = fontSize.sp,
-            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
-            textAlign = textAlign,
-            lineHeight = (fontSize + 10).sp,
-            maxLines = Int.MAX_VALUE,
-            softWrap = true,
-            overflow = TextOverflow.Visible,
-            onTextLayout = { result ->
-                lineCount = result.lineCount
-            },
-        )
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Text(
+                text = text,
+                color = if (active) Color.White else Color.Gray,
+                fontSize = fontSize.sp,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+                textAlign = textAlign,
+                lineHeight = (fontSize + 10).sp,
+                maxLines = Int.MAX_VALUE,
+                softWrap = true,
+                overflow = TextOverflow.Visible,
+                onTextLayout = { result ->
+                    lineCount = result.lineCount
+                },
+            )
+        }
     }
 }
