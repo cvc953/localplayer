@@ -117,7 +117,7 @@ fun TtmlLyricsView(
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(vertical = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize()
         ) {
             itemsIndexed(lines) { index, line ->
