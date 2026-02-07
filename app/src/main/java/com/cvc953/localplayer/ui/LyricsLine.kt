@@ -40,58 +40,28 @@ fun LyricLine(
 
     val textAlign = TextAlign.Start
 
-    // Animación de tres puntos para instrumental
-    if (text.trim() == "...") {
-        val dotCount = 3
-        val baseSize = 10f
-        val maxSize = 20f
-        val colorSteps = listOf(
-            Color(0xFF666666), // gris más oscuro
-            Color(0xFF999999), // gris medio
-            Color(0xFFCCCCCC), // gris claro
-            Color.White        // blanco
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        Text(
+            text = text,
+            color = if (active) Color.White else Color.Gray,
+            fontSize = fontSize.sp,
+            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+            textAlign = textAlign,
+            lineHeight = (fontSize + 10).sp,
+            maxLines = Int.MAX_VALUE,
+            softWrap = true,
+            overflow = TextOverflow.Visible,
+            onTextLayout = { result ->
+                lineCount = result.lineCount
+            },
         )
-        val duration = 1200 // ms
-        val currentTime = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(System.currentTimeMillis()) }
-        androidx.compose.runtime.LaunchedEffect(active) {
-            while (active) {
-                kotlinx.coroutines.delay(80)
-                currentTime.value = System.currentTimeMillis()
-            }
-        }
-        val animPhase = ((currentTime.value / (duration / (dotCount + 1))) % (dotCount + 1)).toInt()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
-        ) {
-            for (i in 0 until dotCount) {
-                // El punto más a la izquierda es el primero en animar
-                val progress = (animPhase - i).coerceAtLeast(0)
-                // El color y tamaño cambian progresivamente de oscuro a blanco
-                val colorIndex = progress.coerceIn(0, colorSteps.lastIndex)
-                val dotColor by animateColorAsState(
-                    targetValue = colorSteps[colorIndex],
-                    label = "dotColor$i"
-                )
-                val dotSize by animateFloatAsState(
-                    targetValue = baseSize + (maxSize - baseSize) * (colorIndex.toFloat() / colorSteps.lastIndex),
-                    label = "dotSize$i"
-                )
-                Box(
-                    modifier = Modifier
-                        .size(dotSize.dp)
-                        .padding(end = 4.dp)
-                ) {
-                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxWidth()) {
-                        drawCircle(color = dotColor)
-                    }
-                }
-            }
-        }
-    } else {
+    }
         Row(
             modifier = Modifier
                 .fillMaxWidth()

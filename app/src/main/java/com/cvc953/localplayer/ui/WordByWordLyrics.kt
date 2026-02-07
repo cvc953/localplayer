@@ -209,45 +209,41 @@ fun LoadingDotsAnimation(
 ) {
     if (!isVisible) return
 
-    // Calcular el progreso de cada punto
-    val progress = (elapsedMs.toFloat() / durationMs.coerceAtLeast(1)).coerceIn(0f, 1f)
-    // Cada punto se vuelve blanco en tercios
-    val dot1Active = progress >= 1f / 3f
-    val dot2Active = progress >= 2f / 3f
-    val dot3Active = progress >= 1f
-
-    val baseColor = Color(0xFF505050)
-    val activeColor = Color.White
-
+    // Animación progresiva de puntos: color y tamaño
+    val dotCount = 3
+    val colorSteps = listOf(
+        Color(0xFF505050), // gris oscuro
+        Color(0xFF888888), // gris medio
+        Color(0xFFCCCCCC), // gris claro
+        Color.White        // blanco
+    )
+    val minSize = 14f
+    val maxSize = 22f
+    // El progreso de cada punto es escalonado y cíclico
+    val phase = ((elapsedMs / (durationMs / (dotCount + 1))).toInt()) % (dotCount + 1)
     Box(
-        modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
-        contentAlignment = Alignment.Center
+        modifier = modifier
+            .padding(horizontal = 24.dp, vertical = 0.dp)
+            .fillMaxWidth(),
+        contentAlignment = Alignment.CenterStart
     ) {
         Row(
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "●",
-                color = if (dot1Active) activeColor else baseColor,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 6.dp)
-            )
-            Text(
-                text = "●",
-                color = if (dot2Active) activeColor else baseColor,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 6.dp)
-            )
-            Text(
-                text = "●",
-                color = if (dot3Active) activeColor else baseColor,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 6.dp)
-            )
+            for (i in 0 until dotCount) {
+                val progress = (phase - i).coerceAtLeast(0)
+                val colorIndex = progress.coerceIn(0, colorSteps.lastIndex)
+                val dotColor = colorSteps[colorIndex]
+                val dotSize = minSize + (maxSize - minSize) * (colorIndex.toFloat() / colorSteps.lastIndex)
+                Text(
+                    text = "●",
+                    color = dotColor,
+                    fontSize = dotSize.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
         }
     }
 }
