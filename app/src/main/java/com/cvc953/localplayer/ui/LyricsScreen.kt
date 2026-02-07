@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.util.LrcLine
 
 @Composable
@@ -74,3 +75,74 @@ fun LyricsView(
         }
     }
 }
+
+/**
+ * Vista de letras con sincronización palabra por palabra para TTML
+ */
+@Composable
+fun TtmlLyricsView(
+    lines: List<TtmlLine>,
+    currentPosition: Long,
+    modifier: Modifier = Modifier,
+    onLineClick: (Long) -> Unit = {}
+) {
+    val listState = rememberLazyListState()
+
+    val currentIndex = remember(currentPosition) {
+        lines.indexOfLast { it.timeMs <= currentPosition }
+            .coerceAtLeast(0)
+    }
+
+    // Scroll automático centrado
+    LaunchedEffect(currentIndex) {
+        listState.animateScrollToItem(
+            index = currentIndex,
+            scrollOffset = -listState.layoutInfo.viewportSize.height / 6
+        )
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF0D0D0D),
+                        Color.Black,
+                        Color(0xFF0D0D0D)
+                    )
+                )
+            )
+    ) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(vertical = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            itemsIndexed(lines) { index, line ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { onLineClick(line.timeMs) }
+                ) {
+                    // Si la línea tiene sílabas, mostrar sincronización palabra por palabra
+                    if (line.syllabus.isNotEmpty()) {
+                        WordByWordLine(
+                            syllables = line.syllabus,
+                            currentPosition = currentPosition,
+                            isActive = index == currentIndex
+                        )
+                    } else {
+                        // Fallback a línea simple
+                        LyricLine(
+                            text = line.text,
+                            active = index == currentIndex
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
