@@ -136,7 +136,11 @@ fun TtmlLyricsView(
                                     .padding(vertical = 20.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                LoadingDotsAnimation(isVisible = true)
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = firstLineStart,
+                                    elapsedMs = currentPosition
+                                )
                             }
                         }
                     }
@@ -183,7 +187,11 @@ fun TtmlLyricsView(
                                     .padding(vertical = 20.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                LoadingDotsAnimation(isVisible = true)
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = gapDuration,
+                                    elapsedMs = currentPosition - currentLineEnd
+                                )
                             }
                         }
                     }
