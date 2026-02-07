@@ -2,20 +2,17 @@ package com.cvc953.localplayer.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,71 +25,45 @@ import com.cvc953.localplayer.model.TtmlSyllable
 @Composable
 fun SyllableLyric(
     syllable: TtmlSyllable,
-    isActive: Boolean,
+    currentPosition: Long,
     isLineActive: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val color by animateColorAsState(
-        targetValue = when {
-            isActive -> Color(0xFFFFFFFF) // Blanco brillante cuando está activo
-            isLineActive -> Color(0xFFE0E0E0) // Gris claro cuando la línea está activa
-            else -> Color(0xFF707070) // Gris oscuro cuando no está activo
-        },
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
-        label = "syllableColor"
-    )
+    val baseColor = when {
+        isLineActive -> Color(0xFFE0E0E0)
+        else -> Color(0xFF707070)
+    }
 
-    val fontSize by animateFloatAsState(
-        targetValue = if (isActive) 22f else 20f,
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
-        label = "syllableFontSize"
-    )
+    val chars = syllable.text.toCharArray()
+    val charCount = chars.size.coerceAtLeast(1)
+    val progress = if (syllable.durationMs > 0) {
+        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
+            .coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val revealCount = if (isLineActive && currentPosition >= syllable.timeMs) {
+        (progress * charCount).toInt().coerceIn(0, charCount)
+    } else {
+        0
+    }
 
-    val scale by animateFloatAsState(
-        targetValue = if (isActive) 1.04f else 1f,
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
-        label = "syllableScale"
-    )
-
-    val alpha by animateFloatAsState(
-        targetValue = when {
-            isActive -> 1f
-            isLineActive -> 0.85f
-            else -> 0.4f
-        },
-        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing),
-        label = "syllableAlpha"
-    )
-
-    val elevation by animateFloatAsState(
-        targetValue = if (isActive) 2f else 0f,
-        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
-        label = "syllableElevation"
-    )
-
-    Text(
-        text = syllable.text,
-        color = color,
-        fontSize = (fontSize * scale).sp,
-        lineHeight = (fontSize + 10f).sp,
-        fontWeight = when {
-            isActive -> FontWeight.Bold
-            isLineActive -> FontWeight.SemiBold
-            else -> FontWeight.Medium
-        },
-        modifier = modifier
-            .padding(horizontal = 1.5.dp)
-            .alpha(alpha)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-                translationY = if (isActive) -1f else 0f
-            }
-            .shadow(
-                elevation = elevation.dp,
-                spotColor = Color.White.copy(alpha = 0.3f)
+    Row(modifier = modifier.padding(horizontal = 1.5.dp)) {
+        chars.forEachIndexed { index, ch ->
+            val charColor by animateColorAsState(
+                targetValue = if (index < revealCount) Color.White else baseColor,
+                animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
+                label = "charColor"
             )
-    )
+            Text(
+                text = ch.toString(),
+                color = charColor,
+                fontSize = 20.sp,
+                lineHeight = 30.sp,
+                fontWeight = if (isLineActive) FontWeight.SemiBold else FontWeight.Medium
+            )
+        }
+    }
 }
 
 /**
@@ -113,13 +84,9 @@ fun WordByWordLine(
     ) {
         syllables.forEach { syllable ->
             // Una sílaba está activa si el tiempo actual está dentro de su rango
-            val syllableActive = isActive && 
-                currentPosition >= syllable.timeMs && 
-                currentPosition < (syllable.timeMs + syllable.durationMs)
-
             SyllableLyric(
                 syllable = syllable,
-                isActive = syllableActive,
+                currentPosition = currentPosition,
                 isLineActive = isActive
             )
         }
