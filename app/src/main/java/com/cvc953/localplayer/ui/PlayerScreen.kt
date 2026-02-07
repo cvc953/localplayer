@@ -296,7 +296,13 @@ fun PlayerScreen(viewModel: MainViewModel = viewModel(), onBack: () -> Unit) {
 
                                 Spacer(Modifier.height(32.dp))
 
-                                SongTitleSection(title = song.title, artist = song.artist)
+                                SongTitleSection(
+                                        title = song.title,
+                                        artist = song.artist,
+                                        album = song.album,
+                                        onArtistClick = { onBack() },
+                                        onAlbumClick = { onBack() }
+                                )
 
                                 Spacer(Modifier.height(32.dp))
 
@@ -889,10 +895,19 @@ fun PlayerScreen(viewModel: MainViewModel = viewModel(), onBack: () -> Unit) {
 }
 
 @Composable
-fun SongTitleSection(title: String, artist: String) {
+fun SongTitleSection(
+        title: String,
+        artist: String,
+        album: String,
+        onArtistClick: () -> Unit,
+        onAlbumClick: () -> Unit
+) {
+        var showMenu by remember { mutableStateOf(false) }
+        var menuTarget by remember { mutableStateOf<String?>(null) }
+
         Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.Start
         ) {
                 Text(
                         text = title,
@@ -906,7 +921,38 @@ fun SongTitleSection(title: String, artist: String) {
 
                 Spacer(Modifier.height(6.dp))
 
-                Text(text = artist, color = Color(0xFFAAAAAA), fontSize = 14.sp, maxLines = 1)
+                Box {
+                        Text(
+                                text = if (album.isNotEmpty()) "$artist - $album" else artist,
+                                color = Color(0xFFAAAAAA),
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                modifier = Modifier.clickable {
+                                        menuTarget = "info"
+                                        showMenu = true
+                                }
+                        )
+
+                        DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false }
+                        ) {
+                                DropdownMenuItem(
+                                        text = { Text("Ir al artista") },
+                                        onClick = {
+                                                showMenu = false
+                                                onArtistClick()
+                                        }
+                                )
+                                DropdownMenuItem(
+                                        text = { Text("Ir al álbum") },
+                                        onClick = {
+                                                showMenu = false
+                                                onAlbumClick()
+                                        }
+                                )
+                        }
+                }
         }
 }
 
