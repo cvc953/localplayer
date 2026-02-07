@@ -61,4 +61,5 @@ fun LyricLine(
             },
         )
     }
+}
 

@@ -43,7 +43,7 @@ fun LyricsView(
         )
     }
 
-    val gapThreshold = 1500L
+    val gapThreshold = 7000L
 
     Box(
         modifier = modifier
