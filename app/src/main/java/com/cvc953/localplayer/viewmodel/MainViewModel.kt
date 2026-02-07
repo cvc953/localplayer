@@ -14,13 +14,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.PlayerState
 import com.cvc953.localplayer.ui.RepeatMode
+import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.util.parseLrc
+import com.cvc953.localplayer.util.isTtml
+import com.cvc953.localplayer.util.TtmlParser
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,6 +35,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 
 data class LyricLine(val timeMs: Long, val text: String)
 
@@ -43,6 +49,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val LAST_SONG_TITLE = "last_song_title"
         private const val LAST_SONG_ARTIST = "last_song_artist"
         private const val LAST_IS_PLAYING = "last_is_playing"
+        private const val PLAYLISTS_JSON = "playlists_json"
     }
 
     init {
@@ -84,6 +91,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val showLyrics = _showLyrics.asStateFlow()
     private val _lyrics = MutableStateFlow<List<LrcLine>>(emptyList())
     val lyrics: StateFlow<List<LrcLine>> = _lyrics
+    private val _ttmlLyrics = MutableStateFlow<TtmlLyrics?>(null)
+    val ttmlLyrics: StateFlow<TtmlLyrics?> = _ttmlLyrics
 
     private val _isScanning = mutableStateOf(false)
     val isScanning: State<Boolean> = _isScanning
@@ -96,6 +105,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val queue: StateFlow<List<Song>> = _queue
 
     // Cache para el orden aleatorio persistente mientras shuffle esté activo
+    // Playlists
+    private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
+    val playlists: StateFlow<List<Playlist>> = _playlists
     private var cachedShuffledRemaining: List<Song>? = null
     // Historial de reproducción para soportar "Anterior" respetando el orden
     private val playHistory: MutableList<Song> = mutableListOf()
@@ -183,12 +195,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setUpcomingOrder(newOrder: List<Song>) {
-        // Solo guardamos las canciones que están en la cola actual,
-        // manteniendo el orden del reordenamiento pero filtrando
-        // las que vienen de la biblioteca automática
-        val currentQueue = _queue.value
-        val reorderedQueue = newOrder.filter { it in currentQueue }
-        _queue.value = reorderedQueue
+        // Guardamos todo el orden de próximas canciones para que el drag funcione
+        // tanto con cola manual como con el resto de la biblioteca.
+        _queue.value = newOrder
         // eliminar de la caché cualquier canción que ahora esté en la cola explícita
         cachedShuffledRemaining = cachedShuffledRemaining?.filter { it !in _queue.value }
     }
@@ -241,6 +250,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
+        _playlists.value = loadPlaylistsFromPrefs()
         // Registrar el observer para detectar cambios en la biblioteca
         getApplication<Application>()
                 .contentResolver
@@ -561,21 +571,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (audioDir != null && audioDir.exists()) {
                         android.util.Log.d("LyricsDebug", "Listando archivos en directorio...")
 
-                        // Intentar con el nombre exacto del archivo
+                        // Primero intentar con TTML para letras palabra por palabra
+                        val ttmlFile = File(audioDir, "$audioNameWithoutExt.ttml")
+                        android.util.Log.d("LyricsDebug", "Buscando TTML: ${ttmlFile.name}")
+                        
+                        if (ttmlFile.exists()) {
+                            try {
+                                val text = ttmlFile.readText()
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ Archivo TTML encontrado: ${ttmlFile.name}, ${text.length} chars"
+                                )
+                                val parsed = TtmlParser.parseTtml(text)
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ TTML parseado: ${parsed.lines.size} líneas, type=${parsed.type}"
+                                )
+                                parsed.lines.forEachIndexed { i, line ->
+                                    android.util.Log.d("LyricsDebug", "  Línea $i: '${line.text}' (${line.syllabus.size} sílabas)")
+                                }
+                                _ttmlLyrics.value = parsed
+                                _lyrics.value = emptyList() // Limpiar letras LRC
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ StateFlow actualizado con TTML"
+                                )
+                                return@launch
+                            } catch (e: Exception) {
+                                android.util.Log.e("LyricsDebug", "Error leyendo TTML", e)
+                            }
+                        }
+
+                        // Si no hay TTML, intentar con LRC
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
-                        android.util.Log.d("LyricsDebug", "Buscando: ${lrcFile.name}")
+                        android.util.Log.d("LyricsDebug", "Buscando LRC: ${lrcFile.name}")
 
                         if (lrcFile.exists()) {
                             try {
                                 val text = lrcFile.readText()
                                 android.util.Log.d(
                                         "LyricsDebug",
-                                        "✓ Archivo encontrado: ${lrcFile.name}, ${text.length} chars"
+                                        "✓ Archivo LRC encontrado: ${lrcFile.name}, ${text.length} chars"
                                 )
+                                _ttmlLyrics.value = null // Limpiar TTML
                                 _lyrics.value = parseLrc(text)
                                 android.util.Log.d(
                                         "LyricsDebug",
-                                        "✓ Lyrics parseadas: ${_lyrics.value.size} líneas"
+                                        "✓ Lyrics LRC parseadas: ${_lyrics.value.size} líneas"
                                 )
                                 return@launch
                             } catch (e: Exception) {
@@ -583,7 +625,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             }
                         }
 
-                        // Si no existe, buscar cualquier .lrc en el directorio
+                        // Buscar cualquier archivo TTML o LRC en el directorio
+                        val ttmlFiles = audioDir.listFiles { _, name ->
+                            name.endsWith(".ttml", ignoreCase = true)
+                        }
+                        
+                        // Intentar con TTML primero
+                        ttmlFiles?.forEach { file ->
+                            android.util.Log.d("LyricsDebug", "Evaluando TTML: ${file.name}")
+                            val ttmlNameWithoutExt = file.nameWithoutExtension
+                            
+                            val audioClean = audioNameWithoutExt
+                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                    .lowercase()
+                                    .trim()
+                            val ttmlClean = ttmlNameWithoutExt
+                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                    .lowercase()
+                                    .trim()
+                            
+                            if (audioClean == ttmlClean) {
+                                try {
+                                    val text = file.readText()
+                                    android.util.Log.d(
+                                            "LyricsDebug",
+                                            "✓ Match TTML encontrado: ${file.name}"
+                                    )
+                                    val parsed = TtmlParser.parseTtml(text)
+                                    _ttmlLyrics.value = parsed
+                                    _lyrics.value = emptyList()
+                                    android.util.Log.d(
+                                            "LyricsDebug",
+                                            "✓ TTML cargado: ${parsed.lines.size} líneas"
+                                    )
+                                    return@launch
+                                } catch (e: Exception) {
+                                    android.util.Log.e("LyricsDebug", "Error leyendo TTML", e)
+                                }
+                            }
+                        }
+                        
+                        // Si no hay TTML, buscar LRC
                         val lrcFiles =
                                 audioDir.listFiles { _, name ->
                                     name.endsWith(".lrc", ignoreCase = true)
@@ -617,12 +699,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                     val text = file.readText()
                                     android.util.Log.d(
                                             "LyricsDebug",
-                                            "✓ Match encontrado: ${file.name}"
+                                            "✓ Match LRC encontrado: ${file.name}"
                                     )
+                                    _ttmlLyrics.value = null
                                     _lyrics.value = parseLrc(text)
                                     android.util.Log.d(
                                             "LyricsDebug",
-                                            "✓ Lyrics cargadas: ${_lyrics.value.size} líneas"
+                                            "✓ Lyrics LRC cargadas: ${_lyrics.value.size} líneas"
                                     )
                                     return@launch
                                 } catch (e: Exception) {
@@ -638,9 +721,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 android.util.Log.d("LyricsDebug", "✗ No se encontraron letras")
+                _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
             } catch (e: Exception) {
                 android.util.Log.e("LyricsDebug", "✗ Excepción general", e)
+                _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
             }
         }
@@ -701,5 +786,159 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Exception) {
             android.util.Log.e("MainViewModel", "Error al cargar última canción", e)
         }
+    }
+    fun createPlaylist(name: String): Boolean {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return false
+
+        val exists = _playlists.value.any { it.name.equals(trimmed, ignoreCase = true) }
+        if (exists) return false
+
+        val updated = _playlists.value + Playlist(name = trimmed)
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+    fun deletePlaylist(name: String): Boolean {
+        val updated = _playlists.value.filterNot { it.name == name }
+        if (updated.size == _playlists.value.size) return false
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun renamePlaylist(oldName: String, newName: String): Boolean {
+        if (newName.isBlank()) return false
+        if (newName == oldName) return true
+        if (_playlists.value.any { it.name == newName }) return false
+
+        val updated =
+                _playlists.value.map { playlist ->
+                    if (playlist.name == oldName) {
+                        playlist.copy(name = newName)
+                    } else {
+                        playlist
+                    }
+                }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun addSongToPlaylist(playlistName: String, songId: Long): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+
+        // Si la canción ya está en la playlist, no agregarla
+        if (songId in playlist.songIds) return false
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds + songId)
+                    } else {
+                        p
+                    }
+                }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun removeSongFromPlaylist(playlistName: String, songId: Long): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+        if (songId !in playlist.songIds) return false
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds.filterNot { it == songId })
+                    } else {
+                        p
+                    }
+                }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun addSongsToPlaylist(playlistName: String, songIds: List<Long>): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+
+        val newSongIds = songIds.filterNot { it in playlist.songIds }
+        if (newSongIds.isEmpty()) return false
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds + newSongIds)
+                    } else {
+                        p
+                    }
+                }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    fun removeSongsFromPlaylist(playlistName: String, songIds: List<Long>): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds.filterNot { it in songIds })
+                    } else {
+                        p
+                    }
+                }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+    private fun loadPlaylistsFromPrefs(): List<Playlist> {
+        val raw = prefs.getString(PLAYLISTS_JSON, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(raw)
+            val result = mutableListOf<Playlist>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                val name = obj.optString("name", "").trim()
+                if (name.isEmpty()) continue
+                val idsArray = obj.optJSONArray("songIds") ?: JSONArray()
+                val ids = mutableListOf<Long>()
+                for (j in 0 until idsArray.length()) {
+                    ids.add(idsArray.optLong(j))
+                }
+                result.add(Playlist(name = name, songIds = ids))
+            }
+            result
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun savePlaylistsToPrefs(playlists: List<Playlist>) {
+        val array = JSONArray()
+        playlists.forEach { playlist ->
+            val idsArray = JSONArray()
+            playlist.songIds.forEach { idsArray.put(it) }
+            val obj = JSONObject()
+            obj.put("name", playlist.name)
+            obj.put("songIds", idsArray)
+            array.put(obj)
+        }
+        prefs.edit().putString(PLAYLISTS_JSON, array.toString()).apply()
+    }
+
+    fun isSongInPlaylist(playlistName: String, songId: Long): Boolean {
+        val playlist = _playlists.value.find { it.name == playlistName } ?: return false
+        return songId in playlist.songIds
     }
 }
