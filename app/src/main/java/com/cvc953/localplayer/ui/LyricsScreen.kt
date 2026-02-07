@@ -43,6 +43,8 @@ fun LyricsView(
         )
     }
 
+    val gapThreshold = 1500L
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -62,6 +64,30 @@ fun LyricsView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize()
         ) {
+            // Mostrar animación de puntos si hay un gap antes de la primera línea
+            if (lyrics.isNotEmpty()) {
+                val firstLineStart = lyrics.first().timeMs
+                if (firstLineStart > gapThreshold) {
+                    val isIntroGapActive = currentPosition in 0 until firstLineStart
+                    if (isIntroGapActive) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = firstLineStart,
+                                    elapsedMs = currentPosition
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             itemsIndexed(lyrics) { index, line ->
                 Box(
                     modifier = Modifier
@@ -72,6 +98,34 @@ fun LyricsView(
                         text = line.text,
                         active = index == currentIndex
                     )
+                }
+
+                // Detectar gap grande entre esta linea y la siguiente
+                if (index < lyrics.size - 1) {
+                    val currentLineEnd = line.timeMs + line.durationMs
+                    val nextLineStart = lyrics[index + 1].timeMs
+                    val gapDuration = nextLineStart - currentLineEnd
+
+                    // Si hay un gap > 1500ms, mostrar animación de puntos
+                    if (gapDuration > gapThreshold) {
+                        // Mostrar la animacion solo si estamos dentro del gap
+                        val isGapActive = currentPosition >= currentLineEnd && currentPosition < nextLineStart
+
+                        if (isGapActive) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = gapDuration,
+                                    elapsedMs = currentPosition - currentLineEnd
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
