@@ -137,20 +137,27 @@ object TtmlParser {
                                 syllable
                             }
                             
-                            // Eliminar paréntesis pero mantener espacios
+                            // Eliminar paréntesis
                             val cleanedText = updatedSyllable.text.replace("(", "").replace(")", "")
                             
                             // Detectar si continúa en la siguiente palabra (no termina con espacio)
-                            // Verificar el texto limpio (sin paréntesis)
                             val continuesWord = cleanedText.isNotEmpty() && !cleanedText.endsWith(" ")
                             
+                            // Si continúa la palabra, eliminar el espacio que pudiera tener
+                            // Si no continúa, mantener el espacio original
+                            val finalText = if (continuesWord) {
+                                cleanedText.trimEnd()
+                            } else {
+                                cleanedText
+                            }
+                            
                             val cleanedSyllable = updatedSyllable.copy(
-                                text = cleanedText,  // Mantener espacios tal como están
+                                text = finalText,
                                 continuesWord = continuesWord
                             )
                             
                             syllabus.add(cleanedSyllable)
-                            textBuilder.append(cleanedText)
+                            textBuilder.append(finalText)
                             
                             // Detectar cierre de paréntesis
                             if (syllable.text.endsWith(")")) {
