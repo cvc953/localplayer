@@ -59,15 +59,50 @@ import kotlinx.coroutines.withContext
 private fun createCombinedAlbumArt(bitmaps: List<Bitmap?>, size: Int = 256): Bitmap {
     val canvas = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     val canvasDrawer = Canvas(canvas)
-    val quadSize = size / 2
+    val count = minOf(4, bitmaps.size)
+    if (count == 0) {
+        return canvas
+    }
 
-    // Redimensionar y dibujar hasta 4 imágenes en una cuadrícula de 2x2
-    for (i in 0 until minOf(4, bitmaps.size)) {
-        val bitmap = bitmaps[i] ?: continue
-        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, quadSize, quadSize, true)
-        val x = (i % 2) * quadSize
-        val y = (i / 2) * quadSize
-        canvasDrawer.drawBitmap(scaledBitmap, x.toFloat(), y.toFloat(), null)
+    val halfSize = size / 2
+
+    when (count) {
+        1 -> {
+            val bitmap = bitmaps[0] ?: return canvas
+            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, size, size, true)
+            canvasDrawer.drawBitmap(scaledBitmap, 0f, 0f, null)
+        }
+        2 -> {
+            for (i in 0 until 2) {
+                val bitmap = bitmaps[i] ?: continue
+                val scaledBitmap = Bitmap.createScaledBitmap(bitmap, halfSize, size, true)
+                val x = i * halfSize
+                canvasDrawer.drawBitmap(scaledBitmap, x.toFloat(), 0f, null)
+            }
+        }
+        3 -> {
+            val leftBitmap = bitmaps[0]
+            if (leftBitmap != null) {
+                val scaledLeft = Bitmap.createScaledBitmap(leftBitmap, halfSize, size, true)
+                canvasDrawer.drawBitmap(scaledLeft, 0f, 0f, null)
+            }
+            for (i in 1 until 3) {
+                val bitmap = bitmaps[i] ?: continue
+                val scaledBitmap = Bitmap.createScaledBitmap(bitmap, halfSize, halfSize, true)
+                val x = halfSize
+                val y = (i - 1) * halfSize
+                canvasDrawer.drawBitmap(scaledBitmap, x.toFloat(), y.toFloat(), null)
+            }
+        }
+        else -> {
+            for (i in 0 until 4) {
+                val bitmap = bitmaps[i] ?: continue
+                val scaledBitmap = Bitmap.createScaledBitmap(bitmap, halfSize, halfSize, true)
+                val x = (i % 2) * halfSize
+                val y = (i / 2) * halfSize
+                canvasDrawer.drawBitmap(scaledBitmap, x.toFloat(), y.toFloat(), null)
+            }
+        }
     }
 
     return canvas
