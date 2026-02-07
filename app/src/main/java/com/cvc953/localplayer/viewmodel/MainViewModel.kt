@@ -20,8 +20,11 @@ import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.PlayerState
 import com.cvc953.localplayer.ui.RepeatMode
+import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.util.parseLrc
+import com.cvc953.localplayer.util.isTtml
+import com.cvc953.localplayer.util.TtmlParser
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -88,6 +91,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val showLyrics = _showLyrics.asStateFlow()
     private val _lyrics = MutableStateFlow<List<LrcLine>>(emptyList())
     val lyrics: StateFlow<List<LrcLine>> = _lyrics
+    private val _ttmlLyrics = MutableStateFlow<TtmlLyrics?>(null)
+    val ttmlLyrics: StateFlow<TtmlLyrics?> = _ttmlLyrics
 
     private val _isScanning = mutableStateOf(false)
     val isScanning: State<Boolean> = _isScanning
@@ -566,21 +571,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (audioDir != null && audioDir.exists()) {
                         android.util.Log.d("LyricsDebug", "Listando archivos en directorio...")
 
-                        // Intentar con el nombre exacto del archivo
+                        // Primero intentar con TTML para letras palabra por palabra
+                        val ttmlFile = File(audioDir, "$audioNameWithoutExt.ttml")
+                        android.util.Log.d("LyricsDebug", "Buscando TTML: ${ttmlFile.name}")
+                        
+                        if (ttmlFile.exists()) {
+                            try {
+                                val text = ttmlFile.readText()
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ Archivo TTML encontrado: ${ttmlFile.name}, ${text.length} chars"
+                                )
+                                val parsed = TtmlParser.parseTtml(text)
+                                _ttmlLyrics.value = parsed
+                                _lyrics.value = emptyList() // Limpiar letras LRC
+                                android.util.Log.d(
+                                        "LyricsDebug",
+                                        "✓ TTML parseado: ${parsed.lines.size} líneas"
+                                )
+                                return@launch
+                            } catch (e: Exception) {
+                                android.util.Log.e("LyricsDebug", "Error leyendo TTML", e)
+                            }
+                        }
+
+                        // Si no hay TTML, intentar con LRC
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
-                        android.util.Log.d("LyricsDebug", "Buscando: ${lrcFile.name}")
+                        android.util.Log.d("LyricsDebug", "Buscando LRC: ${lrcFile.name}")
 
                         if (lrcFile.exists()) {
                             try {
                                 val text = lrcFile.readText()
                                 android.util.Log.d(
                                         "LyricsDebug",
-                                        "✓ Archivo encontrado: ${lrcFile.name}, ${text.length} chars"
+                                        "✓ Archivo LRC encontrado: ${lrcFile.name}, ${text.length} chars"
                                 )
+                                _ttmlLyrics.value = null // Limpiar TTML
                                 _lyrics.value = parseLrc(text)
                                 android.util.Log.d(
                                         "LyricsDebug",
-                                        "✓ Lyrics parseadas: ${_lyrics.value.size} líneas"
+                                        "✓ Lyrics LRC parseadas: ${_lyrics.value.size} líneas"
                                 )
                                 return@launch
                             } catch (e: Exception) {
@@ -588,7 +618,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             }
                         }
 
-                        // Si no existe, buscar cualquier .lrc en el directorio
+                        // Buscar cualquier archivo TTML o LRC en el directorio
+                        val ttmlFiles = audioDir.listFiles { _, name ->
+                            name.endsWith(".ttml", ignoreCase = true)
+                        }
+                        
+                        // Intentar con TTML primero
+                        ttmlFiles?.forEach { file ->
+                            android.util.Log.d("LyricsDebug", "Evaluando TTML: ${file.name}")
+                            val ttmlNameWithoutExt = file.nameWithoutExtension
+                            
+                            val audioClean = audioNameWithoutExt
+                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                    .lowercase()
+                                    .trim()
+                            val ttmlClean = ttmlNameWithoutExt
+                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                    .lowercase()
+                                    .trim()
+                            
+                            if (audioClean == ttmlClean) {
+                                try {
+                                    val text = file.readText()
+                                    android.util.Log.d(
+                                            "LyricsDebug",
+                                            "✓ Match TTML encontrado: ${file.name}"
+                                    )
+                                    val parsed = TtmlParser.parseTtml(text)
+                                    _ttmlLyrics.value = parsed
+                                    _lyrics.value = emptyList()
+                                    android.util.Log.d(
+                                            "LyricsDebug",
+                                            "✓ TTML cargado: ${parsed.lines.size} líneas"
+                                    )
+                                    return@launch
+                                } catch (e: Exception) {
+                                    android.util.Log.e("LyricsDebug", "Error leyendo TTML", e)
+                                }
+                            }
+                        }
+                        
+                        // Si no hay TTML, buscar LRC
                         val lrcFiles =
                                 audioDir.listFiles { _, name ->
                                     name.endsWith(".lrc", ignoreCase = true)
@@ -622,12 +692,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                     val text = file.readText()
                                     android.util.Log.d(
                                             "LyricsDebug",
-                                            "✓ Match encontrado: ${file.name}"
+                                            "✓ Match LRC encontrado: ${file.name}"
                                     )
+                                    _ttmlLyrics.value = null
                                     _lyrics.value = parseLrc(text)
                                     android.util.Log.d(
                                             "LyricsDebug",
-                                            "✓ Lyrics cargadas: ${_lyrics.value.size} líneas"
+                                            "✓ Lyrics LRC cargadas: ${_lyrics.value.size} líneas"
                                     )
                                     return@launch
                                 } catch (e: Exception) {
@@ -643,9 +714,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 android.util.Log.d("LyricsDebug", "✗ No se encontraron letras")
+                _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
             } catch (e: Exception) {
                 android.util.Log.e("LyricsDebug", "✗ Excepción general", e)
+                _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
             }
         }
