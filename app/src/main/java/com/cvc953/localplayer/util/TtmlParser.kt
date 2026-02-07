@@ -137,8 +137,13 @@ object TtmlParser {
                                 syllable
                             }
                             
-                            syllabus.add(updatedSyllable)
-                            textBuilder.append(updatedSyllable.text)
+                            // Eliminar paréntesis del texto
+                            val cleanedSyllable = updatedSyllable.copy(
+                                text = updatedSyllable.text.replace("(", "").replace(")", "")
+                            )
+                            
+                            syllabus.add(cleanedSyllable)
+                            textBuilder.append(cleanedSyllable.text)
                             
                             // Detectar cierre de paréntesis
                             if (syllable.text.endsWith(")")) {
