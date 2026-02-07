@@ -1,8 +1,10 @@
 package com.cvc953.localplayer.ui
 
+import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,6 +59,10 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var sortMode by rememberSaveable { mutableStateOf(ArtistSortMode.TITLE_ASC) }
+    val context = LocalContext.current
+    val activity = context as? Activity
+
+    BackHandler { activity?.moveTaskToBack(true) }
 
     val artists = remember(songs) { songs.groupBy { it.artist.ifBlank { "Desconocido" } }.toList() }
 
@@ -241,6 +247,8 @@ fun ArtistDetailScreen(viewModel: MainViewModel, artistName: String, onBack: () 
     val playlists: List<Playlist> by viewModel.playlists.collectAsState()
     val artistSongs = remember(songs, artistName) { songs.filter { it.artist == artistName } }
     val context = LocalContext.current
+
+    BackHandler { onBack() }
 
     Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         Row(
