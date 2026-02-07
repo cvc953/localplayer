@@ -138,12 +138,25 @@ object TtmlParser {
                             }
                             
                             // Eliminar paréntesis del texto
+                            val cleanedText = updatedSyllable.text.replace("(", "").replace(")", "")
+                            
+                            // Detectar si continúa en la siguiente palabra (no termina con espacio)
+                            val continuesWord = !updatedSyllable.text.endsWith(" ") && 
+                                                !updatedSyllable.text.endsWith(")") &&
+                                                cleanedText.isNotEmpty()
+                            
                             val cleanedSyllable = updatedSyllable.copy(
-                                text = updatedSyllable.text.replace("(", "").replace(")", "")
+                                text = cleanedText.trimEnd(),
+                                continuesWord = continuesWord
                             )
                             
                             syllabus.add(cleanedSyllable)
-                            textBuilder.append(cleanedSyllable.text)
+                            // Agregar texto manteniendo espacios entre palabras
+                            if (continuesWord) {
+                                textBuilder.append(cleanedText.trimEnd())
+                            } else {
+                                textBuilder.append(cleanedText)
+                            }
                             
                             // Detectar cierre de paréntesis
                             if (syllable.text.endsWith(")")) {
