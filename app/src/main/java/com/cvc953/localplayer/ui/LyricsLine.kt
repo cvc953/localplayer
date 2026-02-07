@@ -44,14 +44,14 @@ fun LyricLine(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
-        contentAlignment = Alignment.CenterStart
+        contentAlignment = Alignment.TopStart
     ) {
         Text(
             text = text,
             color = if (active) Color.White else Color.Gray,
             fontSize = fontSize.sp,
             fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
-            textAlign = textAlign,
+            textAlign = TextAlign.Left,
             lineHeight = (fontSize + 10).sp,
             maxLines = Int.MAX_VALUE,
             softWrap = true,
