@@ -731,6 +731,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return true
     }
 
+    fun renamePlaylist(oldName: String, newName: String): Boolean {
+        if (newName.isBlank()) return false
+        if (newName == oldName) return true
+        if (_playlists.value.any { it.name == newName }) return false
+
+        val updated = _playlists.value.map { playlist ->
+            if (playlist.name == oldName) {
+                playlist.copy(name = newName)
+            } else {
+                playlist
+            }
+        }
+
+        _playlists.value = updated
+        savePlaylistsToPrefs(updated)
+        return true
+    }
+
+
 
     fun addSongToPlaylist(playlistName: String, songId: Long): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
