@@ -77,7 +77,7 @@ fun WordByWordLine(
 ) {
     FlowRow(
         modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
-        horizontalArrangement = Arrangement.Center,
+        horizontalArrangement = Arrangement.Start,
         verticalArrangement = Arrangement.Center
     ) {
         syllables.forEach { syllable ->
