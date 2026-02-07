@@ -61,7 +61,7 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
 
     BackHandler {
         val currentTime = System.currentTimeMillis()
-        if (currentTime - lastBackPressTime < 1000) {
+        if (currentTime - lastBackPressTime < 1500) {
             activity?.finish()
         } else {
             lastBackPressTime = currentTime
@@ -171,7 +171,15 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
             Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.End
-            ) { Button(onClick = { showCreateDialog = true }) { Text("Crear lista") } }
+            ) {
+                Button(
+                        onClick = { showCreateDialog = true },
+                        colors =
+                                androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF2196F3)
+                                )
+                ) { Text("Crear lista") }
+            }
 
             if (sortedPlaylists.isEmpty()) {
                 Column(
@@ -181,7 +189,13 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                 ) {
                     Text(text = "No hay listas por ahora", color = Color.White)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { showCreateDialog = true }) { Text("Crear lista") }
+                    Button(
+                            onClick = { showCreateDialog = true },
+                            colors =
+                                    androidx.compose.material3.ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFF2196F3)
+                                    )
+                    ) { Text("Crear lista") }
                 }
             } else {
                 LazyColumn(
