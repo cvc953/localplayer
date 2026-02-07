@@ -14,8 +14,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.Playlist
+import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.PlayerState
@@ -31,9 +31,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import kotlinx.coroutines.withContext
 
 data class LyricLine(val timeMs: Long, val text: String)
 
@@ -190,12 +190,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setUpcomingOrder(newOrder: List<Song>) {
-        // Solo guardamos las canciones que están en la cola actual,
-        // manteniendo el orden del reordenamiento pero filtrando
-        // las que vienen de la biblioteca automática
-        val currentQueue = _queue.value
-        val reorderedQueue = newOrder.filter { it in currentQueue }
-        _queue.value = reorderedQueue
+        // Guardamos todo el orden de próximas canciones para que el drag funcione
+        // tanto con cola manual como con el resto de la biblioteca.
+        _queue.value = newOrder
         // eliminar de la caché cualquier canción que ahora esté en la cola explícita
         cachedShuffledRemaining = cachedShuffledRemaining?.filter { it !in _queue.value }
     }
@@ -725,7 +722,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun deletePlaylist(name: String): Boolean {
         val updated = _playlists.value.filterNot { it.name == name }
         if (updated.size == _playlists.value.size) return false
-        
+
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
@@ -736,35 +733,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (newName == oldName) return true
         if (_playlists.value.any { it.name == newName }) return false
 
-        val updated = _playlists.value.map { playlist ->
-            if (playlist.name == oldName) {
-                playlist.copy(name = newName)
-            } else {
-                playlist
-            }
-        }
+        val updated =
+                _playlists.value.map { playlist ->
+                    if (playlist.name == oldName) {
+                        playlist.copy(name = newName)
+                    } else {
+                        playlist
+                    }
+                }
 
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
     }
 
-
-
     fun addSongToPlaylist(playlistName: String, songId: Long): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
-        
+
         // Si la canción ya está en la playlist, no agregarla
         if (songId in playlist.songIds) return false
-        
-        val updated = _playlists.value.map { p ->
-            if (p.name == playlistName) {
-                p.copy(songIds = p.songIds + songId)
-            } else {
-                p
-            }
-        }
-        
+
+        val updated =
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds + songId)
+                    } else {
+                        p
+                    }
+                }
+
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
@@ -864,5 +861,4 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
         return songId in playlist.songIds
     }
-
 }
