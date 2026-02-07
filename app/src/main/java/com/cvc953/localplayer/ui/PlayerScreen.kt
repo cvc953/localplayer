@@ -317,27 +317,30 @@ fun PlayerScreen(viewModel: MainViewModel = viewModel(), onBack: () -> Unit) {
                                         IconButton(
                                                 onClick = {
                                                         val favoritesName = "Favoritos"
-                                                        
+
                                                         if (isFavorite) {
                                                                 // Quitar de favoritos
-                                                                val removed = viewModel.removeSongFromPlaylist(
-                                                                        favoritesName,
-                                                                        song.id
-                                                                )
+                                                                val removed =
+                                                                        viewModel
+                                                                                .removeSongFromPlaylist(
+                                                                                        favoritesName,
+                                                                                        song.id
+                                                                                )
                                                                 if (removed) {
                                                                         isFavorite = false
                                                                         Toast.makeText(
-                                                                                context,
-                                                                                "Quitado de Favoritos",
-                                                                                Toast.LENGTH_SHORT
-                                                                        )
+                                                                                        context,
+                                                                                        "Quitado de Favoritos",
+                                                                                        Toast.LENGTH_SHORT
+                                                                                )
                                                                                 .show()
                                                                 }
                                                         } else {
                                                                 // Agregar a favoritos
                                                                 val favorites =
                                                                         playlists.find {
-                                                                                it.name == favoritesName
+                                                                                it.name ==
+                                                                                        favoritesName
                                                                         }
                                                                 if (favorites == null) {
                                                                         viewModel.createPlaylist(
@@ -352,10 +355,10 @@ fun PlayerScreen(viewModel: MainViewModel = viewModel(), onBack: () -> Unit) {
                                                                 if (added) {
                                                                         isFavorite = true
                                                                         Toast.makeText(
-                                                                                context,
-                                                                                "Agregado a Favoritos",
-                                                                                Toast.LENGTH_SHORT
-                                                                        )
+                                                                                        context,
+                                                                                        "Agregado a Favoritos",
+                                                                                        Toast.LENGTH_SHORT
+                                                                                )
                                                                                 .show()
                                                                 }
                                                         }
