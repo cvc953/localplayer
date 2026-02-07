@@ -90,6 +90,7 @@ fun PlayerScreen(
         val screenHeightPx =
                 with(LocalDensity.current) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
         val lyrics by viewModel.lyrics.collectAsState()
+        val ttmlLyrics by viewModel.ttmlLyrics.collectAsState()
         var albumArt by remember { mutableStateOf<Bitmap?>(null) }
         var showQueue by remember { mutableStateOf(false) }
         var showAddToPlaylistDialog by remember { mutableStateOf(false) }
@@ -254,15 +255,21 @@ fun PlayerScreen(
                                         modifier = Modifier.weight(1f).fillMaxWidth(),
                                         contentAlignment = Alignment.Center
                                 ) {
-                                        if (lyrics.isEmpty()) {
-                                                Text(
-                                                        text = "No hay letras para esta canción",
-                                                        fontSize = 18.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        textAlign = TextAlign.Center,
-                                                        color = Color.Gray
+                                        // Priorizar TTML sobre LRC
+                                        when {
+                                            ttmlLyrics != null && ttmlLyrics!!.lines.isNotEmpty() -> {
+                                                // Mostrar letras palabra por palabra
+                                                TtmlLyricsView(
+                                                        lines = ttmlLyrics!!.lines,
+                                                        currentPosition = playerState.position,
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        onLineClick = { targetMs ->
+                                                                viewModel.seekTo(targetMs)
+                                                        }
                                                 )
-                                        } else {
+                                            }
+                                            lyrics.isNotEmpty() -> {
+                                                // Fallback a letras línea por línea
                                                 LyricsView(
                                                         lyrics = lyrics,
                                                         currentPosition = playerState.position,
@@ -271,6 +278,16 @@ fun PlayerScreen(
                                                                 viewModel.seekTo(targetMs)
                                                         }
                                                 )
+                                            }
+                                            else -> {
+                                                Text(
+                                                        text = "No hay letras para esta canción",
+                                                        fontSize = 18.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        textAlign = TextAlign.Center,
+                                                        color = Color.Gray
+                                                )
+                                            }
                                         }
                                 }
 
