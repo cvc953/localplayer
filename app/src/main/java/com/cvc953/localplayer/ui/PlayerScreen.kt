@@ -112,8 +112,6 @@ fun PlayerScreen(viewModel: MainViewModel = viewModel(), onBack: () -> Unit) {
                                                         true -> "MP3"
                                                 mimeType?.contains("mp4", ignoreCase = true) ==
                                                         true -> "M4A"
-                                                mimeType?.contains("ogg", ignoreCase = true) ==
-                                                        true -> "OGG"
                                                 mimeType?.contains("wav", ignoreCase = true) ==
                                                         true -> "WAV"
                                                 else ->
@@ -934,16 +932,20 @@ fun SongTitleSection(
                                         }
                         )
 
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                        DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                containerColor = Color.Black
+                        ) {
                                 DropdownMenuItem(
-                                        text = { Text("Ir al artista") },
+                                        text = { Text("Ir al artista", color = Color.White) },
                                         onClick = {
                                                 showMenu = false
                                                 onArtistClick()
                                         }
                                 )
                                 DropdownMenuItem(
-                                        text = { Text("Ir al álbum") },
+                                        text = { Text("Ir al álbum", color = Color.White) },
                                         onClick = {
                                                 showMenu = false
                                                 onAlbumClick()
