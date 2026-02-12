@@ -1,8 +1,10 @@
 package com.cvc953.localplayer.model
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.MediaStore
 import com.cvc953.localplayer.preferences.AppPrefs
@@ -150,15 +152,18 @@ class SongRepository(private val context: Context) {
                         MediaStore.Audio.Media.DATA
                 )
 
+        val selectionInfo = buildSelectionForFolder()
+        android.util.Log.d("SongRepository", "scanSongsFromMediaStore: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
+
         val cursor =
-                context.contentResolver.query(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        projection,
-                        MediaStore.Audio.Media.IS_MUSIC + "!= 0",
-                        null,
-                        null
-                )
-                        ?: return emptyList()
+            context.contentResolver.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                selectionInfo.first,
+                selectionInfo.second,
+                null
+            )
+                ?: return emptyList()
 
         cursor.use {
             val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
@@ -283,43 +288,153 @@ class SongRepository(private val context: Context) {
 
     fun isFirstScanDone(): Boolean = prefs.isFirstScanDone()
 
+    // Build query selection (and args) restricting MediaStore results to the user-chosen folder when available.
+    private fun buildSelectionForFolder(): Pair<String?, Array<String>?> {
+        val folderUris = prefs.getMusicFolderUris()
+        val base = MediaStore.Audio.Media.IS_MUSIC + "!= 0"
+        if (folderUris.isEmpty()) return Pair(base, null)
+
+        val useRelative = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+        val clauses = mutableListOf<String>()
+        val args = mutableListOf<String>()
+
+        folderUris.forEach { folderUriString ->
+            try {
+                val uri = Uri.parse(folderUriString)
+                val treeId = DocumentsContract.getTreeDocumentId(uri)
+                android.util.Log.d("SongRepository", "buildSelectionForFolder: folderUri=$folderUriString treeId=$treeId")
+                if (treeId.startsWith("primary:")) {
+                    val rel = treeId.removePrefix("primary:").trimStart('/')
+                    if (rel.isEmpty()) {
+                        // ignore empty
+                    } else {
+                        val prefix = if (rel.endsWith("/")) rel else "$rel/"
+                        if (useRelative) {
+                            clauses.add(MediaStore.Audio.Media.RELATIVE_PATH + " LIKE ?")
+                            args.add("${prefix}%")
+                        } else {
+                            val basePath = Environment.getExternalStorageDirectory().absolutePath
+                            val dataPrefix = "$basePath/$rel"
+                            clauses.add(MediaStore.Audio.Media.DATA + " LIKE ?")
+                            args.add("${dataPrefix}%")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("SongRepository", "buildSelectionForFolder: failed to parse tree id for $folderUriString", e)
+            }
+            // raw path fallback
+            if (folderUriString.startsWith("/")) {
+                if (useRelative) {
+                    // cannot map raw path to relative cleanly; fall back to DATA
+                    clauses.add(MediaStore.Audio.Media.DATA + " LIKE ?")
+                    args.add("${folderUriString}%")
+                } else {
+                    clauses.add(MediaStore.Audio.Media.DATA + " LIKE ?")
+                    args.add("${folderUriString}%")
+                }
+            }
+        }
+
+        if (clauses.isEmpty()) {
+            android.util.Log.d("SongRepository", "buildSelectionForFolder: no valid clauses, using no selection")
+            return Pair(base, null)
+        }
+
+        val selection = "(" + clauses.joinToString(" OR ") + ") AND " + base
+        android.util.Log.d("SongRepository", "buildSelectionForFolder: selection=$selection args=${args.joinToString()}")
+        return Pair(selection, args.toTypedArray())
+    }
+
+    // Build selection for a single folder URI (used to count songs per-folder)
+    private fun buildSelectionForSingleFolder(folderUriString: String): Pair<String?, Array<String>?> {
+        val base = MediaStore.Audio.Media.IS_MUSIC + "!= 0"
+        if (folderUriString.isEmpty()) return Pair(base, null)
+
+        val useRelative = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+
+        try {
+            val uri = Uri.parse(folderUriString)
+            val treeId = DocumentsContract.getTreeDocumentId(uri)
+            if (treeId.startsWith("primary:")) {
+                val rel = treeId.removePrefix("primary:").trimStart('/')
+                if (rel.isEmpty()) return Pair(base, null)
+                val prefix = if (rel.endsWith("/")) rel else "$rel/"
+                return if (useRelative) Pair(MediaStore.Audio.Media.RELATIVE_PATH + " LIKE ? AND " + base, arrayOf("${prefix}%"))
+                else {
+                    val basePath = Environment.getExternalStorageDirectory().absolutePath
+                    val dataPrefix = "$basePath/$rel"
+                    Pair(MediaStore.Audio.Media.DATA + " LIKE ? AND " + base, arrayOf("${dataPrefix}%"))
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("SongRepository", "buildSelectionForSingleFolder: failed for $folderUriString", e)
+        }
+
+        if (folderUriString.startsWith("/")) {
+            return Pair(MediaStore.Audio.Media.DATA + " LIKE ? AND " + base, arrayOf("${folderUriString}%"))
+        }
+
+        return Pair(base, null)
+    }
+
+    fun countSongsForFolder(folderUriString: String): Int {
+        val sel = buildSelectionForSingleFolder(folderUriString)
+        android.util.Log.d("SongRepository", "countSongsForFolder: selection=${sel.first} args=${sel.second?.joinToString()}")
+        val cursor = context.contentResolver.query(
+            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            arrayOf(MediaStore.Audio.Media._ID),
+            sel.first,
+            sel.second,
+            null
+        )
+        val c = cursor?.count ?: 0
+        cursor?.close()
+        return c
+    }
+
     private fun countSongs(): Int {
+        val selectionInfo = buildSelectionForFolder()
+        android.util.Log.d("SongRepository", "countSongs: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
         val cursor =
-                context.contentResolver.query(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        arrayOf(MediaStore.Audio.Media._ID),
-                        MediaStore.Audio.Media.IS_MUSIC + "!= 0",
-                        null,
-                        null
-                )
+            context.contentResolver.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                arrayOf(MediaStore.Audio.Media._ID),
+                selectionInfo.first,
+                selectionInfo.second,
+                null
+            )
         return cursor?.count ?: 0
     }
 
-    fun scanSongs(onProgress: (current: Int, total: Int) -> Unit): List<Song> {
-
+        fun scanSongs(onProgress: (current: Int, total: Int) -> Unit): List<Song> {
         val projection =
-                arrayOf(
-                        MediaStore.Audio.Media._ID,
-                        MediaStore.Audio.Media.TITLE,
-                        MediaStore.Audio.Media.ARTIST,
-                        MediaStore.Audio.Media.ALBUM,
-                        MediaStore.Audio.Media.YEAR,
-                        MediaStore.Audio.Media.DURATION
-                )
+            arrayOf(
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.ALBUM,
+                MediaStore.Audio.Media.YEAR,
+                MediaStore.Audio.Media.DURATION,
+                MediaStore.Audio.Media.DATA
+            )
 
         val total = countSongs()
         var current = 0
         val list = mutableListOf<Song>()
 
+        val selectionInfo = buildSelectionForFolder()
+        android.util.Log.d("SongRepository", "scanSongs: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
+
         val cursor =
-                context.contentResolver.query(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        projection,
-                        MediaStore.Audio.Media.IS_MUSIC + "!= 0",
-                        null,
-                        null
-                )
-                        ?: return emptyList()
+            context.contentResolver.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                selectionInfo.first,
+                selectionInfo.second,
+                null
+            )
+                ?: return emptyList()
 
         cursor.use {
             val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
@@ -331,48 +446,48 @@ class SongRepository(private val context: Context) {
             val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
             while (it.moveToNext()) {
-                val id = it.getLong(idCol)
-                val uri =
-                        Uri.withAppendedPath(
-                                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                                id.toString()
-                        )
-                val filePath = it.getString(dataCol)
-                val duration = it.getLong(durCol)
+            val id = it.getLong(idCol)
+            val uri =
+                Uri.withAppendedPath(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    id.toString()
+                )
+            val filePath = it.getString(dataCol)
+            val duration = it.getLong(durCol)
 
-                // Excluir archivos de WhatsApp y otras apps de mensajería
-                if (isExcludedPath(filePath)) {
-                    continue
-                }
+            // Excluir archivos de WhatsApp y otras apps de mensajería
+            if (isExcludedPath(filePath)) {
+                continue
+            }
 
-                // Excluir archivos muy cortos (notificaciones, efectos de sonido)
-                // Duración mínima: 30 segundos (30000 ms)
-                if (duration < 30000) {
-                    continue
-                }
+            // Excluir archivos muy cortos (notificaciones, efectos de sonido)
+            // Duración mínima: 30 segundos (30000 ms)
+            if (duration < 30000) {
+                continue
+            }
 
-                val song =
-                        Song(
-                                id = id,
-                                title = it.getString(titleCol),
-                                artist = it.getString(artistCol),
-                                album = it.getString(albumCol),
-                                year = it.getInt(yearCol),
-                                uri = uri,
-                                duration = duration,
-                                albumArt = null,
-                                filePath = filePath
-                        )
+            val song =
+                Song(
+                    id = id,
+                    title = it.getString(titleCol),
+                    artist = it.getString(artistCol),
+                    album = it.getString(albumCol),
+                    year = it.getInt(yearCol),
+                    uri = uri,
+                    duration = duration,
+                    albumArt = null,
+                    filePath = filePath
+                )
 
-                list.add(song)
+            list.add(song)
 
-                current++
-                onProgress(current, total)
+            current++
+            onProgress(current, total)
             }
         }
 
         return list
-    }
+        }
 
     /**
      * Variante del escaneo que notifica cada canción encontrada. Llama a [onSongFound] por cada
@@ -397,15 +512,17 @@ class SongRepository(private val context: Context) {
         var current = 0
         val list = mutableListOf<Song>()
 
+        val selectionInfo = buildSelectionForFolder()
+
         val cursor =
-                context.contentResolver.query(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                        projection,
-                        MediaStore.Audio.Media.IS_MUSIC + "!= 0",
-                        null,
-                        null
-                )
-                        ?: return emptyList()
+            context.contentResolver.query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                projection,
+                selectionInfo.first,
+                selectionInfo.second,
+                null
+            )
+                ?: return emptyList()
 
         cursor.use {
             val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)

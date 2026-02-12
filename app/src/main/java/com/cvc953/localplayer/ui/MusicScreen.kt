@@ -2,7 +2,7 @@ package com.cvc953.localplayer.ui
 
 import MiniPlayer
 import android.app.Activity
-import android.content.Intent
+ 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -25,6 +25,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.Composable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
+import com.cvc953.localplayer.preferences.AppPrefs
+import android.provider.DocumentsContract
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -214,6 +220,18 @@ fun SongsContent(viewModel: MainViewModel) {
                                                                 onClick = {
                                                                         viewModel
                                                                                 .manualRefreshLibrary()
+                                                                        menuExpanded = false
+                                                                }
+                                                        )
+                                                        DropdownMenuItem(
+                                                                text = {
+                                                                        Text(
+                                                                                "Ajustes",
+                                                                                color = Color.White
+                                                                        )
+                                                                },
+                                                                onClick = {
+                                                                        viewModel.openSettingsScreen()
                                                                         menuExpanded = false
                                                                 }
                                                         )
@@ -661,13 +679,69 @@ fun SongsContent(viewModel: MainViewModel) {
 fun MainMusicScreen(onOpenPlayer: () -> Unit) {
         StoragePermissionHandler {
                 val vm: MainViewModel = MainViewModel.instance ?: viewModel()
+                val context = LocalContext.current
+                val appPrefs = AppPrefs(context)
+
+                // If user hasn't picked a music folder yet, show a chooser overlay
+                var needPicker by remember { mutableStateOf(!appPrefs.hasMusicFolderUri()) }
+                val launcher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.OpenDocumentTree()
+                ) { uri ->
+                        android.util.Log.d("MainMusicScreen", "OpenDocumentTree returned: $uri")
+                        if (uri != null) {
+                                try {
+                                        context.contentResolver.takePersistableUriPermission(
+                                                uri,
+                                                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                        )
+                                } catch (e: Exception) {
+                                        android.util.Log.w("MainMusicScreen", "takePersistableUriPermission failed", e)
+                                }
+                                android.util.Log.d("MainMusicScreen", "Storing music folder uri and starting scan: $uri")
+                                appPrefs.setMusicFolderUri(uri.toString())
+                                // hide picker overlay and trigger scan now that folder is set
+                                needPicker = false
+                                try {
+                                        vm.manualRefreshLibrary()
+                                } catch (e: Exception) {
+                                        android.util.Log.e("MainMusicScreen", "manualRefreshLibrary error", e)
+                                }
+                                try {
+                                        android.widget.Toast.makeText(context, "Carpeta seleccionada", android.widget.Toast.LENGTH_SHORT).show()
+                                } catch (_: Exception) {
+                                }
+                        }
+                }
+
                 var selectedTab by rememberSaveable { mutableStateOf(BottomNavItem.Songs.route) }
+                if (needPicker) {
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+                                Column(
+                                        modifier = Modifier.fillMaxSize().padding(32.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                ) {
+                                        Text(
+                                                text = "Selecciona la carpeta donde está tu música",
+                                                color = Color.White,
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.Bold
+                                        )
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        Button(
+                                                onClick = { launcher.launch(null) },
+                                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                                        ) { Text("Elegir carpeta") }
+                                }
+                        }
+                }
+                else {
                 var selectedAlbumName by remember { mutableStateOf<String?>(null) }
                 var selectedArtistName by remember { mutableStateOf<String?>(null) }
                 var selectedPlaylistName by remember { mutableStateOf<String?>(null) }
                 val playerState by vm.playerState.collectAsState()
                 val showPlayerScreen by vm.isPlayerScreenVisible.collectAsState()
-                val context = LocalContext.current
+                val showSettings by vm.isSettingsVisible.collectAsState()
                 val activity = context as? Activity
                 var lastBackPressTime by remember { mutableStateOf(0L) }
 
@@ -894,10 +968,20 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                                 )
                                         }
                                 }
+                                                                // Settings screen overlay
+                                                                if (showSettings) {
+                                                                        Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
+                                                                                                                                                                SettingsScreen(viewModel = vm, onClose = { vm.closeSettingsScreen() })
+                                                                                                                                                                if (vm.isEqualizerVisible.collectAsState().value) {
+                                                                                                                                                                        EqualizerScreen(viewModel = vm, onClose = { vm.closeEqualizerScreen() })
+                                                                                                                                                                }
+                                                                        }
+                                                                }
                         }
-                }
-        }
-}
+                    } // end Box container
+                } // end Scaffold
+            } // end else branch
+        } // end StoragePermissionHandler
 
 fun formatDuration(ms: Long): String {
         val seconds = (ms / 1000) % 60

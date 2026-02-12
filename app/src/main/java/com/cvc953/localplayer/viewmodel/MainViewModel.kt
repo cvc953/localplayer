@@ -19,6 +19,7 @@ import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.model.TtmlLyrics
+import com.cvc953.localplayer.preferences.AppPrefs
 import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.PlayerState
 import com.cvc953.localplayer.ui.RepeatMode
@@ -37,6 +38,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import android.net.Uri
+import android.provider.DocumentsContract
+import com.cvc953.localplayer.services.EqualizerManager
 
 data class LyricLine(val timeMs: Long, val text: String)
 
@@ -57,7 +61,90 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         instance = this
     }
 
+    private val appPrefs = AppPrefs(application)
+
+    private val _isSettingsVisible = MutableStateFlow(false)
+    val isSettingsVisible: StateFlow<Boolean> = _isSettingsVisible
+    private val _isEqualizerVisible = MutableStateFlow(false)
+    val isEqualizerVisible: StateFlow<Boolean> = _isEqualizerVisible
+
+    private val _folderUris = MutableStateFlow(appPrefs.getMusicFolderUris())
+    val folderUris: StateFlow<List<String>> = _folderUris
+
+    fun openSettingsScreen() {
+        _isSettingsVisible.value = true
+    }
+
+    fun closeSettingsScreen() {
+        _isSettingsVisible.value = false
+    }
+
+    fun openEqualizerScreen() {
+        _isEqualizerVisible.value = true
+    }
+
+    fun closeEqualizerScreen() {
+        _isEqualizerVisible.value = false
+    }
+
+    fun addMusicFolder(uri: String) {
+        appPrefs.addMusicFolder(uri)
+        _folderUris.value = appPrefs.getMusicFolderUris()
+        manualRefreshLibrary()
+        refreshFolderEntries()
+    }
+
+    fun removeMusicFolder(uri: String) {
+        appPrefs.removeMusicFolder(uri)
+        _folderUris.value = appPrefs.getMusicFolderUris()
+        manualRefreshLibrary()
+        refreshFolderEntries()
+    }
+
+    data class FolderEntry(val uri: String, val name: String, val count: Int)
+
+    private val _folderEntries = MutableStateFlow<List<FolderEntry>>(emptyList())
+    val folderEntries: StateFlow<List<FolderEntry>> = _folderEntries
+
+    private fun refreshFolderEntries() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val list = mutableListOf<FolderEntry>()
+            val uris = appPrefs.getMusicFolderUris()
+            uris.forEach { u ->
+                var name = u
+                try {
+                    val treeId = DocumentsContract.getTreeDocumentId(Uri.parse(u))
+                    // treeId often like "primary:Music/monochrome" -> show last path segment
+                    val rel = treeId.removePrefix("primary:").trimStart('/')
+                    if (rel.isNotEmpty()) {
+                        val last = rel.substringAfterLast('/')
+                        if (last.isNotEmpty()) name = last
+                    }
+                } catch (_: Exception) {
+                    // fallback to last path segment of URI
+                    try {
+                        val p = Uri.parse(u).lastPathSegment
+                        if (!p.isNullOrEmpty()) name = p
+                    } catch (_: Exception) {
+                    }
+                }
+                val count = try { repository.countSongsForFolder(u) } catch (_: Exception) { 0 }
+                list.add(FolderEntry(uri = u, name = name, count = count))
+            }
+            _folderEntries.value = list
+        }
+    }
+
+    // ensure entries are refreshed when folders change
+    init {
+        // existing init stuff will run; refresh folder entries now
+        refreshFolderEntries()
+    }
+
+    // onCleared is implemented later in the file; no-op here.
+
     private val repository = SongRepository(application)
+    private val equalizerManager = EqualizerManager()
     private val prefs: SharedPreferences =
             application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -76,6 +163,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val playerState: StateFlow<PlayerState> = _playerState
 
     private var mediaPlayer: MediaPlayer? = null
+
+    private val _equalizerEnabled = MutableStateFlow(appPrefs.isEqualizerEnabled())
+    val equalizerEnabled: StateFlow<Boolean> = _equalizerEnabled
+
+    private val _equalizerPresets = MutableStateFlow<List<String>>(emptyList())
+    val equalizerPresets: StateFlow<List<String>> = _equalizerPresets
+
+    private val _selectedPresetIndex = MutableStateFlow(appPrefs.getEqualizerPresetIndex())
+    val selectedPresetIndex: StateFlow<Int> = _selectedPresetIndex
+
+    private val _bandCount = MutableStateFlow(0)
+    val bandCount: StateFlow<Int> = _bandCount
+
+    private val _bandFreqs = MutableStateFlow<List<Int>>(emptyList())
+    val bandFreqs: StateFlow<List<Int>> = _bandFreqs
+
+    private val _bandLevels = MutableStateFlow<List<Int>>(emptyList())
+    val bandLevels: StateFlow<List<Int>> = _bandLevels
+
+    private val _userPresets = MutableStateFlow<List<Pair<String, List<Int>>>>(emptyList())
+    val userPresets: StateFlow<List<Pair<String, List<Int>>>> = _userPresets
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
@@ -296,37 +404,43 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         true,
                         mediaStoreObserver
                 )
+        // Only perform initial scan if user previously selected a music folder
+        val appPrefs = AppPrefs(getApplication())
+        if (appPrefs.hasMusicFolderUri()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    // Solo mostrar indicador si es la primera vez
+                    val firstScan = !repository.isFirstScanDone()
+                    if (firstScan) {
+                        _isScanning.value = true
+                        val temp = mutableListOf<Song>()
+                        // Escaneo incremental: actualizamos _songs a medida que se encuentran canciones
+                        repository.scanSongsStreaming(
+                                onSongFound = { song ->
+                                    temp.add(song)
+                                    _songs.value = temp.sortedBy { it.title }
+                                },
+                                onProgress = { current, total ->
+                                    _scanProgress.value =
+                                            if (total > 0) current.toFloat() / total else 0f
+                                }
+                        )
+                        _isScanning.value = false
+                    } else {
+                        val loaded = withContext(Dispatchers.IO) { repository.loadSongs() }
+                        _songs.value = loaded.sortedBy { it.title }
+                    }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Solo mostrar indicador si es la primera vez
-                val firstScan = !repository.isFirstScanDone()
-                if (firstScan) {
-                    _isScanning.value = true
-                    val temp = mutableListOf<Song>()
-                    // Escaneo incremental: actualizamos _songs a medida que se encuentran canciones
-                    repository.scanSongsStreaming(
-                            onSongFound = { song ->
-                                temp.add(song)
-                                _songs.value = temp.sortedBy { it.title }
-                            },
-                            onProgress = { current, total ->
-                                _scanProgress.value =
-                                        if (total > 0) current.toFloat() / total else 0f
-                            }
-                    )
+                    // Cargar última canción reproducida
+                    loadLastSong()
+                } catch (e: Exception) {
+                    android.util.Log.e("MainViewModel", "Error inicializando ViewModel", e)
                     _isScanning.value = false
-                } else {
-                    val loaded = withContext(Dispatchers.IO) { repository.loadSongs() }
-                    _songs.value = loaded.sortedBy { it.title }
                 }
-
-                // Cargar última canción reproducida
-                loadLastSong()
-            } catch (e: Exception) {
-                android.util.Log.e("MainViewModel", "Error inicializando ViewModel", e)
-                _isScanning.value = false
             }
+        } else {
+            // No folder selected: don't scan yet, UI should prompt user to choose folder
+            _isScanning.value = false
         }
     }
 
@@ -362,6 +476,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             if (autoPlay) startPositionUpdates() else progressJob?.cancel()
             loadLyricsForSong(song)
+
+            // Initialize equalizer attached to this MediaPlayer session
+            try {
+                val sessionId = mediaPlayer?.audioSessionId ?: 0
+                if (sessionId != 0 && equalizerManager.init(sessionId)) {
+                    // update presets list
+                    _equalizerPresets.value = equalizerManager.getPresets()
+                    // populate band info
+                    val bc = equalizerManager.getNumberOfBands().toInt()
+                    _bandCount.value = bc
+                    val freqs = mutableListOf<Int>()
+                    val levels = mutableListOf<Int>()
+                    for (i in 0 until bc) {
+                        freqs.add(equalizerManager.getBandCenterFreq(i.toShort()))
+                        levels.add(equalizerManager.getBandLevel(i.toShort()).toInt())
+                    }
+                    _bandFreqs.value = freqs
+                    _bandLevels.value = levels
+                    // apply persisted custom levels if present and preset is -1
+                    val custom = appPrefs.getCustomBandLevels()
+                    if (custom.isNotEmpty()) {
+                        // apply only if user previously customized (we treat preset index -1 as custom)
+                        if (_selectedPresetIndex.value == -1) {
+                            for (i in 0 until minOf(bc, custom.size)) {
+                                equalizerManager.setBandLevel(i.toShort(), custom[i].toShort())
+                            }
+                            _bandLevels.value = custom
+                        }
+                    }
+                    // load user presets from prefs
+                    _userPresets.value = appPrefs.getUserPresets()
+                    // apply persisted preset if any
+                    val idx = _selectedPresetIndex.value
+                    if (_equalizerEnabled.value) {
+                        equalizerManager.setEnabled(true)
+                        if (idx >= 0) equalizerManager.usePreset(idx)
+                    } else {
+                        equalizerManager.setEnabled(false)
+                    }
+                } else {
+                    _equalizerPresets.value = emptyList()
+                }
+            } catch (_: Exception) {}
         } catch (e: Exception) {
             playNextSong()
         }
@@ -493,9 +650,85 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         progressJob?.cancel()
         mediaPlayer?.release()
         mediaPlayer = null
+        equalizerManager.release()
         // Deregistrar el observer cuando el ViewModel se destruye
         getApplication<Application>().contentResolver.unregisterContentObserver(mediaStoreObserver)
         super.onCleared()
+    }
+
+    fun toggleEqualizer(enabled: Boolean) {
+        appPrefs.setEqualizerEnabled(enabled)
+        _equalizerEnabled.value = enabled
+        try {
+            equalizerManager.setEnabled(enabled)
+        } catch (_: Exception) {}
+    }
+
+    fun setEqualizerPreset(index: Int) {
+        appPrefs.setEqualizerPresetIndex(index)
+        _selectedPresetIndex.value = index
+        try {
+            equalizerManager.usePreset(index)
+            // when applying preset, update band levels state
+            val bc = equalizerManager.getNumberOfBands().toInt()
+            val levels = mutableListOf<Int>()
+            for (i in 0 until bc) levels.add(equalizerManager.getBandLevel(i.toShort()).toInt())
+            _bandLevels.value = levels
+            // if preset is not custom, clear saved custom levels
+            if (index >= 0) appPrefs.setCustomBandLevels(emptyList())
+        } catch (_: Exception) {}
+    }
+
+    fun setBandLevel(bandIndex: Int, level: Int) {
+        try {
+            equalizerManager.setBandLevel(bandIndex.toShort(), level.toShort())
+            val copy = _bandLevels.value.toMutableList()
+            if (bandIndex in copy.indices) copy[bandIndex] = level else {
+                // expand if needed
+                while (copy.size <= bandIndex) copy.add(0)
+                copy[bandIndex] = level
+            }
+            _bandLevels.value = copy
+            // mark as custom
+            _selectedPresetIndex.value = -1
+            appPrefs.setEqualizerPresetIndex(-1)
+            appPrefs.setCustomBandLevels(copy)
+        } catch (_: Exception) {}
+    }
+
+    fun resetBandLevels() {
+        try {
+            val bc = _bandCount.value
+            val zeros = List(bc) { 0 }
+            for (i in 0 until bc) equalizerManager.setBandLevel(i.toShort(), 0)
+            _bandLevels.value = zeros
+            appPrefs.setCustomBandLevels(zeros)
+            _selectedPresetIndex.value = -1
+            appPrefs.setEqualizerPresetIndex(-1)
+        } catch (_: Exception) {}
+    }
+
+    fun saveUserPreset(name: String) {
+        val levels = _bandLevels.value
+        appPrefs.addUserPreset(name, levels)
+        _userPresets.value = appPrefs.getUserPresets()
+    }
+
+    fun applyUserPreset(name: String) {
+        val preset = appPrefs.getUserPresets().firstOrNull { it.first == name } ?: return
+        val levels = preset.second
+        val bc = _bandCount.value
+        for (i in 0 until minOf(bc, levels.size)) {
+            try { equalizerManager.setBandLevel(i.toShort(), levels[i].toShort()) } catch (_: Exception) {}
+        }
+        _bandLevels.value = levels
+        _selectedPresetIndex.value = -1
+        appPrefs.setEqualizerPresetIndex(-1)
+    }
+
+    fun removeUserPreset(name: String) {
+        appPrefs.removeUserPreset(name)
+        _userPresets.value = appPrefs.getUserPresets()
     }
 
     fun openPlayerScreen() {

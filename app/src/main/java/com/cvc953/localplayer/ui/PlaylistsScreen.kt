@@ -529,7 +529,7 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                                     Icon(
                                             Icons.Default.MoreVert,
                                             contentDescription = "Opciones",
-                                            tint = Color(0xFF2196F3)
+                                            tint = Color.White
                                     )
                                 }
                                 DropdownMenu(
