@@ -55,9 +55,11 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.viewmodel.MainViewModel
@@ -167,14 +169,14 @@ fun PlaylistAlbumArt(
                 modifier = modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
         )
-    } else {
-        Box(
-                modifier =
-                        modifier.size(60.dp)
-                                .background(Color(0xFF404040), RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-        ) { Text("🎵", fontSize = 32.sp) }
-    }
+        } else {
+                Image(
+                        painter = painterResource(R.drawable.ic_default_album),
+                        contentDescription = "Carátula por defecto",
+                        modifier = modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                )
+        }
 }
 
 @Composable
