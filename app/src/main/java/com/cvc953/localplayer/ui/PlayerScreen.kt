@@ -94,6 +94,7 @@ fun PlayerScreen(
         var albumArt by remember { mutableStateOf<Bitmap?>(null) }
         var showQueue by remember { mutableStateOf(false) }
         var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+        var newPlaylistName by remember { mutableStateOf("") }
         var isFavorite by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val upcoming =
@@ -257,37 +258,41 @@ fun PlayerScreen(
                                 ) {
                                         // Priorizar TTML sobre LRC
                                         when {
-                                            ttmlLyrics != null && ttmlLyrics!!.lines.isNotEmpty() -> {
-                                                // Mostrar letras palabra por palabra
-                                                TtmlLyricsView(
-                                                        lines = ttmlLyrics!!.lines,
-                                                        currentPosition = playerState.position,
-                                                        modifier = Modifier.fillMaxSize(),
-                                                        onLineClick = { targetMs ->
-                                                                viewModel.seekTo(targetMs)
-                                                        }
-                                                )
-                                            }
-                                            lyrics.isNotEmpty() -> {
-                                                // Fallback a letras línea por línea
-                                                LyricsView(
-                                                        lyrics = lyrics,
-                                                        currentPosition = playerState.position,
-                                                        modifier = Modifier.fillMaxSize(),
-                                                        onLineClick = { targetMs ->
-                                                                viewModel.seekTo(targetMs)
-                                                        }
-                                                )
-                                            }
-                                            else -> {
-                                                Text(
-                                                        text = "No hay letras para esta canción",
-                                                        fontSize = 18.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        textAlign = TextAlign.Center,
-                                                        color = Color.Gray
-                                                )
-                                            }
+                                                ttmlLyrics != null &&
+                                                        ttmlLyrics!!.lines.isNotEmpty() -> {
+                                                        // Mostrar letras palabra por palabra
+                                                        TtmlLyricsView(
+                                                                lines = ttmlLyrics!!.lines,
+                                                                currentPosition =
+                                                                        playerState.position,
+                                                                modifier = Modifier.fillMaxSize(),
+                                                                onLineClick = { targetMs ->
+                                                                        viewModel.seekTo(targetMs)
+                                                                }
+                                                        )
+                                                }
+                                                lyrics.isNotEmpty() -> {
+                                                        // Fallback a letras línea por línea
+                                                        LyricsView(
+                                                                lyrics = lyrics,
+                                                                currentPosition =
+                                                                        playerState.position,
+                                                                modifier = Modifier.fillMaxSize(),
+                                                                onLineClick = { targetMs ->
+                                                                        viewModel.seekTo(targetMs)
+                                                                }
+                                                        )
+                                                }
+                                                else -> {
+                                                        Text(
+                                                                text =
+                                                                        "No hay letras para esta canción",
+                                                                fontSize = 18.sp,
+                                                                fontWeight = FontWeight.Medium,
+                                                                textAlign = TextAlign.Center,
+                                                                color = Color.Gray
+                                                        )
+                                                }
                                         }
                                 }
 
@@ -330,6 +335,7 @@ fun PlayerScreen(
                                         title = song.title,
                                         artist = song.artist,
                                         album = song.album,
+                                        albumArt = albumArt,
                                         onArtistClick = { onNavigateToArtist(song.artist) },
                                         onAlbumClick = { onNavigateToAlbum(song.album) }
                                 )
@@ -442,51 +448,104 @@ fun PlayerScreen(
                                 }
                         }
 
-                        if (showAddToPlaylistDialog) {
-                                AlertDialog(
-                                        onDismissRequest = { showAddToPlaylistDialog = false },
-                                        containerColor = Color(0xFF1A1A1A),
-                                        title = { Text("Agregar a Playlist", color = Color.White) },
-                                        text = {
-                                                LazyColumn {
-                                                        items(playlists) { playlist ->
-                                                                Text(
-                                                                        text = playlist.name,
-                                                                        color = Color.White,
-                                                                        modifier =
-                                                                                Modifier.fillMaxWidth()
-                                                                                        .clickable {
-                                                                                                viewModel
-                                                                                                        .addSongToPlaylist(
-                                                                                                                playlist.name,
-                                                                                                                song.id
-                                                                                                        )
-                                                                                                Toast.makeText(
+                                        if (showAddToPlaylistDialog) {
+                                                AlertDialog(
+                                                        onDismissRequest = { showAddToPlaylistDialog = false },
+                                                        containerColor = Color(0xFF1A1A1A),
+                                                        title = { Text("Agregar a Playlist", color = Color.White) },
+                                                        text = {
+                                                                Column(modifier = Modifier.fillMaxWidth()) {
+                                                                        OutlinedTextField(
+                                                                                value = newPlaylistName,
+                                                                                onValueChange = { newPlaylistName = it },
+                                                                                modifier = Modifier.fillMaxWidth(),
+                                                                                label = { Text("Nueva playlist", color = Color(0xFFB0B0B0)) },
+                                                                                colors = TextFieldDefaults.colors(
+                                                                                        focusedContainerColor = Color(0xFF1A1A1A),
+                                                                                        unfocusedContainerColor = Color(0xFF1A1A1A),
+                                                                                        focusedIndicatorColor = Color(0xFF2196F3),
+                                                                                        unfocusedIndicatorColor = Color(0xFF2A2A2A),
+                                                                                        cursorColor = Color(0xFF2196F3),
+                                                                                        focusedTextColor = Color.White,
+                                                                                        unfocusedTextColor = Color.White,
+                                                                                        focusedLabelColor = Color(0xFF2196F3),
+                                                                                        unfocusedLabelColor = Color(0xFF808080)
+                                                                                )
+                                                                        )
+
+                                                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                                                        Row(
+                                                                                modifier = Modifier.fillMaxWidth(),
+                                                                                horizontalArrangement = Arrangement.End
+                                                                        ) {
+                                                                                TextButton(
+                                                                                        onClick = {
+                                                                                                if (newPlaylistName.isNotBlank()) {
+                                                                                                        val created = viewModel.createPlaylist(newPlaylistName)
+                                                                                                        viewModel.addSongToPlaylist(newPlaylistName, song.id)
+                                                                                                        Toast.makeText(
                                                                                                                 context,
-                                                                                                                "Agregado a ${playlist.name}",
+                                                                                                                "Creado y agregado a $newPlaylistName",
                                                                                                                 Toast.LENGTH_SHORT
-                                                                                                        )
-                                                                                                        .show()
-                                                                                                showAddToPlaylistDialog =
-                                                                                                        false
+                                                                                                        ).show()
+                                                                                                        newPlaylistName = ""
+                                                                                                        showAddToPlaylistDialog = false
+                                                                                                }
                                                                                         }
-                                                                                        .padding(
-                                                                                                12.dp
-                                                                                        ),
-                                                                        fontSize = 14.sp
-                                                                )
+                                                                                ) { Text("Crear", color = Color(0xFF2196F3)) }
+                                                                        }
+
+                                                                        Spacer(modifier = Modifier.height(6.dp))
+
+                                                                        Divider(color = Color(0xFF2A2A2A))
+
+                                                                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                                                                                items(playlists) { playlist ->
+                                                                                        Card(
+                                                                                                modifier = Modifier
+                                                                                                        .fillMaxWidth()
+                                                                                                        .padding(vertical = 6.dp)
+                                                                                                        .clickable {
+                                                                                                                val added = viewModel.addSongToPlaylist(playlist.name, song.id)
+                                                                                                                if (added) {
+                                                                                                                        Toast.makeText(
+                                                                                                                                context,
+                                                                                                                                "Agregado a ${playlist.name}",
+                                                                                                                                Toast.LENGTH_SHORT
+                                                                                                                        ).show()
+                                                                                                                }
+                                                                                                                showAddToPlaylistDialog = false
+                                                                                                        },
+                                                                                                colors = CardDefaults.cardColors(containerColor = Color(0xFF121212)),
+                                                                                                shape = RoundedCornerShape(8.dp)
+                                                                                        ) {
+                                                                                                Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                                                                        Icon(
+                                                                                                                imageVector = Icons.Default.PlaylistAdd,
+                                                                                                                contentDescription = null,
+                                                                                                                tint = Color(0xFF2196F3)
+                                                                                                        )
+                                                                                                        Spacer(Modifier.width(12.dp))
+                                                                                                        Column {
+                                                                                                                Text(text = playlist.name, color = Color.White, fontSize = 14.sp)
+                                                                                                                Text(text = "${playlist.songIds.size} canciones", color = Color(0xFFB0B0B0), fontSize = 12.sp)
+                                                                                                        }
+                                                                                                }
+                                                                                        }
+                                                                                }
+                                                                        }
+                                                                }
+                                                        },
+                                                        confirmButton = {
+                                                                TextButton(
+                                                                        onClick = {
+                                                                                showAddToPlaylistDialog = false
+                                                                        }
+                                                                ) { Text("Cancelar", color = Color(0xFF2196F3)) }
                                                         }
-                                                }
-                                        },
-                                        confirmButton = {
-                                                TextButton(
-                                                        onClick = {
-                                                                showAddToPlaylistDialog = false
-                                                        }
-                                                ) { Text("Cancelar", color = Color(0xFF2196F3)) }
+                                                )
                                         }
-                                )
-                        }
 
                         if (showQueue) {
                                 ModalBottomSheet(
@@ -927,16 +986,18 @@ fun PlayerScreen(
         }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SongTitleSection(
         title: String,
         artist: String,
         album: String,
+        albumArt: Bitmap?,
         onArtistClick: () -> Unit,
         onAlbumClick: () -> Unit
 ) {
         var showMenu by remember { mutableStateOf(false) }
-        var menuTarget by remember { mutableStateOf<String?>(null) }
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
         Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
@@ -962,30 +1023,117 @@ fun SongTitleSection(
                                 maxLines = 1,
                                 modifier =
                                         Modifier.clickable {
-                                                menuTarget = "info"
                                                 showMenu = true
                                         }
                         )
+                        if (showMenu) {
+                                ModalBottomSheet(
+                                        onDismissRequest = { showMenu = false },
+                                        sheetState = sheetState,
+                                        containerColor = Color(0xFF121212)
+                                ) {
+                                        Column(
+                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)
+                                        ) {
+                                                Text(
+                                                        text = "Opciones",
+                                                        color = Color.White,
+                                                        fontSize = 18.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                )
 
-                        DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false },
-                                containerColor = Color.Black
-                        ) {
-                                DropdownMenuItem(
-                                        text = { Text("Ir al artista", color = Color.White) },
-                                        onClick = {
-                                                showMenu = false
-                                                onArtistClick()
+                                                Spacer(Modifier.height(12.dp))
+
+                                                // Fila: Ir al artista + imagen a la izquierda + nombre a la derecha
+                                                Row(
+                                                        modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .clickable {
+                                                                        showMenu = false
+                                                                        onArtistClick()
+                                                                }
+                                                                .padding(vertical = 8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                        // Imagen del artista: usar albumArt si no hay imagen específica
+                                                        Box(
+                                                                modifier = Modifier
+                                                                        .size(56.dp)
+                                                                        .clip(RoundedCornerShape(8.dp))
+                                                                        .background(Color(0xFF2A2A2A)),
+                                                                contentAlignment = Alignment.Center
+                                                        ) {
+                                                                if (albumArt != null) {
+                                                                        Image(
+                                                                                painter = BitmapPainter(albumArt.asImageBitmap()),
+                                                                                contentDescription = "Artist image",
+                                                                                modifier = Modifier.fillMaxSize(),
+                                                                                contentScale = ContentScale.Crop
+                                                                        )
+                                                                } else {
+                                                                        Icon(
+                                                                                imageVector = Icons.Default.Person,
+                                                                                contentDescription = null,
+                                                                                tint = Color.White.copy(alpha = 0.6f),
+                                                                                modifier = Modifier.size(28.dp)
+                                                                        )
+                                                                }
+                                                        }
+
+                                                        Spacer(Modifier.width(12.dp))
+
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                                Text(text = "Ir al artista", color = Color.White, fontSize = 16.sp)
+                                                                Text(text = artist, color = Color(0xFFB0B0B0), fontSize = 14.sp)
+                                                        }
+                                                }
+
+                                                Spacer(Modifier.height(8.dp))
+
+                                                // Fila: Ir al álbum + imagen a la izquierda + nombre a la derecha
+                                                Row(
+                                                        modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .clickable {
+                                                                        showMenu = false
+                                                                        onAlbumClick()
+                                                                }
+                                                                .padding(vertical = 8.dp),
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                        Box(
+                                                                modifier = Modifier
+                                                                        .size(56.dp)
+                                                                        .clip(RoundedCornerShape(8.dp))
+                                                                        .background(Color(0xFF2A2A2A)),
+                                                                contentAlignment = Alignment.Center
+                                                        ) {
+                                                                if (albumArt != null) {
+                                                                        Image(
+                                                                                painter = BitmapPainter(albumArt.asImageBitmap()),
+                                                                                contentDescription = "Album art",
+                                                                                modifier = Modifier.fillMaxSize(),
+                                                                                contentScale = ContentScale.Crop
+                                                                        )
+                                                                } else {
+                                                                        Icon(
+                                                                                imageVector = Icons.Default.MusicNote,
+                                                                                contentDescription = null,
+                                                                                tint = Color.White.copy(alpha = 0.6f),
+                                                                                modifier = Modifier.size(28.dp)
+                                                                        )
+                                                                }
+                                                        }
+
+                                                        Spacer(Modifier.width(12.dp))
+
+                                                        Column(modifier = Modifier.weight(1f)) {
+                                                                Text(text = "Ir al álbum", color = Color.White, fontSize = 16.sp)
+                                                                Text(text = album, color = Color(0xFFB0B0B0), fontSize = 14.sp)
+                                                        }
+                                                }
                                         }
-                                )
-                                DropdownMenuItem(
-                                        text = { Text("Ir al álbum", color = Color.White) },
-                                        onClick = {
-                                                showMenu = false
-                                                onAlbumClick()
-                                        }
-                                )
+                                }
                         }
                 }
         }
