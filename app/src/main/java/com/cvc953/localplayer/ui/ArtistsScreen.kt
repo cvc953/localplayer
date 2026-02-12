@@ -15,11 +15,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -71,6 +76,7 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var sortMode by rememberSaveable { mutableStateOf(ArtistSortMode.TITLE_ASC) }
+    var viewAsGrid by rememberSaveable { mutableStateOf(viewModel.isGridViewPreferred()) }
     val context = LocalContext.current
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
@@ -165,6 +171,16 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
                             if (!showSearchBar) searchQuery = ""
                         }
                 ) { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White) }
+                IconButton(onClick = {
+                    viewAsGrid = !viewAsGrid
+                    viewModel.setGridViewPreferred(viewAsGrid)
+                }) {
+                    Icon(
+                        imageVector = if (viewAsGrid) Icons.Default.ViewList else Icons.Default.ViewModule,
+                        contentDescription = "Cambiar vista",
+                        tint = Color.White
+                    )
+                }
             }
 
             if (showSearchBar) {
@@ -190,74 +206,108 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
             }
 
             Box(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
+                if (viewAsGrid) {
+                    LazyVerticalGrid(
                         modifier = Modifier.fillMaxSize(),
-                        state = listState,
-                        contentPadding =
-                                PaddingValues(
-                                        start = 16.dp,
-                                        top = 16.dp,
-                                        bottom = 16.dp,
-                                        end = 4.dp
-                                ),
+                        columns = GridCells.Adaptive(140.dp),
+                        contentPadding = PaddingValues(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(sortedArtists) { (artistName, artistSongs) ->
-                        val context = LocalContext.current
-                        val mainAlbum =
-                                remember(artistSongs) {
-                                    artistSongs
-                                            .groupBy { it.album.ifBlank { "Desconocido" } }
-                                            .maxByOrNull { it.value.size }
-                                }
-                        val representativeSong = mainAlbum?.value?.firstOrNull()
-                        var albumArt by
-                                remember(representativeSong?.uri) { mutableStateOf<Bitmap?>(null) }
+                    ) {
+                        items(sortedArtists) { (artistName, artistSongs) ->
+                            val context = LocalContext.current
+                            val mainAlbum = remember(artistSongs) {
+                                artistSongs.groupBy { it.album.ifBlank { "Desconocido" } }.maxByOrNull { it.value.size }
+                            }
+                            val representativeSong = mainAlbum?.value?.firstOrNull()
+                            var albumArt by remember(representativeSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
-                        LaunchedEffect(representativeSong?.uri) {
-                            withContext(Dispatchers.IO) {
-                                try {
-                                    val uri = representativeSong?.uri ?: return@withContext
-                                    val retriever = MediaMetadataRetriever()
-                                    retriever.setDataSource(context, uri)
-                                    retriever.embeddedPicture?.let {
-                                        albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
-                                    }
-                                    retriever.release()
-                                } catch (_: Exception) {}
+                            LaunchedEffect(representativeSong?.uri) {
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        val uri = representativeSong?.uri ?: return@withContext
+                                        val retriever = MediaMetadataRetriever()
+                                        retriever.setDataSource(context, uri)
+                                        retriever.embeddedPicture?.let {
+                                            albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                                        }
+                                        retriever.release()
+                                    } catch (_: Exception) {}
+                                }
+                            }
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onArtistClick(artistName) }
+                                    .padding(6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) } ?: painterResource(R.drawable.ic_default_album),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(120.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    text = artistName,
+                                    color = Color.White,
+                                    fontSize = 14.sp,
+                                    maxLines = 2,
+                                    textAlign = TextAlign.Center,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(text = "${artistSongs.size} canciones", color = Color.Gray, fontSize = 12.sp)
                             }
                         }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        state = listState,
+                        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(sortedArtists) { (artistName, artistSongs) ->
+                            val context = LocalContext.current
+                            val mainAlbum = remember(artistSongs) {
+                                artistSongs.groupBy { it.album.ifBlank { "Desconocido" } }.maxByOrNull { it.value.size }
+                            }
+                            val representativeSong = mainAlbum?.value?.firstOrNull()
+                            var albumArt by remember(representativeSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
-                        Row(
-                                modifier =
-                                        Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                                            onArtistClick(artistName)
-                                        },
+                            LaunchedEffect(representativeSong?.uri) {
+                                withContext(Dispatchers.IO) {
+                                    try {
+                                        val uri = representativeSong?.uri ?: return@withContext
+                                        val retriever = MediaMetadataRetriever()
+                                        retriever.setDataSource(context, uri)
+                                        retriever.embeddedPicture?.let {
+                                            albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                                        }
+                                        retriever.release()
+                                    } catch (_: Exception) {}
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable { onArtistClick(artistName) },
                                 verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Image(
-                                    painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) }
-                                                    ?: painterResource(R.drawable.ic_default_album),
+                            ) {
+                                Image(
+                                    painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) } ?: painterResource(R.drawable.ic_default_album),
                                     contentDescription = null,
                                     modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
                                     contentScale = ContentScale.Crop
-                            )
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                        text = artistName,
-                                        color = Color.White,
-                                        fontSize = 16.sp,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
                                 )
-                                Text(
-                                        text = "${artistSongs.size} canciones",
-                                        color = Color.Gray,
-                                        fontSize = 12.sp
-                                )
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = artistName, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(text = "${artistSongs.size} canciones", color = Color.Gray, fontSize = 12.sp)
+                                }
                             }
                         }
                     }

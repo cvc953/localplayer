@@ -50,6 +50,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private const val LAST_SONG_ARTIST = "last_song_artist"
         private const val LAST_IS_PLAYING = "last_is_playing"
         private const val PLAYLISTS_JSON = "playlists_json"
+        private const val PREF_VIEW_AS_GRID = "pref_view_as_grid"
     }
 
     init {
@@ -59,6 +60,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SongRepository(application)
     private val prefs: SharedPreferences =
             application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    
 
     // Lista de canciones
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
@@ -991,6 +994,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             array.put(obj)
         }
         return array.toString()
+    }
+
+    // Persist user's preferred grid/list view for library screens. Default = true (grid)
+    fun isGridViewPreferred(): Boolean {
+        return prefs.getBoolean(PREF_VIEW_AS_GRID, true)
+    }
+
+    fun setGridViewPreferred(value: Boolean) {
+        prefs.edit().putBoolean(PREF_VIEW_AS_GRID, value).apply()
     }
 
     fun isSongInPlaylist(playlistName: String, songId: Long): Boolean {
