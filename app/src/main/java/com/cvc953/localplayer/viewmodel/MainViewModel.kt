@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.database.ContentObserver
 import android.media.MediaPlayer
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
@@ -17,14 +18,13 @@ import androidx.lifecycle.viewModelScope
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
+import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.PlayerState
 import com.cvc953.localplayer.ui.RepeatMode
-import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.util.LrcLine
-import com.cvc953.localplayer.util.parseLrc
-import com.cvc953.localplayer.util.isTtml
 import com.cvc953.localplayer.util.TtmlParser
+import com.cvc953.localplayer.util.parseLrc
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -134,6 +134,40 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } catch (e: Exception) {
                 // Silenciosamente ignorar errores de lectura
+            }
+        }
+
+    /** Import playlists from provided JSON strings. Returns number imported. */
+    suspend fun importPlaylistsFromJsonStrings(jsonStrings: List<String>): Int =
+        withContext(Dispatchers.IO) {
+            try {
+                var imported = 0
+                jsonStrings.forEach { text ->
+                    try {
+                        val array = if (text.trimStart().startsWith("[")) org.json.JSONArray(text) else org.json.JSONArray().apply { put(org.json.JSONObject(text)) }
+                        for (i in 0 until array.length()) {
+                            val obj = array.getJSONObject(i)
+                            val name = obj.optString("name", "").trim()
+                            if (name.isEmpty()) continue
+                            val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
+                            val ids = mutableListOf<Long>()
+                            for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
+
+                            if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }) continue
+
+                            val updated = _playlists.value + Playlist(name = name, songIds = ids)
+                            _playlists.value = updated
+                            savePlaylistsToPrefs(updated)
+                            imported++
+                        }
+                    } catch (_: Exception) {
+                        // ignore parse errors per-string
+                    }
+                }
+                imported
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Error importing playlists from strings", e)
+                0
             }
         }
     }
@@ -574,7 +608,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         // Primero intentar con TTML para letras palabra por palabra
                         val ttmlFile = File(audioDir, "$audioNameWithoutExt.ttml")
                         android.util.Log.d("LyricsDebug", "Buscando TTML: ${ttmlFile.name}")
-                        
+
                         if (ttmlFile.exists()) {
                             try {
                                 val text = ttmlFile.readText()
@@ -588,7 +622,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                         "✓ TTML parseado: ${parsed.lines.size} líneas, type=${parsed.type}"
                                 )
                                 parsed.lines.forEachIndexed { i, line ->
-                                    android.util.Log.d("LyricsDebug", "  Línea $i: '${line.text}' (${line.syllabus.size} sílabas)")
+                                    android.util.Log.d(
+                                            "LyricsDebug",
+                                            "  Línea $i: '${line.text}' (${line.syllabus.size} sílabas)"
+                                    )
                                 }
                                 _ttmlLyrics.value = parsed
                                 _lyrics.value = emptyList() // Limpiar letras LRC
@@ -626,24 +663,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         }
 
                         // Buscar cualquier archivo TTML o LRC en el directorio
-                        val ttmlFiles = audioDir.listFiles { _, name ->
-                            name.endsWith(".ttml", ignoreCase = true)
-                        }
-                        
+                        val ttmlFiles =
+                                audioDir.listFiles { _, name ->
+                                    name.endsWith(".ttml", ignoreCase = true)
+                                }
+
                         // Intentar con TTML primero
                         ttmlFiles?.forEach { file ->
                             android.util.Log.d("LyricsDebug", "Evaluando TTML: ${file.name}")
                             val ttmlNameWithoutExt = file.nameWithoutExtension
-                            
-                            val audioClean = audioNameWithoutExt
-                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
-                                    .lowercase()
-                                    .trim()
-                            val ttmlClean = ttmlNameWithoutExt
-                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
-                                    .lowercase()
-                                    .trim()
-                            
+
+                            val audioClean =
+                                    audioNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
+                            val ttmlClean =
+                                    ttmlNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
+
                             if (audioClean == ttmlClean) {
                                 try {
                                     val text = file.readText()
@@ -664,7 +704,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 }
                             }
                         }
-                        
+
                         // Si no hay TTML, buscar LRC
                         val lrcFiles =
                                 audioDir.listFiles { _, name ->
@@ -937,8 +977,115 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.edit().putString(PLAYLISTS_JSON, array.toString()).apply()
     }
 
+    /**
+     * Return playlists serialized as a JSON array string. Useful for writing to user-selected folders.
+     */
+    fun getPlaylistsJson(): String {
+        val array = JSONArray()
+        _playlists.value.forEach { playlist ->
+            val idsArray = JSONArray()
+            playlist.songIds.forEach { idsArray.put(it) }
+            val obj = JSONObject()
+            obj.put("name", playlist.name)
+            obj.put("songIds", idsArray)
+            array.put(obj)
+        }
+        return array.toString()
+    }
+
     fun isSongInPlaylist(playlistName: String, songId: Long): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
         return songId in playlist.songIds
     }
+
+    /**
+     * Export all playlists as a JSON file into Music/localplayer. Returns true on success. Call
+     * from a coroutine (e.g. viewModelScope.launch { val ok = exportPlaylistsToMusicFolder() })
+     */
+    suspend fun exportPlaylistsToMusicFolder(): Boolean =
+            withContext(Dispatchers.IO) {
+                try {
+                        val musicDir = getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+                    val targetDir = File(musicDir, "localplayer")
+                    if (!targetDir.exists()) targetDir.mkdirs()
+
+                    val file =
+                            File(targetDir, "playlists_export_${System.currentTimeMillis()}.json")
+
+                    val array = org.json.JSONArray()
+                    _playlists.value.forEach { playlist ->
+                        val idsArray = org.json.JSONArray()
+                        playlist.songIds.forEach { idsArray.put(it) }
+                        val obj = org.json.JSONObject()
+                        obj.put("name", playlist.name)
+                        obj.put("songIds", idsArray)
+                        array.put(obj)
+                    }
+
+                    file.writeText(array.toString())
+                    true
+                } catch (e: Exception) {
+                    android.util.Log.e("MainViewModel", "Error exporting playlists", e)
+                    false
+                }
+            }
+
+    /**
+     * Import all JSON playlists found in Music/localplayer. Returns number of playlists imported.
+     * Call from a coroutine (e.g. viewModelScope.launch { val n = importPlaylistsFromMusicFolder()
+     * })
+     */
+    suspend fun importPlaylistsFromMusicFolder(): Int =
+            withContext(Dispatchers.IO) {
+                try {
+                        val musicDir = getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+                    val targetDir = File(musicDir, "localplayer")
+                    if (!targetDir.exists() || !targetDir.isDirectory) return@withContext 0
+
+                    val files =
+                            targetDir.listFiles { f ->
+                                f.extension.equals("json", ignoreCase = true)
+                            }
+                                    ?: return@withContext 0
+                    var imported = 0
+
+                    files.forEach { f ->
+                        try {
+                            val text = f.readText()
+                            val array =
+                                    if (text.trimStart().startsWith("[")) org.json.JSONArray(text)
+                                    else
+                                            org.json.JSONArray().apply {
+                                                put(org.json.JSONObject(text))
+                                            }
+                            for (i in 0 until array.length()) {
+                                val obj = array.getJSONObject(i)
+                                val name = obj.optString("name", "").trim()
+                                if (name.isEmpty()) continue
+                                val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
+                                val ids = mutableListOf<Long>()
+                                for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
+
+                                // Skip if playlist with same name exists
+                                if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }
+                                )
+                                        continue
+
+                                val updated =
+                                        _playlists.value + Playlist(name = name, songIds = ids)
+                                _playlists.value = updated
+                                savePlaylistsToPrefs(updated)
+                                imported++
+                            }
+                        } catch (e: Exception) {
+                            // ignore file parse errors
+                        }
+                    }
+
+                    imported
+                } catch (e: Exception) {
+                    android.util.Log.e("MainViewModel", "Error importing playlists", e)
+                    0
+                }
+            }
 }
