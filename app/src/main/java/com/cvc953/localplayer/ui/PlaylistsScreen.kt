@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -440,20 +441,23 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
             ) {
-                
                 Spacer(Modifier.width(8.dp))
 
-                IconButton(onClick = { treeLauncher.launch(null) }) { Icon(Icons.Default.Download, contentDescription = "Importar", tint = Color.White) }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = { treeLauncher.launch(null) }) {
+                        Icon(Icons.Default.Download, contentDescription = "Importar", tint = Color.White)
+                    }
+                    Text(text = "importar", color = Color.White, fontSize = 12.sp)
+                }
 
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(24.dp))
 
-                Button(
-                        onClick = { showCreateDialog = true },
-                        colors =
-                                androidx.compose.material3.ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF2196F3)
-                                )
-                ) { Text("Crear lista") }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    IconButton(onClick = { showCreateDialog = true }) {
+                        Icon(Icons.Default.Add, contentDescription = "Crear lista", tint = Color.White)
+                    }
+                    Text(text = "crear", color = Color.White, fontSize = 12.sp)
+                }
             }
 
             if (sortedPlaylists.isEmpty()) {
