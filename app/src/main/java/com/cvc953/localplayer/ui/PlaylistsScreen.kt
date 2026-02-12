@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -37,6 +39,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.provider.DocumentsContract
+import android.content.Intent
+import android.util.Log
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,6 +63,7 @@ import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 private fun createCombinedAlbumArt(bitmaps: List<Bitmap?>, size: Int = 256): Bitmap {
     val canvas = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
@@ -186,6 +195,7 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
     var renamePlaylistName by rememberSaveable { mutableStateOf("") }
     var renameError by rememberSaveable { mutableStateOf<String?>(null) }
     var menuExpandedPlaylistId by remember { mutableStateOf<Long?>(null) }
+    var playlistToExport by remember { mutableStateOf<Playlist?>(null) }
     val context = LocalContext.current
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
@@ -230,7 +240,7 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(
+                Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
             ) {
@@ -299,10 +309,142 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                 )
             }
 
+            val scope2 = rememberCoroutineScope()
+            val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+                if (uri != null) {
+                    scope2.launch {
+                        try {
+                            val resolver = context.contentResolver
+
+                            // Try to persist permissions so write works reliably
+                            try {
+                                resolver.takePersistableUriPermission(
+                                    uri,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                                )
+                            } catch (sec: Exception) {
+                                Log.w("PlaylistsScreen", "No persistable permission: ${sec.message}")
+                            }
+
+                            val filename = "localplayer_playlists_${System.currentTimeMillis()}.json"
+
+                            // Some providers reject the raw tree URI for createDocument. Try the tree URI first,
+                            // then fall back to using the tree's document URI.
+                            var docUri = try {
+                                DocumentsContract.createDocument(resolver, uri, "application/json", filename)
+                            } catch (iae: IllegalArgumentException) {
+                                try {
+                                    val treeId = DocumentsContract.getTreeDocumentId(uri)
+                                    val parent = DocumentsContract.buildDocumentUriUsingTree(uri, treeId)
+                                    DocumentsContract.createDocument(resolver, parent, "application/json", filename)
+                                } catch (e2: Exception) {
+                                    Log.e("PlaylistsScreen", "createDocument fallback failed", e2)
+                                    null
+                                }
+                            }
+
+                            if (docUri == null) {
+                                Toast.makeText(context, "No se pudo crear archivo en la carpeta", Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+
+                            resolver.openOutputStream(docUri)?.use { os ->
+                                val text = playlistToExport?.let { p ->
+                                    // serialize single playlist
+                                    val array = org.json.JSONArray()
+                                    val idsArray = org.json.JSONArray()
+                                    p.songIds.forEach { idsArray.put(it) }
+                                    val obj = org.json.JSONObject()
+                                    obj.put("name", p.name)
+                                    obj.put("songIds", idsArray)
+                                    array.put(obj)
+                                    array.toString()
+                                } ?: viewModel.getPlaylistsJson()
+
+                                os.write(text.toByteArray())
+                                os.flush()
+                            }
+
+                            Toast.makeText(context, "Playlists exportadas", Toast.LENGTH_SHORT).show()
+                            playlistToExport = null
+                        } catch (e: Exception) {
+                            Log.e("PlaylistsScreen", "Error exporting playlists", e)
+                            Toast.makeText(context, "Error exportando playlists: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+            val treeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+                if (uri != null) {
+                    scope2.launch {
+                        try {
+                            val resolver = context.contentResolver
+                            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri))
+                            val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                            val texts = mutableListOf<String>()
+                            resolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+                                while (cursor.moveToNext()) {
+                                    val docId = cursor.getString(0)
+                                    val name = cursor.getString(1) ?: ""
+                                    if (name.endsWith(".json", true)) {
+                                        try {
+                                            val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, docId)
+                                            resolver.openInputStream(docUri)?.bufferedReader()?.use { r ->
+                                                texts.add(r.readText())
+                                            }
+                                        } catch (_: Exception) {
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (texts.isNotEmpty()) {
+                                var imported = 0
+                                texts.forEach { text ->
+                                    try {
+                                        val array = if (text.trimStart().startsWith("[")) org.json.JSONArray(text) else org.json.JSONArray().apply { put(org.json.JSONObject(text)) }
+                                        for (i in 0 until array.length()) {
+                                            val obj = array.getJSONObject(i)
+                                            val name = obj.optString("name", "").trim()
+                                            if (name.isEmpty()) continue
+                                            val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
+                                            val ids = mutableListOf<Long>()
+                                            for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
+
+                                            if (viewModel.playlists.value.any { it.name.equals(name, ignoreCase = true) }) continue
+
+                                            val created = viewModel.createPlaylist(name)
+                                            if (created && ids.isNotEmpty()) {
+                                                viewModel.addSongsToPlaylist(name, ids)
+                                            }
+                                            imported++
+                                        }
+                                    } catch (_: Exception) {
+                                    }
+                                }
+                                Toast.makeText(context, "Importadas $imported playlists", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "No se encontraron archivos .json en la carpeta", Toast.LENGTH_SHORT).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error importando desde carpeta", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+
             Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
             ) {
+                
+                Spacer(Modifier.width(8.dp))
+
+                IconButton(onClick = { treeLauncher.launch(null) }) { Icon(Icons.Default.Download, contentDescription = "Importar", tint = Color.White) }
+
+                Spacer(Modifier.width(12.dp))
+
                 Button(
                         onClick = { showCreateDialog = true },
                         colors =
@@ -391,6 +533,14 @@ fun PlaylistsScreen(viewModel: MainViewModel, onPlaylistClick: (String) -> Unit)
                                         onDismissRequest = { menuExpandedPlaylistId = null },
                                         containerColor = Color(0xFF1A1A1A)
                                 ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Exportar", color = Color.White) },
+                                        onClick = {
+                                        playlistToExport = playlist
+                                        exportLauncher.launch(null)
+                                        menuExpandedPlaylistId = null
+                                        }
+                                    )
                                     DropdownMenuItem(
                                             text = { Text("Renombrar", color = Color.White) },
                                             onClick = {

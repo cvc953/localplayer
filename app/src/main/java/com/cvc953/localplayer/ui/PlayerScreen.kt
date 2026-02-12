@@ -95,6 +95,7 @@ fun PlayerScreen(
         var showQueue by remember { mutableStateOf(false) }
         var showAddToPlaylistDialog by remember { mutableStateOf(false) }
         var newPlaylistName by remember { mutableStateOf("") }
+        var showCreatePlaylistDialog by remember { mutableStateOf(false) }
         var isFavorite by remember { mutableStateOf(false) }
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val upcoming =
@@ -455,104 +456,59 @@ fun PlayerScreen(
                                         title = { Text("Agregar a Playlist", color = Color.White) },
                                         text = {
                                                 Column(modifier = Modifier.fillMaxWidth()) {
-                                                        OutlinedTextField(
-                                                                value = newPlaylistName,
-                                                                onValueChange = {
-                                                                        newPlaylistName = it
-                                                                },
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                label = {
-                                                                        Text(
-                                                                                "Nueva playlist",
-                                                                                color =
-                                                                                        Color(
-                                                                                                0xFFB0B0B0
-                                                                                        )
-                                                                        )
-                                                                },
-                                                                colors =
-                                                                        TextFieldDefaults.colors(
-                                                                                focusedContainerColor =
-                                                                                        Color(
-                                                                                                0xFF1A1A1A
-                                                                                        ),
-                                                                                unfocusedContainerColor =
-                                                                                        Color(
-                                                                                                0xFF1A1A1A
-                                                                                        ),
-                                                                                focusedIndicatorColor =
-                                                                                        Color(
-                                                                                                0xFF2196F3
-                                                                                        ),
-                                                                                unfocusedIndicatorColor =
-                                                                                        Color(
-                                                                                                0xFF2A2A2A
-                                                                                        ),
-                                                                                cursorColor =
-                                                                                        Color(
-                                                                                                0xFF2196F3
-                                                                                        ),
-                                                                                focusedTextColor =
-                                                                                        Color.White,
-                                                                                unfocusedTextColor =
-                                                                                        Color.White,
-                                                                                focusedLabelColor =
-                                                                                        Color(
-                                                                                                0xFF2196F3
-                                                                                        ),
-                                                                                unfocusedLabelColor =
-                                                                                        Color(
-                                                                                                0xFF808080
-                                                                                        )
-                                                                        )
-                                                        )
-
-                                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                                        Row(
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                horizontalArrangement =
-                                                                        Arrangement.End
-                                                        ) {
-                                                                TextButton(
-                                                                        onClick = {
-                                                                                if (newPlaylistName
-                                                                                                .isNotBlank()
-                                                                                ) {
-                                                                                        val created =
-                                                                                                viewModel
-                                                                                                        .createPlaylist(
-                                                                                                                newPlaylistName
-                                                                                                        )
-                                                                                        viewModel
-                                                                                                .addSongToPlaylist(
-                                                                                                        newPlaylistName,
-                                                                                                        song.id
-                                                                                                )
-                                                                                        Toast.makeText(
-                                                                                                        context,
-                                                                                                        "Creado y agregado a $newPlaylistName",
-                                                                                                        Toast.LENGTH_SHORT
-                                                                                                )
-                                                                                                .show()
-                                                                                        newPlaylistName =
-                                                                                                ""
-                                                                                        showAddToPlaylistDialog =
-                                                                                                false
-                                                                                }
+                                                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                                                                        Button(onClick = {
+                                                                                showCreatePlaylistDialog = true
+                                                                        }, colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
+                                                                                Text("Crear playlist")
                                                                         }
-                                                                ) {
-                                                                        Text(
-                                                                                "Crear",
-                                                                                color =
-                                                                                        Color(
-                                                                                                0xFF2196F3
-                                                                                        )
-                                                                        )
                                                                 }
-                                                        }
 
                                                         Spacer(modifier = Modifier.height(6.dp))
+
+                                                                                                                // Create playlist dialog triggered from the Add-to-Playlist menu
+                                                                                                                if (showCreatePlaylistDialog) {
+                                                                                                                        AlertDialog(
+                                                                                                                                        onDismissRequest = {
+                                                                                                                                                showCreatePlaylistDialog = false
+                                                                                                                                                newPlaylistName = ""
+                                                                                                                                        },
+                                                                                                                                        containerColor = Color(0xFF1A1A1A),
+                                                                                                                                        title = { Text("Nueva lista", color = Color.White) },
+                                                                                                                                        text = {
+                                                                                                                                                OutlinedTextField(
+                                                                                                                                                                value = newPlaylistName,
+                                                                                                                                                                onValueChange = { newPlaylistName = it },
+                                                                                                                                                                singleLine = true,
+                                                                                                                                                                placeholder = { Text("Nombre de la lista") },
+                                                                                                                                                                colors = TextFieldDefaults.colors(
+                                                                                                                                                                                focusedContainerColor = Color(0xFF1A1A1A),
+                                                                                                                                                                                unfocusedContainerColor = Color(0xFF1A1A1A),
+                                                                                                                                                                                focusedIndicatorColor = Color(0xFF2196F3),
+                                                                                                                                                                                unfocusedIndicatorColor = Color(0xFF404040),
+                                                                                                                                                                                cursorColor = Color(0xFF2196F3),
+                                                                                                                                                                                focusedTextColor = Color.White,
+                                                                                                                                                                                unfocusedTextColor = Color.White
+                                                                                                                                                                )
+                                                                                                                                                )
+                                                                                                                                        },
+                                                                                                                                        confirmButton = {
+                                                                                                                                                TextButton(onClick = {
+                                                                                                                                                        if (newPlaylistName.isNotBlank()) {
+                                                                                                                                                                val created = viewModel.createPlaylist(newPlaylistName)
+                                                                                                                                                                viewModel.addSongToPlaylist(newPlaylistName, song.id)
+                                                                                                                                                                Toast.makeText(context, "Creado y agregado a $newPlaylistName", Toast.LENGTH_SHORT).show()
+                                                                                                                                                                newPlaylistName = ""
+                                                                                                                                                                showCreatePlaylistDialog = false
+                                                                                                                                                                showAddToPlaylistDialog = false
+                                                                                                                                                        }
+                                                                                                                                                }) { Text("Crear", color = Color(0xFF2196F3)) }
+                                                                                                                                        },
+                                                                                                                                        dismissButton = {
+                                                                                                                                                TextButton(onClick = { showCreatePlaylistDialog = false }) { Text("Cancelar", color = Color.White) }
+                                                                                                                                        }
+                                                                                                                        )
+                                                                                                                }
 
                                                         Divider(color = Color(0xFF2A2A2A))
 
