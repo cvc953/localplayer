@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -108,6 +109,7 @@ fun AlbumsScreen(viewModel: MainViewModel, onAlbumClick: (String) -> Unit) {
                 }
             }
     val listState = rememberLazyListState()
+    val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
     var currentScrollLetter by remember { mutableStateOf<String?>(null) }
 
@@ -210,6 +212,7 @@ fun AlbumsScreen(viewModel: MainViewModel, onAlbumClick: (String) -> Unit) {
                     LazyVerticalGrid(
                         modifier = Modifier.fillMaxSize(),
                         columns = GridCells.Adaptive(140.dp),
+                        state = gridState,
                         contentPadding = PaddingValues(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -351,7 +354,8 @@ fun AlbumsScreen(viewModel: MainViewModel, onAlbumClick: (String) -> Unit) {
                                     }
                                 }
                         if (index >= 0) {
-                            scope.launch { listState.scrollToItem(index) }
+                            if (viewAsGrid) scope.launch { gridState.scrollToItem(index) }
+                            else scope.launch { listState.scrollToItem(index) }
                         }
                     }
 
