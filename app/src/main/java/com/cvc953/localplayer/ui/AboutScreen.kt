@@ -135,7 +135,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 )
 
                 FeatureItem(
-                    title = "Búsqueda y filtrado",
+                    title = "Búsqueda",
                     description = "Encuentra tus canciones rápidamente"
                 )
 
