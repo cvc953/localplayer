@@ -97,12 +97,22 @@ fun SettingsScreen(viewModel: MainViewModel, onClose: () -> Unit) {
 
             Spacer(modifier = Modifier.height(24.dp))
             Text("Ecualizador", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    // Equalizer toggle
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val eqEnabled by viewModel.equalizerEnabled.collectAsState()
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Activar ecualizador", color = Color.White)
+                            Text("Usar ecualizador nativo del sistema", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                        }
+                        Switch(checked = eqEnabled, onCheckedChange = { viewModel.toggleEqualizer(it) })
+                    }
 
-            // Open detailed equalizer screen for vertical sliders
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = { viewModel.openEqualizerScreen() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
-                Text("Abrir ecualizador avanzado")
-            }
+                    // Open detailed equalizer screen for vertical sliders
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(onClick = { viewModel.openEqualizerScreen() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
+                        Text("Abrir ecualizador avanzado")
+                    }
         }
     }
 }
