@@ -55,7 +55,7 @@ fun SettingsScreen(viewModel: MainViewModel, onClose: () -> Unit) {
     Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Ajustes - Carpetas", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("Ajustes", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 IconButton(onClick = onClose) {
                     Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White)
                 }
@@ -96,10 +96,11 @@ fun SettingsScreen(viewModel: MainViewModel, onClose: () -> Unit) {
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+            Text("Ecualizador", color = Color.White, fontWeight = FontWeight.SemiBold)
 
             // Open detailed equalizer screen for vertical sliders
             Spacer(modifier = Modifier.height(12.dp))
-            Button(onClick = { viewModel.openEqualizerScreen() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) {
+            Button(onClick = { viewModel.openEqualizerScreen() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
                 Text("Abrir ecualizador avanzado")
             }
         }

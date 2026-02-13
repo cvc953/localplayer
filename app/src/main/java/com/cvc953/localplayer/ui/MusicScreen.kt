@@ -61,7 +61,7 @@ fun SongsContent(viewModel: MainViewModel) {
         var showSearchBar by rememberSaveable { mutableStateOf(false) }
         var sortMode by rememberSaveable { mutableStateOf(SortMode.TITLE_ASC) }
         var sortMenuExpanded by remember { mutableStateOf(false) }
-        var showAbout by remember { mutableStateOf(false) }
+        // About visibility moved to ViewModel so shell UI can react
         var menuExpanded by remember { mutableStateOf(false) }
 
         val filteredSongs =
@@ -242,10 +242,10 @@ fun SongsContent(viewModel: MainViewModel) {
                                                                                 color = Color.White
                                                                         )
                                                                 },
-                                                                onClick = {
-                                                                        showAbout = true
-                                                                        menuExpanded = false
-                                                                }
+                                                                        onClick = {
+                                                                                viewModel.openAboutScreen()
+                                                                                menuExpanded = false
+                                                                        }
                                                         )
                                                 }
                                         }
@@ -666,9 +666,10 @@ fun SongsContent(viewModel: MainViewModel) {
                                 }
                         }
 
+                        val showAbout by viewModel.isAboutVisible.collectAsState()
                         if (showAbout) {
                                 Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
-                                        AboutScreen(onBack = { showAbout = false })
+                                        AboutScreen(onBack = { viewModel.closeAboutScreen() })
                                 }
                         }
                 }
@@ -742,6 +743,8 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 val playerState by vm.playerState.collectAsState()
                 val showPlayerScreen by vm.isPlayerScreenVisible.collectAsState()
                 val showSettings by vm.isSettingsVisible.collectAsState()
+                val showAbout by vm.isAboutVisible.collectAsState()
+                val showEqualizer by vm.isEqualizerVisible.collectAsState()
                 val activity = context as? Activity
                 var lastBackPressTime by remember { mutableStateOf(0L) }
 
@@ -790,7 +793,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 Scaffold(
                         containerColor = Color.Black,
                         bottomBar = {
-                                if (!showPlayerScreen) {
+                                if (!showPlayerScreen && !showSettings && !showAbout && !showEqualizer) {
                                         Column {
                                                 // MiniPlayer arriba del BottomNavigationBar
                                                 if (playerState.currentSong != null) {

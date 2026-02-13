@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,18 +58,51 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
 
             // System presets (from device Equalizer) and user presets are shown below
             val equalizerPresets by viewModel.equalizerPresets.collectAsState()
+            val userPresets by viewModel.userPresets.collectAsState()
             val selectedPreset by viewModel.selectedPresetIndex.collectAsState()
-            if (equalizerPresets.isNotEmpty()) {
+                    val selectedPresetName by viewModel.selectedPresetName.collectAsState()
+            // combine system presets and user presets into single menu; user presets marked true
+            val combined = remember(equalizerPresets, userPresets) {
+                val sys = equalizerPresets.map { it to false }
+                val usr = userPresets.map { it.first to true }
+                sys + usr
+            }
+            if (combined.isNotEmpty()) {
                 var expandedSys by remember { mutableStateOf(false) }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Presets del sistema:", color = Color.White, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { expandedSys = true }) { Text(if (selectedPreset >= 0 && selectedPreset < equalizerPresets.size) equalizerPresets[selectedPreset] else "Seleccionar", color = Color.White) }
-                    DropdownMenu(expanded = expandedSys, onDismissRequest = { expandedSys = false }) {
-                        equalizerPresets.forEachIndexed { idx, name ->
-                            DropdownMenuItem(text = { Text(name) }, onClick = {
-                                viewModel.setEqualizerPreset(idx)
-                                expandedSys = false
-                            })
+                    Text("Presets:", color = Color.White, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { expandedSys = true }) {
+                        Text(
+                            text = selectedPresetName ?: if (selectedPreset >= 0 && selectedPreset < equalizerPresets.size) equalizerPresets[selectedPreset] else "Seleccionar",
+                            color = Color.White
+                        )
+                    }
+                    DropdownMenu(expanded = expandedSys, onDismissRequest = { expandedSys = false }, modifier = Modifier.background(Color.Black)) {
+                        combined.forEachIndexed { idx, pair ->
+                            val (name, isUser) = pair
+                            DropdownMenuItem(
+                                text = {
+                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                        Text(name, color = Color.White, modifier = Modifier.weight(1f))
+                                        if (isUser) {
+                                            IconButton(onClick = {
+                                                viewModel.removeUserPreset(name)
+                                            }) {
+                                                Icon(Icons.Default.Delete, contentDescription = "Eliminar preset", tint = Color.White)
+                                            }
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    if (isUser) {
+                                        viewModel.applyUserPreset(name)
+                                    } else {
+                                        // system preset index is the same as idx when in sys part
+                                        viewModel.setEqualizerPreset(idx)
+                                    }
+                                    expandedSys = false
+                                }
+                            )
                         }
                     }
                 }
@@ -103,7 +137,7 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
                                         modifier = Modifier.matchParentSize(),
                                         trackWidth = 2.dp,
                                         thumbRadius = 10.dp,
-                                        activeColor = Color(0xFFB58CFF),
+                                        activeColor = Color(0xFF2196F3),
                                         inactiveColor = Color.White.copy(alpha = 0.12f),
                                         backgroundColor = Color.Transparent
                                     )
@@ -119,45 +153,11 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 // Preset actions: save (dialog), reset and user presets list
-                var showSaveDialog by remember { mutableStateOf(false) }
-                var dialogName by remember { mutableStateOf("") }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { viewModel.resetBandLevels() }) { Text("Reset") }
-                    Button(onClick = { showSaveDialog = true }, modifier = Modifier.weight(1f)) { Text("Guardar preset") }
-                }
-                if (showSaveDialog) {
-                    AlertDialog(onDismissRequest = { showSaveDialog = false }, title = { Text("Guardar preset") }, text = {
-                        Column {
-                            OutlinedTextField(value = dialogName, onValueChange = { dialogName = it }, label = { Text("Nombre preset") })
-                        }
-                    }, confirmButton = {
-                        TextButton(onClick = {
-                            if (dialogName.isNotBlank()) {
-                                viewModel.saveUserPreset(dialogName.trim())
-                            }
-                            dialogName = ""
-                            showSaveDialog = false
-                        }) { Text("Guardar") }
-                    }, dismissButton = {
-                        TextButton(onClick = { showSaveDialog = false }) { Text("Cancelar") }
-                    })
+                    Button(onClick = { viewModel.resetBandLevels() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) { Text("Reset") }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                val userPresets by viewModel.userPresets.collectAsState()
-                if (userPresets.isNotEmpty()) {
-                    Text("Presets de usuario:", color = Color.White)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Column {
-                        userPresets.forEach { (name, levels) ->
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                                Text(name, color = Color.White, modifier = Modifier.weight(1f))
-                                Button(onClick = { viewModel.applyUserPreset(name) }) { Text("Aplicar") }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Button(onClick = { viewModel.removeUserPreset(name) }) { Text("Eliminar") }
-                            }
-                        }
-                    }
-                }
+                // User presets section removed per user request
             } else {
                 Text("No hay ecualizador disponible para la sesión actual.", color = Color.White)
             }
