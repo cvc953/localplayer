@@ -34,17 +34,19 @@ fun AboutScreen(onBack: () -> Unit) {
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        // Top App Bar
-        TopAppBar(
-            title = {
-                Text(
-                    "Acerca de",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
+        // Custom Top Bar without extra paddings (fixes odd spacing)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF121212))
+                .height(56.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 4.dp, end = 12.dp)
+            ) {
                 IconButton(onClick = onBack) {
                     Icon(
                         Icons.Default.ArrowBack,
@@ -52,12 +54,15 @@ fun AboutScreen(onBack: () -> Unit) {
                         tint = Color.White
                     )
                 }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF121212),
-                scrolledContainerColor = Color(0xFF121212)
-            )
-        )
+                Text(
+                    "Acerca de",
+                    color = Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 4.dp)
+                )
+            }
+        }
 
         // Content
         Column(
