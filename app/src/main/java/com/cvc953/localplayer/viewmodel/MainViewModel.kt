@@ -67,6 +67,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val isSettingsVisible: StateFlow<Boolean> = _isSettingsVisible
     private val _isEqualizerVisible = MutableStateFlow(false)
     val isEqualizerVisible: StateFlow<Boolean> = _isEqualizerVisible
+    private val _isAboutVisible = MutableStateFlow(false)
+    val isAboutVisible: StateFlow<Boolean> = _isAboutVisible
 
     private val _folderUris = MutableStateFlow(appPrefs.getMusicFolderUris())
     val folderUris: StateFlow<List<String>> = _folderUris
@@ -85,6 +87,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun closeEqualizerScreen() {
         _isEqualizerVisible.value = false
+    }
+
+    fun openAboutScreen() {
+        _isAboutVisible.value = true
+    }
+
+    fun closeAboutScreen() {
+        _isAboutVisible.value = false
     }
 
     fun addMusicFolder(uri: String) {
@@ -172,6 +182,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _selectedPresetIndex = MutableStateFlow(appPrefs.getEqualizerPresetIndex())
     val selectedPresetIndex: StateFlow<Int> = _selectedPresetIndex
+    private val _selectedPresetName = MutableStateFlow<String?>(null)
+    val selectedPresetName: StateFlow<String?> = _selectedPresetName
 
     private val _bandCount = MutableStateFlow(0)
     val bandCount: StateFlow<Int> = _bandCount
@@ -481,8 +493,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val sessionId = mediaPlayer?.audioSessionId ?: 0
                 if (sessionId != 0 && equalizerManager.init(sessionId)) {
-                    // update presets list
-                    _equalizerPresets.value = equalizerManager.getPresets()
+                    // update presets list (sanitize names that may be vendor-garbled)
+                    _equalizerPresets.value = sanitizePresetNames(equalizerManager.getPresets())
                     // populate band info
                     val bc = equalizerManager.getNumberOfBands().toInt()
                     _bandCount.value = bc
@@ -676,6 +688,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _bandLevels.value = levels
             // if preset is not custom, clear saved custom levels
             if (index >= 0) appPrefs.setCustomBandLevels(emptyList())
+            // update selected preset name if available
+            _selectedPresetName.value = _equalizerPresets.value.getOrNull(index)
         } catch (_: Exception) {}
     }
 
@@ -712,6 +726,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val levels = _bandLevels.value
         appPrefs.addUserPreset(name, levels)
         _userPresets.value = appPrefs.getUserPresets()
+        _selectedPresetName.value = name
     }
 
     fun applyUserPreset(name: String) {
@@ -724,11 +739,57 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _bandLevels.value = levels
         _selectedPresetIndex.value = -1
         appPrefs.setEqualizerPresetIndex(-1)
+        _selectedPresetName.value = name
     }
 
     fun removeUserPreset(name: String) {
         appPrefs.removeUserPreset(name)
         _userPresets.value = appPrefs.getUserPresets()
+        if (_selectedPresetName.value == name) _selectedPresetName.value = null
+    }
+
+    // Normalize vendor-provided preset names by extracting known genre/keyword fragments
+    private fun sanitizePresetNames(input: List<String>): List<String> {
+        if (input.isEmpty()) return input
+        val keywords = listOf(
+            "normal",
+            "classical",
+            "class",
+            "jazz",
+            "pop",
+            "rock",
+            "dance",
+            "hiphop",
+            "hip",
+            "hop",
+            "electronic",
+            "vocal",
+            "flat",
+            "speech",
+            "bass",
+            "treble",
+            "latin",
+            "blues",
+            "acoustic",
+            "metal",
+            "folk",
+            "reggae",
+            "soul",
+            "rnb"
+        )
+
+        return input.map { raw ->
+            var s = raw.lowercase().replace(Regex("[^a-z0-9]"), " ").trim()
+            val parts = mutableListOf<String>()
+            for (kw in keywords) {
+                if (s.contains(kw)) {
+                    // add keyword capitalized and remove from s
+                    parts.add(kw.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
+                    s = s.replace(kw, " ")
+                }
+            }
+            if (parts.isNotEmpty()) parts.joinToString(" ") else raw.trim().replace(Regex("\\s+"), " ")
+        }
     }
 
     fun openPlayerScreen() {
