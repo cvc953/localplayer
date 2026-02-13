@@ -177,6 +177,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _equalizerEnabled = MutableStateFlow(appPrefs.isEqualizerEnabled())
     val equalizerEnabled: StateFlow<Boolean> = _equalizerEnabled
 
+    private val _autoScanEnabled = MutableStateFlow(appPrefs.isAutoScanEnabled())
+    val autoScanEnabled: StateFlow<Boolean> = _autoScanEnabled
+
+    private val _themeMode = MutableStateFlow(appPrefs.getThemeMode())
+    val themeMode: StateFlow<String> = _themeMode
+
     private val _equalizerPresets = MutableStateFlow<List<String>>(emptyList())
     val equalizerPresets: StateFlow<List<String>> = _equalizerPresets
 
@@ -240,8 +246,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             object : ContentObserver(Handler(Looper.getMainLooper())) {
                 override fun onChange(selfChange: Boolean) {
                     super.onChange(selfChange)
-                    // Detectar cambios en la biblioteca y refrescar
-                    refreshMusicLibrary()
+                    // Detectar cambios en la biblioteca y refrescar (si está activado)
+                    if (appPrefs.isAutoScanEnabled()) refreshMusicLibrary()
                 }
             }
 
@@ -421,9 +427,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (appPrefs.hasMusicFolderUri()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    // Solo mostrar indicador si es la primera vez
+                    // Solo mostrar indicador si es la primera vez y el usuario tiene activado el escaneo automático
                     val firstScan = !repository.isFirstScanDone()
-                    if (firstScan) {
+                    if (firstScan && appPrefs.isAutoScanEnabled()) {
                         _isScanning.value = true
                         val temp = mutableListOf<Song>()
                         // Escaneo incremental: actualizamos _songs a medida que se encuentran canciones
@@ -674,6 +680,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         try {
             equalizerManager.setEnabled(enabled)
         } catch (_: Exception) {}
+    }
+
+    fun toggleAutoScan(enabled: Boolean) {
+        appPrefs.setAutoScanEnabled(enabled)
+        _autoScanEnabled.value = enabled
+        // If enabling auto-scan, trigger an immediate refresh so new files are picked up
+        if (enabled) {
+            try {
+                refreshMusicLibrary()
+            } catch (_: Exception) {}
+        }
+    }
+
+    fun setThemeMode(mode: String) {
+        appPrefs.setThemeMode(mode)
+        _themeMode.value = mode
     }
 
     fun setEqualizerPreset(index: Int) {

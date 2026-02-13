@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material3.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -123,6 +124,51 @@ fun SettingsScreen(viewModel: MainViewModel, onClose: () -> Unit) {
                     Button(onClick = { viewModel.openEqualizerScreen() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
                         Text("Abrir ecualizador avanzado")
                     }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            // Auto-scan option
+            val autoScan by viewModel.autoScanEnabled.collectAsState()
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Escaneo automático", color = Color.White)
+                    Text("Detectar cambios y escanear automáticamente", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                }
+                Switch(
+                    checked = autoScan,
+                    onCheckedChange = { viewModel.toggleAutoScan(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color(0xFF2196F3),
+                        checkedTrackColor = Color.White,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = Color.White.copy(alpha = 0.12f)
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            // Theme selector
+            val theme by viewModel.themeMode.collectAsState()
+            val themeOptions = listOf("system", "light", "dark")
+            var expanded by remember { mutableStateOf(false) }
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Tema", color = Color.White)
+                    Text("Selecciona tema de la aplicación", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                }
+                Box {
+                    Button(onClick = { expanded = true }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
+                        Text(theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        themeOptions.forEach { t ->
+                            DropdownMenuItem(text = { Text(t.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }) }, onClick = {
+                                viewModel.setThemeMode(t)
+                                expanded = false
+                            })
+                        }
+                    }
+                }
+            }
         }
     }
 }

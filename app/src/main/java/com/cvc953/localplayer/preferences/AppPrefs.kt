@@ -134,4 +134,19 @@ class AppPrefs(context: Context) {
         val list = getUserPresets().filterNot { it.first == name }
         setUserPresets(list)
     }
+
+    // Auto-scan preference: whether app should scan automatically when folders change or on startup
+    fun isAutoScanEnabled(): Boolean = prefs.getBoolean("auto_scan_enabled", true)
+
+    fun setAutoScanEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("auto_scan_enabled", enabled).apply()
+    }
+
+    // Theme preference: "system", "light", or "dark"
+    fun getThemeMode(): String = prefs.getString("theme_mode", "system") ?: "system"
+
+    fun setThemeMode(mode: String) {
+        if (mode != "system" && mode != "light" && mode != "dark") return
+        prefs.edit().putString("theme_mode", mode).apply()
+    }
 }
