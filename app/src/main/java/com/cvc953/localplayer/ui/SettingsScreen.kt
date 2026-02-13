@@ -1,5 +1,6 @@
 package com.cvc953.localplayer.ui
 
+import android.R
 import android.app.Activity
 import android.content.Intent
 import android.provider.DocumentsContract
@@ -105,7 +106,16 @@ fun SettingsScreen(viewModel: MainViewModel, onClose: () -> Unit) {
                             Text("Activar ecualizador", color = Color.White)
                             Text("Usar ecualizador nativo del sistema", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                         }
-                        Switch(checked = eqEnabled, onCheckedChange = { viewModel.toggleEqualizer(it) })
+                        Switch(
+                            checked = eqEnabled,
+                            onCheckedChange = { viewModel.toggleEqualizer(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color(0xFF2196F3),
+                                checkedTrackColor = Color.White,
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.White.copy(alpha = 0.12f)
+                            )
+                        )
                     }
 
                     // Open detailed equalizer screen for vertical sliders
