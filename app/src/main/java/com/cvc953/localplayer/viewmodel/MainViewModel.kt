@@ -6,11 +6,9 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.database.ContentObserver
 import android.media.MediaPlayer
-import android.net.Uri
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
-import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -22,13 +20,13 @@ import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.preferences.AppPrefs
-import com.cvc953.localplayer.services.EqualizerManager
 import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.PlayerState
 import com.cvc953.localplayer.ui.RepeatMode
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.util.TtmlParser
 import com.cvc953.localplayer.util.parseLrc
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,16 +38,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
+import android.net.Uri
+import android.provider.DocumentsContract
+import com.cvc953.localplayer.services.EqualizerManager
 
-data class LyricLine(
-    val timeMs: Long,
-    val text: String,
-)
+data class LyricLine(val timeMs: Long, val text: String)
 
-class MainViewModel(
-    application: Application,
-) : AndroidViewModel(application) {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
     companion object {
         var instance: MainViewModel? = null
         private const val PREFS_NAME = "music_prefs"
@@ -115,11 +111,7 @@ class MainViewModel(
         refreshFolderEntries()
     }
 
-    data class FolderEntry(
-        val uri: String,
-        val name: String,
-        val count: Int,
-    )
+    data class FolderEntry(val uri: String, val name: String, val count: Int)
 
     private val _folderEntries = MutableStateFlow<List<FolderEntry>>(emptyList())
     val folderEntries: StateFlow<List<FolderEntry>> = _folderEntries
@@ -146,12 +138,7 @@ class MainViewModel(
                     } catch (_: Exception) {
                     }
                 }
-                val count =
-                    try {
-                        repository.countSongsForFolder(u)
-                    } catch (_: Exception) {
-                        0
-                    }
+                val count = try { repository.countSongsForFolder(u) } catch (_: Exception) { 0 }
                 list.add(FolderEntry(uri = u, name = name, count = count))
             }
             _folderEntries.value = list
@@ -169,7 +156,9 @@ class MainViewModel(
     private val repository = SongRepository(application)
     private val equalizerManager = EqualizerManager()
     private val prefs: SharedPreferences =
-        application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            application.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    
 
     // Lista de canciones
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
@@ -249,19 +238,18 @@ class MainViewModel(
     private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
     val playlists: StateFlow<List<Playlist>> = _playlists
     private var cachedShuffledRemaining: List<Song>? = null
-
     // Historial de reproducción para soportar "Anterior" respetando el orden
     private val playHistory: MutableList<Song> = mutableListOf()
 
     // Observer para detectar cambios en la biblioteca de música
     private val mediaStoreObserver =
-        object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean) {
-                super.onChange(selfChange)
-                // Detectar cambios en la biblioteca y refrescar (si está activado)
-                if (appPrefs.isAutoScanEnabled()) refreshMusicLibrary()
+            object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean) {
+                    super.onChange(selfChange)
+                    // Detectar cambios en la biblioteca y refrescar (si está activado)
+                    if (appPrefs.isAutoScanEnabled()) refreshMusicLibrary()
+                }
             }
-        }
 
     private fun refreshMusicLibrary() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -279,46 +267,39 @@ class MainViewModel(
             }
         }
 
-        /** Import playlists from provided JSON strings. Returns number imported. */
-        suspend fun importPlaylistsFromJsonStrings(jsonStrings: List<String>): Int =
-            withContext(Dispatchers.IO) {
-                try {
-                    var imported = 0
-                    jsonStrings.forEach { text ->
-                        try {
-                            val array =
-                                if (text.trimStart().startsWith("[")) {
-                                    org.json.JSONArray(text)
-                                } else {
-                                    org.json.JSONArray().apply {
-                                        put(org.json.JSONObject(text))
-                                    }
-                                }
-                            for (i in 0 until array.length()) {
-                                val obj = array.getJSONObject(i)
-                                val name = obj.optString("name", "").trim()
-                                if (name.isEmpty()) continue
-                                val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
-                                val ids = mutableListOf<Long>()
-                                for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
+    /** Import playlists from provided JSON strings. Returns number imported. */
+    suspend fun importPlaylistsFromJsonStrings(jsonStrings: List<String>): Int =
+        withContext(Dispatchers.IO) {
+            try {
+                var imported = 0
+                jsonStrings.forEach { text ->
+                    try {
+                        val array = if (text.trimStart().startsWith("[")) org.json.JSONArray(text) else org.json.JSONArray().apply { put(org.json.JSONObject(text)) }
+                        for (i in 0 until array.length()) {
+                            val obj = array.getJSONObject(i)
+                            val name = obj.optString("name", "").trim()
+                            if (name.isEmpty()) continue
+                            val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
+                            val ids = mutableListOf<Long>()
+                            for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
 
-                                if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }) continue
+                            if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }) continue
 
-                                val updated = _playlists.value + Playlist(name = name, songIds = ids)
-                                _playlists.value = updated
-                                savePlaylistsToPrefs(updated)
-                                imported++
-                            }
-                        } catch (_: Exception) {
-                            // ignore parse errors per-string
+                            val updated = _playlists.value + Playlist(name = name, songIds = ids)
+                            _playlists.value = updated
+                            savePlaylistsToPrefs(updated)
+                            imported++
                         }
+                    } catch (_: Exception) {
+                        // ignore parse errors per-string
                     }
-                    imported
-                } catch (e: Exception) {
-                    android.util.Log.e("MainViewModel", "Error importing playlists from strings", e)
-                    0
                 }
+                imported
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Error importing playlists from strings", e)
+                0
             }
+        }
     }
 
     fun manualRefreshLibrary() {
@@ -331,16 +312,16 @@ class MainViewModel(
                 val newSongs = repository.forceRescanSongs()
 
                 android.util.Log.d(
-                    "MainViewModel",
-                    "Re-escaneo completo: ${newSongs.size} canciones",
+                        "MainViewModel",
+                        "Re-escaneo completo: ${newSongs.size} canciones"
                 )
 
                 // Actualizar la lista con las nuevas canciones
                 withContext(Dispatchers.Main) {
                     _songs.value = newSongs.sortedBy { it.title }
                     android.util.Log.d(
-                        "MainViewModel",
-                        "Lista actualizada en UI: ${_songs.value.size} canciones",
+                            "MainViewModel",
+                            "Lista actualizada en UI: ${_songs.value.size} canciones"
                     )
                 }
 
@@ -368,10 +349,7 @@ class MainViewModel(
         cachedShuffledRemaining = cachedShuffledRemaining?.filter { it != song }
     }
 
-    fun moveQueueItem(
-        fromIndex: Int,
-        toIndex: Int,
-    ) {
+    fun moveQueueItem(fromIndex: Int, toIndex: Int) {
         val list = _queue.value.toMutableList()
         if (fromIndex !in list.indices || toIndex !in list.indices) return
         val item = list.removeAt(fromIndex)
@@ -398,31 +376,29 @@ class MainViewModel(
         upcoming.addAll(_queue.value)
 
         val remaining =
-            when {
-                _isShuffle.value -> {
-                    // Usar caché si existe, si no generarla en este momento
-                    if (cachedShuffledRemaining == null) {
-                        val excluded = mutableSetOf<Song>()
-                        excluded.addAll(_queue.value)
-                        excluded.add(current)
-                        cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
+                when {
+                    _isShuffle.value -> {
+                        // Usar caché si existe, si no generarla en este momento
+                        if (cachedShuffledRemaining == null) {
+                            val excluded = mutableSetOf<Song>()
+                            excluded.addAll(_queue.value)
+                            excluded.add(current)
+                            cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
+                        }
+                        // Asegurarnos de quitar cualquier canción que ahora esté en la cola
+                        cachedShuffledRemaining =
+                                cachedShuffledRemaining?.filter { it !in _queue.value }
+                        cachedShuffledRemaining ?: emptyList()
                     }
-                    // Asegurarnos de quitar cualquier canción que ahora esté en la cola
-                    cachedShuffledRemaining =
-                        cachedShuffledRemaining?.filter { it !in _queue.value }
-                    cachedShuffledRemaining ?: emptyList()
+                    _repeatMode.value == RepeatMode.ALL -> {
+                        val idx = base.indexOf(current)
+                        if (idx == -1) base else base.drop(idx + 1) + base.take(idx)
+                    }
+                    else -> {
+                        val idx = base.indexOf(current)
+                        if (idx == -1) emptyList() else base.drop(idx + 1)
+                    }
                 }
-
-                _repeatMode.value == RepeatMode.ALL -> {
-                    val idx = base.indexOf(current)
-                    if (idx == -1) base else base.drop(idx + 1) + base.take(idx)
-                }
-
-                else -> {
-                    val idx = base.indexOf(current)
-                    if (idx == -1) emptyList() else base.drop(idx + 1)
-                }
-            }
 
         upcoming.addAll(remaining)
         return upcoming
@@ -441,12 +417,12 @@ class MainViewModel(
         _playlists.value = loadPlaylistsFromPrefs()
         // Registrar el observer para detectar cambios en la biblioteca
         getApplication<Application>()
-            .contentResolver
-            .registerContentObserver(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                true,
-                mediaStoreObserver,
-            )
+                .contentResolver
+                .registerContentObserver(
+                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                        true,
+                        mediaStoreObserver
+                )
         // Only perform initial scan if user previously selected a music folder
         val appPrefs = AppPrefs(getApplication())
         if (appPrefs.hasMusicFolderUri()) {
@@ -459,25 +435,18 @@ class MainViewModel(
                         val temp = mutableListOf<Song>()
                         // Escaneo incremental: actualizamos _songs a medida que se encuentran canciones
                         repository.scanSongsStreaming(
-                            onSongFound = { song ->
-                                temp.add(song)
-                                _songs.value = temp.sortedBy { it.title }
-                            },
-                            onProgress = { current, total ->
-                                _scanProgress.value =
-                                    if (total > 0) current.toFloat() / total else 0f
-                            },
+                                onSongFound = { song ->
+                                    temp.add(song)
+                                    _songs.value = temp.sortedBy { it.title }
+                                },
+                                onProgress = { current, total ->
+                                    _scanProgress.value =
+                                            if (total > 0) current.toFloat() / total else 0f
+                                }
                         )
                         _isScanning.value = false
                     } else {
-                        val loaded =
-                            if (appPrefs.isAutoScanEnabled()) {
-                                withContext(Dispatchers.IO) {
-                                    repository.forceRescanSongs()
-                                }
-                            } else {
-                                withContext(Dispatchers.IO) { repository.loadSongs() }
-                            }
+                        val loaded = if (appPrefs.isAutoScanEnabled()) withContext(Dispatchers.IO) { repository.forceRescanSongs() } else withContext(Dispatchers.IO) { repository.loadSongs() }
                         _songs.value = loaded.sortedBy { it.title }
                     }
 
@@ -494,38 +463,35 @@ class MainViewModel(
         }
     }
 
-    fun playSong(
-        song: Song,
-        autoPlay: Boolean = true,
-    ) {
+    fun playSong(song: Song, autoPlay: Boolean = true) {
         mediaPlayer?.release()
 
         try {
             mediaPlayer =
-                MediaPlayer().apply {
-                    setDataSource(getApplication(), song.uri)
-                    prepare()
-                    if (autoPlay) start()
+                    MediaPlayer().apply {
+                        setDataSource(getApplication(), song.uri)
+                        prepare()
+                        if (autoPlay) start()
 
-                    setOnCompletionListener {
-                        if (_repeatMode.value == RepeatMode.ONE) {
-                            // reinicia la misma canción
-                            seekTo(0)
-                            mediaPlayer?.start()
-                            _playerState.update { it.copy(isPlaying = true) }
-                        } else {
-                            playNextSong()
+                        setOnCompletionListener {
+                            if (_repeatMode.value == RepeatMode.ONE) {
+                                // reinicia la misma canción
+                                seekTo(0)
+                                mediaPlayer?.start()
+                                _playerState.update { it.copy(isPlaying = true) }
+                            } else {
+                                playNextSong()
+                            }
                         }
                     }
-                }
 
             _playerState.value =
-                PlayerState(
-                    currentSong = song,
-                    isPlaying = autoPlay,
-                    position = 0L,
-                    duration = mediaPlayer?.duration?.toLong() ?: 0L,
-                )
+                    PlayerState(
+                            currentSong = song,
+                            isPlaying = autoPlay,
+                            position = 0L,
+                            duration = mediaPlayer?.duration?.toLong() ?: 0L
+                    )
 
             if (autoPlay) startPositionUpdates() else progressJob?.cancel()
             loadLyricsForSong(song)
@@ -571,8 +537,7 @@ class MainViewModel(
                 } else {
                     _equalizerPresets.value = emptyList()
                 }
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) {}
         } catch (e: Exception) {
             playNextSong()
         }
@@ -611,53 +576,46 @@ class MainViewModel(
         }
 
         val nextSong =
-            when {
-                _isShuffle.value -> {
-                    // Respetar el orden aleatorio persistente generado al activar shuffle
-                    if (cachedShuffledRemaining == null) {
-                        val excluded = mutableSetOf<Song>()
-                        excluded.addAll(_queue.value)
-                        excluded.add(currentSong)
-                        cachedShuffledRemaining = list.filter { it !in excluded }.shuffled()
-                    }
-                    val next = cachedShuffledRemaining?.firstOrNull()
-                    if (next != null) {
-                        // consumir el primero de la caché
-                        cachedShuffledRemaining = cachedShuffledRemaining?.drop(1)
-                        next
-                    } else {
-                        // fallback: elige cualquiera distinto
-                        if (list.size == 1) {
-                            currentSong
+                when {
+                    _isShuffle.value -> {
+                        // Respetar el orden aleatorio persistente generado al activar shuffle
+                        if (cachedShuffledRemaining == null) {
+                            val excluded = mutableSetOf<Song>()
+                            excluded.addAll(_queue.value)
+                            excluded.add(currentSong)
+                            cachedShuffledRemaining = list.filter { it !in excluded }.shuffled()
+                        }
+                        val next = cachedShuffledRemaining?.firstOrNull()
+                        if (next != null) {
+                            // consumir el primero de la caché
+                            cachedShuffledRemaining = cachedShuffledRemaining?.drop(1)
+                            next
                         } else {
-                            var randomSong: Song
-                            do {
-                                randomSong = list.random()
-                            } while (randomSong == currentSong)
-                            randomSong
+                            // fallback: elige cualquiera distinto
+                            if (list.size == 1) currentSong
+                            else {
+                                var randomSong: Song
+                                do {
+                                    randomSong = list.random()
+                                } while (randomSong == currentSong)
+                                randomSong
+                            }
                         }
                     }
-                }
-
-                _repeatMode.value == RepeatMode.ONE -> {
-                    // Repetir la misma canción
-                    currentSong
-                }
-
-                else -> {
-                    // Avanza normalmente
-                    val currentIndex = list.indexOf(currentSong)
-                    val nextIndex = currentIndex + 1
-                    if (nextIndex < list.size) {
-                        list[nextIndex]
-                    } else if (_repeatMode.value == RepeatMode.ALL) {
-                        list[0]
-                    } else {
-                        return // NO hay siguiente canción si RepeatMode.NONE y estamos al
+                    _repeatMode.value == RepeatMode.ONE -> {
+                        // Repetir la misma canción
+                        currentSong
                     }
-                    // final
+                    else -> {
+                        // Avanza normalmente
+                        val currentIndex = list.indexOf(currentSong)
+                        val nextIndex = currentIndex + 1
+                        if (nextIndex < list.size) list[nextIndex]
+                        else if (_repeatMode.value == RepeatMode.ALL) list[0]
+                        else return // NO hay siguiente canción si RepeatMode.NONE y estamos al
+                        // final
+                    }
                 }
-            }
 
         // push current to history
         playHistory.add(currentSong)
@@ -679,37 +637,29 @@ class MainViewModel(
         }
 
         val previousSong =
-            when {
-                _isShuffle.value -> {
-                    // Si no hay historial, intentar tomar la última consumida de la caché
-                    // (no es trivial recuperar la "anterior" en shuffle sin historial)
-                    if (list.size == 1) {
+                when {
+                    _isShuffle.value -> {
+                        // Si no hay historial, intentar tomar la última consumida de la caché
+                        // (no es trivial recuperar la "anterior" en shuffle sin historial)
+                        if (list.size == 1) currentSong
+                        else {
+                            var randomSong: Song
+                            do {
+                                randomSong = list.random()
+                            } while (randomSong == currentSong)
+                            randomSong
+                        }
+                    }
+                    _repeatMode.value == RepeatMode.ONE -> {
                         currentSong
-                    } else {
-                        var randomSong: Song
-                        do {
-                            randomSong = list.random()
-                        } while (randomSong == currentSong)
-                        randomSong
+                    }
+                    else -> {
+                        val currentIndex = list.indexOf(currentSong)
+                        val prevIndex = currentIndex - 1
+                        if (prevIndex >= 0) list[prevIndex]
+                        else if (_repeatMode.value == RepeatMode.ALL) list.last() else return
                     }
                 }
-
-                _repeatMode.value == RepeatMode.ONE -> {
-                    currentSong
-                }
-
-                else -> {
-                    val currentIndex = list.indexOf(currentSong)
-                    val prevIndex = currentIndex - 1
-                    if (prevIndex >= 0) {
-                        list[prevIndex]
-                    } else if (_repeatMode.value == RepeatMode.ALL) {
-                        list.last()
-                    } else {
-                        return
-                    }
-                }
-            }
 
         playSong(previousSong)
         startService(getApplication(), previousSong)
@@ -730,8 +680,7 @@ class MainViewModel(
         _equalizerEnabled.value = enabled
         try {
             equalizerManager.setEnabled(enabled)
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
     }
 
     fun toggleAutoScan(enabled: Boolean) {
@@ -741,8 +690,7 @@ class MainViewModel(
         if (enabled) {
             try {
                 refreshMusicLibrary()
-            } catch (_: Exception) {
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -765,20 +713,14 @@ class MainViewModel(
             if (index >= 0) appPrefs.setCustomBandLevels(emptyList())
             // update selected preset name if available
             _selectedPresetName.value = _equalizerPresets.value.getOrNull(index)
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
     }
 
-    fun setBandLevel(
-        bandIndex: Int,
-        level: Int,
-    ) {
+    fun setBandLevel(bandIndex: Int, level: Int) {
         try {
             equalizerManager.setBandLevel(bandIndex.toShort(), level.toShort())
             val copy = _bandLevels.value.toMutableList()
-            if (bandIndex in copy.indices) {
-                copy[bandIndex] = level
-            } else {
+            if (bandIndex in copy.indices) copy[bandIndex] = level else {
                 // expand if needed
                 while (copy.size <= bandIndex) copy.add(0)
                 copy[bandIndex] = level
@@ -788,8 +730,7 @@ class MainViewModel(
             _selectedPresetIndex.value = -1
             appPrefs.setEqualizerPresetIndex(-1)
             appPrefs.setCustomBandLevels(copy)
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
     }
 
     fun resetBandLevels() {
@@ -801,8 +742,7 @@ class MainViewModel(
             appPrefs.setCustomBandLevels(zeros)
             _selectedPresetIndex.value = -1
             appPrefs.setEqualizerPresetIndex(-1)
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) {}
     }
 
     fun saveUserPreset(name: String) {
@@ -817,10 +757,7 @@ class MainViewModel(
         val levels = preset.second
         val bc = _bandCount.value
         for (i in 0 until minOf(bc, levels.size)) {
-            try {
-                equalizerManager.setBandLevel(i.toShort(), levels[i].toShort())
-            } catch (_: Exception) {
-            }
+            try { equalizerManager.setBandLevel(i.toShort(), levels[i].toShort()) } catch (_: Exception) {}
         }
         _bandLevels.value = levels
         _selectedPresetIndex.value = -1
@@ -837,33 +774,32 @@ class MainViewModel(
     // Normalize vendor-provided preset names by extracting known genre/keyword fragments
     private fun sanitizePresetNames(input: List<String>): List<String> {
         if (input.isEmpty()) return input
-        val keywords =
-            listOf(
-                "normal",
-                "classical",
-                "class",
-                "jazz",
-                "pop",
-                "rock",
-                "dance",
-                "hiphop",
-                "hip",
-                "hop",
-                "electronic",
-                "vocal",
-                "flat",
-                "speech",
-                "bass",
-                "treble",
-                "latin",
-                "blues",
-                "acoustic",
-                "metal",
-                "folk",
-                "reggae",
-                "soul",
-                "rnb",
-            )
+        val keywords = listOf(
+            "normal",
+            "classical",
+            "class",
+            "jazz",
+            "pop",
+            "rock",
+            "dance",
+            "hiphop",
+            "hip",
+            "hop",
+            "electronic",
+            "vocal",
+            "flat",
+            "speech",
+            "bass",
+            "treble",
+            "latin",
+            "blues",
+            "acoustic",
+            "metal",
+            "folk",
+            "reggae",
+            "soul",
+            "rnb"
+        )
 
         return input.map { raw ->
             var s = raw.lowercase().replace(Regex("[^a-z0-9]"), " ").trim()
@@ -897,18 +833,18 @@ class MainViewModel(
     private fun startPositionUpdates() {
         positionJob?.cancel()
         positionJob =
-            viewModelScope.launch {
-                while (true) {
-                    val player = mediaPlayer ?: break
-                    _playerState.update {
-                        it.copy(
-                            position = player.currentPosition.toLong(),
-                            duration = player.duration.toLong(),
-                        )
+                viewModelScope.launch {
+                    while (true) {
+                        val player = mediaPlayer ?: break
+                        _playerState.update {
+                            it.copy(
+                                    position = player.currentPosition.toLong(),
+                                    duration = player.duration.toLong()
+                            )
+                        }
+                        delay(50)
                     }
-                    delay(50)
                 }
-            }
     }
 
     // Cambiar aleatorio
@@ -932,11 +868,11 @@ class MainViewModel(
     // Cambiar repetición
     fun toggleRepeat() {
         _repeatMode.value =
-            when (_repeatMode.value) {
-                RepeatMode.NONE -> RepeatMode.ONE
-                RepeatMode.ONE -> RepeatMode.ALL
-                RepeatMode.ALL -> RepeatMode.NONE
-            }
+                when (_repeatMode.value) {
+                    RepeatMode.NONE -> RepeatMode.ONE
+                    RepeatMode.ONE -> RepeatMode.ALL
+                    RepeatMode.ALL -> RepeatMode.NONE
+                }
     }
 
     fun toggleLyrics() {
@@ -966,8 +902,8 @@ class MainViewModel(
                             if (dataCol >= 0) {
                                 audioFilePath = cursor.getString(dataCol)
                                 android.util.Log.d(
-                                    "LyricsDebug",
-                                    "FilePath obtenido: $audioFilePath",
+                                        "LyricsDebug",
+                                        "FilePath obtenido: $audioFilePath"
                                 )
                             }
                         }
@@ -997,25 +933,25 @@ class MainViewModel(
                             try {
                                 val text = ttmlFile.readText()
                                 android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ Archivo TTML encontrado: ${ttmlFile.name}, ${text.length} chars",
+                                        "LyricsDebug",
+                                        "✓ Archivo TTML encontrado: ${ttmlFile.name}, ${text.length} chars"
                                 )
                                 val parsed = TtmlParser.parseTtml(text)
                                 android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ TTML parseado: ${parsed.lines.size} líneas, type=${parsed.type}",
+                                        "LyricsDebug",
+                                        "✓ TTML parseado: ${parsed.lines.size} líneas, type=${parsed.type}"
                                 )
                                 parsed.lines.forEachIndexed { i, line ->
                                     android.util.Log.d(
-                                        "LyricsDebug",
-                                        "  Línea $i: '${line.text}' (${line.syllabus.size} sílabas)",
+                                            "LyricsDebug",
+                                            "  Línea $i: '${line.text}' (${line.syllabus.size} sílabas)"
                                     )
                                 }
                                 _ttmlLyrics.value = parsed
                                 _lyrics.value = emptyList() // Limpiar letras LRC
                                 android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ StateFlow actualizado con TTML",
+                                        "LyricsDebug",
+                                        "✓ StateFlow actualizado con TTML"
                                 )
                                 return@launch
                             } catch (e: Exception) {
@@ -1031,14 +967,14 @@ class MainViewModel(
                             try {
                                 val text = lrcFile.readText()
                                 android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ Archivo LRC encontrado: ${lrcFile.name}, ${text.length} chars",
+                                        "LyricsDebug",
+                                        "✓ Archivo LRC encontrado: ${lrcFile.name}, ${text.length} chars"
                                 )
                                 _ttmlLyrics.value = null // Limpiar TTML
                                 _lyrics.value = parseLrc(text)
                                 android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ Lyrics LRC parseadas: ${_lyrics.value.size} líneas",
+                                        "LyricsDebug",
+                                        "✓ Lyrics LRC parseadas: ${_lyrics.value.size} líneas"
                                 )
                                 return@launch
                             } catch (e: Exception) {
@@ -1048,9 +984,9 @@ class MainViewModel(
 
                         // Buscar cualquier archivo TTML o LRC en el directorio
                         val ttmlFiles =
-                            audioDir.listFiles { _, name ->
-                                name.endsWith(".ttml", ignoreCase = true)
-                            }
+                                audioDir.listFiles { _, name ->
+                                    name.endsWith(".ttml", ignoreCase = true)
+                                }
 
                         // Intentar con TTML primero
                         ttmlFiles?.forEach { file ->
@@ -1058,29 +994,29 @@ class MainViewModel(
                             val ttmlNameWithoutExt = file.nameWithoutExtension
 
                             val audioClean =
-                                audioNameWithoutExt
-                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
-                                    .lowercase()
-                                    .trim()
+                                    audioNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
                             val ttmlClean =
-                                ttmlNameWithoutExt
-                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
-                                    .lowercase()
-                                    .trim()
+                                    ttmlNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
 
                             if (audioClean == ttmlClean) {
                                 try {
                                     val text = file.readText()
                                     android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ Match TTML encontrado: ${file.name}",
+                                            "LyricsDebug",
+                                            "✓ Match TTML encontrado: ${file.name}"
                                     )
                                     val parsed = TtmlParser.parseTtml(text)
                                     _ttmlLyrics.value = parsed
                                     _lyrics.value = emptyList()
                                     android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ TTML cargado: ${parsed.lines.size} líneas",
+                                            "LyricsDebug",
+                                            "✓ TTML cargado: ${parsed.lines.size} líneas"
                                     )
                                     return@launch
                                 } catch (e: Exception) {
@@ -1091,12 +1027,12 @@ class MainViewModel(
 
                         // Si no hay TTML, buscar LRC
                         val lrcFiles =
-                            audioDir.listFiles { _, name ->
-                                name.endsWith(".lrc", ignoreCase = true)
-                            }
+                                audioDir.listFiles { _, name ->
+                                    name.endsWith(".lrc", ignoreCase = true)
+                                }
                         android.util.Log.d(
-                            "LyricsDebug",
-                            "Archivos .lrc encontrados: ${lrcFiles?.size ?: 0}",
+                                "LyricsDebug",
+                                "Archivos .lrc encontrados: ${lrcFiles?.size ?: 0}"
                         )
 
                         lrcFiles?.forEach { file ->
@@ -1105,15 +1041,15 @@ class MainViewModel(
 
                             // Comparar ignorando caracteres problemáticos
                             val audioClean =
-                                audioNameWithoutExt
-                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
-                                    .lowercase()
-                                    .trim()
+                                    audioNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
                             val lrcClean =
-                                lrcNameWithoutExt
-                                    .replace(Regex("[:\\\\/*?\"<>|]"), "")
-                                    .lowercase()
-                                    .trim()
+                                    lrcNameWithoutExt
+                                            .replace(Regex("[:\\\\/*?\"<>|]"), "")
+                                            .lowercase()
+                                            .trim()
 
                             android.util.Log.d("LyricsDebug", "  Audio clean: '$audioClean'")
                             android.util.Log.d("LyricsDebug", "  LRC clean: '$lrcClean'")
@@ -1122,14 +1058,14 @@ class MainViewModel(
                                 try {
                                     val text = file.readText()
                                     android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ Match LRC encontrado: ${file.name}",
+                                            "LyricsDebug",
+                                            "✓ Match LRC encontrado: ${file.name}"
                                     )
                                     _ttmlLyrics.value = null
                                     _lyrics.value = parseLrc(text)
                                     android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ Lyrics LRC cargadas: ${_lyrics.value.size} líneas",
+                                            "LyricsDebug",
+                                            "✓ Lyrics LRC cargadas: ${_lyrics.value.size} líneas"
                                     )
                                     return@launch
                                 } catch (e: Exception) {
@@ -1155,27 +1091,20 @@ class MainViewModel(
         }
     }
 
-    fun startService(
-        context: Context,
-        song: Song,
-        isPlaying: Boolean = true,
-    ) {
+    fun startService(context: Context, song: Song, isPlaying: Boolean = true) {
         ContextCompat.startForegroundService(
-            context,
-            Intent(context, MusicService::class.java).apply {
-                putExtra("SONG_URI", song.uri.toString())
-                putExtra("TITLE", song.title)
-                putExtra("ARTIST", song.artist)
-                putExtra("IS_PLAYING", isPlaying)
-            },
+                context,
+                Intent(context, MusicService::class.java).apply {
+                    putExtra("SONG_URI", song.uri.toString())
+                    putExtra("TITLE", song.title)
+                    putExtra("ARTIST", song.artist)
+                    putExtra("IS_PLAYING", isPlaying)
+                }
         )
         saveLastSong(song, isPlaying)
     }
 
-    private fun saveLastSong(
-        song: Song,
-        isPlaying: Boolean,
-    ) {
+    private fun saveLastSong(song: Song, isPlaying: Boolean) {
         prefs.edit().apply {
             putString(LAST_SONG_URI, song.uri.toString())
             putString(LAST_SONG_TITLE, song.title)
@@ -1195,8 +1124,8 @@ class MainViewModel(
             // Verificar que haya canciones cargadas
             if (_songs.value.isEmpty()) {
                 android.util.Log.d(
-                    "MainViewModel",
-                    "No hay canciones cargadas, no se puede restaurar última canción",
+                        "MainViewModel",
+                        "No hay canciones cargadas, no se puede restaurar última canción"
                 )
                 return
             }
@@ -1210,15 +1139,14 @@ class MainViewModel(
                 startService(getApplication(), song, lastIsPlaying)
             } else {
                 android.util.Log.d(
-                    "MainViewModel",
-                    "Canción guardada ya no existe en la biblioteca",
+                        "MainViewModel",
+                        "Canción guardada ya no existe en la biblioteca"
                 )
             }
         } catch (e: Exception) {
             android.util.Log.e("MainViewModel", "Error al cargar última canción", e)
         }
     }
-
     fun createPlaylist(name: String): Boolean {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return false
@@ -1231,7 +1159,6 @@ class MainViewModel(
         savePlaylistsToPrefs(updated)
         return true
     }
-
     fun deletePlaylist(name: String): Boolean {
         val updated = _playlists.value.filterNot { it.name == name }
         if (updated.size == _playlists.value.size) return false
@@ -1241,109 +1168,94 @@ class MainViewModel(
         return true
     }
 
-    fun renamePlaylist(
-        oldName: String,
-        newName: String,
-    ): Boolean {
+    fun renamePlaylist(oldName: String, newName: String): Boolean {
         if (newName.isBlank()) return false
         if (newName == oldName) return true
         if (_playlists.value.any { it.name == newName }) return false
 
         val updated =
-            _playlists.value.map { playlist ->
-                if (playlist.name == oldName) {
-                    playlist.copy(name = newName)
-                } else {
-                    playlist
+                _playlists.value.map { playlist ->
+                    if (playlist.name == oldName) {
+                        playlist.copy(name = newName)
+                    } else {
+                        playlist
+                    }
                 }
-            }
 
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
     }
 
-    fun addSongToPlaylist(
-        playlistName: String,
-        songId: Long,
-    ): Boolean {
+    fun addSongToPlaylist(playlistName: String, songId: Long): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
 
         // Si la canción ya está en la playlist, no agregarla
         if (songId in playlist.songIds) return false
 
         val updated =
-            _playlists.value.map { p ->
-                if (p.name == playlistName) {
-                    p.copy(songIds = p.songIds + songId)
-                } else {
-                    p
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds + songId)
+                    } else {
+                        p
+                    }
                 }
-            }
 
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
     }
 
-    fun removeSongFromPlaylist(
-        playlistName: String,
-        songId: Long,
-    ): Boolean {
+    fun removeSongFromPlaylist(playlistName: String, songId: Long): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
         if (songId !in playlist.songIds) return false
 
         val updated =
-            _playlists.value.map { p ->
-                if (p.name == playlistName) {
-                    p.copy(songIds = p.songIds.filterNot { it == songId })
-                } else {
-                    p
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds.filterNot { it == songId })
+                    } else {
+                        p
+                    }
                 }
-            }
 
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
     }
 
-    fun addSongsToPlaylist(
-        playlistName: String,
-        songIds: List<Long>,
-    ): Boolean {
+    fun addSongsToPlaylist(playlistName: String, songIds: List<Long>): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
 
         val newSongIds = songIds.filterNot { it in playlist.songIds }
         if (newSongIds.isEmpty()) return false
 
         val updated =
-            _playlists.value.map { p ->
-                if (p.name == playlistName) {
-                    p.copy(songIds = p.songIds + newSongIds)
-                } else {
-                    p
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds + newSongIds)
+                    } else {
+                        p
+                    }
                 }
-            }
 
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
         return true
     }
 
-    fun removeSongsFromPlaylist(
-        playlistName: String,
-        songIds: List<Long>,
-    ): Boolean {
+    fun removeSongsFromPlaylist(playlistName: String, songIds: List<Long>): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
 
         val updated =
-            _playlists.value.map { p ->
-                if (p.name == playlistName) {
-                    p.copy(songIds = p.songIds.filterNot { it in songIds })
-                } else {
-                    p
+                _playlists.value.map { p ->
+                    if (p.name == playlistName) {
+                        p.copy(songIds = p.songIds.filterNot { it in songIds })
+                    } else {
+                        p
+                    }
                 }
-            }
 
         _playlists.value = updated
         savePlaylistsToPrefs(updated)
@@ -1402,16 +1314,15 @@ class MainViewModel(
     }
 
     // Persist user's preferred grid/list view for library screens. Default = true (grid)
-    fun isGridViewPreferred(): Boolean = prefs.getBoolean(PREF_VIEW_AS_GRID, true)
+    fun isGridViewPreferred(): Boolean {
+        return prefs.getBoolean(PREF_VIEW_AS_GRID, true)
+    }
 
     fun setGridViewPreferred(value: Boolean) {
         prefs.edit().putBoolean(PREF_VIEW_AS_GRID, value).apply()
     }
 
-    fun isSongInPlaylist(
-        playlistName: String,
-        songId: Long,
-    ): Boolean {
+    fun isSongInPlaylist(playlistName: String, songId: Long): Boolean {
         val playlist = _playlists.value.find { it.name == playlistName } ?: return false
         return songId in playlist.songIds
     }
@@ -1421,32 +1332,32 @@ class MainViewModel(
      * from a coroutine (e.g. viewModelScope.launch { val ok = exportPlaylistsToMusicFolder() })
      */
     suspend fun exportPlaylistsToMusicFolder(): Boolean =
-        withContext(Dispatchers.IO) {
-            try {
-                val musicDir = getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-                val targetDir = File(musicDir, "localplayer")
-                if (!targetDir.exists()) targetDir.mkdirs()
+            withContext(Dispatchers.IO) {
+                try {
+                        val musicDir = getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+                    val targetDir = File(musicDir, "localplayer")
+                    if (!targetDir.exists()) targetDir.mkdirs()
 
-                val file =
-                    File(targetDir, "playlists_export_${System.currentTimeMillis()}.json")
+                    val file =
+                            File(targetDir, "playlists_export_${System.currentTimeMillis()}.json")
 
-                val array = org.json.JSONArray()
-                _playlists.value.forEach { playlist ->
-                    val idsArray = org.json.JSONArray()
-                    playlist.songIds.forEach { idsArray.put(it) }
-                    val obj = org.json.JSONObject()
-                    obj.put("name", playlist.name)
-                    obj.put("songIds", idsArray)
-                    array.put(obj)
+                    val array = org.json.JSONArray()
+                    _playlists.value.forEach { playlist ->
+                        val idsArray = org.json.JSONArray()
+                        playlist.songIds.forEach { idsArray.put(it) }
+                        val obj = org.json.JSONObject()
+                        obj.put("name", playlist.name)
+                        obj.put("songIds", idsArray)
+                        array.put(obj)
+                    }
+
+                    file.writeText(array.toString())
+                    true
+                } catch (e: Exception) {
+                    android.util.Log.e("MainViewModel", "Error exporting playlists", e)
+                    false
                 }
-
-                file.writeText(array.toString())
-                true
-            } catch (e: Exception) {
-                android.util.Log.e("MainViewModel", "Error exporting playlists", e)
-                false
             }
-        }
 
     /**
      * Import all JSON playlists found in Music/localplayer. Returns number of playlists imported.
@@ -1454,58 +1365,56 @@ class MainViewModel(
      * })
      */
     suspend fun importPlaylistsFromMusicFolder(): Int =
-        withContext(Dispatchers.IO) {
-            try {
-                val musicDir = getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-                val targetDir = File(musicDir, "localplayer")
-                if (!targetDir.exists() || !targetDir.isDirectory) return@withContext 0
+            withContext(Dispatchers.IO) {
+                try {
+                        val musicDir = getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+                    val targetDir = File(musicDir, "localplayer")
+                    if (!targetDir.exists() || !targetDir.isDirectory) return@withContext 0
 
-                val files =
-                    targetDir.listFiles { f ->
-                        f.extension.equals("json", ignoreCase = true)
-                    }
-                        ?: return@withContext 0
-                var imported = 0
-
-                files.forEach { f ->
-                    try {
-                        val text = f.readText()
-                        val array =
-                            if (text.trimStart().startsWith("[")) {
-                                org.json.JSONArray(text)
-                            } else {
-                                org.json.JSONArray().apply {
-                                    put(org.json.JSONObject(text))
-                                }
+                    val files =
+                            targetDir.listFiles { f ->
+                                f.extension.equals("json", ignoreCase = true)
                             }
-                        for (i in 0 until array.length()) {
-                            val obj = array.getJSONObject(i)
-                            val name = obj.optString("name", "").trim()
-                            if (name.isEmpty()) continue
-                            val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
-                            val ids = mutableListOf<Long>()
-                            for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
+                                    ?: return@withContext 0
+                    var imported = 0
 
-                            // Skip if playlist with same name exists
-                            if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }) {
-                                continue
+                    files.forEach { f ->
+                        try {
+                            val text = f.readText()
+                            val array =
+                                    if (text.trimStart().startsWith("[")) org.json.JSONArray(text)
+                                    else
+                                            org.json.JSONArray().apply {
+                                                put(org.json.JSONObject(text))
+                                            }
+                            for (i in 0 until array.length()) {
+                                val obj = array.getJSONObject(i)
+                                val name = obj.optString("name", "").trim()
+                                if (name.isEmpty()) continue
+                                val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
+                                val ids = mutableListOf<Long>()
+                                for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
+
+                                // Skip if playlist with same name exists
+                                if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }
+                                )
+                                        continue
+
+                                val updated =
+                                        _playlists.value + Playlist(name = name, songIds = ids)
+                                _playlists.value = updated
+                                savePlaylistsToPrefs(updated)
+                                imported++
                             }
-
-                            val updated =
-                                _playlists.value + Playlist(name = name, songIds = ids)
-                            _playlists.value = updated
-                            savePlaylistsToPrefs(updated)
-                            imported++
+                        } catch (e: Exception) {
+                            // ignore file parse errors
                         }
-                    } catch (e: Exception) {
-                        // ignore file parse errors
                     }
-                }
 
-                imported
-            } catch (e: Exception) {
-                android.util.Log.e("MainViewModel", "Error importing playlists", e)
-                0
+                    imported
+                } catch (e: Exception) {
+                    android.util.Log.e("MainViewModel", "Error importing playlists", e)
+                    0
+                }
             }
-        }
 }
