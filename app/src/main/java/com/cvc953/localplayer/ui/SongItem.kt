@@ -53,16 +53,15 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun SongItem(
-        song: Song,
-        isPlaying: Boolean,
-        onClick: () -> Unit,
-        onQueueNext: () -> Unit,
-        onQueueEnd: () -> Unit,
-        playlists: List<Playlist> = emptyList(),
-        onAddToPlaylist: ((String, Long) -> Unit)? = null,
-        onRemoveFromPlaylist: (() -> Unit)? = null
+    song: Song,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    onQueueNext: () -> Unit,
+    onQueueEnd: () -> Unit,
+    playlists: List<Playlist> = emptyList(),
+    onAddToPlaylist: ((String, Long) -> Unit)? = null,
+    onRemoveFromPlaylist: (() -> Unit)? = null,
 ) {
-
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) } // aquí se guarda la carátula
 
@@ -76,43 +75,46 @@ fun SongItem(
                     albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
                 }
                 retriever.release()
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            }
         }
     }
 
     Row(
-            modifier =
-                    Modifier.fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0x00FFFFFF))
-                            .clickable { onClick() }
-                            .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color(0x00FFFFFF))
+                .clickable { onClick() }
+                .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-                painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) }
-                                ?: painterResource(R.drawable.ic_default_album),
-                contentDescription = null,
-                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
+            painter =
+                albumArt?.let { BitmapPainter(it.asImageBitmap()) }
+                    ?: painterResource(R.drawable.ic_default_album),
+            contentDescription = null,
+            modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop,
         )
 
         Spacer(modifier = Modifier.width(12.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                    text = song.title,
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                text = song.title,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
-                    text = song.artist,
-                    color = Color(0xFFCCCCCC),
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                text = song.artist,
+                color = Color(0xFFCCCCCC),
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
 
@@ -124,54 +126,54 @@ fun SongItem(
         Box {
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = "Más opciones",
-                        tint = Color.White
+                    Icons.Default.MoreVert,
+                    contentDescription = "Más opciones",
+                    tint = Color.White,
                 )
             }
             DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                    containerColor = Color(0xFF1A1A1A),
-                    modifier = Modifier.background(Color(0xFF1A1A1A))
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                containerColor = Color(0xFF1A1A1A),
+                modifier = Modifier.background(Color(0xFF1A1A1A)),
             ) {
                 DropdownMenuItem(
-                        text = { Text("Reproducir ahora", color = Color.White) },
-                        onClick = {
-                            menuExpanded = false
-                            onClick()
-                        }
+                    text = { Text("Reproducir ahora", color = Color.White) },
+                    onClick = {
+                        menuExpanded = false
+                        onClick()
+                    },
                 )
                 DropdownMenuItem(
-                        text = { Text("Añadir como siguiente", color = Color.White) },
-                        onClick = {
-                            menuExpanded = false
-                            onQueueNext()
-                        }
+                    text = { Text("Añadir como siguiente", color = Color.White) },
+                    onClick = {
+                        menuExpanded = false
+                        onQueueNext()
+                    },
                 )
                 DropdownMenuItem(
-                        text = { Text("Añadir al final", color = Color.White) },
-                        onClick = {
-                            menuExpanded = false
-                            onQueueEnd()
-                        }
+                    text = { Text("Añadir al final", color = Color.White) },
+                    onClick = {
+                        menuExpanded = false
+                        onQueueEnd()
+                    },
                 )
                 if (onRemoveFromPlaylist != null) {
                     DropdownMenuItem(
-                            text = { Text("Quitar de la lista", color = Color.White) },
-                            onClick = {
-                                menuExpanded = false
-                                onRemoveFromPlaylist()
-                            }
+                        text = { Text("Quitar de la lista", color = Color.White) },
+                        onClick = {
+                            menuExpanded = false
+                            onRemoveFromPlaylist()
+                        },
                     )
                 }
                 if (playlists.isNotEmpty() && onAddToPlaylist != null) {
                     DropdownMenuItem(
-                            text = { Text("Agregar a playlist", color = Color.White) },
-                            onClick = {
-                                menuExpanded = false
-                                showPlaylistDialog = true
-                            }
+                        text = { Text("Agregar a playlist", color = Color.White) },
+                        onClick = {
+                            menuExpanded = false
+                            showPlaylistDialog = true
+                        },
                     )
                 }
             }
@@ -179,35 +181,35 @@ fun SongItem(
 
         if (showPlaylistDialog && playlists.isNotEmpty()) {
             AlertDialog(
-                    onDismissRequest = { showPlaylistDialog = false },
-                    containerColor = Color(0xFF1A1A1A),
-                    title = { Text("Agregar a lista", color = Color.White) },
-                    text = {
-                        LazyColumn {
-                            items(playlists) { playlist ->
-                                Text(
-                                        text = playlist.name,
-                                        color = Color.White,
-                                        modifier =
-                                                Modifier.fillMaxWidth()
-                                                        .clickable {
-                                                            onAddToPlaylist?.invoke(
-                                                                    playlist.name,
-                                                                    song.id
-                                                            )
-                                                            showPlaylistDialog = false
-                                                        }
-                                                        .padding(12.dp),
-                                        fontSize = 14.sp
-                                )
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { showPlaylistDialog = false }) {
-                            Text("Cancelar", color = Color(0xFF2196F3))
+                onDismissRequest = { showPlaylistDialog = false },
+                containerColor = Color(0xFF1A1A1A),
+                title = { Text("Agregar a lista", color = Color.White) },
+                text = {
+                    LazyColumn {
+                        items(playlists) { playlist ->
+                            Text(
+                                text = playlist.name,
+                                color = Color.White,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            onAddToPlaylist?.invoke(
+                                                playlist.name,
+                                                song.id,
+                                            )
+                                            showPlaylistDialog = false
+                                        }.padding(12.dp),
+                                fontSize = 14.sp,
+                            )
                         }
                     }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showPlaylistDialog = false }) {
+                        Text("Cancelar", color = Color(0xFF2196F3))
+                    }
+                },
             )
         }
     }

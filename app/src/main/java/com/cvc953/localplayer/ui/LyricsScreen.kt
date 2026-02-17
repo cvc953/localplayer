@@ -26,43 +26,46 @@ fun LyricsView(
     lyrics: List<LrcLine>,
     currentPosition: Long,
     modifier: Modifier = Modifier,
-    onLineClick: (Long) -> Unit = {}
+    onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
 
-    val currentIndex = remember(currentPosition) {
-        lyrics.indexOfLast { it.timeMs <= currentPosition }
-            .coerceAtLeast(0)
-    }
+    val currentIndex =
+        remember(currentPosition) {
+            lyrics
+                .indexOfLast { it.timeMs <= currentPosition }
+                .coerceAtLeast(0)
+        }
 
     // Scroll automático centrado
     LaunchedEffect(currentIndex) {
         listState.animateScrollToItem(
             index = currentIndex,
-            scrollOffset = -listState.layoutInfo.viewportSize.height / 6
+            scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
         )
     }
 
     val gapThreshold = 7000L
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0D0D0D),
-                        Color.Black,
-                        Color(0xFF0D0D0D)
-                    )
-                )
-            )
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF0D0D0D),
+                            Color.Black,
+                            Color(0xFF0D0D0D),
+                        ),
+                    ),
+                ),
     ) {
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(vertical = 120.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             // Mostrar animación de puntos si hay un gap antes de la primera línea
             if (lyrics.isNotEmpty()) {
@@ -72,15 +75,16 @@ fun LyricsView(
                     if (isIntroGapActive) {
                         item {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
                                     durationMs = firstLineStart,
-                                    elapsedMs = currentPosition
+                                    elapsedMs = currentPosition,
                                 )
                             }
                         }
@@ -90,13 +94,14 @@ fun LyricsView(
 
             itemsIndexed(lyrics) { index, line ->
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { onLineClick(line.timeMs) }
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clickable { onLineClick(line.timeMs) },
                 ) {
                     LyricLine(
                         text = line.text,
-                        active = index == currentIndex
+                        active = index == currentIndex,
                     )
                 }
 
@@ -113,15 +118,16 @@ fun LyricsView(
 
                         if (isGapActive) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
                                     durationMs = gapDuration,
-                                    elapsedMs = currentPosition - currentLineStart
+                                    elapsedMs = currentPosition - currentLineStart,
                                 )
                             }
                         }
@@ -140,41 +146,44 @@ fun TtmlLyricsView(
     lines: List<TtmlLine>,
     currentPosition: Long,
     modifier: Modifier = Modifier,
-    onLineClick: (Long) -> Unit = {}
+    onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
 
-    val currentIndex = remember(currentPosition) {
-        lines.indexOfLast { it.timeMs <= currentPosition }
-            .coerceAtLeast(0)
-    }
+    val currentIndex =
+        remember(currentPosition) {
+            lines
+                .indexOfLast { it.timeMs <= currentPosition }
+                .coerceAtLeast(0)
+        }
 
     // Scroll automático centrado
     LaunchedEffect(currentIndex) {
         listState.animateScrollToItem(
             index = currentIndex,
-            scrollOffset = -listState.layoutInfo.viewportSize.height / 6
+            scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
         )
     }
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF0D0D0D),
-                        Color.Black,
-                        Color(0xFF0D0D0D)
-                    )
-                )
-            )
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF0D0D0D),
+                            Color.Black,
+                            Color(0xFF0D0D0D),
+                        ),
+                    ),
+                ),
     ) {
         LazyColumn(
             state = listState,
             contentPadding = PaddingValues(vertical = 120.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) {
             val gapThreshold = 1500L
 
@@ -185,15 +194,16 @@ fun TtmlLyricsView(
                         val isIntroGapActive = currentPosition in 0 until firstLineStart
                         if (isIntroGapActive) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
                                     durationMs = firstLineStart,
-                                    elapsedMs = currentPosition
+                                    elapsedMs = currentPosition,
                                 )
                             }
                         }
@@ -203,22 +213,23 @@ fun TtmlLyricsView(
 
             itemsIndexed(lines) { index, line ->
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { onLineClick(line.timeMs) }
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .clickable { onLineClick(line.timeMs) },
                 ) {
                     // Si la línea tiene sílabas, mostrar sincronización palabra por palabra
                     if (line.syllabus.isNotEmpty()) {
                         WordByWordLine(
                             syllables = line.syllabus,
                             currentPosition = currentPosition,
-                            isActive = index == currentIndex
+                            isActive = index == currentIndex,
                         )
                     } else {
                         // Fallback a línea simple
                         LyricLine(
                             text = line.text,
-                            active = index == currentIndex
+                            active = index == currentIndex,
                         )
                     }
                 }
@@ -236,15 +247,16 @@ fun TtmlLyricsView(
 
                         if (isGapActive) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
                                     durationMs = gapDuration,
-                                    elapsedMs = currentPosition - currentLineEnd
+                                    elapsedMs = currentPosition - currentLineEnd,
                                 )
                             }
                         }
@@ -254,4 +266,3 @@ fun TtmlLyricsView(
         }
     }
 }
-
