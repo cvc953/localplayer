@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,12 +57,12 @@ fun AboutScreen(onBack: () -> Unit) {
                     Icon(
                         Icons.Default.ArrowBack,
                         contentDescription = "Atrás",
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
                 Text(
                     "Acerca de",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(start = 4.dp),
@@ -84,7 +85,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 text = "Local Player",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
 
@@ -93,7 +94,7 @@ fun AboutScreen(onBack: () -> Unit) {
             Text(
                 text = "v1.0",
                 fontSize = 14.sp,
-                color = Color(0xFFB0B0B0),
+                color = LocalExtendedColors.current.textSecondarySoft,
                 textAlign = TextAlign.Center,
             )
 
@@ -103,7 +104,8 @@ fun AboutScreen(onBack: () -> Unit) {
             Text(
                 text = "Reproductor de música local ligero y moderno",
                 fontSize = 16.sp,
-                color = Color(0xFFCCCCCC),
+                // color = Color(0xFFCCCCCC),
+                color = LocalExtendedColors.current.textSecondary,
                 textAlign = TextAlign.Center,
                 lineHeight = 24.sp,
             )
@@ -115,7 +117,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
                         .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -123,7 +125,7 @@ fun AboutScreen(onBack: () -> Unit) {
                     text = "Características",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 FeatureItem(
@@ -164,14 +166,14 @@ fun AboutScreen(onBack: () -> Unit) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
                         .padding(16.dp),
             ) {
                 Text(
                     text = "Desarrollador",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -179,7 +181,8 @@ fun AboutScreen(onBack: () -> Unit) {
                 Text(
                     text = "Cristian Villalobos C.",
                     fontSize = 14.sp,
-                    color = Color(0xFFCCCCCC),
+                    // color = Color(0xFFCCCCCC),
+                    color = LocalExtendedColors.current.textSecondary,
                 )
             }
 
@@ -190,14 +193,14 @@ fun AboutScreen(onBack: () -> Unit) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.background, RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
                         .padding(16.dp),
             ) {
                 Text(
                     text = "Tecnologías",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -214,7 +217,7 @@ fun AboutScreen(onBack: () -> Unit) {
             Text(
                 text = "© 2026 Local Player. Todos los derechos reservados.",
                 fontSize = 12.sp,
-                color = Color(0xFF808080),
+                color = LocalExtendedColors.current.textSecondary,
                 textAlign = TextAlign.Center,
             )
 
@@ -234,13 +237,13 @@ private fun FeatureItem(
             text = title,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF2196F3),
+            color = MaterialTheme.colorScheme.primary,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = description,
             fontSize = 12.sp,
-            color = Color(0xFFB0B0B0),
+            color = LocalExtendedColors.current.textSecondarySoft,
         )
     }
 }
@@ -263,12 +266,12 @@ private fun TechItem(
                 text = name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF2196F3),
+                color = MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = description,
                 fontSize = 12.sp,
-                color = Color(0xFFB0B0B0),
+                color = LocalExtendedColors.current.textSecondarySoft,
             )
         }
     }

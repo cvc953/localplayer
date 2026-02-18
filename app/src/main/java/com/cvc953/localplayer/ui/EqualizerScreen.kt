@@ -1,24 +1,52 @@
 package com.cvc953.localplayer.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.rotate
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlin.math.abs
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
-fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
+fun EqualizerScreen(
+    viewModel: MainViewModel,
+    onClose: () -> Unit,
+) {
     val bandCount by viewModel.bandCount.collectAsState()
     val bandFreqs by viewModel.bandFreqs.collectAsState()
     val bandLevels by viewModel.bandLevels.collectAsState()
@@ -37,19 +65,21 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
             } else {
                 // one decimal place
                 val decimal = (rem / 100)
-                "${sign}${whole}.${decimal}k"
+                "${sign}$whole.${decimal}k"
             }
         } else {
-            "${sign}${absn}"
+            "${sign}$absn"
         }
     }
 
-    Surface(modifier = Modifier.fillMaxSize(), color = Color.Black) {
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("Ecualizador", color = Color.White, fontSize = 20.sp)
+                Text("Ecualizador", color = MaterialTheme.colorScheme.onBackground, fontSize = 20.sp)
                 Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onClose) { Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White) }
+                IconButton(
+                    onClick = onClose,
+                ) { Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onBackground) }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -60,35 +90,52 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
             val equalizerPresets by viewModel.equalizerPresets.collectAsState()
             val userPresets by viewModel.userPresets.collectAsState()
             val selectedPreset by viewModel.selectedPresetIndex.collectAsState()
-                    val selectedPresetName by viewModel.selectedPresetName.collectAsState()
+            val selectedPresetName by viewModel.selectedPresetName.collectAsState()
             // combine system presets and user presets into single menu; user presets marked true
-            val combined = remember(equalizerPresets, userPresets) {
-                val sys = equalizerPresets.map { it to false }
-                val usr = userPresets.map { it.first to true }
-                sys + usr
-            }
+            val combined =
+                remember(equalizerPresets, userPresets) {
+                    val sys = equalizerPresets.map { it to false }
+                    val usr = userPresets.map { it.first to true }
+                    sys + usr
+                }
             if (combined.isNotEmpty()) {
                 var expandedSys by remember { mutableStateOf(false) }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Presets:", color = Color.White, modifier = Modifier.weight(1f))
+                    Text("Presets:", color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
                     TextButton(onClick = { expandedSys = true }) {
                         Text(
-                            text = selectedPresetName ?: if (selectedPreset >= 0 && selectedPreset < equalizerPresets.size) equalizerPresets[selectedPreset] else "Seleccionar",
-                            color = Color.White
+                            text =
+                                selectedPresetName
+                                    ?: if (selectedPreset >= 0 &&
+                                        selectedPreset < equalizerPresets.size
+                                    ) {
+                                        equalizerPresets[selectedPreset]
+                                    } else {
+                                        "Seleccionar"
+                                    },
+                            color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
-                    DropdownMenu(expanded = expandedSys, onDismissRequest = { expandedSys = false }, modifier = Modifier.background(Color.Black)) {
+                    DropdownMenu(
+                        expanded = expandedSys,
+                        onDismissRequest = { expandedSys = false },
+                        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                    ) {
                         combined.forEachIndexed { idx, pair ->
                             val (name, isUser) = pair
                             DropdownMenuItem(
                                 text = {
                                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(name, color = Color.White, modifier = Modifier.weight(1f))
+                                        Text(name, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
                                         if (isUser) {
                                             IconButton(onClick = {
                                                 viewModel.removeUserPreset(name)
                                             }) {
-                                                Icon(Icons.Default.Delete, contentDescription = "Eliminar preset", tint = Color.White)
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Eliminar preset",
+                                                    tint = MaterialTheme.colorScheme.onBackground,
+                                                )
                                             }
                                         }
                                     }
@@ -101,7 +148,7 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
                                         viewModel.setEqualizerPreset(idx)
                                     }
                                     expandedSys = false
-                                }
+                                },
                             )
                         }
                     }
@@ -111,12 +158,16 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
 
             if (bandCount > 0) {
                 // Horizontal list of vertical sliders (one column per band)
-                Row(modifier = Modifier.fillMaxWidth().height(260.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(260.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     for (i in 0 until bandCount) {
                         val freq = if (i < bandFreqs.size) bandFreqs[i] / 1000 else 0
                         val level = if (i < bandLevels.size) bandLevels[i] else 0
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
-                            Text("${formatWithK(freq)}Hz", color = Color.White, fontSize = 12.sp)
+                            Text("${formatWithK(freq)}Hz", color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp)
                             Spacer(modifier = Modifier.height(8.dp))
                             // Vertical slider implemented rotating a Slider
                             var sliderPos by remember { mutableStateOf(level.toFloat()) }
@@ -137,16 +188,16 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
                                         modifier = Modifier.matchParentSize(),
                                         trackWidth = 2.dp,
                                         thumbRadius = 10.dp,
-                                        activeColor = Color(0xFF2196F3),
-                                        inactiveColor = Color.White.copy(alpha = 0.12f),
-                                        backgroundColor = Color.Transparent
+                                        activeColor = MaterialTheme.colorScheme.primary,
+                                        inactiveColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
+                                        backgroundColor = Color.Transparent,
                                     )
                                 }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(formatWithK(sliderPos.toInt()), color = Color.White, fontSize = 12.sp)
-                                Text("mB", color = Color.White.copy(alpha = 0.8f), fontSize = 10.sp)
+                                Text(formatWithK(sliderPos.toInt()), color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp)
+                                Text("mB", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f), fontSize = 10.sp)
                             }
                         }
                     }
@@ -154,12 +205,14 @@ fun EqualizerScreen(viewModel: MainViewModel, onClose: () -> Unit) {
                 Spacer(modifier = Modifier.height(12.dp))
                 // Preset actions: save (dialog), reset and user presets list
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { viewModel.resetBandLevels() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) { Text("Reset") }
+                    Button(onClick = {
+                        viewModel.resetBandLevels()
+                    }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { Text("Reset") }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 // User presets section removed per user request
             } else {
-                Text("No hay ecualizador disponible para la sesión actual.", color = Color.White)
+                Text("No hay ecualizador disponible para la sesión actual.", color = MaterialTheme.colorScheme.onBackground)
             }
         }
     }

@@ -24,6 +24,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -48,9 +49,19 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.ui.theme.ExtendedColors
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.ui.theme.md_surfaceSheet
+import com.cvc953.localplayer.ui.theme.md_textMeta
+import com.cvc953.localplayer.ui.theme.md_textSecondary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+val MaterialTheme.extendedColors: ExtendedColors
+    @Composable
+    get() = LocalExtendedColors.current
+
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun SongItem(
     song: Song,
@@ -85,7 +96,7 @@ fun SongItem(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0x00FFFFFF))
+                .background(Color.Transparent)
                 .clickable { onClick() }
                 .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -104,21 +115,21 @@ fun SongItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = song.title,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = song.artist,
-                color = Color(0xFFCCCCCC),
+                color = MaterialTheme.extendedColors.textSecondary,
                 fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
 
-        Text(text = formatDuration(song.duration), color = Color(0xFFCCCCCC), fontSize = 12.sp)
+        Text(text = formatDuration(song.duration), color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
 
         var menuExpanded by remember { mutableStateOf(false) }
         var showPlaylistDialog by remember { mutableStateOf(false) }
@@ -128,31 +139,31 @@ fun SongItem(
                 Icon(
                     Icons.Default.MoreVert,
                     contentDescription = "Más opciones",
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
             DropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
-                containerColor = Color(0xFF1A1A1A),
-                modifier = Modifier.background(Color(0xFF1A1A1A)),
+                containerColor = md_surfaceSheet,
+                modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
             ) {
                 DropdownMenuItem(
-                    text = { Text("Reproducir ahora", color = Color.White) },
+                    text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         menuExpanded = false
                         onClick()
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text("Añadir como siguiente", color = Color.White) },
+                    text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         menuExpanded = false
                         onQueueNext()
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text("Añadir al final", color = Color.White) },
+                    text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         menuExpanded = false
                         onQueueEnd()
@@ -160,7 +171,7 @@ fun SongItem(
                 )
                 if (onRemoveFromPlaylist != null) {
                     DropdownMenuItem(
-                        text = { Text("Quitar de la lista", color = Color.White) },
+                        text = { Text("Quitar de la lista", color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             menuExpanded = false
                             onRemoveFromPlaylist()
@@ -169,7 +180,7 @@ fun SongItem(
                 }
                 if (playlists.isNotEmpty() && onAddToPlaylist != null) {
                     DropdownMenuItem(
-                        text = { Text("Agregar a playlist", color = Color.White) },
+                        text = { Text("Agregar a playlist", color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             menuExpanded = false
                             showPlaylistDialog = true
@@ -182,14 +193,14 @@ fun SongItem(
         if (showPlaylistDialog && playlists.isNotEmpty()) {
             AlertDialog(
                 onDismissRequest = { showPlaylistDialog = false },
-                containerColor = Color(0xFF1A1A1A),
-                title = { Text("Agregar a lista", color = Color.White) },
+                containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                title = { Text("Agregar a lista", color = MaterialTheme.colorScheme.onSurface) },
                 text = {
                     LazyColumn {
                         items(playlists) { playlist ->
                             Text(
                                 text = playlist.name,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -207,7 +218,7 @@ fun SongItem(
                 },
                 confirmButton = {
                     TextButton(onClick = { showPlaylistDialog = false }) {
-                        Text("Cancelar", color = Color(0xFF2196F3))
+                        Text("Cancelar", color = MaterialTheme.colorScheme.primary)
                     }
                 },
             )

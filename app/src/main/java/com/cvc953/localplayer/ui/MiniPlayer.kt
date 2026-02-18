@@ -1,4 +1,3 @@
-import com.cvc953.localplayer.R
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -11,6 +10,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,21 +29,21 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.ui.text.font.FontWeight
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun MiniPlayer(
     song: Song,
     isPlaying: Boolean,
     onPlayPause: () -> Unit,
     onClick: () -> Unit,
-    onNext: () -> Unit
+    onNext: () -> Unit,
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
@@ -54,40 +57,44 @@ fun MiniPlayer(
                 albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
             }
             retriever.release()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF121212)) // color similar a la app
-            .clickable { onClick() }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(LocalExtendedColors.current.surfaceSheet) // color similar a la app
+                .clickable { onClick() }
+                .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-
         Image(
-            painter = albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
-                ?: painterResource(R.drawable.ic_default_album), // Reemplaza por un recurso que tengas
+            painter =
+                albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
+                    ?: painterResource(R.drawable.ic_default_album),
+            // Reemplaza por un recurso que tengas
             contentDescription = null,
-            modifier = Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(4.dp)),
-            contentScale = ContentScale.Crop
+            modifier =
+                Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+            contentScale = ContentScale.Crop,
         )
 
         Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = song.title, color = Color.White, maxLines = 1, fontWeight = FontWeight.SemiBold)
-            Text(text = song.artist, color = Color.Gray, fontSize = 12.sp, maxLines = 1)
+            Text(text = song.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, fontWeight = FontWeight.SemiBold)
+            Text(text = song.artist, color = LocalExtendedColors.current.textSecondarySoft, fontSize = 12.sp, maxLines = 1)
         }
 
         IconButton(onClick = onPlayPause) {
             Icon(
                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                 contentDescription = null,
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
 
@@ -95,7 +102,7 @@ fun MiniPlayer(
             Icon(
                 imageVector = Icons.Default.SkipNext,
                 contentDescription = null,
-                tint = Color.White
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

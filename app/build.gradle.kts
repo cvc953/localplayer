@@ -84,8 +84,6 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.2.1")
     implementation("androidx.media3:media3-session:1.2.1")
 
-
-
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
@@ -97,19 +95,14 @@ dependencies {
 // Para PendingIntent y compatibilidad
     implementation("androidx.core:core-ktx:1.12.0")
 
-
     // ViewModel + Compose
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation ("androidx.activity:activity-compose:1.9.3")
-
-
+    implementation("androidx.activity:activity-compose:1.9.3")
 
 // StateFlow + collectAsState
     implementation("androidx.compose.runtime:runtime-livedata")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-
 }
-
