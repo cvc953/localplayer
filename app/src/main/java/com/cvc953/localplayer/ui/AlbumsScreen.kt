@@ -387,7 +387,7 @@ fun AlbumsScreen(
                                 .align(Alignment.CenterEnd)
                                 .padding(end = 4.dp)
                                 .width(28.dp)
-                                .fillMaxHeight(0.75f)
+                                .fillMaxHeight()
                                 .onGloballyPositioned { coords ->
                                     columnHeight = coords.size.height.toFloat()
                                 }.pointerInput(Unit) {
@@ -443,8 +443,10 @@ fun AlbumsScreen(
                                 textAlign = TextAlign.Center,
                                 modifier =
                                     Modifier
-                                        .clickable { scrollToLetter(letter) }
-                                        .padding(vertical = 1.5.dp),
+                                        .weight(1f)
+                                        .wrapContentHeight(Alignment.CenterVertically)
+                                        .clickable { scrollToLetter(letter) },
+                                // .padding(vertical = 1.5.dp),
                             )
                         }
                     }
@@ -462,7 +464,7 @@ fun AlbumsScreen(
                                             .dp * 0.25f
                                     },
                                 ).background(
-                                    md_overlay,
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
                                     RoundedCornerShape(16.dp),
                                 ).border(
                                     2.dp,
