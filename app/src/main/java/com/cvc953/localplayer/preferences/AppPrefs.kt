@@ -143,10 +143,10 @@ class AppPrefs(context: Context) {
     }
 
     // Theme preference: "system", "light", or "dark"
-    fun getThemeMode(): String = prefs.getString("theme_mode", "system") ?: "system"
+    fun getThemeMode(): String = prefs.getString("theme_mode", "sistema") ?: "sistema"
 
     fun setThemeMode(mode: String) {
-        if (mode != "system" && mode != "light" && mode != "dark") return
+        if (mode != "sistema" && mode != "claro" && mode != "oscuro") return
         prefs.edit().putString("theme_mode", mode).apply()
     }
 }

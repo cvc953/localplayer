@@ -14,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -378,7 +379,7 @@ fun ArtistsScreen(
                                 .align(Alignment.CenterEnd)
                                 .padding(end = 4.dp)
                                 .width(28.dp)
-                                .fillMaxHeight(0.75f)
+                                .fillMaxHeight()
                                 .onGloballyPositioned { coords ->
                                     columnHeight = coords.size.height.toFloat()
                                 }.pointerInput(Unit) {
@@ -416,7 +417,7 @@ fun ArtistsScreen(
                                     )
                                 },
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceEvenly,
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         alphabet.forEach { letter ->
                             val isActive = currentScrollLetter == letter
@@ -434,8 +435,10 @@ fun ArtistsScreen(
                                 textAlign = TextAlign.Center,
                                 modifier =
                                     Modifier
-                                        .clickable { scrollToLetter(letter) }
-                                        .padding(vertical = 1.5.dp),
+                                        .weight(1f)
+                                        .wrapContentHeight(Alignment.CenterVertically)
+                                        .clickable { scrollToLetter(letter) },
+                                // .padding(vertical = 1.5.dp),
                             )
                         }
                     }
@@ -453,7 +456,7 @@ fun ArtistsScreen(
                                             .dp * 0.25f
                                     },
                                 ).background(
-                                    md_overlay,
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
                                     RoundedCornerShape(16.dp),
                                 ).border(
                                     2.dp,

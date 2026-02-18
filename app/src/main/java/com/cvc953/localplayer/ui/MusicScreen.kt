@@ -649,7 +649,7 @@ fun SongsContent(viewModel: MainViewModel) {
                                 } else {
                                     MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                                 },
-                            fontSize = if (isActive) 11.sp else 9.sp,
+                            fontSize = if (isActive) 12.sp else 10.sp,
                             fontWeight =
                                 if (isActive) {
                                     FontWeight.Bold
@@ -659,6 +659,8 @@ fun SongsContent(viewModel: MainViewModel) {
                             textAlign = TextAlign.Center,
                             modifier =
                                 Modifier
+                                    .weight(1f)
+                                    .wrapContentHeight(Alignment.CenterVertically)
                                     .clickable {
                                         scrollToLetter(
                                             letter,
