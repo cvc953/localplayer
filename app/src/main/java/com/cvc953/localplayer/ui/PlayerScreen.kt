@@ -62,6 +62,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
@@ -103,6 +104,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.ui.theme.md_surfaceImagePlaceholder
+import com.cvc953.localplayer.ui.theme.md_surfaceSheet
+import com.cvc953.localplayer.ui.theme.md_textMeta
+import com.cvc953.localplayer.ui.theme.md_textSecondary
+import com.cvc953.localplayer.ui.theme.md_textSecondarySoft
+import com.cvc953.localplayer.ui.theme.md_textSecondaryStrong
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -261,7 +268,7 @@ fun PlayerScreen(
                 .offset { IntOffset(0, offsetY.value.toInt()) }
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color(0xFF0F0F0F), Color.Black),
+                        listOf(Color(0xFF0F0F0F), MaterialTheme.colorScheme.background),
                     ),
                 ),
     ) {
@@ -351,7 +358,7 @@ fun PlayerScreen(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,
-                                color = Color.Gray,
+                                color = md_textSecondary,
                             )
                         }
                     }
@@ -475,7 +482,7 @@ fun PlayerScreen(
                                     Icons.Outlined.FavoriteBorder
                                 },
                             contentDescription = "Favoritos",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
 
@@ -485,7 +492,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                             contentDescription = "Ver cola",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
 
@@ -495,7 +502,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                             contentDescription = "Agregar a playlist",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
 
@@ -505,7 +512,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.Lyrics,
                             contentDescription = "Mostrar letras",
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                 }
@@ -514,8 +521,8 @@ fun PlayerScreen(
             if (showAddToPlaylistDialog) {
                 AlertDialog(
                     onDismissRequest = { showAddToPlaylistDialog = false },
-                    containerColor = Color(0xFF1A1A1A),
-                    title = { Text("Agregar a Playlist", color = Color.White) },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    title = { Text("Agregar a Playlist", color = MaterialTheme.colorScheme.onBackground) },
                     text = {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
@@ -528,7 +535,7 @@ fun PlayerScreen(
                                     },
                                     colors =
                                         androidx.compose.material3.ButtonDefaults.buttonColors(
-                                            containerColor = Color(0xFF2196F3),
+                                            containerColor = MaterialTheme.colorScheme.primary,
                                         ),
                                 ) {
                                     Text("Crear playlist")
@@ -547,13 +554,11 @@ fun PlayerScreen(
                                             ""
                                     },
                                     containerColor =
-                                        Color(
-                                            0xFF1A1A1A,
-                                        ),
+                                        MaterialTheme.colorScheme.surface,
                                     title = {
                                         Text(
                                             "Nueva lista",
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                         )
                                     },
                                     text = {
@@ -573,27 +578,19 @@ fun PlayerScreen(
                                                 TextFieldDefaults
                                                     .colors(
                                                         focusedContainerColor =
-                                                            Color(
-                                                                0xFF1A1A1A,
-                                                            ),
+                                                            MaterialTheme.colorScheme.surface,
                                                         unfocusedContainerColor =
-                                                            Color(
-                                                                0xFF1A1A1A,
-                                                            ),
+                                                            MaterialTheme.colorScheme.surface,
                                                         focusedIndicatorColor =
-                                                            Color(
-                                                                0xFF2196F3,
-                                                            ),
+                                                            MaterialTheme.colorScheme.primary,
                                                         unfocusedIndicatorColor =
                                                             Color(
                                                                 0xFF404040,
                                                             ),
                                                         cursorColor =
-                                                            Color(
-                                                                0xFF2196F3,
-                                                            ),
-                                                        focusedTextColor = Color.White,
-                                                        unfocusedTextColor = Color.White,
+                                                            MaterialTheme.colorScheme.primary,
+                                                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                                     ),
                                         )
                                     },
@@ -628,9 +625,7 @@ fun PlayerScreen(
                                             Text(
                                                 "Crear",
                                                 color =
-                                                    Color(
-                                                        0xFF2196F3,
-                                                    ),
+                                                    MaterialTheme.colorScheme.primary,
                                             )
                                         }
                                     },
@@ -641,14 +636,14 @@ fun PlayerScreen(
                                         }) {
                                             Text(
                                                 "Cancelar",
-                                                color = Color.White,
+                                                color = MaterialTheme.colorScheme.onBackground,
                                             )
                                         }
                                     },
                                 )
                             }
 
-                            HorizontalDivider(color = Color(0xFF2A2A2A))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
 
                             LazyColumn(
                                 modifier =
@@ -686,9 +681,7 @@ fun PlayerScreen(
                                             CardDefaults
                                                 .cardColors(
                                                     containerColor =
-                                                        Color(
-                                                            0xFF121212,
-                                                        ),
+                                                    md_surfaceSheet,
                                                 ),
                                         shape =
                                             RoundedCornerShape(
@@ -710,9 +703,7 @@ fun PlayerScreen(
                                                 contentDescription =
                                                 null,
                                                 tint =
-                                                    Color(
-                                                        0xFF2196F3,
-                                                    ),
+                                                    MaterialTheme.colorScheme.primary,
                                             )
                                             Spacer(
                                                 Modifier.width(
@@ -724,7 +715,7 @@ fun PlayerScreen(
                                                     text =
                                                         playlist.name,
                                                     color =
-                                                        Color.White,
+                                                        MaterialTheme.colorScheme.onBackground,
                                                     fontSize =
                                                         14.sp,
                                                 )
@@ -732,9 +723,7 @@ fun PlayerScreen(
                                                     text =
                                                         "${playlist.songIds.size} canciones",
                                                     color =
-                                                        Color(
-                                                            0xFFB0B0B0,
-                                                        ),
+                                                    md_textSecondarySoft,
                                                     fontSize =
                                                         12.sp,
                                                 )
@@ -750,7 +739,7 @@ fun PlayerScreen(
                             onClick = {
                                 showAddToPlaylistDialog = false
                             },
-                        ) { Text("Cancelar", color = Color(0xFF2196F3)) }
+                        ) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
                     },
                 )
             }
@@ -759,7 +748,7 @@ fun PlayerScreen(
                 ModalBottomSheet(
                     onDismissRequest = { showQueue = false },
                     sheetState = sheetState,
-                    containerColor = Color(0xFF121212),
+                    containerColor = md_surfaceSheet,
                 ) {
                     Column(
                         modifier =
@@ -772,7 +761,7 @@ fun PlayerScreen(
                     ) {
                         Text(
                             text = "Próximas canciones",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -782,7 +771,7 @@ fun PlayerScreen(
                         if (dragList.isEmpty()) {
                             Text(
                                 text = "No hay próximas canciones",
-                                color = Color(0xFFB0B0B0),
+                                color = md_textSecondarySoft,
                                 fontSize = 14.sp,
                             )
                         } else {
@@ -1018,9 +1007,7 @@ fun PlayerScreen(
                                                     clip =
                                                     true,
                                                 ).background(
-                                                    Color(
-                                                        0xFF1A1A1A,
-                                                    ),
+                                                    MaterialTheme.colorScheme.surface,
                                                     RoundedCornerShape(
                                                         12.dp,
                                                     ),
@@ -1033,13 +1020,9 @@ fun PlayerScreen(
                                                         },
                                                     color =
                                                         if (isDragging) {
-                                                            Color(
-                                                                0xFF2196F3,
-                                                            )
+                                                            MaterialTheme.colorScheme.primary
                                                         } else {
-                                                            Color(
-                                                                0xFF2A2A2A,
-                                                            )
+                                                            MaterialTheme.colorScheme.outline
                                                         },
                                                     shape =
                                                         RoundedCornerShape(
@@ -1065,9 +1048,7 @@ fun PlayerScreen(
                                                             8.dp,
                                                         ),
                                                     ).background(
-                                                        Color(
-                                                            0xFF2A2A2A,
-                                                        ),
+                                                        MaterialTheme.colorScheme.outline,
                                                     ),
                                         ) {
                                             if (albumArtBitmap !=
@@ -1095,7 +1076,7 @@ fun PlayerScreen(
                                                     contentDescription =
                                                     null,
                                                     tint =
-                                                        Color.White
+                                                        MaterialTheme.colorScheme.onBackground
                                                             .copy(
                                                                 alpha =
                                                                 0.5f,
@@ -1129,7 +1110,7 @@ fun PlayerScreen(
                                                     queuedSong
                                                         .title,
                                                 color =
-                                                    Color.White,
+                                                    MaterialTheme.colorScheme.onBackground,
                                                 fontSize =
                                                     16.sp,
                                                 maxLines =
@@ -1143,9 +1124,7 @@ fun PlayerScreen(
                                                     queuedSong
                                                         .artist,
                                                 color =
-                                                    Color(
-                                                        0xFFB0B0B0,
-                                                    ),
+                                                md_textSecondarySoft,
                                                 fontSize =
                                                     13.sp,
                                                 maxLines =
@@ -1164,11 +1143,9 @@ fun PlayerScreen(
                                                 "Reordenar",
                                             tint =
                                                 if (isDragging) {
-                                                    Color(
-                                                        0xFF2196F3,
-                                                    )
+                                                    MaterialTheme.colorScheme.primary
                                                 } else {
-                                                    Color.White
+                                                    MaterialTheme.colorScheme.onBackground
                                                         .copy(
                                                             alpha =
                                                             0.7f,
@@ -1208,7 +1185,7 @@ fun SongTitleSection(
     ) {
         Text(
             text = title,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -1221,7 +1198,7 @@ fun SongTitleSection(
         Box {
             Text(
                 text = if (album.isNotEmpty()) "$artist - $album" else artist,
-                color = Color(0xFFAAAAAA),
+                color = md_textSecondaryStrong,
                 fontSize = 14.sp,
                 maxLines = 1,
                 modifier = Modifier.clickable { showMenu = true },
@@ -1230,7 +1207,7 @@ fun SongTitleSection(
                 ModalBottomSheet(
                     onDismissRequest = { showMenu = false },
                     sheetState = sheetState,
-                    containerColor = Color(0xFF121212),
+                    containerColor = md_surfaceSheet,
                 ) {
                     Column(
                         modifier =
@@ -1243,7 +1220,7 @@ fun SongTitleSection(
                     ) {
                         Text(
                             text = "Opciones",
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                         )
@@ -1274,9 +1251,7 @@ fun SongTitleSection(
                                                 8.dp,
                                             ),
                                         ).background(
-                                            Color(
-                                                0xFF2A2A2A,
-                                            ),
+                                            MaterialTheme.colorScheme.outline,
                                         ),
                                 contentAlignment = Alignment.Center,
                             ) {
@@ -1302,7 +1277,7 @@ fun SongTitleSection(
                                         contentDescription =
                                         null,
                                         tint =
-                                            Color.White
+                                            MaterialTheme.colorScheme.onBackground
                                                 .copy(
                                                     alpha =
                                                     0.6f,
@@ -1320,12 +1295,12 @@ fun SongTitleSection(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Ir al artista",
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 16.sp,
                                 )
                                 Text(
                                     text = artist,
-                                    color = Color(0xFFB0B0B0),
+                                    color = md_textSecondarySoft,
                                     fontSize = 14.sp,
                                 )
                             }
@@ -1354,11 +1329,7 @@ fun SongTitleSection(
                                             RoundedCornerShape(
                                                 8.dp,
                                             ),
-                                        ).background(
-                                            Color(
-                                                0xFF2A2A2A,
-                                            ),
-                                        ),
+                                        ).background(MaterialTheme.colorScheme.outline),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 if (albumArt != null) {
@@ -1383,7 +1354,7 @@ fun SongTitleSection(
                                         contentDescription =
                                         null,
                                         tint =
-                                            Color.White
+                                            MaterialTheme.colorScheme.onBackground
                                                 .copy(
                                                     alpha =
                                                     0.6f,
@@ -1401,12 +1372,12 @@ fun SongTitleSection(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Ir al álbum",
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 16.sp,
                                 )
                                 Text(
                                     text = album,
-                                    color = Color(0xFFB0B0B0),
+                                    color = md_textSecondarySoft,
                                     fontSize = 14.sp,
                                 )
                             }
@@ -1439,9 +1410,9 @@ fun PlayerControls(
                 modifier = Modifier.fillMaxWidth().height(20.dp),
                 colors =
                     SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Color(0xFF2196F3),
-                        inactiveTrackColor = Color(0xFF404040),
+                        thumbColor = MaterialTheme.colorScheme.onBackground,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.outline,
                     ),
             )
 
@@ -1452,12 +1423,12 @@ fun PlayerControls(
             ) {
                 Text(
                     text = formatDuration(playerState.position),
-                    color = Color(0xFFB0B0B0),
+                    color = md_textSecondarySoft,
                     fontSize = 10.sp,
                 )
                 Text(
                     text = formatDuration(playerState.duration),
-                    color = Color(0xFFB0B0B0),
+                    color = md_textSecondarySoft,
                     fontSize = 10.sp,
                 )
             }
@@ -1482,7 +1453,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.Shuffle,
                     contentDescription = "Shuffle",
-                    tint = if (isShuffle) Color(0xFF2196F3) else Color.White,
+                    tint = if (isShuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1491,7 +1462,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1502,7 +1473,7 @@ fun PlayerControls(
                     Modifier
                         .size(buttonSize)
                         .background(
-                            Color(0xFF2196F3),
+                            MaterialTheme.colorScheme.primary,
                             shape = RoundedCornerShape(50),
                         ),
             ) {
@@ -1514,7 +1485,7 @@ fun PlayerControls(
                             Icons.Rounded.PlayArrow
                         },
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(buttonSize * 0.5f),
                 )
             }
@@ -1523,7 +1494,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipNext,
                     null,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1538,9 +1509,9 @@ fun PlayerControls(
                     contentDescription = "Repeat",
                     tint =
                         if (repeatMode != RepeatMode.NONE) {
-                            Color(0xFF2196F3)
+                            MaterialTheme.colorScheme.primary
                         } else {
-                            Color.White
+                            MaterialTheme.colorScheme.onBackground
                         },
                     modifier = Modifier.size(buttonSize),
                 )
@@ -1561,7 +1532,7 @@ fun PlayerControls(
                         }
                         if (audioBitrate.isNotEmpty()) append(audioBitrate)
                     },
-                color = Color(0xFF808080),
+                color = md_textMeta,
                 fontSize = 11.sp,
                 textAlign = TextAlign.Center,
             )
