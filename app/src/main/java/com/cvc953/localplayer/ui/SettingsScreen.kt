@@ -115,7 +115,11 @@ fun SettingsScreen(
                     ) {
                         Text(theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                    ) {
                         themeOptions.forEach { t ->
                             DropdownMenuItem(text = {
                                 Text(
