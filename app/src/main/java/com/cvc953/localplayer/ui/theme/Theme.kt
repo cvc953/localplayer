@@ -98,7 +98,7 @@ fun LocalPlayerTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            // typography = typography,
+            typography = typography,
             content = content,
         )
     }

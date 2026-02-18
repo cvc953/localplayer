@@ -464,7 +464,7 @@ fun ArtistsScreen(
                     ) {
                         Text(
                             text = letter,
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 48.sp,
                             fontWeight = FontWeight.Bold,
                         )

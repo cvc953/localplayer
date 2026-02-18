@@ -18,6 +18,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -581,7 +582,7 @@ fun SongsContent(viewModel: MainViewModel) {
                             .align(Alignment.CenterEnd)
                             .padding(end = 4.dp)
                             .width(28.dp)
-                            .fillMaxHeight(0.75f)
+                            .fillMaxHeight(0.8f)
                             .onGloballyPositioned { coords ->
                                 columnHeight =
                                     coords.size.height.toFloat()
@@ -636,7 +637,7 @@ fun SongsContent(viewModel: MainViewModel) {
                                 )
                             },
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceEvenly,
+                    verticalArrangement = Arrangement.Center,
                 ) {
                     alphabet.forEach { letter ->
                         val isActive = currentScrollLetter == letter
@@ -662,7 +663,7 @@ fun SongsContent(viewModel: MainViewModel) {
                                         scrollToLetter(
                                             letter,
                                         )
-                                    }.padding(vertical = 0.5.dp),
+                                    }, // .padding(vertical = 10.dp),
                         )
                     }
                 }

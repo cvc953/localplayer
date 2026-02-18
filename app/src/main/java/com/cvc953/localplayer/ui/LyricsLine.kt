@@ -36,7 +36,7 @@ fun LyricLine(
     var lineCount by remember(text) { mutableStateOf(1) }
 
     val fontSize by animateFloatAsState(
-        targetValue = if (active) 30f else 28f,
+        targetValue = 30f,
         label = "fontSize",
     )
 
@@ -53,7 +53,7 @@ fun LyricLine(
             text = text.trimStart(),
             color = if (active) MaterialTheme.colorScheme.onBackground else Color.Gray,
             fontSize = fontSize.sp,
-            fontWeight = if (active) FontWeight.Bold else FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Left,
             lineHeight = (fontSize + 10).sp,
             maxLines = Int.MAX_VALUE,
