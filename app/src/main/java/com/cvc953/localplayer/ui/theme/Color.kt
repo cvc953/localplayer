@@ -51,6 +51,12 @@ val md_lightSurfaceSheet = Color(0xFFFAFAFA)
 // Text
 val md_lightTextSecondary = Color(0xFF616161)
 val md_lightTextSecondarySoft = Color(0xFF9E9E9E)
+val md_lightTextSecondaryStrong = Color(0xFF424242)
+
+// Text Variants
+val md_textMeta_Light = Color(0xFF6F6F6F)
+
+val md_surfaceSheet_Light = Color(0xFFE8E8E8)
 
 // Outline
 val md_lightOutlineSoft = Color(0xFFBDBDBD)

@@ -62,6 +62,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -104,6 +105,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.ui.theme.md_background
 import com.cvc953.localplayer.ui.theme.md_surfaceImagePlaceholder
 import com.cvc953.localplayer.ui.theme.md_surfaceSheet
 import com.cvc953.localplayer.ui.theme.md_textMeta
@@ -268,7 +271,7 @@ fun PlayerScreen(
                 .offset { IntOffset(0, offsetY.value.toInt()) }
                 .background(
                     Brush.verticalGradient(
-                        listOf(Color(0xFF0F0F0F), MaterialTheme.colorScheme.background),
+                        listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background),
                     ),
                 ),
     ) {
@@ -358,7 +361,7 @@ fun PlayerScreen(
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.Center,
-                                color = md_textSecondary,
+                                color = LocalExtendedColors.current.textSecondary,
                             )
                         }
                     }
@@ -584,9 +587,7 @@ fun PlayerScreen(
                                                         focusedIndicatorColor =
                                                             MaterialTheme.colorScheme.primary,
                                                         unfocusedIndicatorColor =
-                                                            Color(
-                                                                0xFF404040,
-                                                            ),
+                                                            MaterialTheme.colorScheme.surfaceVariant,
                                                         cursorColor =
                                                             MaterialTheme.colorScheme.primary,
                                                         focusedTextColor = MaterialTheme.colorScheme.onBackground,
@@ -681,7 +682,7 @@ fun PlayerScreen(
                                             CardDefaults
                                                 .cardColors(
                                                     containerColor =
-                                                    md_surfaceSheet,
+                                                        LocalExtendedColors.current.surfaceSheet,
                                                 ),
                                         shape =
                                             RoundedCornerShape(
@@ -723,7 +724,7 @@ fun PlayerScreen(
                                                     text =
                                                         "${playlist.songIds.size} canciones",
                                                     color =
-                                                    md_textSecondarySoft,
+                                                        LocalExtendedColors.current.textSecondarySoft,
                                                     fontSize =
                                                         12.sp,
                                                 )
@@ -748,7 +749,7 @@ fun PlayerScreen(
                 ModalBottomSheet(
                     onDismissRequest = { showQueue = false },
                     sheetState = sheetState,
-                    containerColor = md_surfaceSheet,
+                    containerColor = LocalExtendedColors.current.surfaceSheet,
                 ) {
                     Column(
                         modifier =
@@ -771,7 +772,7 @@ fun PlayerScreen(
                         if (dragList.isEmpty()) {
                             Text(
                                 text = "No hay próximas canciones",
-                                color = md_textSecondarySoft,
+                                color = LocalExtendedColors.current.textSecondarySoft,
                                 fontSize = 14.sp,
                             )
                         } else {
@@ -1124,7 +1125,7 @@ fun PlayerScreen(
                                                     queuedSong
                                                         .artist,
                                                 color =
-                                                md_textSecondarySoft,
+                                                    LocalExtendedColors.current.textSecondarySoft,
                                                 fontSize =
                                                     13.sp,
                                                 maxLines =
@@ -1198,7 +1199,7 @@ fun SongTitleSection(
         Box {
             Text(
                 text = if (album.isNotEmpty()) "$artist - $album" else artist,
-                color = md_textSecondaryStrong,
+                color = LocalExtendedColors.current.textSecondaryStrong,
                 fontSize = 14.sp,
                 maxLines = 1,
                 modifier = Modifier.clickable { showMenu = true },
@@ -1207,7 +1208,7 @@ fun SongTitleSection(
                 ModalBottomSheet(
                     onDismissRequest = { showMenu = false },
                     sheetState = sheetState,
-                    containerColor = md_surfaceSheet,
+                    containerColor = LocalExtendedColors.current.surfaceSheet,
                 ) {
                     Column(
                         modifier =
@@ -1300,7 +1301,7 @@ fun SongTitleSection(
                                 )
                                 Text(
                                     text = artist,
-                                    color = md_textSecondarySoft,
+                                    color = LocalExtendedColors.current.textSecondarySoft,
                                     fontSize = 14.sp,
                                 )
                             }
@@ -1377,7 +1378,7 @@ fun SongTitleSection(
                                 )
                                 Text(
                                     text = album,
-                                    color = md_textSecondarySoft,
+                                    color = LocalExtendedColors.current.textSecondarySoft,
                                     fontSize = 14.sp,
                                 )
                             }
@@ -1423,12 +1424,12 @@ fun PlayerControls(
             ) {
                 Text(
                     text = formatDuration(playerState.position),
-                    color = md_textSecondarySoft,
+                    color = LocalExtendedColors.current.textSecondarySoft,
                     fontSize = 10.sp,
                 )
                 Text(
                     text = formatDuration(playerState.duration),
-                    color = md_textSecondarySoft,
+                    color = LocalExtendedColors.current.textSecondarySoft,
                     fontSize = 10.sp,
                 )
             }
@@ -1532,7 +1533,7 @@ fun PlayerControls(
                         }
                         if (audioBitrate.isNotEmpty()) append(audioBitrate)
                     },
-                color = md_textMeta,
+                color = LocalExtendedColors.current.texMeta,
                 fontSize = 11.sp,
                 textAlign = TextAlign.Center,
             )

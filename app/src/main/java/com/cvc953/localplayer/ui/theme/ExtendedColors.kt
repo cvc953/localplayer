@@ -1,4 +1,17 @@
 package com.cvc953.localplayer.ui.theme
 
-class ExtendedColors {
-}
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
+
+data class ExtendedColors(
+    val textSecondary: Color,
+    val textSecondarySoft: Color,
+    val textSecondaryStrong: Color,
+    val texMeta: Color,
+    val surfaceSheet: Color,
+)
+
+val LocalExtendedColors =
+    staticCompositionLocalOf<ExtendedColors> {
+        error("ExtendedColors not provided")
+    }

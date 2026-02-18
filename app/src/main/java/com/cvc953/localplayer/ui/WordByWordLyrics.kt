@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,8 +29,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.model.TtmlSyllable
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
-/**
+@Suppress("ktlint:standard:function-naming")
+/*
  * Componente para mostrar una silaba individual con highlight animado
  * Inspirado en YouLyPlus para mostrar sincronizacion palabra por palabra
  */
@@ -38,24 +41,26 @@ fun SyllableLyric(
     syllable: TtmlSyllable,
     currentPosition: Long,
     isLineActive: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val baseColor = Color(0xFF707070)
-    val baseFontSize = if (isLineActive) 30f else 28f
+    val baseFontSize = 30f
 
     val chars = syllable.text.toCharArray()
     val charCount = chars.size.coerceAtLeast(1)
-    val progress = if (syllable.durationMs > 0) {
-        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
-            .coerceIn(0f, 1f)
-    } else {
-        0f
-    }
-    val revealCount = if (isLineActive && currentPosition >= syllable.timeMs) {
-        (progress * charCount).toInt().coerceIn(0, charCount)
-    } else {
-        0
-    }
+    val progress =
+        if (syllable.durationMs > 0) {
+            ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
+                .coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+    val revealCount =
+        if (isLineActive && currentPosition >= syllable.timeMs) {
+            (progress * charCount).toInt().coerceIn(0, charCount)
+        } else {
+            0
+        }
 
     // Reducir padding si la sílaba continúa en la siguiente palabra
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
@@ -63,22 +68,28 @@ fun SyllableLyric(
     Row(modifier = modifier.padding(end = horizontalPadding)) {
         chars.forEachIndexed { index, ch ->
             val charColor by animateColorAsState(
-                targetValue = if (index < revealCount) Color.White else baseColor,
+                targetValue =
+                    if (index < revealCount) {
+                        MaterialTheme.colorScheme.onBackground
+                    } else {
+                        baseColor
+                    },
                 animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
-                label = "charColor"
+                label = "charColor",
             )
             Text(
                 text = ch.toString(),
                 color = charColor,
                 fontSize = baseFontSize.sp,
                 lineHeight = (baseFontSize + 10f).sp,
-                fontWeight = if (isLineActive) FontWeight.Bold else FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
         }
     }
 }
 
-/**
+@Suppress("ktlint:standard:function-naming")
+/*
  * Componente para mostrar una silaba de fondo (entre parentesis) mas pequeña
  */
 @Composable
@@ -86,27 +97,29 @@ fun BackgroundSyllableLyric(
     syllable: TtmlSyllable,
     currentPosition: Long,
     isLineActive: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Solo mostrar si la línea está activa
     if (!isLineActive) return
-    
+
     val baseColor = Color(0xFF585858)
     val baseFontSize = 20f
 
     val chars = syllable.text.toCharArray()
     val charCount = chars.size.coerceAtLeast(1)
-    val progress = if (syllable.durationMs > 0) {
-        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
-            .coerceIn(0f, 1f)
-    } else {
-        0f
-    }
-    val revealCount = if (currentPosition >= syllable.timeMs) {
-        (progress * charCount).toInt().coerceIn(0, charCount)
-    } else {
-        0
-    }
+    val progress =
+        if (syllable.durationMs > 0) {
+            ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
+                .coerceIn(0f, 1f)
+        } else {
+            0f
+        }
+    val revealCount =
+        if (currentPosition >= syllable.timeMs) {
+            (progress * charCount).toInt().coerceIn(0, charCount)
+        } else {
+            0
+        }
 
     // Reducir padding si la sílaba continúa en la siguiente palabra
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
@@ -116,14 +129,14 @@ fun BackgroundSyllableLyric(
             val charColor by animateColorAsState(
                 targetValue = if (index < revealCount) Color(0xFFB0B0B0) else baseColor,
                 animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
-                label = "charColor"
+                label = "charColor",
             )
             Text(
                 text = ch.toString(),
                 color = charColor,
                 fontSize = baseFontSize.sp,
                 lineHeight = (baseFontSize + 8f).sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
         }
     }
@@ -138,22 +151,23 @@ fun WordByWordLine(
     syllables: List<TtmlSyllable>,
     currentPosition: Long,
     isActive: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     // Separar sílabas principales de las de fondo (entre paréntesis)
     val mainSyllables = syllables.filter { !it.isBackground }
     val backgroundSyllables = syllables.filter { it.isBackground }
-    
+
     Column(
         modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         // Agrupar sílabas que forman una palabra
         FlowRow(
             horizontalArrangement = Arrangement.Start,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             var wordBuffer = mutableListOf<TtmlSyllable>()
+
             @Composable
             fun flushWord() {
                 if (wordBuffer.isNotEmpty()) {
@@ -162,7 +176,7 @@ fun WordByWordLine(
                             SyllableLyric(
                                 syllable = syllable,
                                 currentPosition = currentPosition,
-                                isLineActive = isActive
+                                isLineActive = isActive,
                             )
                         }
                     }
@@ -178,19 +192,19 @@ fun WordByWordLine(
             // Por si la última palabra no se ha vaciado
             flushWord()
         }
-        
+
         // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
         if (backgroundSyllables.isNotEmpty() && isActive) {
             Spacer(modifier = Modifier.padding(top = 2.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.Start,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 backgroundSyllables.forEach { syllable ->
                     BackgroundSyllableLyric(
                         syllable = syllable,
                         currentPosition = currentPosition,
-                        isLineActive = isActive
+                        isLineActive = isActive,
                     )
                 }
             }
@@ -206,31 +220,37 @@ fun LoadingDotsAnimation(
     modifier: Modifier = Modifier,
     isVisible: Boolean = true,
     durationMs: Long = 1000L, // Duración total del gap instrumental
-    elapsedMs: Long = 0L // Tiempo transcurrido actual
+    elapsedMs: Long = 0L, // Tiempo transcurrido actual
 ) {
     if (!isVisible) return
 
     val dotCount = 3
-    val colorSteps = listOf(
-        Color(0xFF505050), // gris oscuro
-        Color(0xFF888888), // gris medio
-        Color(0xFFCCCCCC), // gris claro
-        Color.White        // blanco
-    )
+    val colorSteps =
+        listOf(
+            // Color(0xFF505050), // gris oscuro
+            // Color(0xFF888888), // gris medio
+            // Color(0xFFCCCCCC), // gris claro
+            // Color.White, // blanco
+            LocalExtendedColors.current.textSecondarySoft,
+            LocalExtendedColors.current.textSecondary,
+            LocalExtendedColors.current.textSecondaryStrong,
+            MaterialTheme.colorScheme.onBackground,
+        )
     val minSize = 14f
     val maxSize = 22f
     val appearDuration = durationMs / (dotCount + 1)
     val lastDotWhiteThreshold = 500L
 
     Box(
-        modifier = modifier
-            .padding(horizontal = 24.dp, vertical = 0.dp)
-            .fillMaxWidth(),
-        contentAlignment = Alignment.CenterStart
+        modifier =
+            modifier
+                .padding(horizontal = 24.dp, vertical = 0.dp)
+                .fillMaxWidth(),
+        contentAlignment = Alignment.CenterStart,
     ) {
         Row(
             horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             for (i in 0 until dotCount) {
                 // Cada punto tiene su propio tiempo de aparición y animación
@@ -250,20 +270,24 @@ fun LoadingDotsAnimation(
                 // Animación fluida
                 val animatedSize by androidx.compose.animation.core.animateFloatAsState(
                     targetValue = dotSize,
-                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 180),
-                    label = "dotSize$i"
+                    animationSpec =
+                        androidx.compose.animation.core
+                            .tween(durationMillis = 180),
+                    label = "dotSize$i",
                 )
                 val animatedColor by androidx.compose.animation.animateColorAsState(
                     targetValue = dotColor,
-                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 180),
-                    label = "dotColor$i"
+                    animationSpec =
+                        androidx.compose.animation.core
+                            .tween(durationMillis = 180),
+                    label = "dotColor$i",
                 )
                 Text(
                     text = "●",
                     color = animatedColor,
                     fontSize = animatedSize.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.padding(horizontal = 4.dp),
                 )
             }
         }

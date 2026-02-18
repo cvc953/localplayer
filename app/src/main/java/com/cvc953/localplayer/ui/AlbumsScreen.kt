@@ -161,7 +161,7 @@ fun AlbumsScreen(
                     DropdownMenu(
                         expanded = sortMenuExpanded,
                         onDismissRequest = { sortMenuExpanded = false },
-                        containerColor = MaterialTheme.colorScheme.surface,
+                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
                     ) {
                         DropdownMenuItem(
                             text = { Text("Título A-Z", color = MaterialTheme.colorScheme.onSurface) },
@@ -203,17 +203,17 @@ fun AlbumsScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     singleLine = true,
-                    placeholder = { Text("Buscar por álbum", color = Color(0xFF808080)) },
+                    placeholder = { Text("Buscar por álbum", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors =
                         TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                             focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                             unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
                             cursorColor = MaterialTheme.colorScheme.primary,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                             focusedLabelColor = MaterialTheme.colorScheme.primary,
                             unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
@@ -473,7 +473,7 @@ fun AlbumsScreen(
                     ) {
                         Text(
                             text = letter,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            color = MaterialTheme.colorScheme.background,
                             fontSize = 48.sp,
                             fontWeight = FontWeight.Bold,
                         )

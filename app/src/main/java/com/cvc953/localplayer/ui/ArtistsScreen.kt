@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 package com.cvc953.localplayer.ui
 
 import android.app.Activity
@@ -13,12 +15,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -31,6 +33,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -63,14 +66,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
+import com.cvc953.localplayer.ui.theme.md_overlay
+import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
-fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
+fun ArtistsScreen(
+    viewModel: MainViewModel,
+    onArtistClick: (String) -> Unit,
+) {
     val songs by viewModel.songs.collectAsState()
     val isScanning by viewModel.isScanning
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -95,19 +104,23 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
     val artists = remember(songs) { songs.groupBy { it.artist.ifBlank { "Desconocido" } }.toList() }
 
     val filteredArtists =
-            remember(artists, searchQuery) {
-                val q = searchQuery.trim().lowercase()
-                if (q.isEmpty()) artists else artists.filter { it.first.lowercase().contains(q) }
-            }
+        remember(artists, searchQuery) {
+            val q = searchQuery.trim().lowercase()
+            if (q.isEmpty()) artists else artists.filter { it.first.lowercase().contains(q) }
+        }
 
     val sortedArtists =
-            remember(filteredArtists, sortMode) {
-                when (sortMode) {
-                    ArtistSortMode.TITLE_ASC -> filteredArtists.sortedBy { it.first.lowercase() }
-                    ArtistSortMode.TITLE_DESC ->
-                            filteredArtists.sortedByDescending { it.first.lowercase() }
+        remember(filteredArtists, sortMode) {
+            when (sortMode) {
+                ArtistSortMode.TITLE_ASC -> {
+                    filteredArtists.sortedBy { it.first.lowercase() }
+                }
+
+                ArtistSortMode.TITLE_DESC -> {
+                    filteredArtists.sortedByDescending { it.first.lowercase() }
                 }
             }
+        }
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
@@ -115,64 +128,64 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
 
     if (isScanning) {
         Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            CircularProgressIndicator(color = Color.White)
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Escaneando canciones", color = Color.White)
+            Text("Escaneando canciones", color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                        text = "Artistas",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f)
+                    text = "Artistas",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f),
                 )
 
                 Box {
                     IconButton(onClick = { sortMenuExpanded = true }) {
-                        Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = Color.White)
+                        Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = MaterialTheme.colorScheme.onBackground)
                     }
                     DropdownMenu(
-                            expanded = sortMenuExpanded,
-                            onDismissRequest = { sortMenuExpanded = false },
-                            containerColor = Color(0xFF1A1A1A)
+                        expanded = sortMenuExpanded,
+                        onDismissRequest = { sortMenuExpanded = false },
+                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
                     ) {
                         DropdownMenuItem(
-                                text = { Text("Título A-Z", color = Color.White) },
-                                onClick = {
-                                    sortMode = ArtistSortMode.TITLE_ASC
-                                    sortMenuExpanded = false
-                                }
+                            text = { Text("Título A-Z", color = MaterialTheme.colorScheme.onSurface) },
+                            onClick = {
+                                sortMode = ArtistSortMode.TITLE_ASC
+                                sortMenuExpanded = false
+                            },
                         )
                         DropdownMenuItem(
-                                text = { Text("Título Z-A", color = Color.White) },
-                                onClick = {
-                                    sortMode = ArtistSortMode.TITLE_DESC
-                                    sortMenuExpanded = false
-                                }
+                            text = { Text("Título Z-A", color = MaterialTheme.colorScheme.onSurface) },
+                            onClick = {
+                                sortMode = ArtistSortMode.TITLE_DESC
+                                sortMenuExpanded = false
+                            },
                         )
                     }
                 }
 
                 IconButton(
-                        onClick = {
-                            showSearchBar = !showSearchBar
-                            if (!showSearchBar) searchQuery = ""
-                        }
-                ) { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.White) }
+                    onClick = {
+                        showSearchBar = !showSearchBar
+                        if (!showSearchBar) searchQuery = ""
+                    },
+                ) { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onBackground) }
                 IconButton(onClick = {
                     viewAsGrid = !viewAsGrid
                     viewModel.setGridViewPreferred(viewAsGrid)
@@ -180,30 +193,30 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
                     Icon(
                         imageVector = if (viewAsGrid) Icons.Default.ViewList else Icons.Default.ViewModule,
                         contentDescription = "Cambiar vista",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
 
             if (showSearchBar) {
                 OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        singleLine = true,
-                        placeholder = { Text("Buscar por artista", color = Color(0xFF808080)) },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        colors =
-                                TextFieldDefaults.colors(
-                                        focusedContainerColor = Color(0xFF1A1A1A),
-                                        unfocusedContainerColor = Color(0xFF1A1A1A),
-                                        focusedIndicatorColor = Color(0xFF2196F3),
-                                        unfocusedIndicatorColor = Color(0xFF404040),
-                                        cursorColor = Color(0xFF2196F3),
-                                        focusedTextColor = Color.White,
-                                        unfocusedTextColor = Color.White,
-                                        focusedLabelColor = Color(0xFF2196F3),
-                                        unfocusedLabelColor = Color(0xFF808080)
-                                )
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    singleLine = true,
+                    placeholder = { Text("Buscar por artista", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors =
+                        TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                            focusedLabelColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 )
             }
 
@@ -215,13 +228,14 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
                         state = gridState,
                         contentPadding = PaddingValues(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(sortedArtists) { (artistName, artistSongs) ->
                             val context = LocalContext.current
-                            val mainAlbum = remember(artistSongs) {
-                                artistSongs.groupBy { it.album.ifBlank { "Desconocido" } }.maxByOrNull { it.value.size }
-                            }
+                            val mainAlbum =
+                                remember(artistSongs) {
+                                    artistSongs.groupBy { it.album.ifBlank { "Desconocido" } }.maxByOrNull { it.value.size }
+                                }
                             val representativeSong = mainAlbum?.value?.firstOrNull()
                             var albumArt by remember(representativeSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
@@ -235,33 +249,36 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
                                             albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
                                         }
                                         retriever.release()
-                                    } catch (_: Exception) {}
+                                    } catch (_: Exception) {
+                                    }
                                 }
                             }
 
                             Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onArtistClick(artistName) }
-                                    .padding(6.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onArtistClick(artistName) }
+                                        .padding(6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Image(
-                                    painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) } ?: painterResource(R.drawable.ic_default_album),
+                                    painter =
+                                        albumArt?.let { BitmapPainter(it.asImageBitmap()) } ?: painterResource(R.drawable.ic_default_album),
                                     contentDescription = null,
                                     modifier = Modifier.size(120.dp).clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop
+                                    contentScale = ContentScale.Crop,
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
                                     text = artistName,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 14.sp,
                                     maxLines = 2,
                                     textAlign = TextAlign.Center,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
                                 )
-                                Text(text = "${artistSongs.size} canciones", color = Color.Gray, fontSize = 12.sp)
+                                Text(text = "${artistSongs.size} canciones", color = md_textSecondary, fontSize = 12.sp)
                             }
                         }
                     }
@@ -270,13 +287,14 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
                         modifier = Modifier.fillMaxSize(),
                         state = listState,
                         contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(sortedArtists) { (artistName, artistSongs) ->
                             val context = LocalContext.current
-                            val mainAlbum = remember(artistSongs) {
-                                artistSongs.groupBy { it.album.ifBlank { "Desconocido" } }.maxByOrNull { it.value.size }
-                            }
+                            val mainAlbum =
+                                remember(artistSongs) {
+                                    artistSongs.groupBy { it.album.ifBlank { "Desconocido" } }.maxByOrNull { it.value.size }
+                                }
                             val representativeSong = mainAlbum?.value?.firstOrNull()
                             var albumArt by remember(representativeSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
@@ -290,26 +308,34 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
                                             albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
                                         }
                                         retriever.release()
-                                    } catch (_: Exception) {}
+                                    } catch (_: Exception) {
+                                    }
                                 }
                             }
 
                             Row(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable { onArtistClick(artistName) },
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Image(
-                                    painter = albumArt?.let { BitmapPainter(it.asImageBitmap()) } ?: painterResource(R.drawable.ic_default_album),
+                                    painter =
+                                        albumArt?.let { BitmapPainter(it.asImageBitmap()) } ?: painterResource(R.drawable.ic_default_album),
                                     contentDescription = null,
                                     modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop
+                                    contentScale = ContentScale.Crop,
                                 )
 
                                 Spacer(modifier = Modifier.width(12.dp))
 
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(text = artistName, color = Color.White, fontSize = 16.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text(text = "${artistSongs.size} canciones", color = Color.Gray, fontSize = 12.sp)
+                                    Text(
+                                        text = artistName,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 16.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(text = "${artistSongs.size} canciones", color = md_textSecondary, fontSize = 12.sp)
                                 }
                             }
                         }
@@ -327,80 +353,89 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
                             currentScrollLetter = null
                         }
                         val index =
-                                if (letter == "#") {
-                                    sortedArtists.indexOfFirst { (artistName, _) ->
-                                        val firstChar = artistName.firstOrNull()?.uppercaseChar()
-                                        firstChar == null || !firstChar.isLetter()
-                                    }
-                                } else {
-                                    sortedArtists.indexOfFirst { (artistName, _) ->
-                                        artistName.firstOrNull()?.uppercaseChar() == letter[0]
-                                    }
+                            if (letter == "#") {
+                                sortedArtists.indexOfFirst { (artistName, _) ->
+                                    val firstChar = artistName.firstOrNull()?.uppercaseChar()
+                                    firstChar == null || !firstChar.isLetter()
                                 }
+                            } else {
+                                sortedArtists.indexOfFirst { (artistName, _) ->
+                                    artistName.firstOrNull()?.uppercaseChar() == letter[0]
+                                }
+                            }
                         if (index >= 0) {
-                            if (viewAsGrid) scope.launch { gridState.scrollToItem(index) }
-                            else scope.launch { listState.scrollToItem(index) }
+                            if (viewAsGrid) {
+                                scope.launch { gridState.scrollToItem(index) }
+                            } else {
+                                scope.launch { listState.scrollToItem(index) }
+                            }
                         }
                     }
 
                     Column(
-                            modifier =
-                                    Modifier.align(Alignment.CenterEnd)
-                                            .padding(end = 4.dp)
-                                            .width(28.dp)
-                                            .fillMaxHeight(0.75f)
-                                            .onGloballyPositioned { coords ->
-                                                columnHeight = coords.size.height.toFloat()
-                                            }
-                                            .pointerInput(Unit) {
-                                                detectDragGestures(
-                                                        onDragStart = { offset ->
-                                                            val index =
-                                                                    ((offset.y / columnHeight) *
-                                                                                    alphabet.size)
-                                                                            .toInt()
-                                                                            .coerceIn(
-                                                                                    0,
-                                                                                    alphabet.lastIndex
-                                                                            )
-                                                            scrollToLetter(alphabet[index])
-                                                        },
-                                                        onDrag = { change, _ ->
-                                                            change.consume()
-                                                            val y =
-                                                                    change.position.y.coerceIn(
-                                                                            0f,
-                                                                            columnHeight
-                                                                    )
-                                                            val index =
-                                                                    ((y / columnHeight) *
-                                                                                    alphabet.size)
-                                                                            .toInt()
-                                                                            .coerceIn(
-                                                                                    0,
-                                                                                    alphabet.lastIndex
-                                                                            )
-                                                            scrollToLetter(alphabet[index])
-                                                        }
+                        modifier =
+                            Modifier
+                                .align(Alignment.CenterEnd)
+                                .padding(end = 4.dp)
+                                .width(28.dp)
+                                .fillMaxHeight(0.75f)
+                                .onGloballyPositioned { coords ->
+                                    columnHeight = coords.size.height.toFloat()
+                                }.pointerInput(Unit) {
+                                    detectDragGestures(
+                                        onDragStart = { offset ->
+                                            val index =
+                                                (
+                                                    (offset.y / columnHeight) *
+                                                        alphabet.size
+                                                ).toInt()
+                                                    .coerceIn(
+                                                        0,
+                                                        alphabet.lastIndex,
+                                                    )
+                                            scrollToLetter(alphabet[index])
+                                        },
+                                        onDrag = { change, _ ->
+                                            change.consume()
+                                            val y =
+                                                change.position.y.coerceIn(
+                                                    0f,
+                                                    columnHeight,
                                                 )
-                                            },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.SpaceEvenly
+                                            val index =
+                                                (
+                                                    (y / columnHeight) *
+                                                        alphabet.size
+                                                ).toInt()
+                                                    .coerceIn(
+                                                        0,
+                                                        alphabet.lastIndex,
+                                                    )
+                                            scrollToLetter(alphabet[index])
+                                        },
+                                    )
+                                },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceEvenly,
                     ) {
                         alphabet.forEach { letter ->
                             val isActive = currentScrollLetter == letter
                             Text(
-                                    text = letter,
-                                    color =
-                                            if (isActive) Color(0xFF2196F3)
-                                            else Color.White.copy(alpha = 0.7f),
-                                    fontSize = if (isActive) 12.sp else 10.sp,
-                                    fontWeight =
-                                            if (isActive) FontWeight.Bold else FontWeight.Medium,
-                                    textAlign = TextAlign.Center,
-                                    modifier =
-                                            Modifier.clickable { scrollToLetter(letter) }
-                                                    .padding(vertical = 1.5.dp)
+                                text = letter,
+                                color =
+                                    if (isActive) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                                    },
+                                fontSize = if (isActive) 12.sp else 10.sp,
+                                fontWeight =
+                                    if (isActive) FontWeight.Bold else FontWeight.Medium,
+                                textAlign = TextAlign.Center,
+                                modifier =
+                                    Modifier
+                                        .clickable { scrollToLetter(letter) }
+                                        .padding(vertical = 1.5.dp),
                             )
                         }
                     }
@@ -408,31 +443,30 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
 
                 currentScrollLetter?.let { letter ->
                     Box(
-                            modifier =
-                                    Modifier.align(Alignment.Center)
-                                            .size(
-                                                    with(LocalDensity.current) {
-                                                        LocalConfiguration.current
-                                                                .screenWidthDp
-                                                                .dp * 0.25f
-                                                    }
-                                            )
-                                            .background(
-                                                    Color.Black.copy(alpha = 0.8f),
-                                                    RoundedCornerShape(16.dp)
-                                            )
-                                            .border(
-                                                    2.dp,
-                                                    Color(0xFF2196F3),
-                                                    RoundedCornerShape(16.dp)
-                                            ),
-                            contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .align(Alignment.Center)
+                                .size(
+                                    with(LocalDensity.current) {
+                                        LocalConfiguration.current
+                                            .screenWidthDp
+                                            .dp * 0.25f
+                                    },
+                                ).background(
+                                    md_overlay,
+                                    RoundedCornerShape(16.dp),
+                                ).border(
+                                    2.dp,
+                                    MaterialTheme.colorScheme.primary,
+                                    RoundedCornerShape(16.dp),
+                                ),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                                text = letter,
-                                color = Color.White,
-                                fontSize = 48.sp,
-                                fontWeight = FontWeight.Bold
+                            text = letter,
+                            color = MaterialTheme.colorScheme.background,
+                            fontSize = 48.sp,
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
@@ -443,11 +477,16 @@ fun ArtistsScreen(viewModel: MainViewModel, onArtistClick: (String) -> Unit) {
 
 private enum class ArtistSortMode {
     TITLE_ASC,
-    TITLE_DESC
+    TITLE_DESC,
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
-fun ArtistDetailScreen(viewModel: MainViewModel, artistName: String, onBack: () -> Unit) {
+fun ArtistDetailScreen(
+    viewModel: MainViewModel,
+    artistName: String,
+    onBack: () -> Unit,
+) {
     val songs by viewModel.songs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
     val playlists: List<Playlist> by viewModel.playlists.collectAsState()
@@ -456,53 +495,53 @@ fun ArtistDetailScreen(viewModel: MainViewModel, artistName: String, onBack: () 
 
     BackHandler { onBack() }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.onBackground)
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                        text = artistName,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    text = artistName,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                Text(text = "${artistSongs.size} canciones", color = Color.Gray, fontSize = 12.sp)
+                Text(text = "${artistSongs.size} canciones", color = md_textSecondary, fontSize = 12.sp)
             }
         }
 
         LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding =
-                        PaddingValues(start = 16.dp, top = 8.dp, bottom = 16.dp, end = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding =
+                PaddingValues(start = 16.dp, top = 8.dp, bottom = 16.dp, end = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(artistSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
                 SongItem(
-                        song = song,
-                        isPlaying = isCurrent,
-                        onClick = {
-                            // Usar el orden del artista como cola de reproduccion
-                            viewModel.updateDisplayOrder(artistSongs)
-                            viewModel.playSong(song)
-                            viewModel.startService(context, song)
-                        },
-                        onQueueNext = { viewModel.addToQueueNext(song) },
-                        onQueueEnd = { viewModel.addToQueueEnd(song) },
-                        playlists = playlists,
-                        onAddToPlaylist = { playlistName, songId ->
-                            viewModel.addSongToPlaylist(playlistName, songId)
-                        }
+                    song = song,
+                    isPlaying = isCurrent,
+                    onClick = {
+                        // Usar el orden del artista como cola de reproduccion
+                        viewModel.updateDisplayOrder(artistSongs)
+                        viewModel.playSong(song)
+                        viewModel.startService(context, song)
+                    },
+                    onQueueNext = { viewModel.addToQueueNext(song) },
+                    onQueueEnd = { viewModel.addToQueueEnd(song) },
+                    playlists = playlists,
+                    onAddToPlaylist = { playlistName, songId ->
+                        viewModel.addSongToPlaylist(playlistName, songId)
+                    },
                 )
             }
         }
