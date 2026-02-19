@@ -3,6 +3,7 @@ package com.cvc953.localplayer.ui
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -46,14 +47,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.theme.ExtendedColors
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.ui.theme.md_surfaceSheet
-import com.cvc953.localplayer.ui.theme.md_textMeta
-import com.cvc953.localplayer.ui.theme.md_textSecondary
+import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -72,6 +73,7 @@ fun SongItem(
     playlists: List<Playlist> = emptyList(),
     onAddToPlaylist: ((String, Long) -> Unit)? = null,
     onRemoveFromPlaylist: (() -> Unit)? = null,
+    viewModel: MainViewModel = viewModel(),
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) } // aquí se guarda la carátula
@@ -145,7 +147,7 @@ fun SongItem(
             DropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
-                containerColor = md_surfaceSheet,
+                containerColor = MaterialTheme.extendedColors.surfaceSheet,
                 modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
             ) {
                 DropdownMenuItem(
@@ -187,6 +189,39 @@ fun SongItem(
                         },
                     )
                 }
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            if (playlists.any { it.name == "Favoritos" && it.songIds.contains(song.id) }) {
+                                "Eliminar de favoritos"
+                            } else {
+                                "Añadir a favoritos"
+                            },
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    },
+                    onClick = {
+                        menuExpanded = false
+                        val favoritesName = "Favoritos"
+
+                        // Encuentra la playlist Favoritos, o crea una si no existe
+                        var favorites = playlists.find { it.name == favoritesName }
+                        if (favorites == null) {
+                            viewModel.createPlaylist(favoritesName)
+                            favorites = playlists.find { it.name == favoritesName } // recarga
+                        }
+
+                        val isFavorite = favorites?.songIds?.contains(song.id) == true
+
+                        if (isFavorite) {
+                            viewModel.removeSongFromPlaylist(favoritesName, song.id)
+                            Toast.makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT).show()
+                        } else {
+                            viewModel.addSongToPlaylist(favoritesName, song.id)
+                            Toast.makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                )
             }
         }
 

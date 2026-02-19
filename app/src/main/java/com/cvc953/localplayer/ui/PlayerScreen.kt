@@ -62,7 +62,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -87,7 +86,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -106,13 +104,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
-import com.cvc953.localplayer.ui.theme.md_background
-import com.cvc953.localplayer.ui.theme.md_surfaceImagePlaceholder
-import com.cvc953.localplayer.ui.theme.md_surfaceSheet
-import com.cvc953.localplayer.ui.theme.md_textMeta
-import com.cvc953.localplayer.ui.theme.md_textSecondary
-import com.cvc953.localplayer.ui.theme.md_textSecondarySoft
-import com.cvc953.localplayer.ui.theme.md_textSecondaryStrong
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

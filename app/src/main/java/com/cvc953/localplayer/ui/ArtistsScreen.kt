@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
@@ -315,7 +316,7 @@ fun ArtistsScreen(
                             }
 
                             Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable { onArtistClick(artistName) },
+                                modifier = Modifier.fillMaxWidth().padding(8.dp).clickable { onArtistClick(artistName) },
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Image(
@@ -337,6 +338,44 @@ fun ArtistsScreen(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(text = "${artistSongs.size} canciones", color = md_textSecondary, fontSize = 12.sp)
+                                }
+
+                                var menuExpanded by remember { mutableStateOf(false) }
+                                var showPlaylistDialog by remember { mutableStateOf(false) }
+
+                                Box {
+                                    IconButton(onClick = { menuExpanded = true }) {
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = "Más opciones",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = menuExpanded,
+                                        onDismissRequest = { menuExpanded = false },
+                                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                                        modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                            },
+                                        )
+                                    }
                                 }
                             }
                         }
