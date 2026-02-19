@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
@@ -278,7 +279,11 @@ fun AlbumsScreen(
                                     textAlign = TextAlign.Center,
                                     overflow = TextOverflow.Ellipsis,
                                 )
-                                Text(text = "${albumSongs.size} canciones", color = md_textSecondary, fontSize = 12.sp)
+                                Text(
+                                    text = "${albumSongs.size} canciones",
+                                    color = MaterialTheme.extendedColors.textSecondary,
+                                    fontSize = 12.sp,
+                                )
                             }
                         }
                     }
@@ -317,7 +322,7 @@ fun AlbumsScreen(
 
                             Row(
                                 modifier =
-                                    Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
+                                    Modifier.fillMaxWidth().padding(8.dp).clickable {
                                         onAlbumClick(albumName)
                                     },
                                 verticalAlignment = Alignment.CenterVertically,
@@ -345,7 +350,46 @@ fun AlbumsScreen(
                                         text = "${albumSongs.size} canciones",
                                         color = md_textSecondary,
                                         fontSize = 12.sp,
+                                        maxLines = 1,
                                     )
+                                }
+
+                                var menuExpanded by remember { mutableStateOf(false) }
+                                var showPlaylistDialog by remember { mutableStateOf(false) }
+
+                                Box {
+                                    IconButton(onClick = { menuExpanded = true }) {
+                                        Icon(
+                                            Icons.Default.MoreVert,
+                                            contentDescription = "Más opciones",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = menuExpanded,
+                                        onDismissRequest = { menuExpanded = false },
+                                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                                        modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                            },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -521,7 +565,7 @@ fun AlbumDetailScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(text = "${albumSongs.size} canciones", color = md_textSecondary, fontSize = 12.sp)
+                Text(text = "${albumSongs.size} canciones", color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
             }
         }
 
