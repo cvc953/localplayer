@@ -72,14 +72,10 @@ fun MiniPlayer(
     ) {
         Image(
             painter =
-                albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
+                albumArt?.let { BitmapPainter(it.asImageBitmap()) }
                     ?: painterResource(R.drawable.ic_default_album),
-            // Reemplaza por un recurso que tengas
             contentDescription = null,
-            modifier =
-                Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(4.dp)),
+            modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop,
         )
 
