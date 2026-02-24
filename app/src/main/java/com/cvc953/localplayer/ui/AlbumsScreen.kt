@@ -6,6 +6,7 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -13,7 +14,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -50,9 +65,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -67,7 +82,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
-import com.cvc953.localplayer.ui.theme.md_overlay
+import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +94,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AlbumsScreen(
     viewModel: MainViewModel,
-    onAlbumClick: (String) -> Unit,
+    onAlbumClick: (albumName: String, artistName: String) -> Unit,
 ) {
     val songs by viewModel.songs.collectAsState()
     val isScanning by viewModel.isScanning
@@ -102,7 +117,8 @@ fun AlbumsScreen(
         }
     }
 
-    val albums = remember(songs) { songs.groupBy { it.album.ifBlank { "Desconocido" } }.toList() }
+    val albums =
+        remember(songs) { songs.groupBy { "${it.album.ifBlank { "Desconocido" }}|${it.artist.ifBlank { "Desconocido" }}" }.toList() }
 
     val filteredAlbums =
         remember(albums, searchQuery) {
@@ -255,8 +271,12 @@ fun AlbumsScreen(
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
-                                        .clickable { onAlbumClick(albumName) }
-                                        .padding(6.dp),
+                                        .clickable {
+                                            val parts = albumName.split("|")
+                                            val realAlbumName = parts.getOrNull(0) ?: albumName
+                                            val realArtistName = parts.getOrNull(1) ?: "Desconocido"
+                                            onAlbumClick(realAlbumName, realArtistName)
+                                        }.padding(6.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 Image(
@@ -272,7 +292,7 @@ fun AlbumsScreen(
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
-                                    text = albumName,
+                                    text = albumName.split("|").getOrNull(0) ?: albumName,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 14.sp,
                                     maxLines = 2,
@@ -323,7 +343,10 @@ fun AlbumsScreen(
                             Row(
                                 modifier =
                                     Modifier.fillMaxWidth().padding(8.dp).clickable {
-                                        onAlbumClick(albumName)
+                                        val parts = albumName.split("|")
+                                        val realAlbumName = parts.getOrNull(0) ?: albumName
+                                        val realArtistName = parts.getOrNull(1) ?: "Desconocido"
+                                        onAlbumClick(realAlbumName, realArtistName)
                                     },
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -340,7 +363,7 @@ fun AlbumsScreen(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = albumName,
+                                        text = albumName.split("|").getOrNull(0) ?: albumName,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 16.sp,
                                         maxLines = 1,
@@ -535,19 +558,32 @@ fun AlbumsScreen(
 fun AlbumDetailScreen(
     viewModel: MainViewModel,
     albumName: String,
+    artistName: String,
     onBack: () -> Unit,
 ) {
     val songs by viewModel.songs.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
     val playlists: List<Playlist> by viewModel.playlists.collectAsState()
-    val albumSongs = remember(songs, albumName) { songs.filter { it.album == albumName } }
+    val albumSongs =
+        remember(
+            songs,
+            albumName,
+            artistName,
+        ) {
+            songs.filter { it.album == albumName && it.artist == artistName }.sortedWith(
+                compareBy<Song>({ it.discNumber }, { it.trackNumber }),
+            )
+        }
     val context = LocalContext.current
 
     BackHandler { onBack() }
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
@@ -564,19 +600,21 @@ fun AlbumDetailScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Left,
                 )
-                Text(text = "${albumSongs.size} canciones", color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
+                // Text(text = "${albumSongs.size} canciones", color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
             }
         }
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding =
-                PaddingValues(start = 16.dp, top = 8.dp, bottom = 16.dp, end = 4.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
+            item { AlbumHeader(viewModel, albumName, artistName) }
             items(albumSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
+
                 SongItem(
                     song = song,
                     isPlaying = isCurrent,
@@ -601,4 +639,70 @@ fun AlbumDetailScreen(
 private enum class AlbumSortMode {
     TITLE_ASC,
     TITLE_DESC,
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+fun AlbumHeader(
+    viewModel: MainViewModel,
+    albumName: String,
+    artistName: String,
+) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+    ) {
+        val songs by viewModel.songs.collectAsState()
+        val albumSongs = remember(songs, albumName, artistName) { songs.filter { it.album == albumName && it.artist == artistName } }
+        var albumArt by remember { mutableStateOf<Bitmap?>(null) }
+        val firstSong = albumSongs.firstOrNull()
+        val context = LocalContext.current
+
+        LaunchedEffect(firstSong?.uri) {
+            withContext(Dispatchers.IO) {
+                try {
+                    val uri = firstSong?.uri ?: return@withContext
+                    val retriever = MediaMetadataRetriever()
+                    retriever.setDataSource(context, uri)
+                    retriever.embeddedPicture?.let {
+                        albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                    }
+                    retriever.release()
+                } catch (_: Exception) {
+                }
+            }
+        }
+
+        Image(
+            painter =
+                albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
+                    ?: painterResource(
+                        R.drawable.ic_default_album,
+                    ),
+            contentDescription = null,
+            modifier =
+                Modifier
+                    .fillMaxWidth(1f)
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(4.dp)),
+            contentScale = ContentScale.Crop,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = albumName,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(text = "${albumSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
+    }
 }

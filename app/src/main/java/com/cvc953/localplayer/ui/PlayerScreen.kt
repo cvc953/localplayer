@@ -933,9 +933,7 @@ fun PlayerScreen(
                                                 null,
                                             )
                                         }
-                                    LaunchedEffect(
-                                        queuedSong.uri,
-                                    ) {
+                                    LaunchedEffect(queuedSong.uri) {
                                         albumArtBitmap =
                                             withContext(
                                                 Dispatchers

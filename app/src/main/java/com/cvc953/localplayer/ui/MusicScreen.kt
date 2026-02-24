@@ -55,6 +55,7 @@ import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.ui.theme.md_overlay
 import com.cvc953.localplayer.util.StoragePermissionHandler
 import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import kotlinx.coroutines.launch
 
 @Suppress("ktlint:standard:function-naming")
@@ -719,11 +720,13 @@ fun SongsContent(viewModel: MainViewModel) {
 fun MainMusicScreen(onOpenPlayer: () -> Unit) {
     StoragePermissionHandler {
         val vm: MainViewModel = MainViewModel.instance ?: viewModel()
+        val playerViewModel: PlayerViewModel = viewModel()
         val context = LocalContext.current
         val appPrefs = AppPrefs(context)
 
         // If user hasn't picked a music folder yet, show a chooser overlay
         var needPicker by remember { mutableStateOf(!appPrefs.hasMusicFolderUri()) }
+        var selectedArtistSongsView by rememberSaveable { mutableStateOf(false) }
         val launcher =
             rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.OpenDocumentTree(),
@@ -846,6 +849,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                     isPlaying = playerState.isPlaying,
                                     onPlayPause = {
                                         vm.togglePlayPause()
+                                        // playerViewModel.togglePlayPause()
                                     },
                                     onClick = { vm.openPlayerScreen() },
                                     onNext = { vm.playNextSong() },
@@ -934,18 +938,22 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                         }
 
                         BottomNavItem.Albums.route -> {
-                            val albumName = selectedAlbumName
-                            if (albumName == null) {
+                            val albumKey = selectedAlbumName
+                            if (albumKey == null) {
                                 AlbumsScreen(
                                     viewModel = vm,
-                                    onAlbumClick = {
-                                        selectedAlbumName = it
+                                    onAlbumClick = { albumName, artistName ->
+                                        selectedAlbumName = "$albumName|$artistName"
                                     },
                                 )
                             } else {
+                                val parts = albumKey.split("|")
+                                val albumName = parts[0]
+                                val artistName = parts.getOrElse(1) { "Desconocido" }
                                 AlbumDetailScreen(
                                     viewModel = vm,
                                     albumName = albumName,
+                                    artistName = artistName,
                                     onBack = {
                                         selectedAlbumName = null
                                     },
@@ -962,12 +970,30 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                         selectedArtistName = it
                                     },
                                 )
+                            } else if (selectedArtistName != null && selectedTab == BottomNavItem.Artists.route &&
+                                selectedArtistSongsView
+                            ) {
+                                ArtistSongsScreen(
+                                    viewModel = vm,
+                                    artistName = artistName,
+                                    onBack = {
+                                        selectedArtistSongsView = false
+                                    },
+                                )
                             } else {
                                 ArtistDetailScreen(
                                     viewModel = vm,
                                     artistName = artistName,
                                     onBack = {
                                         selectedArtistName = null
+                                    },
+                                    onAlbumClick = { albumName, artistName ->
+                                        selectedAlbumName = "$albumName|$artistName"
+                                        selectedArtistName = artistName
+                                        selectedTab = BottomNavItem.Albums.route
+                                    },
+                                    onViewAllSongs = {
+                                        selectedArtistSongsView = true
                                     },
                                 )
                             }
