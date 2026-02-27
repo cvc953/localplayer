@@ -38,19 +38,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import kotlin.math.abs
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun EqualizerScreen(
-    viewModel: MainViewModel,
+    equalizerViewModel: EqualizerViewModel,
     onClose: () -> Unit,
 ) {
-    val bandCount by viewModel.bandCount.collectAsState()
-    val bandFreqs by viewModel.bandFreqs.collectAsState()
-    val bandLevels by viewModel.bandLevels.collectAsState()
-    val equalizerEnabled by viewModel.equalizerEnabled.collectAsState()
+    val isEnabled by equalizerViewModel.isEnabled.collectAsState()
+    val bands by equalizerViewModel.bands.collectAsState()
+    val presets by equalizerViewModel.presets.collectAsState()
+    val selectedPreset by equalizerViewModel.selectedPreset.collectAsState()
+    val bandCount = bands.size
 
     BackHandler { onClose() }
 
@@ -86,33 +87,14 @@ fun EqualizerScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // System presets (from device Equalizer) and user presets are shown below
-            val equalizerPresets by viewModel.equalizerPresets.collectAsState()
-            val userPresets by viewModel.userPresets.collectAsState()
-            val selectedPreset by viewModel.selectedPresetIndex.collectAsState()
-            val selectedPresetName by viewModel.selectedPresetName.collectAsState()
-            // combine system presets and user presets into single menu; user presets marked true
-            val combined =
-                remember(equalizerPresets, userPresets) {
-                    val sys = equalizerPresets.map { it to false }
-                    val usr = userPresets.map { it.first to true }
-                    sys + usr
-                }
-            if (combined.isNotEmpty()) {
+            // Preset selection UI
+            if (presets.isNotEmpty()) {
                 var expandedSys by remember { mutableStateOf(false) }
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                     Text("Presets:", color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
                     TextButton(onClick = { expandedSys = true }) {
                         Text(
-                            text =
-                                selectedPresetName
-                                    ?: if (selectedPreset >= 0 &&
-                                        selectedPreset < equalizerPresets.size
-                                    ) {
-                                        equalizerPresets[selectedPreset]
-                                    } else {
-                                        "Seleccionar"
-                                    },
+                            text = selectedPreset ?: "Seleccionar",
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     }
@@ -121,32 +103,11 @@ fun EqualizerScreen(
                         onDismissRequest = { expandedSys = false },
                         modifier = Modifier.background(MaterialTheme.colorScheme.background),
                     ) {
-                        combined.forEachIndexed { idx, pair ->
-                            val (name, isUser) = pair
+                        presets.forEach { name ->
                             DropdownMenuItem(
-                                text = {
-                                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                        Text(name, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.weight(1f))
-                                        if (isUser) {
-                                            IconButton(onClick = {
-                                                viewModel.removeUserPreset(name)
-                                            }) {
-                                                Icon(
-                                                    Icons.Default.Delete,
-                                                    contentDescription = "Eliminar preset",
-                                                    tint = MaterialTheme.colorScheme.onBackground,
-                                                )
-                                            }
-                                        }
-                                    }
-                                },
+                                text = { Text(name, color = MaterialTheme.colorScheme.onBackground) },
                                 onClick = {
-                                    if (isUser) {
-                                        viewModel.applyUserPreset(name)
-                                    } else {
-                                        // system preset index is the same as idx when in sys part
-                                        viewModel.setEqualizerPreset(idx)
-                                    }
+                                    equalizerViewModel.selectPreset(name)
                                     expandedSys = false
                                 },
                             )
@@ -164,8 +125,8 @@ fun EqualizerScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     for (i in 0 until bandCount) {
-                        val freq = if (i < bandFreqs.size) bandFreqs[i] / 1000 else 0
-                        val level = if (i < bandLevels.size) bandLevels[i] else 0
+                        val freq = 60 * (i + 1) // Placeholder frequency: 60Hz, 120Hz, ...
+                        val level = bands[i]
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(64.dp)) {
                             Text("${formatWithK(freq)}Hz", color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp)
                             Spacer(modifier = Modifier.height(8.dp))
@@ -182,7 +143,7 @@ fun EqualizerScreen(
                                         onValueChange = {
                                             sliderPos = it
                                             // live update
-                                            viewModel.setBandLevel(i, it.toInt())
+                                            equalizerViewModel.setBandLevel(i, it.toInt())
                                         },
                                         valueRange = -1500f..1500f,
                                         modifier = Modifier.matchParentSize(),
@@ -206,7 +167,7 @@ fun EqualizerScreen(
                 // Preset actions: save (dialog), reset and user presets list
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = {
-                        viewModel.resetBandLevels()
+                        equalizerViewModel.resetBandLevels()
                     }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)) { Text("Reset") }
                 }
                 Spacer(modifier = Modifier.height(8.dp))

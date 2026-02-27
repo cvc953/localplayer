@@ -18,6 +18,11 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import androidx.core.app.NotificationCompat
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.viewmodel.MainViewModel
@@ -41,6 +46,9 @@ class MusicService : Service() {
     private var durationMs: Long = 0L
 
     private lateinit var mediaSession: MediaSessionCompat
+    private var serviceJob: Job? = null
+    private lateinit var serviceScope: CoroutineScope
+    private lateinit var playerController: com.cvc953.localplayer.controller.PlayerController
 
     override fun onCreate() {
         super.onCreate()
@@ -48,6 +56,31 @@ class MusicService : Service() {
 
         createNotificationChannel()
         initMediaSession()
+
+        serviceScope = CoroutineScope(Dispatchers.Default + Job())
+        playerController = com.cvc953.localplayer.controller.PlayerController.getInstance(this, serviceScope)
+
+        // Observe player state and update notification when it changes
+        serviceJob = serviceScope.launch {
+            playerController.state.collect { st ->
+                st.currentSong?.let {
+                    title = it.title.ifBlank { "Reproduciendo" }
+                    artist = it.artist
+                    isPlaying = st.isPlaying
+                    positionMs = st.position
+                    durationMs = st.duration
+                    updateMediaSession()
+                    updateNotification()
+                } ?: run {
+                    // No current song
+                    isPlaying = st.isPlaying
+                    positionMs = st.position
+                    durationMs = st.duration
+                    updateMediaSession()
+                    updateNotification()
+                }
+            }
+        }
 
         val notification = createNotification()
         try {
@@ -68,19 +101,19 @@ class MusicService : Service() {
         mediaSession.setCallback(
             object : MediaSessionCompat.Callback() {
                 override fun onPlay() {
-                    MainViewModel.instance?.togglePlayPause()
+                    playerController.togglePlayPause()
                 }
 
                 override fun onPause() {
-                    MainViewModel.instance?.togglePlayPause()
+                    playerController.togglePlayPause()
                 }
 
                 override fun onSkipToNext() {
-                    MainViewModel.instance?.playNextSong()
+                    playerController.next()
                 }
 
                 override fun onSkipToPrevious() {
-                    MainViewModel.instance?.playPreviousSong()
+                    playerController.previous()
                 }
             },
         )
@@ -97,17 +130,17 @@ class MusicService : Service() {
 
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
-                MainViewModel.instance?.togglePlayPause()
+                playerController.togglePlayPause()
                 return START_STICKY
             }
 
             ACTION_PREV -> {
-                MainViewModel.instance?.playPreviousSong()
+                playerController.previous()
                 return START_STICKY
             }
 
             ACTION_NEXT -> {
-                MainViewModel.instance?.playNextSong()
+                playerController.next()
                 return START_STICKY
             }
 

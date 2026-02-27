@@ -53,8 +53,7 @@ import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.theme.ExtendedColors
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
-import com.cvc953.localplayer.ui.theme.md_surfaceSheet
-import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -73,7 +72,7 @@ fun SongItem(
     playlists: List<Playlist> = emptyList(),
     onAddToPlaylist: ((String, Long) -> Unit)? = null,
     onRemoveFromPlaylist: (() -> Unit)? = null,
-    viewModel: MainViewModel = viewModel(),
+    playlistViewModel: PlaylistViewModel = viewModel(),
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) } // aquí se guarda la carátula
@@ -207,17 +206,17 @@ fun SongItem(
                         // Encuentra la playlist Favoritos, o crea una si no existe
                         var favorites = playlists.find { it.name == favoritesName }
                         if (favorites == null) {
-                            viewModel.createPlaylist(favoritesName)
+                            playlistViewModel.createPlaylist(favoritesName)
                             favorites = playlists.find { it.name == favoritesName } // recarga
                         }
 
                         val isFavorite = favorites?.songIds?.contains(song.id) == true
 
                         if (isFavorite) {
-                            viewModel.removeSongFromPlaylist(favoritesName, song.id)
+                                        playlistViewModel.removeSongFromPlaylist(favoritesName, song.id)
                             Toast.makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT).show()
                         } else {
-                            viewModel.addSongToPlaylist(favoritesName, song.id)
+                                        playlistViewModel.addSongToPlaylist(favoritesName, song.id)
                             Toast.makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT).show()
                         }
                     },

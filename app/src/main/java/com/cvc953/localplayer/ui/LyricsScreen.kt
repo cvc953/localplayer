@@ -13,22 +13,27 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.util.LrcLine
+import com.cvc953.localplayer.viewmodel.LyricsViewModel
+import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 
 @Composable
-fun LyricsView(
-    lyrics: List<LrcLine>,
-    currentPosition: Long,
+fun LyricsScreen(
+    lyricsViewModel: LyricsViewModel,
+    playbackViewModel: PlaybackViewModel,
     modifier: Modifier = Modifier,
     onLineClick: (Long) -> Unit = {},
 ) {
+    val lyrics by lyricsViewModel.lyrics.collectAsState()
+    val currentPosition by playbackViewModel.currentPosition.collectAsState()
     val listState = rememberLazyListState()
 
     val currentIndex =
@@ -91,7 +96,6 @@ fun LyricsView(
                     }
                 }
             }
-
             itemsIndexed(lyrics) { index, line ->
                 Box(
                     modifier =
@@ -138,6 +142,7 @@ fun LyricsView(
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 /**
  * Vista de letras con sincronización palabra por palabra para TTML
  */
@@ -260,6 +265,48 @@ fun TtmlLyricsView(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+fun LyricsView(
+    lyrics: List<LrcLine>,
+    currentPosition: Long,
+    modifier: Modifier = Modifier,
+    onLineClick: (Long) -> Unit = {},
+) {
+    val listState = rememberLazyListState()
+    val currentIndex =
+        remember(currentPosition) {
+            lyrics.indexOfLast { it.timeMs <= currentPosition }.coerceAtLeast(0)
+        }
+    LaunchedEffect(currentIndex) {
+        listState.animateScrollToItem(
+            index = currentIndex,
+            scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
+        )
+    }
+    Box(
+        modifier = modifier.fillMaxSize(),
+    ) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(vertical = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            itemsIndexed(lyrics) { index, line ->
+                Box(
+                    modifier = Modifier.fillMaxSize().clickable { onLineClick(line.timeMs) },
+                ) {
+                    LyricLine(
+                        text = line.text,
+                        active = index == currentIndex,
+                    )
                 }
             }
         }

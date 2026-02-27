@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.database.ContentObserver
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Environment
 import android.os.Handler
@@ -17,6 +16,39 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.cvc953.localplayer.model.Playlist
+import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.model.SongRepository
+import com.cvc953.localplayer.model.TtmlLyrics
+import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.services.EqualizerManager
+import com.cvc953.localplayer.services.MusicService
+import com.cvc953.localplayer.ui.PlayerState
+import com.cvc953.localplayer.ui.RepeatMode
+import com.cvc953.localplayer.util.LrcLine
+import com.cvc953.localplayer.util.TtmlParser
+import com.cvc953.localplayer.util.parseLrc
+import com.cvc953.localplayer.viewmodel.AlbumViewModel
+import com.cvc953.localplayer.viewmodel.ArtistViewModel
+import com.cvc953.localplayer.viewmodel.LyricsViewModel
+import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.SongViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+
+/*class MainViewModel(
+    application: Application,
+) : AndroidViewModel(application) {
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
@@ -45,7 +77,7 @@ import java.io.File
 data class LyricLine(
     val timeMs: Long,
     val text: String,
-)
+)*/
 
 class MainViewModel(
     application: Application,
@@ -175,6 +207,15 @@ class MainViewModel(
     private val _songs = MutableStateFlow<List<Song>>(emptyList())
     val songs: StateFlow<List<Song>> = _songs
 
+    // ViewModels especializados
+    val lyricsViewModel = LyricsViewModel(application)
+    val songViewModel = SongViewModel(application)
+    val artistViewModel = ArtistViewModel(application)
+    val albumViewModel = AlbumViewModel(application)
+    val playbackViewModel = PlaybackViewModel(application)
+
+    // Aquí puedes exponer solo el estado global mínimo necesario y delegar toda la lógica a los ViewModels anteriores.
+
     // Orden de visualización actual (usado para next/previous)
     private val _displayOrder = MutableStateFlow<List<Song>>(emptyList())
     val displayOrder: StateFlow<List<Song>> = _displayOrder
@@ -183,7 +224,16 @@ class MainViewModel(
     private val _playerState = MutableStateFlow(PlayerState())
     val playerState: StateFlow<PlayerState> = _playerState
 
-    private var mediaPlayer: MediaPlayer? = null
+    init {
+        // Keep MainViewModel's player state in sync with the centralized PlaybackViewModel
+        viewModelScope.launch {
+            playbackViewModel.playerState.collect { state ->
+                _playerState.value = state
+            }
+        }
+    }
+
+    
 
     private val _equalizerEnabled = MutableStateFlow(appPrefs.isEqualizerEnabled())
     val equalizerEnabled: StateFlow<Boolean> = _equalizerEnabled
@@ -217,7 +267,7 @@ class MainViewModel(
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
 
-    private var progressJob: Job? = null
+    
 
     // Modos
     private val _isShuffle = MutableStateFlow(false)
@@ -498,100 +548,22 @@ class MainViewModel(
         song: Song,
         autoPlay: Boolean = true,
     ) {
-        mediaPlayer?.release()
-
+        // Delegate playback to PlaybackViewModel to avoid duplicate MediaPlayer instances
         try {
-            mediaPlayer =
-                MediaPlayer().apply {
-                    setDataSource(getApplication(), song.uri)
-                    prepare()
-                    if (autoPlay) start()
-
-                    setOnCompletionListener {
-                        if (_repeatMode.value == RepeatMode.ONE) {
-                            // reinicia la misma canción
-                            seekTo(0)
-                            mediaPlayer?.start()
-                            _playerState.update { it.copy(isPlaying = true) }
-                        } else {
-                            playNextSong()
-                        }
-                    }
-                }
-
-            _playerState.value =
-                PlayerState(
-                    currentSong = song,
-                    isPlaying = autoPlay,
-                    position = 0L,
-                    duration = mediaPlayer?.duration?.toLong() ?: 0L,
-                )
-
-            if (autoPlay) startPositionUpdates() else progressJob?.cancel()
+            playbackViewModel.play(song)
             loadLyricsForSong(song)
-
-            // Initialize equalizer attached to this MediaPlayer session
-            try {
-                val sessionId = mediaPlayer?.audioSessionId ?: 0
-                if (sessionId != 0 && equalizerManager.init(sessionId)) {
-                    // update presets list (sanitize names that may be vendor-garbled)
-                    _equalizerPresets.value = sanitizePresetNames(equalizerManager.getPresets())
-                    // populate band info
-                    val bc = equalizerManager.getNumberOfBands().toInt()
-                    _bandCount.value = bc
-                    val freqs = mutableListOf<Int>()
-                    val levels = mutableListOf<Int>()
-                    for (i in 0 until bc) {
-                        freqs.add(equalizerManager.getBandCenterFreq(i.toShort()))
-                        levels.add(equalizerManager.getBandLevel(i.toShort()).toInt())
-                    }
-                    _bandFreqs.value = freqs
-                    _bandLevels.value = levels
-                    // apply persisted custom levels if present and preset is -1
-                    val custom = appPrefs.getCustomBandLevels()
-                    if (custom.isNotEmpty()) {
-                        // apply only if user previously customized (we treat preset index -1 as custom)
-                        if (_selectedPresetIndex.value == -1) {
-                            for (i in 0 until minOf(bc, custom.size)) {
-                                equalizerManager.setBandLevel(i.toShort(), custom[i].toShort())
-                            }
-                            _bandLevels.value = custom
-                        }
-                    }
-                    // load user presets from prefs
-                    _userPresets.value = appPrefs.getUserPresets()
-                    // apply persisted preset if any
-                    val idx = _selectedPresetIndex.value
-                    if (_equalizerEnabled.value) {
-                        equalizerManager.setEnabled(true)
-                        if (idx >= 0) equalizerManager.usePreset(idx)
-                    } else {
-                        equalizerManager.setEnabled(false)
-                    }
-                } else {
-                    _equalizerPresets.value = emptyList()
-                }
-            } catch (_: Exception) {
-            }
         } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "Error delegating playSong", e)
             playNextSong()
         }
     }
 
     fun togglePlayPause() {
-        mediaPlayer?.let {
-            if (it.isPlaying) {
-                it.pause()
-                progressJob?.cancel()
-                _playerState.value = _playerState.value.copy(isPlaying = false)
-                _playerState.value.currentSong?.let { song -> saveLastSong(song, false) }
-            } else {
-                it.start()
-                // startProgressTracking()
-                startPositionUpdates()
-                _playerState.value = _playerState.value.copy(isPlaying = true)
-                _playerState.value.currentSong?.let { song -> saveLastSong(song, true) }
-            }
+        // Delegate to playbackViewModel
+        try {
+            playbackViewModel.togglePlayPause()
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "togglePlayPause delegate failed", e)
         }
     }
 
@@ -659,10 +631,13 @@ class MainViewModel(
                 }
             }
 
-        // push current to history
+        // push current to history and delegate playback
         playHistory.add(currentSong)
-        playSong(nextSong)
-        startService(getApplication(), nextSong)
+        try {
+            playbackViewModel.play(nextSong)
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "playNextSong delegate failed", e)
+        }
     }
 
     fun playPreviousSong() {
@@ -711,14 +686,14 @@ class MainViewModel(
                 }
             }
 
-        playSong(previousSong)
-        startService(getApplication(), previousSong)
+        try {
+            playbackViewModel.play(previousSong)
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "playPreviousSong delegate failed", e)
+        }
     }
 
     override fun onCleared() {
-        progressJob?.cancel()
-        mediaPlayer?.release()
-        mediaPlayer = null
         equalizerManager.release()
         // Deregistrar el observer cuando el ViewModel se destruye
         getApplication<Application>().contentResolver.unregisterContentObserver(mediaStoreObserver)
@@ -888,41 +863,7 @@ class MainViewModel(
     }
 
     fun seekTo(position: Long) {
-        mediaPlayer?.seekTo(position.toInt())
-        _playerState.update { it.copy(position = position) }
-    }
-
-    private var positionJob: Job? = null
-
-    private fun startPositionUpdates() {
-        positionJob?.cancel()
-        positionJob =
-            viewModelScope.launch {
-                while (true) {
-                    val player = mediaPlayer ?: break
-
-                    val position = player.currentPosition.toLong()
-                    val duration = player.duration.toLong()
-                    val isPlaying = player.isPlaying
-
-                    _playerState.update {
-                        it.copy(
-                            position = player.currentPosition.toLong(),
-                            duration = player.duration.toLong(),
-                        )
-                    }
-                    getApplication<Application>().startService(
-                        Intent(getApplication(), MusicService::class.java).apply {
-                            action = MusicService.ACTION_UPDATE_STATE
-                            putExtra("IS_PLAYING", isPlaying)
-                            putExtra("POSITION", position)
-                            putExtra("DURATION", duration)
-                        },
-                    )
-
-                    delay(50)
-                }
-            }
+        playbackViewModel.seekTo(position)
     }
 
     // Cambiar aleatorio
@@ -1221,7 +1162,7 @@ class MainViewModel(
             if (song != null) {
                 // Reproducir o preparar según estado previo
                 playSong(song, autoPlay = lastIsPlaying)
-                startService(getApplication(), song, lastIsPlaying)
+                // NO iniciar el servicio aquí para evitar crash en arranque
             } else {
                 android.util.Log.d(
                     "MainViewModel",
