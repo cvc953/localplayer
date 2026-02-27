@@ -1,4 +1,4 @@
-package com.cvc953.localplayer.player
+package com.cvc953.localplayer.controller
 
 import android.content.Context
 import android.media.MediaPlayer
@@ -12,15 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class PlayerState(
-    val curretSong: Song? = null,
-    val isPlaying: Boolean = false,
-    val position: Int = 0,
-)
-
 class PlayerController(
     private val context: Context,
-    private val scope: CoroutineScope,
+    private val scope: CoroutineScope? = null,
 ) {
     private var mediaPlayer: MediaPlayer? = null
     private val queue = mutableListOf<Song>()
@@ -28,6 +22,8 @@ class PlayerController(
 
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = _state
+
+    private var progressJob: Job? = null
 
     fun playNow(
         songs: List<Song>,
@@ -37,6 +33,10 @@ class PlayerController(
         queue.addAll(songs)
         currentIndex = startIndex
         playCurrent()
+    }
+
+    fun playSong(song: Song) {
+        playNow(listOf(song))
     }
 
     fun queueNext(songs: List<Song>) {
@@ -49,8 +49,12 @@ class PlayerController(
     }
 
     private fun playCurrent() {
-        if (currentIndex !in queue.indices) return
-        play(queue[currentIndex])
+        if (currentIndex !in queue.indices) {
+            stop()
+            return
+        }
+        val song = queue[currentIndex]
+        play(song)
     }
 
     private fun play(song: Song) {
@@ -70,27 +74,19 @@ class PlayerController(
                 }
             }
 
-        _state.value =
-            PlayerState(
-                currentSong = song,
-                isPlaying = true,
-                duration = mediaPlayer?.duration?.toLong() ?: 0,
-            )
+        _state.value = PlayerState(currentSong = song, isPlaying = true, position = 0L, duration = mediaPlayer?.duration?.toLong() ?: 0L)
 
         startProgressUpdates()
     }
 
-    private var progressJob: Job? = null
-
     private fun startProgressUpdates() {
         progressJob?.cancel()
+        val s = scope ?: return
         progressJob =
-            scope.launch {
+            s.launch {
                 while (mediaPlayer != null) {
-                    _state.update {
-                        it.copy(position = mediaPlayer!!.currentPosition.toLong())
-                    }
-                    delay(200)
+                    _state.update { it.copy(position = mediaPlayer?.currentPosition?.toLong() ?: it.position) }
+                    delay(200L)
                 }
             }
     }
@@ -102,14 +98,69 @@ class PlayerController(
         }
     }
 
+    fun pause() {
+        mediaPlayer?.pause()
+        _state.update { it.copy(isPlaying = false) }
+    }
+
+    fun resume() {
+        mediaPlayer?.start()
+        _state.update { it.copy(isPlaying = true) }
+    }
+
+    fun stop() {
+        progressJob?.cancel()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        _state.value = PlayerState()
+    }
+
+    fun seekTo(position: Long) {
+        mediaPlayer?.seekTo(position.toInt())
+        _state.update { s -> s.copy(position = position) }
+    }
+
+    fun next() {
+        if (currentIndex + 1 < queue.size) {
+            currentIndex++
+            playCurrent()
+        } else {
+            stop()
+        }
+    }
+
+    fun previous() {
+        if (currentIndex - 1 >= 0) {
+            currentIndex--
+            playCurrent()
+        } else {
+            seekTo(0L)
+        }
+    }
+
     fun release() {
         progressJob?.cancel()
         mediaPlayer?.release()
         mediaPlayer = null
     }
 
-    fun seekTo(position: Long) {
-        mediaPlayer?.seekTo(position.toInt())
-        _state.update { s -> s.copy(position = position) }
+    fun getCurrentPosition(): Long = mediaPlayer?.currentPosition?.toLong() ?: 0L
+
+    fun getDuration(): Long = mediaPlayer?.duration?.toLong() ?: 0L
+
+    fun isPlaying(): Boolean = mediaPlayer?.isPlaying == true
+
+    companion object {
+        @Suppress("ktlint:standard:property-naming")
+        @Volatile
+        private var INSTANCE: PlayerController? = null
+
+        fun getInstance(
+            context: Context,
+            scope: CoroutineScope? = null,
+        ): PlayerController =
+            INSTANCE ?: synchronized(this) {
+                INSTANCE ?: PlayerController(context.applicationContext, scope).also { INSTANCE = it }
+            }
     }
 }

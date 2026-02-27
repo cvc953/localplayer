@@ -6,7 +6,6 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -30,11 +29,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -67,7 +67,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -80,29 +79,39 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.component1
+import androidx.core.graphics.component2
 import com.cvc953.localplayer.R
-import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.viewmodel.SongViewModel
 import com.cvc953.localplayer.ui.theme.md_textSecondary
-import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.AlbumViewModel
+import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.util.Log
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun AlbumsScreen(
-    viewModel: MainViewModel,
+    albumViewModel: AlbumViewModel,
+    playbackViewModel: PlaybackViewModel,
     onAlbumClick: (albumName: String, artistName: String) -> Unit,
 ) {
-    val songs by viewModel.songs.collectAsState()
-    val isScanning by viewModel.isScanning
+    // Use the global SongViewModel to get the full songs list so album thumbnails
+    // are available for all albums, not only the currently selected one.
+    val songViewModel: SongViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val songs by songViewModel.songs.collectAsState()
+    val albums by albumViewModel.albums.collectAsState()
+    val isScanning by albumViewModel.isScanning
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var sortMode by rememberSaveable { mutableStateOf(AlbumSortMode.TITLE_ASC) }
-    var viewAsGrid by rememberSaveable { mutableStateOf(viewModel.isGridViewPreferred()) }
+    var viewAsGrid by rememberSaveable { mutableStateOf(albumViewModel.isGridViewPreferred()) }
     val context = LocalContext.current
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
@@ -117,27 +126,17 @@ fun AlbumsScreen(
         }
     }
 
-    val albums =
-        remember(songs) { songs.groupBy { "${it.album.ifBlank { "Desconocido" }}|${it.artist.ifBlank { "Desconocido" }}" }.toList() }
+    val filteredAlbums = remember(albums, searchQuery) {
+        val q = searchQuery.trim().lowercase()
+        if (q.isEmpty()) albums else albums.filter { it.name.lowercase().contains(q) }
+    }
 
-    val filteredAlbums =
-        remember(albums, searchQuery) {
-            val q = searchQuery.trim().lowercase()
-            if (q.isEmpty()) albums else albums.filter { it.first.lowercase().contains(q) }
+    val sortedAlbums = remember(filteredAlbums, sortMode) {
+        when (sortMode) {
+            AlbumSortMode.TITLE_ASC -> filteredAlbums.sortedBy { it.name.lowercase() }
+            AlbumSortMode.TITLE_DESC -> filteredAlbums.sortedByDescending { it.name.lowercase() }
         }
-
-    val sortedAlbums =
-        remember(filteredAlbums, sortMode) {
-            when (sortMode) {
-                AlbumSortMode.TITLE_ASC -> {
-                    filteredAlbums.sortedBy { it.first.lowercase() }
-                }
-
-                AlbumSortMode.TITLE_DESC -> {
-                    filteredAlbums.sortedByDescending { it.first.lowercase() }
-                }
-            }
-        }
+    }
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
@@ -205,7 +204,7 @@ fun AlbumsScreen(
                 ) { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onBackground) }
                 IconButton(onClick = {
                     viewAsGrid = !viewAsGrid
-                    viewModel.setGridViewPreferred(viewAsGrid)
+                    albumViewModel.setGridViewPreferred(viewAsGrid)
                 }) {
                     Icon(
                         imageVector = if (viewAsGrid) Icons.Default.ViewList else Icons.Default.ViewModule,
@@ -247,64 +246,103 @@ fun AlbumsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(sortedAlbums) { (albumName, albumSongs) ->
-                            val context = LocalContext.current
-                            val firstSong = albumSongs.firstOrNull()
-                            var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
+                            items(sortedAlbums) { album ->
+                                val context = LocalContext.current
+                                val firstSong = songs.firstOrNull {
+                                    it.album.trim().equals(album.name.trim(), ignoreCase = true) &&
+                                        it.artist.trim().equals(album.artist.trim(), ignoreCase = true)
+                                }
+                                var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
-                            LaunchedEffect(firstSong?.uri) {
-                                withContext(Dispatchers.IO) {
-                                    try {
-                                        val uri = firstSong?.uri ?: return@withContext
-                                        val retriever = MediaMetadataRetriever()
-                                        retriever.setDataSource(context, uri)
-                                        retriever.embeddedPicture?.let {
-                                            albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                                LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
+                                    withContext(Dispatchers.IO) {
+                                        try {
+                                            val uri = firstSong?.uri ?: return@withContext
+                                            Log.d("AlbumsScreen", "Loading art for album='${album.name}' artist='${album.artist}' uri=$uri filePath=${firstSong.filePath}")
+                                            val retriever = MediaMetadataRetriever()
+                                            retriever.setDataSource(context, uri)
+                                            val embedded = retriever.embeddedPicture
+                                            if (embedded != null && embedded.isNotEmpty()) {
+                                                albumArt = BitmapFactory.decodeByteArray(embedded, 0, embedded.size)
+                                                Log.d("AlbumsScreen", "Embedded art found for uri=$uri size=${embedded.size}")
+                                            } else {
+                                                Log.d("AlbumsScreen", "No embedded art for uri=$uri")
+                                            }
+                                            retriever.release()
+
+                                            if (albumArt == null) {
+                                                Log.d("AlbumsScreen", "Trying contentResolver fallback for uri=$uri")
+                                                try {
+                                                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                                                        albumArt = BitmapFactory.decodeStream(stream)
+                                                    }
+                                                } catch (e: Exception) {
+                                                    Log.d("AlbumsScreen", "contentResolver fallback failed: ${e.message}")
+                                                }
+                                            }
+
+                                            if (albumArt == null) {
+                                                Log.d("AlbumsScreen", "Trying file fallback for filePath=${firstSong.filePath}")
+                                                val path = firstSong.filePath
+                                                if (!path.isNullOrBlank()) {
+                                                    try {
+                                                        val dir = java.io.File(path).parentFile
+                                                        val candidates = listOf("cover.jpg", "folder.jpg", "album.jpg", "front.jpg", "cover.png", "folder.png")
+                                                        for (name in candidates) {
+                                                            val f = java.io.File(dir, name)
+                                                            if (f.exists() && f.length() > 0) {
+                                                                albumArt = BitmapFactory.decodeFile(f.absolutePath)
+                                                                if (albumArt != null) {
+                                                                    Log.d("AlbumsScreen", "Found external cover file=${f.absolutePath}")
+                                                                    break
+                                                                }
+                                                            }
+                                                        }
+                                                    } catch (_: Exception) {
+                                                    }
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.d("AlbumsScreen", "Unexpected error loading art: ${e.message}")
                                         }
-                                        retriever.release()
-                                    } catch (_: Exception) {
                                     }
                                 }
-                            }
 
-                            Column(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            val parts = albumName.split("|")
-                                            val realAlbumName = parts.getOrNull(0) ?: albumName
-                                            val realArtistName = parts.getOrNull(1) ?: "Desconocido"
-                                            onAlbumClick(realAlbumName, realArtistName)
-                                        }.padding(6.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Image(
-                                    painter =
-                                        albumArt?.let { BitmapPainter(it.asImageBitmap()) }
-                                            ?: painterResource(R.drawable.ic_default_album),
-                                    contentDescription = null,
+                                Column(
                                     modifier =
                                         Modifier
-                                            .size(120.dp)
-                                            .clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop,
-                                )
-                                Spacer(Modifier.height(6.dp))
-                                Text(
-                                    text = albumName.split("|").getOrNull(0) ?: albumName,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 14.sp,
-                                    maxLines = 2,
-                                    textAlign = TextAlign.Center,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Text(
-                                    text = "${albumSongs.size} canciones",
-                                    color = MaterialTheme.extendedColors.textSecondary,
-                                    fontSize = 12.sp,
-                                )
-                            }
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onAlbumClick(album.name, album.artist)
+                                            }.padding(6.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Image(
+                                        painter =
+                                            albumArt?.let { BitmapPainter(it.asImageBitmap()) }
+                                                ?: painterResource(R.drawable.ic_default_album),
+                                        contentDescription = null,
+                                        modifier =
+                                            Modifier
+                                                .size(120.dp)
+                                                .clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        text = album.name,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 14.sp,
+                                        maxLines = 2,
+                                        textAlign = TextAlign.Center,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        text = "${album.songCount} canciones",
+                                        color = MaterialTheme.extendedColors.textSecondary,
+                                        fontSize = 12.sp,
+                                    )
+                                }
                         }
                     }
                 } else {
@@ -320,21 +358,54 @@ fun AlbumsScreen(
                             ),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        items(sortedAlbums) { (albumName, albumSongs) ->
+                        items(sortedAlbums) { album ->
                             val context = LocalContext.current
-                            val firstSong = albumSongs.firstOrNull()
+                            val firstSong = songs.firstOrNull {
+                                it.album.trim().equals(album.name.trim(), ignoreCase = true) &&
+                                    it.artist.trim().equals(album.artist.trim(), ignoreCase = true)
+                            }
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
-                            LaunchedEffect(firstSong?.uri) {
+                            LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
                                 withContext(Dispatchers.IO) {
                                     try {
                                         val uri = firstSong?.uri ?: return@withContext
                                         val retriever = MediaMetadataRetriever()
                                         retriever.setDataSource(context, uri)
-                                        retriever.embeddedPicture?.let {
-                                            albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                                        val embedded = retriever.embeddedPicture
+                                        if (embedded != null && embedded.isNotEmpty()) {
+                                            albumArt = BitmapFactory.decodeByteArray(embedded, 0, embedded.size)
                                         }
                                         retriever.release()
+
+                                        // Fallback: try content resolver stream (some providers expose album art this way)
+                                        if (albumArt == null) {
+                                            try {
+                                                context.contentResolver.openInputStream(uri)?.use { stream ->
+                                                    albumArt = BitmapFactory.decodeStream(stream)
+                                                }
+                                            } catch (_: Exception) {
+                                            }
+                                        }
+
+                                        // Fallback: check for common cover files next to the audio file
+                                        if (albumArt == null) {
+                                            val path = firstSong.filePath
+                                            if (!path.isNullOrBlank()) {
+                                                try {
+                                                    val dir = java.io.File(path).parentFile
+                                                    val candidates = listOf("cover.jpg", "folder.jpg", "album.jpg", "front.jpg", "cover.png", "folder.png")
+                                                    for (name in candidates) {
+                                                        val f = java.io.File(dir, name)
+                                                        if (f.exists() && f.length() > 0) {
+                                                            albumArt = BitmapFactory.decodeFile(f.absolutePath)
+                                                            if (albumArt != null) break
+                                                        }
+                                                    }
+                                                } catch (_: Exception) {
+                                                }
+                                            }
+                                        }
                                     } catch (_: Exception) {
                                     }
                                 }
@@ -343,10 +414,7 @@ fun AlbumsScreen(
                             Row(
                                 modifier =
                                     Modifier.fillMaxWidth().padding(8.dp).clickable {
-                                        val parts = albumName.split("|")
-                                        val realAlbumName = parts.getOrNull(0) ?: albumName
-                                        val realArtistName = parts.getOrNull(1) ?: "Desconocido"
-                                        onAlbumClick(realAlbumName, realArtistName)
+                                        onAlbumClick(album.name, album.artist)
                                     },
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -363,14 +431,14 @@ fun AlbumsScreen(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = albumName.split("|").getOrNull(0) ?: albumName,
+                                        text = album.name,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 16.sp,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
-                                        text = "${albumSongs.size} canciones",
+                                        text = "${album.songCount} canciones",
                                         color = md_textSecondary,
                                         fontSize = 12.sp,
                                         maxLines = 1,
@@ -556,24 +624,19 @@ fun AlbumsScreen(
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun AlbumDetailScreen(
-    viewModel: MainViewModel,
+    albumViewModel: AlbumViewModel,
+    playbackViewModel: PlaybackViewModel,
+    playlistViewModel: PlaylistViewModel,
     albumName: String,
     artistName: String,
     onBack: () -> Unit,
 ) {
-    val songs by viewModel.songs.collectAsState()
-    val playerState by viewModel.playerState.collectAsState()
-    val playlists: List<Playlist> by viewModel.playlists.collectAsState()
-    val albumSongs =
-        remember(
-            songs,
-            albumName,
-            artistName,
-        ) {
-            songs.filter { it.album == albumName && it.artist == artistName }.sortedWith(
-                compareBy<Song>({ it.discNumber }, { it.trackNumber }),
-            )
-        }
+    val songs by albumViewModel.songs.collectAsState()
+    val playerState by playbackViewModel.playerState.collectAsState()
+    val playlists by playlistViewModel.playlists.collectAsState()
+    val albumSongs = remember(songs, albumName, artistName) {
+        songs.filter { it.album == albumName && it.artist == artistName }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+    }
     val context = LocalContext.current
 
     BackHandler { onBack() }
@@ -611,7 +674,7 @@ fun AlbumDetailScreen(
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item { AlbumHeader(viewModel, albumName, artistName) }
+            item { AlbumHeader(albumViewModel, albumName, artistName) }
             items(albumSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
@@ -620,15 +683,14 @@ fun AlbumDetailScreen(
                     isPlaying = isCurrent,
                     onClick = {
                         // Usar el orden del album como cola de reproduccion
-                        viewModel.updateDisplayOrder(albumSongs)
-                        viewModel.playSong(song)
-                        viewModel.startService(context, song)
+                        playbackViewModel.updateDisplayOrder(albumSongs)
+                        playbackViewModel.play(song)
                     },
-                    onQueueNext = { viewModel.addToQueueNext(song) },
-                    onQueueEnd = { viewModel.addToQueueEnd(song) },
+                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
                     playlists = playlists,
                     onAddToPlaylist = { playlistName, songId ->
-                        viewModel.addSongToPlaylist(playlistName, songId)
+                        playlistViewModel.addSongToPlaylist(playlistName, songId)
                     },
                 )
             }
@@ -644,7 +706,7 @@ private enum class AlbumSortMode {
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun AlbumHeader(
-    viewModel: MainViewModel,
+    viewModel: com.cvc953.localplayer.viewmodel.AlbumViewModel,
     albumName: String,
     artistName: String,
 ) {
@@ -660,33 +722,56 @@ fun AlbumHeader(
         val firstSong = albumSongs.firstOrNull()
         val context = LocalContext.current
 
-        LaunchedEffect(firstSong?.uri) {
+        LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
             withContext(Dispatchers.IO) {
                 try {
                     val uri = firstSong?.uri ?: return@withContext
                     val retriever = MediaMetadataRetriever()
                     retriever.setDataSource(context, uri)
-                    retriever.embeddedPicture?.let {
-                        albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
-                    }
+                    val picture = retriever.embeddedPicture
                     retriever.release()
+                    if (picture != null && picture.isNotEmpty()) {
+                        albumArt = BitmapFactory.decodeByteArray(picture, 0, picture.size)
+                    }
+
+                    if (albumArt == null) {
+                        try {
+                            context.contentResolver.openInputStream(uri)?.use { stream ->
+                                val bmp = BitmapFactory.decodeStream(stream)
+                                if (bmp != null) albumArt = bmp
+                            }
+                        } catch (_: Exception) {
+                        }
+                    }
+
+                    if (albumArt == null) {
+                        val path = firstSong.filePath
+                        if (!path.isNullOrBlank()) {
+                            try {
+                                val dir = java.io.File(path).parentFile
+                                val candidates = listOf("cover.jpg", "folder.jpg", "album.jpg", "front.jpg", "cover.png", "folder.png")
+                                for (name in candidates) {
+                                    val f = java.io.File(dir, name)
+                                    if (f.exists() && f.length() > 0) {
+                                        val bmp = BitmapFactory.decodeFile(f.absolutePath)
+                                        if (bmp != null) {
+                                            albumArt = bmp
+                                            break
+                                        }
+                                    }
+                                }
+                            } catch (_: Exception) {
+                            }
+                        }
+                    }
                 } catch (_: Exception) {
                 }
             }
         }
-
         Image(
-            painter =
-                albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
-                    ?: painterResource(
-                        R.drawable.ic_default_album,
-                    ),
+            painter = albumArt?.asImageBitmap()?.let { BitmapPainter(it) } ?: painterResource(R.drawable.ic_default_album),
             contentDescription = null,
-            modifier =
-                Modifier
-                    .fillMaxWidth(1f)
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(4.dp)),
+            modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp)),
             contentScale = ContentScale.Crop,
         )
 

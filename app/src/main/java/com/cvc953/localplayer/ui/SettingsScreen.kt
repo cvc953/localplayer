@@ -46,16 +46,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cvc953.localplayer.viewmodel.MainViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cvc953.localplayer.viewmodel.SettingsViewModel
+import com.cvc953.localplayer.viewmodel.FolderViewModel
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun SettingsScreen(
-    viewModel: MainViewModel,
+    settingsViewModel: SettingsViewModel,
+    folderViewModel: FolderViewModel = viewModel(),
+    onOpenEqualizer: () -> Unit,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
-    val folderEntries by viewModel.folderEntries.collectAsState()
+    val settings by settingsViewModel.settings.collectAsState()
+    val folderEntries by folderViewModel.folderEntries.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(
@@ -69,7 +74,7 @@ fun SettingsScreen(
                     )
                 } catch (_: Exception) {
                 }
-                viewModel.addMusicFolder(uri.toString())
+                folderViewModel.addMusicFolder(uri.toString())
                 Toast.makeText(context, "Carpeta añadida", Toast.LENGTH_SHORT).show()
             }
         }
@@ -96,8 +101,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Theme selector
-            val theme by viewModel.themeMode.collectAsState()
-            val themeOptions = listOf("sistema", "claro", "oscuro")
+            val themeOptions = listOf("system", "light", "dark")
             var expanded by remember { mutableStateOf(false) }
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -113,7 +117,7 @@ fun SettingsScreen(
                         onClick = { expanded = true },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     ) {
-                        Text(theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
+                        Text(settings.theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
                     }
                     DropdownMenu(
                         expanded = expanded,
@@ -126,7 +130,7 @@ fun SettingsScreen(
                                     t.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
                                 )
                             }, onClick = {
-                                viewModel.setThemeMode(t)
+                                settingsViewModel.updateTheme(t)
                                 expanded = false
                             })
                         }
@@ -136,7 +140,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
             // Auto-scan option
-            val autoScan by viewModel.autoScanEnabled.collectAsState()
+            val autoScan by folderViewModel.autoScanEnabled.collectAsState()
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Escaneo automático", color = MaterialTheme.colorScheme.onBackground)
@@ -148,7 +152,7 @@ fun SettingsScreen(
                 }
                 Switch(
                     checked = autoScan,
-                    onCheckedChange = { viewModel.toggleAutoScan(it) },
+                    onCheckedChange = { folderViewModel.setAutoScan(it) },
                     colors =
                         SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,
@@ -163,7 +167,6 @@ fun SettingsScreen(
             Text("Ecualizador", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
             // Equalizer toggle
             Spacer(modifier = Modifier.height(8.dp))
-            val eqEnabled by viewModel.equalizerEnabled.collectAsState()
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Activar ecualizador", color = MaterialTheme.colorScheme.onBackground)
@@ -174,8 +177,8 @@ fun SettingsScreen(
                     )
                 }
                 Switch(
-                    checked = eqEnabled,
-                    onCheckedChange = { viewModel.toggleEqualizer(it) },
+                    checked = settings.equalizerEnabled,
+                    onCheckedChange = { settingsViewModel.updateOtherSetting("equalizerEnabled", it) },
                     colors =
                         SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,
@@ -189,7 +192,7 @@ fun SettingsScreen(
             // Open detailed equalizer screen for vertical sliders
             Spacer(modifier = Modifier.height(12.dp))
             Button(
-                onClick = { viewModel.openEqualizerScreen() },
+                onClick = { onOpenEqualizer() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text("Abrir ecualizador avanzado")
@@ -226,7 +229,7 @@ fun SettingsScreen(
                                 )
                             }
                             IconButton(onClick = {
-                                viewModel.removeMusicFolder(entry.uri)
+                                folderViewModel.removeMusicFolder(entry.uri)
                                 Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.onBackground)

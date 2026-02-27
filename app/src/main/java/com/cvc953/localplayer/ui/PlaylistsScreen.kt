@@ -27,11 +27,9 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -63,12 +61,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.ui.theme.md_textSecondary
-import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -195,16 +195,17 @@ fun PlaylistAlbumArt(
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun PlaylistsScreen(
-    viewModel: MainViewModel,
+    playlistViewModel: PlaylistViewModel,
+    playbackViewModel: PlaybackViewModel,
     onPlaylistClick: (String) -> Unit,
 ) {
-    val isScanning by viewModel.isScanning
-    val playlists: List<Playlist> by viewModel.playlists.collectAsState()
-    val songs by viewModel.songs.collectAsState()
+    val isScanning by playlistViewModel.isScanning.collectAsState()
+    val playlists by playlistViewModel.playlists.collectAsState()
+    val songs by playlistViewModel.songs.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
-    var sortMode by rememberSaveable { mutableStateOf(PlaylistSortMode.TITLE_ASC) }
+    var sortModeName by rememberSaveable { mutableStateOf(PlaylistSortMode.TITLE_ASC.name) }
     var showCreateDialog by rememberSaveable { mutableStateOf(false) }
     var newPlaylistName by rememberSaveable { mutableStateOf("") }
     var createError by rememberSaveable { mutableStateOf<String?>(null) }
@@ -236,8 +237,8 @@ fun PlaylistsScreen(
         }
 
     val sortedPlaylists =
-        remember(filteredPlaylists, sortMode) {
-            when (sortMode) {
+        remember(filteredPlaylists, sortModeName) {
+            when (PlaylistSortMode.valueOf(sortModeName)) {
                 PlaylistSortMode.TITLE_ASC -> {
                     filteredPlaylists.sortedBy { it.name.lowercase() }
                 }
@@ -278,7 +279,11 @@ fun PlaylistsScreen(
 
                 Box {
                     IconButton(onClick = { sortMenuExpanded = true }) {
-                        Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(
+                            Icons.Default.Sort,
+                            contentDescription = "Ordenar",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
                     }
                     DropdownMenu(
                         expanded = sortMenuExpanded,
@@ -286,16 +291,26 @@ fun PlaylistsScreen(
                         containerColor = MaterialTheme.extendedColors.surfaceSheet,
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Título A-Z", color = MaterialTheme.colorScheme.onSurface) },
+                            text = {
+                                Text(
+                                    "Título A-Z",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
                             onClick = {
-                                sortMode = PlaylistSortMode.TITLE_ASC
+                                sortModeName = PlaylistSortMode.TITLE_ASC.name
                                 sortMenuExpanded = false
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Título Z-A", color = MaterialTheme.colorScheme.onSurface) },
+                            text = {
+                                Text(
+                                    "Título Z-A",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
                             onClick = {
-                                sortMode = PlaylistSortMode.TITLE_DESC
+                                sortModeName = PlaylistSortMode.TITLE_DESC.name
                                 sortMenuExpanded = false
                             },
                         )
@@ -307,7 +322,13 @@ fun PlaylistsScreen(
                         showSearchBar = !showSearchBar
                         if (!showSearchBar) searchQuery = ""
                     },
-                ) { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onBackground) }
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
             }
 
             if (showSearchBar) {
@@ -315,7 +336,12 @@ fun PlaylistsScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     singleLine = true,
-                    placeholder = { Text("Buscar por lista", color = MaterialTheme.colorScheme.onBackground) },
+                    placeholder = {
+                        Text(
+                            "Buscar por lista",
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors =
                         TextFieldDefaults.colors(
@@ -347,55 +373,101 @@ fun PlaylistsScreen(
                                         Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                                     )
                                 } catch (sec: Exception) {
-                                    Log.w("PlaylistsScreen", "No persistable permission: ${sec.message}")
+                                    Log.w(
+                                        "PlaylistsScreen",
+                                        "No persistable permission: ${sec.message}",
+                                    )
                                 }
 
-                                val filename = "localplayer_playlists_${System.currentTimeMillis()}.json"
+                                val filename =
+                                    "localplayer_playlists_${System.currentTimeMillis()}.json"
 
                                 // Some providers reject the raw tree URI for createDocument. Try the tree URI first,
                                 // then fall back to using the tree's document URI.
                                 var docUri =
                                     try {
-                                        DocumentsContract.createDocument(resolver, uri, "application/json", filename)
+                                        DocumentsContract.createDocument(
+                                            resolver,
+                                            uri,
+                                            "application/json",
+                                            filename,
+                                        )
                                     } catch (iae: IllegalArgumentException) {
                                         try {
                                             val treeId = DocumentsContract.getTreeDocumentId(uri)
-                                            val parent = DocumentsContract.buildDocumentUriUsingTree(uri, treeId)
-                                            DocumentsContract.createDocument(resolver, parent, "application/json", filename)
+                                            val parent =
+                                                DocumentsContract.buildDocumentUriUsingTree(
+                                                    uri,
+                                                    treeId,
+                                                )
+                                            DocumentsContract.createDocument(
+                                                resolver,
+                                                parent,
+                                                "application/json",
+                                                filename,
+                                            )
                                         } catch (e2: Exception) {
-                                            Log.e("PlaylistsScreen", "createDocument fallback failed", e2)
+                                            Log.e(
+                                                "PlaylistsScreen",
+                                                "createDocument fallback failed",
+                                                e2,
+                                            )
                                             null
                                         }
                                     }
 
                                 if (docUri == null) {
-                                    Toast.makeText(context, "No se pudo crear archivo en la carpeta", Toast.LENGTH_SHORT).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "No se pudo crear archivo en la carpeta",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
                                     return@launch
                                 }
 
-                                resolver.openOutputStream(docUri)?.use { os ->
-                                    val text =
-                                        playlistToExport?.let { p ->
-                                            // serialize single playlist
-                                            val array = org.json.JSONArray()
-                                            val idsArray = org.json.JSONArray()
-                                            p.songIds.forEach { idsArray.put(it) }
-                                            val obj = org.json.JSONObject()
-                                            obj.put("name", p.name)
-                                            obj.put("songIds", idsArray)
-                                            array.put(obj)
-                                            array.toString()
-                                        } ?: viewModel.getPlaylistsJson()
+                                var exportError: String? = null
+                                var exportSuccess = false
+                                try {
+                                    resolver.openOutputStream(docUri)?.use { os ->
+                                        val text =
+                                            playlistToExport?.let { p ->
+                                                // serialize single playlist
+                                                val array = org.json.JSONArray()
+                                                val idsArray = org.json.JSONArray()
+                                                p.songIds.forEach { idsArray.put(it) }
+                                                val obj = org.json.JSONObject()
+                                                obj.put("name", p.name)
+                                                obj.put("songIds", idsArray)
+                                                array.put(obj)
+                                                array.toString()
+                                            } ?: playlistViewModel.getPlaylistsJson()
 
-                                    os.write(text.toByteArray())
-                                    os.flush()
+                                        os.write(text.toByteArray())
+                                        os.flush()
+                                        exportSuccess = true
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e("PlaylistsScreen", "Error exporting playlists", e)
+                                    exportError = e.message
                                 }
-
-                                Toast.makeText(context, "Playlists exportadas", Toast.LENGTH_SHORT).show()
-                                playlistToExport = null
+                                if (exportSuccess) {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Playlists exportadas",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                    playlistToExport = null
+                                } else if (exportError != null) {
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Error exportando playlists: $exportError",
+                                            Toast.LENGTH_LONG,
+                                        ).show()
+                                }
                             } catch (e: Exception) {
-                                Log.e("PlaylistsScreen", "Error exporting playlists", e)
-                                Toast.makeText(context, "Error exportando playlists: ${e.message}", Toast.LENGTH_LONG).show()
                             }
                         }
                     }
@@ -404,79 +476,106 @@ fun PlaylistsScreen(
                 rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
                     if (uri != null) {
                         scope2.launch {
-                            try {
-                                val resolver = context.contentResolver
-                                val childrenUri =
-                                    DocumentsContract.buildChildDocumentsUriUsingTree(
-                                        uri,
-                                        DocumentsContract.getTreeDocumentId(uri),
-                                    )
-                                val projection =
-                                    arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-                                val texts = mutableListOf<String>()
-                                resolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+                            val resolver = context.contentResolver
+                            val childrenUri =
+                                DocumentsContract.buildChildDocumentsUriUsingTree(
+                                    uri,
+                                    DocumentsContract.getTreeDocumentId(uri),
+                                )
+                            val projection =
+                                arrayOf(
+                                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                                )
+                            val texts = mutableListOf<String>()
+                            resolver
+                                .query(childrenUri, projection, null, null, null)
+                                ?.use { cursor ->
                                     while (cursor.moveToNext()) {
                                         val docId = cursor.getString(0)
                                         val name = cursor.getString(1) ?: ""
                                         if (name.endsWith(".json", true)) {
                                             try {
-                                                val docUri = DocumentsContract.buildDocumentUriUsingTree(uri, docId)
-                                                resolver.openInputStream(docUri)?.bufferedReader()?.use { r ->
-                                                    texts.add(r.readText())
-                                                }
+                                                val docUri =
+                                                    DocumentsContract.buildDocumentUriUsingTree(
+                                                        uri,
+                                                        docId,
+                                                    )
+                                                resolver
+                                                    .openInputStream(docUri)
+                                                    ?.bufferedReader()
+                                                    ?.use { r ->
+                                                        texts.add(r.readText())
+                                                    }
                                             } catch (_: Exception) {
                                             }
                                         }
                                     }
                                 }
 
-                                if (texts.isNotEmpty()) {
-                                    var imported = 0
-                                    texts.forEach { text ->
-                                        try {
-                                            val array =
-                                                if (text.trimStart().startsWith(
-                                                        "[",
-                                                    )
-                                                ) {
-                                                    org.json.JSONArray(text)
-                                                } else {
-                                                    org.json.JSONArray().apply {
-                                                        put(org.json.JSONObject(text))
-                                                    }
+                            if (texts.isNotEmpty()) {
+                                var imported = 0
+                                texts.forEach { text ->
+                                    try {
+                                        val array =
+                                            if (text.trimStart().startsWith("[")) {
+                                                org.json.JSONArray(text)
+                                            } else {
+                                                org.json.JSONArray().apply {
+                                                    put(org.json.JSONObject(text))
                                                 }
-                                            for (i in 0 until array.length()) {
-                                                val obj = array.getJSONObject(i)
-                                                val name = obj.optString("name", "").trim()
-                                                if (name.isEmpty()) continue
-                                                val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
-                                                val ids = mutableListOf<Long>()
-                                                for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
-
-                                                if (viewModel.playlists.value.any { it.name.equals(name, ignoreCase = true) }) continue
-
-                                                val created = viewModel.createPlaylist(name)
-                                                if (created && ids.isNotEmpty()) {
-                                                    viewModel.addSongsToPlaylist(name, ids)
-                                                }
-                                                imported++
                                             }
-                                        } catch (_: Exception) {
+                                        for (i in 0 until array.length()) {
+                                            val obj = array.getJSONObject(i)
+                                            val name = obj.optString("name", "").trim()
+                                            if (name.isEmpty()) continue
+                                            val idsArr =
+                                                obj.optJSONArray("songIds")
+                                                    ?: org.json.JSONArray()
+                                            val ids = mutableListOf<Long>()
+                                            for (j in 0 until idsArr.length()) {
+                                                ids.add(idsArr.optLong(j))
+                                            }
+
+                                            if (playlistViewModel.playlists.value.any {
+                                                    it.name.equals(name, ignoreCase = true)
+                                                }
+                                            ) {
+                                                continue
+                                            }
+
+                                            val created = playlistViewModel.createPlaylist(name)
+                                            if (created && ids.isNotEmpty()) {
+                                                playlistViewModel.addSongsToPlaylist(name, ids)
+                                            }
+                                            imported++
                                         }
+                                    } catch (_: Exception) {
                                     }
-                                    Toast.makeText(context, "Importadas $imported playlists", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, "No se encontraron archivos .json en la carpeta", Toast.LENGTH_SHORT).show()
                                 }
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Error importando desde carpeta", Toast.LENGTH_SHORT).show()
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "Importadas $imported playlists",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
+                            } else {
+                                Toast
+                                    .makeText(
+                                        context,
+                                        "No se encontraron archivos .json en la carpeta",
+                                        Toast.LENGTH_SHORT,
+                                    ).show()
                             }
                         }
                     }
                 }
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -484,18 +583,34 @@ fun PlaylistsScreen(
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = { treeLauncher.launch(null) }) {
-                        Icon(Icons.Default.Download, contentDescription = "Importar", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = "Importar",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
                     }
-                    Text(text = "importar", color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp)
+                    Text(
+                        text = "importar",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = 12.sp,
+                    )
                 }
 
                 Spacer(Modifier.width(24.dp))
 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = { showCreateDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "Crear lista", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Crear lista",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
                     }
-                    Text(text = "crear", color = MaterialTheme.colorScheme.onBackground, fontSize = 12.sp)
+                    Text(
+                        text = "crear",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = 12.sp,
+                    )
                 }
             }
 
@@ -505,7 +620,10 @@ fun PlaylistsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text(text = "No hay listas por ahora", color = MaterialTheme.colorScheme.onBackground)
+                    Text(
+                        text = "No hay listas por ahora",
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = { showCreateDialog = true },
@@ -547,7 +665,11 @@ fun PlaylistsScreen(
                                         onPlaylistClick(playlist.name)
                                     },
                             ) {
-                                Text(text = playlist.name, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp)
+                                Text(
+                                    text = playlist.name,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    fontSize = 16.sp,
+                                )
                                 Text(
                                     text = "${playlist.songIds.size} canciones",
                                     color = md_textSecondary,
@@ -581,7 +703,12 @@ fun PlaylistsScreen(
                                     containerColor = MaterialTheme.extendedColors.surfaceSheet,
                                 ) {
                                     DropdownMenuItem(
-                                        text = { Text("Exportar", color = MaterialTheme.colorScheme.onBackground) },
+                                        text = {
+                                            Text(
+                                                "Exportar",
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                            )
+                                        },
                                         onClick = {
                                             playlistToExport = playlist
                                             exportLauncher.launch(null)
@@ -589,7 +716,12 @@ fun PlaylistsScreen(
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Renombrar", color = MaterialTheme.colorScheme.onBackground) },
+                                        text = {
+                                            Text(
+                                                "Renombrar",
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                            )
+                                        },
                                         onClick = {
                                             playlistToRename = playlist
                                             renamePlaylistName = playlist.name
@@ -598,7 +730,12 @@ fun PlaylistsScreen(
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Eliminar", color = Color(0xFFFF6B6B)) },
+                                        text = {
+                                            Text(
+                                                "Eliminar",
+                                                color = Color(0xFFFF6B6B),
+                                            )
+                                        },
                                         onClick = {
                                             playlistToDelete = playlist
                                             menuExpandedPlaylistId = null
@@ -611,172 +748,177 @@ fun PlaylistsScreen(
                 }
             }
         }
-    }
 
-    if (playlistToDelete != null) {
-        val target = playlistToDelete
-        AlertDialog(
-            onDismissRequest = { playlistToDelete = null },
-            containerColor = MaterialTheme.colorScheme.background,
-            title = { Text("Eliminar lista", color = MaterialTheme.colorScheme.onBackground) },
-            text = {
-                Text(text = "Se eliminara la lista \"${target?.name}\".", color = md_textSecondary)
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        target?.name?.let { name -> viewModel.deletePlaylist(name) }
-                        playlistToDelete = null
-                    },
-                ) { Text("Eliminar", color = Color(0xFFFF6B6B)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { playlistToDelete = null }) {
-                    Text("Cancelar", color = MaterialTheme.colorScheme.onBackground)
-                }
-            },
-        )
-    }
-
-    if (showCreateDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showCreateDialog = false
-                newPlaylistName = ""
-                createError = null
-            },
-            containerColor = MaterialTheme.colorScheme.background,
-            title = { Text("Nueva lista", color = MaterialTheme.colorScheme.onBackground) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = newPlaylistName,
-                        onValueChange = { newPlaylistName = it },
-                        singleLine = true,
-                        placeholder = { Text("Nombre de la lista") },
-                        colors =
-                            TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                                cursorColor = MaterialTheme.colorScheme.primary,
-                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
-                            ),
+        if (playlistToDelete != null) {
+            val target = playlistToDelete
+            AlertDialog(
+                onDismissRequest = { playlistToDelete = null },
+                containerColor = MaterialTheme.colorScheme.background,
+                title = { Text("Eliminar lista", color = MaterialTheme.colorScheme.onBackground) },
+                text = {
+                    Text(
+                        text = "Se eliminara la lista \"${target?.name}\".",
+                        color = md_textSecondary,
                     )
-                    if (createError != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = createError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            target?.name?.let { name -> playlistViewModel.deletePlaylist(name) }
+                            playlistToDelete = null
+                        },
+                    ) { Text("Eliminar", color = Color(0xFFFF6B6B)) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { playlistToDelete = null }) {
+                        Text("Cancelar", color = MaterialTheme.colorScheme.onBackground)
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val ok = viewModel.createPlaylist(newPlaylistName)
-                        if (ok) {
+                },
+            )
+        }
+
+        if (showCreateDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    showCreateDialog = false
+                    newPlaylistName = ""
+                    createError = null
+                },
+                containerColor = MaterialTheme.colorScheme.background,
+                title = { Text("Nueva lista", color = MaterialTheme.colorScheme.onBackground) },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = newPlaylistName,
+                            onValueChange = { newPlaylistName = it },
+                            singleLine = true,
+                            placeholder = { Text("Nombre de la lista") },
+                            colors =
+                                TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                                    cursorColor = MaterialTheme.colorScheme.primary,
+                                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                ),
+                        )
+                        if (createError != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = createError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val ok = playlistViewModel.createPlaylist(newPlaylistName)
+                            if (ok) {
+                                showCreateDialog = false
+                                newPlaylistName = ""
+                                createError = null
+                            } else {
+                                createError = "Nombre invalido o duplicado"
+                            }
+                        },
+                    ) { Text("Crear", color = MaterialTheme.colorScheme.primary) }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
                             showCreateDialog = false
                             newPlaylistName = ""
                             createError = null
-                        } else {
-                            createError = "Nombre invalido o duplicado"
-                        }
-                    },
-                ) { Text("Crear", color = MaterialTheme.colorScheme.primary) }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showCreateDialog = false
-                        newPlaylistName = ""
-                        createError = null
-                    },
-                ) { Text("Cancelar", color = MaterialTheme.colorScheme.onBackground) }
-            },
-        )
-    }
+                        },
+                    ) { Text("Cancelar", color = MaterialTheme.colorScheme.onBackground) }
+                },
+            )
+        }
 
-    if (showRenameDialog && playlistToRename != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showRenameDialog = false
-                renamePlaylistName = ""
-                renameError = null
-            },
-            containerColor = MaterialTheme.colorScheme.background,
-            title = { Text("Renombrar lista", color = MaterialTheme.colorScheme.onBackground) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = renamePlaylistName,
-                        onValueChange = { renamePlaylistName = it },
-                        singleLine = true,
-                        placeholder = { Text("Nombre de la lista") },
-                        colors =
-                            TextFieldDefaults.colors(
-                                focusedContainerColor = MaterialTheme.colorScheme.background,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                                cursorColor = MaterialTheme.colorScheme.primary,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                            ),
-                    )
-                    if (renameError != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = renameError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
+        if (showRenameDialog && playlistToRename != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showRenameDialog = false
+                    renamePlaylistName = ""
+                    renameError = null
+                },
+                containerColor = MaterialTheme.colorScheme.background,
+                title = { Text("Renombrar lista", color = MaterialTheme.colorScheme.onBackground) },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = renamePlaylistName,
+                            onValueChange = { renamePlaylistName = it },
+                            singleLine = true,
+                            placeholder = { Text("Nombre de la lista") },
+                            colors =
+                                TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                                    cursorColor = MaterialTheme.colorScheme.primary,
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White,
+                                ),
+                        )
+                        if (renameError != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(text = renameError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
+                        }
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val ok =
-                            viewModel.renamePlaylist(
-                                playlistToRename!!.name,
-                                renamePlaylistName,
-                            )
-                        if (ok) {
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val ok =
+                                playlistViewModel.renamePlaylist(
+                                    playlistToRename!!.name,
+                                    renamePlaylistName,
+                                )
+                            if (ok) {
+                                showRenameDialog = false
+                                renamePlaylistName = ""
+                                renameError = null
+                                playlistToRename = null
+                            } else {
+                                renameError = "Nombre inválido o duplicado"
+                            }
+                        },
+                    ) { Text("Renombrar", color = MaterialTheme.colorScheme.primary) }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
                             showRenameDialog = false
                             renamePlaylistName = ""
                             renameError = null
                             playlistToRename = null
-                        } else {
-                            renameError = "Nombre inválido o duplicado"
-                        }
-                    },
-                ) { Text("Renombrar", color = MaterialTheme.colorScheme.primary) }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showRenameDialog = false
-                        renamePlaylistName = ""
-                        renameError = null
-                        playlistToRename = null
-                    },
-                ) { Text("Cancelar", color = Color.White) }
-            },
-        )
+                        },
+                    ) { Text("Cancelar", color = Color.White) }
+                },
+            )
+        }
     }
 }
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun PlaylistDetailScreen(
-    viewModel: MainViewModel,
+    playlistViewModel: PlaylistViewModel,
+    playbackViewModel: PlaybackViewModel,
     playlistName: String,
     onBack: () -> Unit,
 ) {
-    val songs by viewModel.songs.collectAsState()
-    val playerState by viewModel.playerState.collectAsState()
-    val playlists: List<Playlist> by viewModel.playlists.collectAsState()
+    val songs by playlistViewModel.songs.collectAsState()
+    val playerState by playbackViewModel.playerState.collectAsState()
+    val playlists by playlistViewModel.playlists.collectAsState()
 
     BackHandler { onBack() }
 
-    val playlist = remember(playlists, playlistName) { playlists.find { it.name == playlistName } }
+    val playlist =
+        remember(playlists, playlistName) { playlists.find { it.name == playlistName } }
 
     val playlistSongs =
         remember(songs, playlist) {
@@ -809,7 +951,11 @@ fun PlaylistDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.onBackground)
+                Icon(
+                    Icons.Default.ArrowBack,
+                    contentDescription = "Volver",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -822,7 +968,11 @@ fun PlaylistDetailScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                 )
-                Text(text = "${playlistSongs.size} canciones", color = md_textSecondary, fontSize = 12.sp)
+                Text(
+                    text = "${playlistSongs.size} canciones",
+                    color = md_textSecondary,
+                    fontSize = 12.sp,
+                )
             }
         }
 
@@ -855,7 +1005,7 @@ fun PlaylistDetailScreen(
                     Button(
                         onClick = {
                             if (selectedSongsToRemove.isNotEmpty()) {
-                                viewModel.removeSongsFromPlaylist(
+                                playlistViewModel.removeSongsFromPlaylist(
                                     playlistName,
                                     selectedSongsToRemove.toList(),
                                 )
@@ -962,20 +1112,22 @@ fun PlaylistDetailScreen(
                             onClick = {
                                 if (!isRemoveMode) {
                                     // Usar el orden de la playlist como cola de reproduccion
-                                    viewModel.updateDisplayOrder(playlistSongs)
-                                    viewModel.playSong(song)
-                                    viewModel.startService(context, song)
+                                    playbackViewModel.updateDisplayOrder(playlistSongs)
+                                    playbackViewModel.play(song)
                                 }
                             },
-                            onQueueNext = { viewModel.addToQueueNext(song) },
-                            onQueueEnd = { viewModel.addToQueueEnd(song) },
+                            onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                            onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
                             playlists = playlists,
                             onAddToPlaylist = { targetPlaylistName, songId ->
-                                viewModel.addSongToPlaylist(targetPlaylistName, songId)
+                                playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
                             },
                             onRemoveFromPlaylist = {
                                 if (!isRemoveMode) {
-                                    viewModel.removeSongFromPlaylist(playlistName, song.id)
+                                    playlistViewModel.removeSongFromPlaylist(
+                                        playlistName,
+                                        song.id,
+                                    )
                                 }
                             },
                         )
@@ -989,7 +1141,12 @@ fun PlaylistDetailScreen(
         AlertDialog(
             onDismissRequest = { showAddSongsDialog = false },
             containerColor = MaterialTheme.colorScheme.background,
-            title = { Text("Agregar canciones", color = MaterialTheme.colorScheme.onBackground) },
+            title = {
+                Text(
+                    "Agregar canciones",
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            },
             text = {
                 if (availableSongs.isEmpty()) {
                     Text("No hay canciones disponibles", color = md_textSecondary)
@@ -1080,7 +1237,7 @@ fun PlaylistDetailScreen(
                 Button(
                     onClick = {
                         if (selectedSongsToAdd.isNotEmpty()) {
-                            viewModel.addSongsToPlaylist(
+                            playlistViewModel.addSongsToPlaylist(
                                 playlistName,
                                 selectedSongsToAdd.toList(),
                             )
@@ -1104,7 +1261,7 @@ fun PlaylistDetailScreen(
     }
 }
 
-private enum class PlaylistSortMode {
+enum class PlaylistSortMode {
     TITLE_ASC,
     TITLE_DESC,
 }

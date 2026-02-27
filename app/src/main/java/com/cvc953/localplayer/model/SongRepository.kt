@@ -1,3 +1,4 @@
+
 package com.cvc953.localplayer.model
 
 import android.Manifest
@@ -288,7 +289,7 @@ class SongRepository(
                         uri = Uri.parse(o.getString("uri")),
                         duration = o.getLong("duration"),
                         filePath = o.optString("filePath", null).takeIf { it.isNotEmpty() },
-                        albumArt = TODO(),
+                        albumArt = null,
                         trackNumber = o.getInt("trackNumber"),
                         discNumber = o.getInt("discNumber"),
                     ),
@@ -612,5 +613,27 @@ class SongRepository(
         }
 
         return list
+    }
+
+    /**
+     * Devuelve la lista de artistas únicos con el número de canciones de cada uno.
+     */
+    fun getAllArtists(): List<Artist> {
+        val songs = loadSongs()
+        return songs
+            .groupBy { it.artist.ifBlank { "Desconocido" } }
+            .map { (name, songs) -> Artist(name, songs.size) }
+            .sortedBy { it.name.lowercase() }
+    }
+
+    /**
+     * Devuelve la lista de álbumes únicos con el número de canciones de cada uno.
+     */
+    fun getAllAlbums(): List<Album> {
+        val songs = loadSongs()
+        return songs
+            .groupBy { Pair(it.album.ifBlank { "Desconocido" }, it.artist.ifBlank { "Desconocido" }) }
+            .map { (key, songs) -> Album(key.first, key.second, songs.size) }
+            .sortedWith(compareBy({ it.name.lowercase() }, { it.artist.lowercase() }))
     }
 }

@@ -104,7 +104,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
-import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.PlayerViewModel
+import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import com.cvc953.localplayer.viewmodel.LyricsViewModel
+import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -113,18 +117,22 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
-    viewModel: MainViewModel = viewModel(),
+    playbackViewModel: PlaybackViewModel = viewModel(),
+    playerViewModel: PlayerViewModel = viewModel(),
+    playlistViewModel: PlaylistViewModel = viewModel(),
+    lyricsViewModel: LyricsViewModel = viewModel(),
+    songViewModel: SongViewModel = viewModel(),
     onBack: () -> Unit,
     onNavigateToArtist: (String) -> Unit = {},
     onNavigateToAlbum: (String) -> Unit = {},
 ) {
-    val showLyrics by viewModel.showLyrics.collectAsState()
-    val playerState by viewModel.playerState.collectAsState()
-    val queue by viewModel.queue.collectAsState()
-    val songs by viewModel.songs.collectAsState()
-    val playlists by viewModel.playlists.collectAsState()
-    val isShuffle by viewModel.isShuffle.collectAsState()
-    val repeatMode by viewModel.repeatMode.collectAsState()
+    val showLyrics by playerViewModel.showLyrics.collectAsState()
+    val playerState by playbackViewModel.playerState.collectAsState()
+    val queue by playbackViewModel.queue.collectAsState()
+    val songs by songViewModel.songs.collectAsState()
+    val playlists by playlistViewModel.playlists.collectAsState()
+    val isShuffle by playbackViewModel.isShuffle.collectAsState()
+    val repeatMode by playbackViewModel.repeatMode.collectAsState()
     val song = playerState.currentSong ?: return
     val offsetY = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -134,8 +142,8 @@ fun PlayerScreen(
             LocalConfiguration.current.screenHeightDp.dp
                 .toPx()
         }
-    val lyrics by viewModel.lyrics.collectAsState()
-    val ttmlLyrics by viewModel.ttmlLyrics.collectAsState()
+    val lyrics by lyricsViewModel.lyrics.collectAsState()
+    val ttmlLyrics by lyricsViewModel.ttmlLyrics.collectAsState()
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
     var showQueue by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
@@ -143,10 +151,9 @@ fun PlayerScreen(
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var isFavorite by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val upcoming =
-        remember(queue, playerState, songs, isShuffle, repeatMode) {
-            viewModel.getUpcomingSongs()
-        }
+    val upcoming = remember(queue, playerState, songs, isShuffle, repeatMode) {
+        playbackViewModel.getUpcomingSongs()
+    }
     val listState = rememberLazyListState()
     val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
@@ -247,13 +254,13 @@ fun PlayerScreen(
     }
 
     LaunchedEffect(song.id, playlists) {
-        isFavorite = viewModel.isSongInPlaylist("Favoritos", song.id)
+        isFavorite = playlistViewModel.isSongInPlaylist("Favoritos", song.id)
     }
 
-    BackHandler(enabled = showLyrics) { viewModel.toggleLyrics() }
+    BackHandler(enabled = showLyrics) { playerViewModel.toggleLyrics() }
     BackHandler(enabled = !showLyrics) { onBack() }
 
-    LaunchedEffect(song) { viewModel.loadLyricsForSong(song) }
+    LaunchedEffect(song) { lyricsViewModel.loadLyricsForSong(song) }
 
     Box(
         modifier =
@@ -326,9 +333,7 @@ fun PlayerScreen(
                                 currentPosition =
                                     playerState.position,
                                 modifier = Modifier.fillMaxSize(),
-                                onLineClick = { targetMs ->
-                                    viewModel.seekTo(targetMs)
-                                },
+                                onLineClick = { targetMs -> playbackViewModel.seekTo(targetMs) },
                             )
                         }
 
@@ -339,9 +344,7 @@ fun PlayerScreen(
                                 currentPosition =
                                     playerState.position,
                                 modifier = Modifier.fillMaxSize(),
-                                onLineClick = { targetMs ->
-                                    viewModel.seekTo(targetMs)
-                                },
+                                onLineClick = { targetMs -> playbackViewModel.seekTo(targetMs) },
                             )
                         }
 
@@ -362,9 +365,9 @@ fun PlayerScreen(
                 MiniPlayer(
                     song = song,
                     isPlaying = playerState.isPlaying,
-                    onPlayPause = { viewModel.togglePlayPause() },
-                    onClick = { viewModel.toggleLyrics() },
-                    onNext = { viewModel.playNextSong() },
+                    onPlayPause = { playbackViewModel.togglePlayPause() },
+                    onClick = { playerViewModel.toggleLyrics() },
+                    onNext = { playbackViewModel.playNextSong() },
                 )
             }
         } else {
@@ -406,7 +409,8 @@ fun PlayerScreen(
                 Spacer(Modifier.height(32.dp))
 
                 PlayerControls(
-                    viewModel = viewModel,
+                    playbackViewModel = playbackViewModel,
+                    playerViewModel = playerViewModel,
                     isPlaying = playerState.isPlaying,
                     audioFormat = audioFormat,
                     audioBitrate = audioBitrate,
@@ -424,47 +428,21 @@ fun PlayerScreen(
 
                             if (isFavorite) {
                                 // Quitar de favoritos
-                                val removed =
-                                    viewModel
-                                        .removeSongFromPlaylist(
-                                            favoritesName,
-                                            song.id,
-                                        )
-                                if (removed) {
-                                    isFavorite = false
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Quitado de Favoritos",
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                }
+                                playlistViewModel.removeSongFromPlaylist(
+                                    favoritesName,
+                                    song.id,
+                                )
+                                isFavorite = false
+                                Toast.makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT).show()
                             } else {
                                 // Agregar a favoritos
-                                val favorites =
-                                    playlists.find {
-                                        it.name ==
-                                            favoritesName
-                                    }
+                                val favorites = playlists.find { it.name == favoritesName }
                                 if (favorites == null) {
-                                    viewModel.createPlaylist(
-                                        favoritesName,
-                                    )
+                                    playlistViewModel.createPlaylist(favoritesName)
                                 }
-                                val added =
-                                    viewModel.addSongToPlaylist(
-                                        favoritesName,
-                                        song.id,
-                                    )
-                                if (added) {
-                                    isFavorite = true
-                                    Toast
-                                        .makeText(
-                                            context,
-                                            "Agregado a Favoritos",
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
-                                }
+                                playlistViewModel.addSongToPlaylist(favoritesName, song.id)
+                                isFavorite = true
+                                Toast.makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT).show()
                             }
                         },
                     ) {
@@ -502,7 +480,7 @@ fun PlayerScreen(
 
                     Spacer(Modifier.width(16.dp))
 
-                    IconButton(onClick = { viewModel.toggleLyrics() }) {
+                    IconButton(onClick = { playerViewModel.toggleLyrics() }) {
                         Icon(
                             imageVector = Icons.Default.Lyrics,
                             contentDescription = "Mostrar letras",
@@ -588,18 +566,9 @@ fun PlayerScreen(
                                     },
                                     confirmButton = {
                                         TextButton(onClick = {
-                                            if (newPlaylistName
-                                                    .isNotBlank()
-                                            ) {
-                                                viewModel
-                                                    .createPlaylist(
-                                                        newPlaylistName,
-                                                    )
-                                                viewModel
-                                                    .addSongToPlaylist(
-                                                        newPlaylistName,
-                                                        song.id,
-                                                    )
+                                            if (newPlaylistName.isNotBlank()) {
+                                                playlistViewModel.createPlaylist(newPlaylistName)
+                                                playlistViewModel.addSongToPlaylist(newPlaylistName, song.id)
                                                 Toast
                                                     .makeText(
                                                         context,
@@ -648,26 +617,11 @@ fun PlayerScreen(
                                         modifier =
                                             Modifier
                                                 .fillMaxWidth()
-                                                .padding(
-                                                    vertical =
-                                                        6.dp,
-                                                ).clickable {
-                                                    val added =
-                                                        viewModel
-                                                            .addSongToPlaylist(
-                                                                playlist.name,
-                                                                song.id,
-                                                            )
-                                                    if (added) {
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Agregado a ${playlist.name}",
-                                                                Toast.LENGTH_SHORT,
-                                                            ).show()
-                                                    }
-                                                    showAddToPlaylistDialog =
-                                                        false
+                                                .padding(vertical = 6.dp)
+                                                .clickable {
+                                                    playlistViewModel.addSongToPlaylist(playlist.name, song.id)
+                                                    Toast.makeText(context, "Agregado a ${playlist.name}", Toast.LENGTH_SHORT).show()
+                                                    showAddToPlaylistDialog = false
                                                 },
                                         colors =
                                             CardDefaults
@@ -863,10 +817,9 @@ fun PlayerScreen(
                                                         null
                                                     dragOffset =
                                                         0f
-                                                    viewModel
-                                                        .setUpcomingOrder(
-                                                            dragList.toList(),
-                                                        )
+                                                    playbackViewModel.updateDisplayOrder(
+                                                        dragList.toList(),
+                                                    )
                                                 },
                                                 onDragCancel = {
                                                     draggingIndex =
@@ -1382,20 +1335,21 @@ fun SongTitleSection(
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun PlayerControls(
-    viewModel: MainViewModel = viewModel(),
+    playbackViewModel: PlaybackViewModel = viewModel(),
+    playerViewModel: PlayerViewModel = viewModel(),
     isPlaying: Boolean,
     audioFormat: String = "",
     audioBitrate: String = "",
 ) {
-    val playerState by viewModel.playerState.collectAsState()
-    val isShuffle by viewModel.isShuffle.collectAsState()
-    val repeatMode by viewModel.repeatMode.collectAsState()
+    val playerState by playbackViewModel.playerState.collectAsState()
+    val isShuffle by playbackViewModel.isShuffle.collectAsState()
+    val repeatMode by playbackViewModel.repeatMode.collectAsState()
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-            Slider(
+                Slider(
                 value = playerState.position.toFloat(),
-                onValueChange = { viewModel.seekTo(it.toLong()) },
+                onValueChange = { playbackViewModel.seekTo(it.toLong()) },
                 valueRange = 0f..playerState.duration.toFloat(),
                 modifier = Modifier.fillMaxWidth().height(20.dp),
                 colors =
@@ -1439,7 +1393,7 @@ fun PlayerControls(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            IconButton(onClick = { viewModel.toggleShuffle() }) {
+            IconButton(onClick = { playbackViewModel.toggleShuffle() }) {
                 Icon(
                     Icons.Rounded.Shuffle,
                     contentDescription = "Shuffle",
@@ -1448,7 +1402,7 @@ fun PlayerControls(
                 )
             }
 
-            IconButton(onClick = { viewModel.playPreviousSong() }) {
+            IconButton(onClick = { playbackViewModel.playPreviousSong() }) {
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     null,
@@ -1458,7 +1412,7 @@ fun PlayerControls(
             }
 
             IconButton(
-                onClick = { viewModel.togglePlayPause() },
+                onClick = { playbackViewModel.togglePlayPause() },
                 modifier =
                     Modifier
                         .size(buttonSize)
@@ -1480,7 +1434,7 @@ fun PlayerControls(
                 )
             }
 
-            IconButton(onClick = { viewModel.playNextSong() }) {
+            IconButton(onClick = { playbackViewModel.playNextSong() }) {
                 Icon(
                     Icons.Rounded.SkipNext,
                     null,
@@ -1489,7 +1443,7 @@ fun PlayerControls(
                 )
             }
 
-            IconButton(onClick = { viewModel.toggleRepeat() }) {
+            IconButton(onClick = { playbackViewModel.toggleRepeat() }) {
                 Icon(
                     when (repeatMode) {
                         RepeatMode.NONE -> Icons.Rounded.Repeat
