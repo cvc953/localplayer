@@ -24,6 +24,7 @@ class PlayerController(
     val state: StateFlow<PlayerState> = _state
 
     private var progressJob: Job? = null
+    private var onQueueEnded: (() -> Unit)? = null
 
     fun playNow(
         songs: List<Song>,
@@ -70,6 +71,10 @@ class PlayerController(
                         playCurrent()
                     } else {
                         _state.update { it.copy(isPlaying = false) }
+                        try {
+                            onQueueEnded?.invoke()
+                        } catch (_: Exception) {
+                        }
                     }
                 }
             }
@@ -84,17 +89,30 @@ class PlayerController(
         val s = scope ?: return
         progressJob =
             s.launch {
-                while (mediaPlayer != null) {
-                    _state.update { it.copy(position = mediaPlayer?.currentPosition?.toLong() ?: it.position) }
+                while (true) {
+                    try {
+                        val mp = mediaPlayer ?: break
+                        val pos = try { mp.currentPosition.toLong() } catch (_: IllegalStateException) { break }
+                        _state.update { it.copy(position = pos) }
+                    } catch (_: Exception) {
+                        break
+                    }
                     delay(200L)
                 }
             }
     }
 
     fun togglePlayPause() {
-        mediaPlayer?.let {
-            if (it.isPlaying) it.pause() else it.start()
-            _state.update { s -> s.copy(isPlaying = it.isPlaying, position = it.currentPosition.toLong()) }
+        mediaPlayer?.let { mp ->
+            try {
+                if (mp.isPlaying) mp.pause() else mp.start()
+                val isPlaying = try { mp.isPlaying } catch (_: IllegalStateException) { false }
+                val pos = try { mp.currentPosition.toLong() } catch (_: IllegalStateException) { _state.value.position }
+                _state.update { s -> s.copy(isPlaying = isPlaying, position = pos) }
+            } catch (_: IllegalStateException) {
+                // ignore invalid state transitions
+                _state.update { s -> s.copy(isPlaying = false) }
+            }
         }
     }
 
@@ -144,11 +162,33 @@ class PlayerController(
         mediaPlayer = null
     }
 
-    fun getCurrentPosition(): Long = mediaPlayer?.currentPosition?.toLong() ?: 0L
+    fun getCurrentPosition(): Long {
+        return try {
+            mediaPlayer?.currentPosition?.toLong() ?: 0L
+        } catch (_: IllegalStateException) {
+            0L
+        }
+    }
 
-    fun getDuration(): Long = mediaPlayer?.duration?.toLong() ?: 0L
+    fun getDuration(): Long {
+        return try {
+            mediaPlayer?.duration?.toLong() ?: 0L
+        } catch (_: IllegalStateException) {
+            0L
+        }
+    }
 
-    fun isPlaying(): Boolean = mediaPlayer?.isPlaying == true
+    fun isPlaying(): Boolean {
+        return try {
+            mediaPlayer?.isPlaying == true
+        } catch (_: IllegalStateException) {
+            false
+        }
+    }
+
+    fun setOnQueueEndedListener(listener: (() -> Unit)?) {
+        onQueueEnded = listener
+    }
 
     companion object {
         @Suppress("ktlint:standard:property-naming")

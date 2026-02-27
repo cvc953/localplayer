@@ -548,7 +548,7 @@ fun SongsContent(
                             }
                         }
                     if (index >= 0) {
-                        scope.launch { listState.scrollToItem(index) }
+                        scope.launch { listState.animateScrollToItem(index) }
                     }
                 }
 
@@ -880,13 +880,18 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                     playbackViewModel = playbackViewModel,
                                     onAlbumClick = { albumName, artistName ->
                                         // Ensure AlbumViewModel loads songs for this album
-                                        val found = albumViewModel.albums.value.find {
-                                            it.name.equals(albumName, ignoreCase = true) && it.artist.equals(artistName, ignoreCase = true)
-                                        }
+                                        val found =
+                                            albumViewModel.albums.value.find {
+                                                it.name.equals(albumName, ignoreCase = true) &&
+                                                    it.artist.equals(artistName, ignoreCase = true)
+                                            }
                                         if (found != null) {
                                             albumViewModel.selectAlbum(found)
                                         } else {
-                                            albumViewModel.selectAlbum(com.cvc953.localplayer.model.Album(albumName, artistName, 0))
+                                            albumViewModel.selectAlbum(
+                                                com.cvc953.localplayer.model
+                                                    .Album(albumName, artistName, 0),
+                                            )
                                         }
                                         selectedAlbumName = "$albumName|$artistName"
                                     },
