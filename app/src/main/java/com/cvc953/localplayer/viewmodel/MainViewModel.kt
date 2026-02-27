@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.cvc953.localplayer.controller.PlayerController
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -230,6 +231,19 @@ class MainViewModel(
             playbackViewModel.playerState.collect { state ->
                 _playerState.value = state
             }
+        }
+        // Ensure when the PlayerController's internal queue is exhausted, MainViewModel advances
+        try {
+            val pc = PlayerController.getInstance(getApplication(), viewModelScope)
+            pc.setOnQueueEndedListener {
+                viewModelScope.launch {
+                    try {
+                        playNextSong()
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        } catch (_: Exception) {
         }
     }
 
