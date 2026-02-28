@@ -1,3 +1,4 @@
+
 @file:Suppress("ktlint:standard:no-wildcard-imports")
 
 package com.cvc953.localplayer.ui
@@ -107,6 +108,21 @@ fun ArtistsScreen(
     val songViewModel: SongViewModel = viewModel()
     val songs by songViewModel.songs.collectAsState()
     val artists by artistViewModel.artists.collectAsState()
+
+    // Expand and deduplicate artist names using normalization
+    val expandedArtists = remember(artists) {
+        val seen = mutableSetOf<String>()
+        val result = mutableListOf<com.cvc953.localplayer.model.Artist>()
+        for (artist in artists) {
+            for (name in normalizeArtistName(artist.name)) {
+                val norm = name.trim()
+                if (norm.isNotEmpty() && seen.add(norm.lowercase())) {
+                    result.add(artist.copy(name = norm))
+                }
+            }
+        }
+        result
+    }
     val isScanning by songViewModel.isScanning.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
@@ -127,19 +143,17 @@ fun ArtistsScreen(
         }
     }
 
-    val filteredArtists =
-        remember(artists, searchQuery) {
-            val q = searchQuery.trim().lowercase()
-            if (q.isEmpty()) artists else artists.filter { it.name.lowercase().contains(q) }
-        }
+    val filteredArtists = remember(expandedArtists, searchQuery) {
+        val q = searchQuery.trim().lowercase()
+        if (q.isEmpty()) expandedArtists else expandedArtists.filter { it.name.lowercase().contains(q) }
+    }
 
-    val sortedArtists =
-        remember(filteredArtists, sortMode) {
-            when (sortMode) {
-                ArtistSortMode.TITLE_ASC -> filteredArtists.sortedBy { it.name.lowercase() }
-                ArtistSortMode.TITLE_DESC -> filteredArtists.sortedByDescending { it.name.lowercase() }
-            }
+    val sortedArtists = remember(filteredArtists, sortMode) {
+        when (sortMode) {
+            ArtistSortMode.TITLE_ASC -> filteredArtists.sortedBy { it.name.lowercase() }
+            ArtistSortMode.TITLE_DESC -> filteredArtists.sortedByDescending { it.name.lowercase() }
         }
+    }
 
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -252,7 +266,10 @@ fun ArtistsScreen(
                     ) {
                         items(sortedArtists) { artist ->
                             val context = LocalContext.current
-                            val firstSong = songs.firstOrNull { it.artist.trim().equals(artist.name.trim(), ignoreCase = true) }
+                            // Buscar cualquier canción donde el artista normalizado coincida
+                            val firstSong = songs.firstOrNull { song ->
+                                normalizeArtistName(song.artist).any { it.equals(artist.name.trim(), ignoreCase = true) }
+                            }
                             var artistArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
@@ -261,7 +278,7 @@ fun ArtistsScreen(
                                         val uri = firstSong?.uri ?: return@withContext
                                         Log.d(
                                             "ArtistsScreen",
-                                            "Loading art for artist='${artist.name}' uri=$uri filePath=${firstSong.filePath}",
+                                            "Loading art for artist='${artist.name}' uri=$uri filePath=${firstSong?.filePath}",
                                         )
                                         val retriever = MediaMetadataRetriever()
                                         retriever.setDataSource(context, uri)
@@ -286,8 +303,8 @@ fun ArtistsScreen(
                                         }
 
                                         if (artistArt == null) {
-                                            Log.d("ArtistsScreen", "Trying file fallback for filePath=${firstSong.filePath}")
-                                            val path = firstSong.filePath
+                                            Log.d("ArtistsScreen", "Trying file fallback for filePath=${firstSong?.filePath}")
+                                            val path = firstSong?.filePath
                                             if (!path.isNullOrBlank()) {
                                                 try {
                                                     val dir = java.io.File(path).parentFile
@@ -324,17 +341,84 @@ fun ArtistsScreen(
                                 modifier = Modifier.fillMaxWidth().clickable { onArtistClick(artist.name) }.padding(6.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Image(
-                                    painter =
-                                        artistArt?.let {
-                                            BitmapPainter(
-                                                it.asImageBitmap(),
+                                Box(modifier = Modifier.size(120.dp)) {
+                                    Image(
+                                        painter =
+                                            artistArt?.let { BitmapPainter(it.asImageBitmap()) }
+                                                ?: painterResource(R.drawable.ic_default_album),
+                                        contentDescription = null,
+                                        modifier = Modifier.matchParentSize().clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                    var menuExpanded by remember { mutableStateOf(false) }
+                                    Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                                        IconButton(onClick = { menuExpanded = true }) {
+                                            Icon(
+                                                Icons.Default.MoreVert,
+                                                contentDescription = "Más opciones",
+                                                tint = MaterialTheme.colorScheme.onSurface,
                                             )
-                                        } ?: painterResource(R.drawable.ic_default_album),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(120.dp).clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop,
-                                )
+                                        }
+                                        DropdownMenu(
+                                            expanded = menuExpanded,
+                                            onDismissRequest = { menuExpanded = false },
+                                            containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                                            modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
+                                        ) {
+                                            // Agrupar todas las canciones por artista, orden alfabético
+                                            val artistsOrdered = sortedArtists.map { it.name.trim() }
+                                            val allSongsByArtist =
+                                                artistsOrdered.flatMap { artistName ->
+                                                    songs
+                                                        .filter {
+                                                            it.artist.trim().equals(artistName, ignoreCase = true)
+                                                        }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+                                                }
+                                            val artistSongs =
+                                                songs
+                                                    .filter {
+                                                        it.artist.trim().equals(artist.name.trim(), ignoreCase = true)
+                                                    }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+                                            val firstSongOfArtist = artistSongs.firstOrNull()
+                                            val startIndex =
+                                                if (firstSongOfArtist !=
+                                                    null
+                                                ) {
+                                                    allSongsByArtist.indexOfFirst { it.id == firstSongOfArtist.id }
+                                                } else {
+                                                    0
+                                                }
+                                            DropdownMenuItem(
+                                                text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                                                onClick = {
+                                                    menuExpanded = false
+                                                    if (allSongsByArtist.isNotEmpty() && startIndex >= 0) {
+                                                        playbackViewModel.updateDisplayOrder(allSongsByArtist)
+                                                        playbackViewModel.play(allSongsByArtist[startIndex])
+                                                    }
+                                                },
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                                                onClick = {
+                                                    menuExpanded = false
+                                                    val currentQueue = playbackViewModel.queue.value
+                                                    val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                    toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                                },
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                                                onClick = {
+                                                    menuExpanded = false
+                                                    val currentQueue = playbackViewModel.queue.value
+                                                    val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                    toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
                                 Spacer(Modifier.height(6.dp))
                                 Text(
                                     text = artist.name,
@@ -344,8 +428,12 @@ fun ArtistsScreen(
                                     textAlign = TextAlign.Center,
                                     overflow = TextOverflow.Ellipsis,
                                 )
+                                // Contar todas las canciones donde el artista aparece (normalizado)
+                                val songCount = songs.count { song ->
+                                    normalizeArtistName(song.artist).any { it.equals(artist.name.trim(), ignoreCase = true) }
+                                }
                                 Text(
-                                    text = "${artist.songCount} canciones",
+                                    text = "$songCount canciones",
                                     color = MaterialTheme.extendedColors.textSecondary,
                                     fontSize = 12.sp,
                                 )
@@ -463,33 +551,59 @@ fun ArtistsScreen(
                                         containerColor = MaterialTheme.extendedColors.surfaceSheet,
                                         modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
                                     ) {
-                                        DropdownMenuItem(text = {
-                                            Text(
-                                                "Reproducir ahora",
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                        }, onClick = {
-                                            menuExpanded =
-                                                false
-                                        })
-                                        DropdownMenuItem(text = {
-                                            Text(
-                                                "Añadir como siguiente",
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                        }, onClick = {
-                                            menuExpanded =
-                                                false
-                                        })
-                                        DropdownMenuItem(text = {
-                                            Text(
-                                                "Añadir al final",
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                        }, onClick = {
-                                            menuExpanded =
-                                                false
-                                        })
+                                        // Agrupar todas las canciones por artista, orden alfabético
+                                        val artistsOrdered = sortedArtists.map { it.name.trim() }
+                                        val allSongsByArtist =
+                                            artistsOrdered.flatMap { artistName ->
+                                                songs
+                                                    .filter { song ->
+                                                        normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) }
+                                                    }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+                                            }
+                                        val artistSongs =
+                                            songs
+                                                .filter { song ->
+                                                    normalizeArtistName(
+                                                        song.artist,
+                                                    ).any { it.equals(artist.name.trim(), ignoreCase = true) }
+                                                }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+                                        val firstSongOfArtist = artistSongs.firstOrNull()
+                                        val startIndex =
+                                            if (firstSongOfArtist !=
+                                                null
+                                            ) {
+                                                allSongsByArtist.indexOfFirst { it.id == firstSongOfArtist.id }
+                                            } else {
+                                                0
+                                            }
+                                        DropdownMenuItem(
+                                            text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                                if (allSongsByArtist.isNotEmpty() && startIndex >= 0) {
+                                                    playbackViewModel.updateDisplayOrder(allSongsByArtist)
+                                                    playbackViewModel.play(allSongsByArtist[startIndex])
+                                                }
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                                val currentQueue = playbackViewModel.queue.value
+                                                val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                                            onClick = {
+                                                menuExpanded = false
+                                                val currentQueue = playbackViewModel.queue.value
+                                                val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                            },
+                                        )
                                     }
                                 }
                             }
@@ -617,9 +731,13 @@ fun ArtistDetailScreen(
     artistName: String,
     onBack: () -> Unit,
 ) {
-    val artistSongs by artistViewModel.getSongsForArtist(artistName).collectAsState(initial = emptyList())
+    val repo = remember { SongRepository(artistViewModel.getApplication<Application>()) }
+    val allSongs = remember { repo.loadSongs() }
     val playerState by playbackViewModel.playerState.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
+    val artistSongs = remember(allSongs, artistName) {
+        allSongs.filter { song -> normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) } }
+    }
     val artistSongsSorted = remember(artistSongs) { artistSongs.sortedWith(compareBy({ it.album }, { it.discNumber }, { it.trackNumber })) }
     val context = LocalContext.current
 
@@ -644,6 +762,12 @@ fun ArtistDetailScreen(
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                )
+                // Mostrar el número real de canciones
+                Text(
+                    text = "${artistSongs.size} canciones",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.extendedColors.textSecondary,
                 )
             }
         }
@@ -745,7 +869,14 @@ fun ArtistHeader(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(text = artistName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(
+            text = artistName,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -762,7 +893,7 @@ fun ArtistSongsScreen(
 ) {
     val repo = remember { SongRepository(artistViewModel.getApplication<Application>()) }
     val allSongs = remember { repo.loadSongs() }
-    val artistSongs = allSongs.filter { it.artist == artistName }
+    val artistSongs = allSongs.filter { song -> normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) } }
     val context = LocalContext.current
 
     BackHandler { onBack() }
@@ -802,5 +933,15 @@ fun ArtistSongsScreen(
                 )
             }
         }
+    }
+}
+
+// Normaliza nombres de artistas, separando por ',' y '/' excepto 'AC/DC'
+fun normalizeArtistName(artist: String): List<String> {
+    val trimmed = artist.trim()
+    return if (trimmed.equals("AC/DC", ignoreCase = true)) {
+        listOf("AC/DC")
+    } else {
+        trimmed.split(',', '/').map { it.trim() }.filter { it.isNotEmpty() }
     }
 }

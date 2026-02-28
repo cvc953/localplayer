@@ -107,11 +107,16 @@ class PlaybackViewModel(
             _isLoading.value = true
             _error.value = null
             try {
-                playerController.playSong(song)
+                // Si la canción no es la única en la cola, sincroniza la cola con la lista actual
+                val queue = _queue.value
+                val index = queue.indexOfFirst { it.id == song.id }
+                if (queue.size > 1 && index >= 0) {
+                    playerController.playNow(queue, index)
+                } else {
+                    playerController.playSong(song)
+                }
                 _currentPosition.value = 0L
-                _currentPosition.value = 0L
-                // Notify service about the new song so notification shows correct metadata
-                // Persist playback state
+                // Persistir estado de reproducción
                 try {
                     prefs.saveLastSongUri(song.uri.toString())
                     prefs.savePlaybackPosition(0L)
