@@ -374,36 +374,20 @@ fun AlbumsScreen(
                                             containerColor = MaterialTheme.extendedColors.surfaceSheet,
                                             modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
                                         ) {
-                                            // Agrupar todas las canciones por álbum y artista usando normalización
-                                            val albumsOrdered = albums.sortedBy { it.name.lowercase() }
-                                            val allSongsByAlbum =
-                                                albumsOrdered.flatMap { alb ->
-                                                    songs.filter { song ->
-                                                        normalizeAlbumName(song.album).any { it.equals(alb.name.trim(), ignoreCase = true) } &&
-                                                        normalizeArtistName(song.artist).any { it.equals(alb.artist.trim(), ignoreCase = true) }
-                                                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
-                                                }
-                                            // Buscar el índice de la primera canción del álbum seleccionado
-                                            val albumSongs =
-                                                songs.filter { song ->
-                                                    normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
-                                                    normalizeArtistName(song.artist).any { it.equals(album.artist.trim(), ignoreCase = true) }
-                                                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                            // Solo usar las canciones del álbum actual para el dropdown (más rápido)
+                                            val albumSongs = songs.filter { song ->
+                                                normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
+                                                normalizeArtistName(song.artist).any { it.equals(album.artist.trim(), ignoreCase = true) }
+                                            }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
                                             val firstSongOfAlbum = albumSongs.firstOrNull()
-                                            val startIndex =
-                                                if (firstSongOfAlbum != null) {
-                                                    allSongsByAlbum.indexOfFirst { it.id == firstSongOfAlbum.id }
-                                                } else {
-                                                    0
-                                                }
 
                                             DropdownMenuItem(
                                                 text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
                                                 onClick = {
                                                     menuExpanded = false
-                                                    if (allSongsByAlbum.isNotEmpty() && startIndex >= 0) {
-                                                        playbackViewModel.updateDisplayOrder(allSongsByAlbum)
-                                                        playbackViewModel.play(allSongsByAlbum[startIndex])
+                                                    if (albumSongs.isNotEmpty()) {
+                                                        playbackViewModel.updateDisplayOrder(albumSongs)
+                                                        playbackViewModel.play(albumSongs[0])
                                                     }
                                                 },
                                             )

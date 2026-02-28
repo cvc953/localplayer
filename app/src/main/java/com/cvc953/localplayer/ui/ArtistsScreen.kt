@@ -369,36 +369,18 @@ fun ArtistsScreen(
                                             containerColor = MaterialTheme.extendedColors.surfaceSheet,
                                             modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
                                         ) {
-                                            // Agrupar todas las canciones por artista, orden alfabético
-                                            val artistsOrdered = sortedArtists.map { it.name.trim() }
-                                            val allSongsByArtist =
-                                                artistsOrdered.flatMap { artistName ->
-                                                    songs
-                                                        .filter {
-                                                            it.artist.trim().equals(artistName, ignoreCase = true)
-                                                        }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
-                                                }
-                                            val artistSongs =
-                                                songs
-                                                    .filter {
-                                                        it.artist.trim().equals(artist.name.trim(), ignoreCase = true)
-                                                    }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+                                            // Solo usar las canciones del artista actual para el dropdown (más rápido)
+                                            val artistSongs = songs.filter {
+                                                it.artist.trim().equals(artist.name.trim(), ignoreCase = true)
+                                            }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
                                             val firstSongOfArtist = artistSongs.firstOrNull()
-                                            val startIndex =
-                                                if (firstSongOfArtist !=
-                                                    null
-                                                ) {
-                                                    allSongsByArtist.indexOfFirst { it.id == firstSongOfArtist.id }
-                                                } else {
-                                                    0
-                                                }
                                             DropdownMenuItem(
                                                 text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
                                                 onClick = {
                                                     menuExpanded = false
-                                                    if (allSongsByArtist.isNotEmpty() && startIndex >= 0) {
-                                                        playbackViewModel.updateDisplayOrder(allSongsByArtist)
-                                                        playbackViewModel.play(allSongsByArtist[startIndex])
+                                                    if (artistSongs.isNotEmpty()) {
+                                                        playbackViewModel.updateDisplayOrder(artistSongs)
+                                                        playbackViewModel.play(artistSongs[0])
                                                     }
                                                 },
                                             )
@@ -558,13 +540,6 @@ fun ArtistsScreen(
                                     ) {
                                         // Agrupar todas las canciones por artista, orden alfabético
                                         val artistsOrdered = sortedArtists.map { it.name.trim() }
-                                        val allSongsByArtist =
-                                            artistsOrdered.flatMap { artistName ->
-                                                songs
-                                                    .filter { song ->
-                                                        normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) }
-                                                    }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
-                                            }
                                         val artistSongs =
                                             songs
                                                 .filter { song ->
@@ -573,21 +548,14 @@ fun ArtistsScreen(
                                                     ).any { it.equals(artist.name.trim(), ignoreCase = true) }
                                                 }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
                                         val firstSongOfArtist = artistSongs.firstOrNull()
-                                        val startIndex =
-                                            if (firstSongOfArtist !=
-                                                null
-                                            ) {
-                                                allSongsByArtist.indexOfFirst { it.id == firstSongOfArtist.id }
-                                            } else {
-                                                0
-                                            }
+                                        val startIndex = 0
                                         DropdownMenuItem(
                                             text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
                                             onClick = {
                                                 menuExpanded = false
-                                                if (allSongsByArtist.isNotEmpty() && startIndex >= 0) {
-                                                    playbackViewModel.updateDisplayOrder(allSongsByArtist)
-                                                    playbackViewModel.play(allSongsByArtist[startIndex])
+                                                if (artistSongs.isNotEmpty()) {
+                                                    playbackViewModel.updateDisplayOrder(artistSongs)
+                                                    playbackViewModel.play(artistSongs[0])
                                                 }
                                             },
                                         )
