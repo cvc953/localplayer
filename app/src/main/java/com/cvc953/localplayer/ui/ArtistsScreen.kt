@@ -110,19 +110,20 @@ fun ArtistsScreen(
     val artists by artistViewModel.artists.collectAsState()
 
     // Expand and deduplicate artist names using normalization
-    val expandedArtists = remember(artists) {
-        val seen = mutableSetOf<String>()
-        val result = mutableListOf<com.cvc953.localplayer.model.Artist>()
-        for (artist in artists) {
-            for (name in normalizeArtistName(artist.name)) {
-                val norm = name.trim()
-                if (norm.isNotEmpty() && seen.add(norm.lowercase())) {
-                    result.add(artist.copy(name = norm))
+    val expandedArtists =
+        remember(artists) {
+            val seen = mutableSetOf<String>()
+            val result = mutableListOf<com.cvc953.localplayer.model.Artist>()
+            for (artist in artists) {
+                for (name in normalizeArtistName(artist.name)) {
+                    val norm = name.trim()
+                    if (norm.isNotEmpty() && seen.add(norm.lowercase())) {
+                        result.add(artist.copy(name = norm))
+                    }
                 }
             }
+            result
         }
-        result
-    }
     val isScanning by songViewModel.isScanning.collectAsState()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
@@ -143,17 +144,19 @@ fun ArtistsScreen(
         }
     }
 
-    val filteredArtists = remember(expandedArtists, searchQuery) {
-        val q = searchQuery.trim().lowercase()
-        if (q.isEmpty()) expandedArtists else expandedArtists.filter { it.name.lowercase().contains(q) }
-    }
-
-    val sortedArtists = remember(filteredArtists, sortMode) {
-        when (sortMode) {
-            ArtistSortMode.TITLE_ASC -> filteredArtists.sortedBy { it.name.lowercase() }
-            ArtistSortMode.TITLE_DESC -> filteredArtists.sortedByDescending { it.name.lowercase() }
+    val filteredArtists =
+        remember(expandedArtists, searchQuery) {
+            val q = searchQuery.trim().lowercase()
+            if (q.isEmpty()) expandedArtists else expandedArtists.filter { it.name.lowercase().contains(q) }
         }
-    }
+
+    val sortedArtists =
+        remember(filteredArtists, sortMode) {
+            when (sortMode) {
+                ArtistSortMode.TITLE_ASC -> filteredArtists.sortedBy { it.name.lowercase() }
+                ArtistSortMode.TITLE_DESC -> filteredArtists.sortedByDescending { it.name.lowercase() }
+            }
+        }
 
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
@@ -267,9 +270,10 @@ fun ArtistsScreen(
                         items(sortedArtists) { artist ->
                             val context = LocalContext.current
                             // Buscar cualquier canción donde el artista normalizado coincida
-                            val firstSong = songs.firstOrNull { song ->
-                                normalizeArtistName(song.artist).any { it.equals(artist.name.trim(), ignoreCase = true) }
-                            }
+                            val firstSong =
+                                songs.firstOrNull { song ->
+                                    normalizeArtistName(song.artist).any { it.equals(artist.name.trim(), ignoreCase = true) }
+                                }
                             var artistArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
@@ -429,9 +433,10 @@ fun ArtistsScreen(
                                     overflow = TextOverflow.Ellipsis,
                                 )
                                 // Contar todas las canciones donde el artista aparece (normalizado)
-                                val songCount = songs.count { song ->
-                                    normalizeArtistName(song.artist).any { it.equals(artist.name.trim(), ignoreCase = true) }
-                                }
+                                val songCount =
+                                    songs.count { song ->
+                                        normalizeArtistName(song.artist).any { it.equals(artist.name.trim(), ignoreCase = true) }
+                                    }
                                 Text(
                                     text = "$songCount canciones",
                                     color = MaterialTheme.extendedColors.textSecondary,
@@ -735,9 +740,10 @@ fun ArtistDetailScreen(
     val allSongs = remember { repo.loadSongs() }
     val playerState by playbackViewModel.playerState.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
-    val artistSongs = remember(allSongs, artistName) {
-        allSongs.filter { song -> normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) } }
-    }
+    val artistSongs =
+        remember(allSongs, artistName) {
+            allSongs.filter { song -> normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) } }
+        }
     val artistSongsSorted = remember(artistSongs) { artistSongs.sortedWith(compareBy({ it.album }, { it.discNumber }, { it.trackNumber })) }
     val context = LocalContext.current
 
@@ -808,7 +814,15 @@ fun ArtistHeader(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
         val songs by artistViewModel.getSongsForArtist(artistName).collectAsState(initial = emptyList())
-        val artistSongs = remember(songs, artistName) { songs.filter { it.artist == artistName } }
+        val repo = remember { SongRepository(artistViewModel.getApplication<Application>()) }
+        val allSongs = remember { repo.loadSongs() }
+        // val playerState by playbackViewModel.playerState.collectAsState()
+        // val playlists by playlistViewModel.playlists.collectAsState()
+        val artistSongs =
+            remember(allSongs, artistName) {
+                allSongs.filter { song -> normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) } }
+            }
+        // val artistSongs = remember(songs, artistName) { songs.filter { it.artist == artistName } }
         var artistArt by remember { mutableStateOf<Bitmap?>(null) }
         val firstSong = artistSongs.firstOrNull()
         val context = LocalContext.current
