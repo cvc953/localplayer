@@ -2,6 +2,7 @@ package com.cvc953.localplayer.controller
 
 import android.content.Context
 import android.media.MediaPlayer
+import android.util.Log
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.PlayerState
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +26,7 @@ class PlayerController(
 
     private var progressJob: Job? = null
     private var onQueueEnded: (() -> Unit)? = null
+    private var onAudioSessionIdChanged: ((Int) -> Unit)? = null
 
     fun playNow(
         songs: List<Song>,
@@ -49,6 +51,23 @@ class PlayerController(
         queue.addAll(songs)
     }
 
+    /**
+     * Replace the internal queue without automatically starting playback.
+     * If [keepCurrentSong] is true and the current song exists in [songs],
+     * keep the currentIndex pointing to that song; otherwise set to 0.
+     */
+    fun replaceQueue(songs: List<Song>, keepCurrentSong: Boolean = true) {
+        val currentSong = if (currentIndex in queue.indices) queue[currentIndex] else null
+        queue.clear()
+        queue.addAll(songs)
+        currentIndex = if (keepCurrentSong && currentSong != null) {
+            val idx = queue.indexOfFirst { it.id == currentSong.id }
+            if (idx >= 0) idx else 0
+        } else {
+            0
+        }
+    }
+
     private fun playCurrent() {
         if (currentIndex !in queue.indices) {
             stop()
@@ -65,6 +84,14 @@ class PlayerController(
                 setDataSource(context, song.uri)
                 prepare()
                 start()
+                // notify listener about audio session id once created
+                try {
+                    val sid = audioSessionId
+                    Log.d("PlayerController", "MediaPlayer created audioSessionId=$sid")
+                    onAudioSessionIdChanged?.invoke(sid)
+                } catch (t: Throwable) {
+                    Log.w("PlayerController", "onAudioSessionIdChanged invoke failed", t)
+                }
                 setOnCompletionListener {
                     if (currentIndex + 1 < queue.size) {
                         currentIndex++
@@ -82,6 +109,11 @@ class PlayerController(
         _state.value = PlayerState(currentSong = song, isPlaying = true, position = 0L, duration = mediaPlayer?.duration?.toLong() ?: 0L)
 
         startProgressUpdates()
+    }
+
+    fun setOnAudioSessionIdChangedListener(listener: ((Int) -> Unit)?) {
+        onAudioSessionIdChanged = listener
+        try { Log.d("PlayerController", "setOnAudioSessionIdChangedListener registered") } catch (_: Exception) {}
     }
 
     private fun startProgressUpdates() {
@@ -167,6 +199,15 @@ class PlayerController(
             mediaPlayer?.currentPosition?.toLong() ?: 0L
         } catch (_: IllegalStateException) {
             0L
+        }
+    }
+
+    /** Return the underlying MediaPlayer audio session id, or 0 if not available. */
+    fun getAudioSessionId(): Int {
+        return try {
+            mediaPlayer?.audioSessionId ?: 0
+        } catch (_: Exception) {
+            0
         }
     }
 

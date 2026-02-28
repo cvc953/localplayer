@@ -104,10 +104,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
-import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -151,9 +151,10 @@ fun PlayerScreen(
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var isFavorite by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val upcoming = remember(queue, playerState, songs, isShuffle, repeatMode) {
-        playbackViewModel.getUpcomingSongs()
-    }
+    val upcoming =
+        remember(queue, playerState, songs, isShuffle, repeatMode) {
+            playbackViewModel.getUpcomingSongs()
+        }
     val listState = rememberLazyListState()
     val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
@@ -231,6 +232,7 @@ fun PlayerScreen(
         // caused by shuffle reordering the upcoming list every second.
         if (showQueue && draggingIndex == null) {
             dragList.clear()
+            // Show only upcoming songs (exclude currently playing)
             dragList.addAll(upcoming)
         }
     }
@@ -817,9 +819,17 @@ fun PlayerScreen(
                                                         null
                                                     dragOffset =
                                                         0f
-                                                    playbackViewModel.updateDisplayOrder(
-                                                        dragList.toList(),
-                                                    )
+                                                    // Merge current song back as first element when saving the new order
+                                                    val currentSong = playerState.currentSong
+                                                    val newOrder =
+                                                        if (currentSong !=
+                                                            null
+                                                        ) {
+                                                            listOf(currentSong) + dragList.toList()
+                                                        } else {
+                                                            dragList.toList()
+                                                        }
+                                                    playbackViewModel.updateDisplayOrder(newOrder)
                                                 },
                                                 onDragCancel = {
                                                     draggingIndex =
@@ -1347,7 +1357,7 @@ fun PlayerControls(
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                Slider(
+            Slider(
                 value = playerState.position.toFloat(),
                 onValueChange = { playbackViewModel.seekTo(it.toLong()) },
                 valueRange = 0f..playerState.duration.toFloat(),

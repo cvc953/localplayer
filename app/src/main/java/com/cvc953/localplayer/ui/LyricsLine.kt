@@ -33,6 +33,16 @@ fun LyricLine(
     text: String,
     active: Boolean,
 ) {
+    LyricLine(text = text, active = active, modifier = Modifier)
+}
+
+
+@Composable
+fun LyricLine(
+    text: String,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+) {
     var lineCount by remember(text) { mutableStateOf(1) }
 
     val fontSize by animateFloatAsState(
@@ -44,7 +54,7 @@ fun LyricLine(
 
     Box(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
         contentAlignment = Alignment.TopStart,

@@ -1,12 +1,7 @@
 package com.cvc953.localplayer.ui
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.StartOffset
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,45 +44,37 @@ fun SyllableLyric(
     val baseColor = Color(0xFF707070)
     val baseFontSize = 30f
 
-    val chars = syllable.text.toCharArray()
-    val charCount = chars.size.coerceAtLeast(1)
-    val progress =
-        if (syllable.durationMs > 0) {
-            ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
-                .coerceIn(0f, 1f)
-        } else {
-            0f
-        }
-    val revealCount =
-        if (isLineActive && currentPosition >= syllable.timeMs) {
-            (progress * charCount).toInt().coerceIn(0, charCount)
-        } else {
-            0
-        }
+    val text = syllable.text
+    val charCount = text.length.coerceAtLeast(1)
+    val rawProgress = if (syllable.durationMs > 0) {
+        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
+    } else 0f
+    val targetProgress = if (isLineActive && currentPosition >= syllable.timeMs) rawProgress else 0f
 
-    // Reducir padding si la sílaba continúa en la siguiente palabra
+    val animatedProgress by animateFloatAsState(targetValue = targetProgress, animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing))
+    val revealCount = (animatedProgress * charCount).toInt().coerceIn(0, charCount)
+
+    val revealed = if (revealCount > 0) text.substring(0, revealCount) else ""
+    val rest = if (revealCount < charCount) text.substring(revealCount) else ""
+
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
-        chars.forEachIndexed { index, ch ->
-            val charColor by animateColorAsState(
-                targetValue =
-                    if (index < revealCount) {
-                        MaterialTheme.colorScheme.onBackground
-                    } else {
-                        baseColor
-                    },
-                animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
-                label = "charColor",
-            )
-            Text(
-                text = ch.toString(),
-                color = charColor,
-                fontSize = baseFontSize.sp,
-                lineHeight = (baseFontSize + 10f).sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        Text(
+            buildAnnotatedString {
+                if (revealed.isNotEmpty()) {
+                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = baseFontSize.sp)) {
+                        append(revealed)
+                    }
+                }
+                if (rest.isNotEmpty()) {
+                    withStyle(SpanStyle(color = baseColor, fontWeight = FontWeight.Bold, fontSize = baseFontSize.sp)) {
+                        append(rest)
+                    }
+                }
+            },
+            lineHeight = (baseFontSize + 10f).sp,
+        )
     }
 }
 
@@ -101,44 +91,39 @@ fun BackgroundSyllableLyric(
 ) {
     // Solo mostrar si la línea está activa
     if (!isLineActive) return
-
     val baseColor = Color(0xFF585858)
     val baseFontSize = 20f
 
-    val chars = syllable.text.toCharArray()
-    val charCount = chars.size.coerceAtLeast(1)
-    val progress =
-        if (syllable.durationMs > 0) {
-            ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat())
-                .coerceIn(0f, 1f)
-        } else {
-            0f
-        }
-    val revealCount =
-        if (currentPosition >= syllable.timeMs) {
-            (progress * charCount).toInt().coerceIn(0, charCount)
-        } else {
-            0
-        }
+    val text = syllable.text
+    val charCount = text.length.coerceAtLeast(1)
+    val rawProgress = if (syllable.durationMs > 0) {
+        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
+    } else 0f
+    val targetProgress = if (currentPosition >= syllable.timeMs) rawProgress else 0f
+    val animatedProgress by animateFloatAsState(targetValue = targetProgress, animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing))
+    val revealCount = (animatedProgress * charCount).toInt().coerceIn(0, charCount)
 
-    // Reducir padding si la sílaba continúa en la siguiente palabra
+    val revealed = if (revealCount > 0) text.substring(0, revealCount) else ""
+    val rest = if (revealCount < charCount) text.substring(revealCount) else ""
+
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
-        chars.forEachIndexed { index, ch ->
-            val charColor by animateColorAsState(
-                targetValue = if (index < revealCount) Color(0xFFB0B0B0) else baseColor,
-                animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
-                label = "charColor",
-            )
-            Text(
-                text = ch.toString(),
-                color = charColor,
-                fontSize = baseFontSize.sp,
-                lineHeight = (baseFontSize + 8f).sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+        Text(
+            buildAnnotatedString {
+                if (revealed.isNotEmpty()) {
+                    withStyle(SpanStyle(color = Color(0xFFB0B0B0), fontSize = baseFontSize.sp, fontWeight = FontWeight.Bold)) {
+                        append(revealed)
+                    }
+                }
+                if (rest.isNotEmpty()) {
+                    withStyle(SpanStyle(color = baseColor, fontSize = baseFontSize.sp, fontWeight = FontWeight.Bold)) {
+                        append(rest)
+                    }
+                }
+            },
+            lineHeight = (baseFontSize + 8f).sp,
+        )
     }
 }
 

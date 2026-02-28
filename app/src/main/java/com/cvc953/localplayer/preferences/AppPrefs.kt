@@ -149,4 +149,51 @@ class AppPrefs(context: Context) {
         if (mode != "sistema" && mode != "claro" && mode != "oscuro") return
         prefs.edit().putString("theme_mode", mode).apply()
     }
+
+    // Playback state persistence (queue, current song, position, shuffle, repeat, playing)
+    fun savePlaybackQueue(uris: List<String>) {
+        prefs.edit().putString("playback_queue", org.json.JSONArray(uris).toString()).apply()
+    }
+
+    fun loadPlaybackQueue(): List<String> {
+        val raw = prefs.getString("playback_queue", null) ?: return emptyList()
+        return try {
+            val arr = org.json.JSONArray(raw)
+            val list = mutableListOf<String>()
+            for (i in 0 until arr.length()) list.add(arr.getString(i))
+            list
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    fun saveLastSongUri(uri: String?) {
+        if (uri == null) prefs.edit().remove("last_song_uri").apply() else prefs.edit().putString("last_song_uri", uri).apply()
+    }
+
+    fun loadLastSongUri(): String? = prefs.getString("last_song_uri", null)
+
+    fun savePlaybackPosition(positionMs: Long) {
+        prefs.edit().putLong("playback_position", positionMs).apply()
+    }
+
+    fun loadPlaybackPosition(): Long = prefs.getLong("playback_position", 0L)
+
+    fun saveShuffleEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("playback_shuffle", enabled).apply()
+    }
+
+    fun loadShuffleEnabled(): Boolean = prefs.getBoolean("playback_shuffle", false)
+
+    fun saveRepeatMode(mode: String) {
+        prefs.edit().putString("playback_repeat", mode).apply()
+    }
+
+    fun loadRepeatMode(): String? = prefs.getString("playback_repeat", null)
+
+    fun saveIsPlaying(isPlaying: Boolean) {
+        prefs.edit().putBoolean("playback_is_playing", isPlaying).apply()
+    }
+
+    fun loadIsPlaying(): Boolean = prefs.getBoolean("playback_is_playing", false)
 }

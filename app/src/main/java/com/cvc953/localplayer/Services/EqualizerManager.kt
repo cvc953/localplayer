@@ -7,6 +7,9 @@ import android.util.Log
  * Small wrapper around android.media.audiofx.Equalizer to manage lifecycle and provide helpers.
  */
 class EqualizerManager {
+        private fun log(msg: String) {
+            android.util.Log.d("EqualizerManager", msg)
+        }
     private var eq: Equalizer? = null
 
     fun init(sessionId: Int): Boolean {
@@ -16,6 +19,7 @@ class EqualizerManager {
             val e = Equalizer(0, sessionId)
             e.enabled = false
             eq = e
+            android.util.Log.d("EqualizerManager", "Initialized Equalizer with sessionId=$sessionId; bands=${e.numberOfBands}")
             true
         } catch (t: Throwable) {
             Log.w("EqualizerManager", "Failed to init Equalizer", t)
@@ -49,8 +53,10 @@ class EqualizerManager {
 
     fun setBandLevel(band: Short, level: Short) {
         try {
+            log("setBandLevel(band=$band, level=$level)")
             eq?.setBandLevel(band, level)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            log("Error en setBandLevel: ${e.message}")
         }
     }
 
@@ -68,9 +74,11 @@ class EqualizerManager {
 
     fun usePreset(index: Int) {
         try {
+            log("usePreset(index=$index)")
             val e = eq ?: return
             if (index >= 0 && index < e.numberOfPresets) e.usePreset(index.toShort())
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            log("Error en usePreset: ${e.message}")
         }
     }
 

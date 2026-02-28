@@ -249,6 +249,7 @@ fun SongsContent(
                                 onClick = {
                                     // Redirigir a navegación de settings si es necesario
                                     menuExpanded = false
+                                    playerViewModel.showSettings(true)
                                 },
                             )
                             DropdownMenuItem(
@@ -261,6 +262,7 @@ fun SongsContent(
                                 onClick = {
                                     // Redirigir a navegación de about si es necesario
                                     menuExpanded = false
+                                    playerViewModel.showAbout(true)
                                 },
                             )
                         }
@@ -477,7 +479,7 @@ fun SongsContent(
                                         playbackViewModel.updateDisplayOrder(sortedSongs)
                                         playbackViewModel.play(song)
                                         // Ensure player UI is shown
-                                        playerViewModel.showPlayerScreen(true)
+                                        // playerViewModel.showPlayerScreen(true)
                                         // Si es necesario, iniciar servicio desde playbackViewModel
                                     },
                                     onQueueNext = { playbackViewModel.addToQueueNext(song) },
@@ -548,7 +550,7 @@ fun SongsContent(
                             }
                         }
                     if (index >= 0) {
-                        scope.launch { listState.animateScrollToItem(index) }
+                        scope.launch { listState.scrollToItem(index) }
                     }
                 }
 
@@ -933,21 +935,6 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                         playlistViewModel = playlistViewModel,
                                         artistName = artistName,
                                         onBack = { selectedArtistName = null },
-                                        onAlbumClick = { albumName, artist ->
-                                            // Select album in ViewModel so songs are loaded
-                                            val found = albumViewModel.albums.value.find {
-                                                it.name.equals(albumName, ignoreCase = true) && it.artist.equals(artist, ignoreCase = true)
-                                            }
-                                            if (found != null) {
-                                                albumViewModel.selectAlbum(found)
-                                            } else {
-                                                albumViewModel.selectAlbum(com.cvc953.localplayer.model.Album(albumName, artist, 0))
-                                            }
-                                            selectedAlbumName = "$albumName|$artist"
-                                            selectedArtistName = artistName
-                                            selectedTab = BottomNavItem.Albums.route
-                                        },
-                                        onViewAllSongs = { selectedArtistSongsView = true },
                                     )
                                 }
                             }
@@ -990,10 +977,21 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                     }
                     if (showSettings) {
                         Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
+                            val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel =
+                                androidx.lifecycle.viewmodel.compose
+                                    .viewModel()
                             SettingsScreen(
                                 settingsViewModel = /* Provide your SettingsViewModel here */ remember { SettingsViewModel() },
+                                equalizerEnabled = mainViewModel.equalizerEnabled.collectAsState().value,
+                                onToggleEqualizer = { enabled -> mainViewModel.toggleEqualizer(enabled) },
                                 onOpenEqualizer = { playerViewModel.showEqualizer(true) },
                                 onClose = { playerViewModel.closeSettingsScreen() },
+                                onThemeChange = { mode ->
+                                    try {
+                                        mainViewModel.setThemeMode(mode)
+                                    } catch (_: Exception) {
+                                    }
+                                },
                             )
                             if (playerViewModel.isEqualizerVisible.collectAsState().value) {
                                 val context = LocalContext.current
@@ -1002,7 +1000,8 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                         EqualizerViewModel(context.applicationContext as android.app.Application)
                                     }
                                 EqualizerScreen(
-                                    equalizerViewModel = equalizerViewModel,
+                                    // equalizerViewModel = equalizerViewModel,
+                                    mainViewModel = mainViewModel,
                                     onClose = { playerViewModel.closeEqualizerScreen() },
                                 )
                             }
