@@ -3,6 +3,13 @@ package com.cvc953.localplayer.preferences
 import android.content.Context
 
 class AppPrefs(context: Context) {
+    // Playlist order preference (per playlist)
+    fun getPlaylistOrder(playlistName: String): String =
+        prefs.getString("playlist_order_$playlistName", "PLAYLIST") ?: "PLAYLIST"
+
+    fun setPlaylistOrder(playlistName: String, order: String) {
+        prefs.edit().putString("playlist_order_$playlistName", order).apply()
+    }
 
     private val prefs = context.getSharedPreferences(
         "localplayer_prefs",

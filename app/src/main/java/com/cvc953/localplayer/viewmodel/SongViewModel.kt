@@ -31,12 +31,14 @@ class SongViewModel(
         loadSongs()
     }
 
+
     fun manualRefreshLibrary() {
-        loadSongs(forceRescan = true)
+        loadSongs(forceRescan = true, showScanning = true)
     }
 
-    fun loadSongs(forceRescan: Boolean = false) {
+    fun loadSongs(forceRescan: Boolean = false, showScanning: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
+            if (showScanning) _isScanning.value = true
             _isLoading.value = true
             _error.value = null
             try {
@@ -47,6 +49,7 @@ class SongViewModel(
                 _error.value = "Error cargando canciones: ${e.message}"
             } finally {
                 _isLoading.value = false
+                if (showScanning) _isScanning.value = false
             }
         }
     }

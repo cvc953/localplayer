@@ -696,12 +696,49 @@ fun PlaylistsScreen(
                                     )
                                 }
                                 DropdownMenu(
-                                    expanded =
-                                        menuExpandedPlaylistId ==
-                                            playlist.hashCode().toLong(),
+                                    expanded = menuExpandedPlaylistId == playlist.hashCode().toLong(),
                                     onDismissRequest = { menuExpandedPlaylistId = null },
                                     containerColor = MaterialTheme.extendedColors.surfaceSheet,
                                 ) {
+                                    val appPrefs = remember { com.cvc953.localplayer.preferences.AppPrefs(context) }
+                                    val order = appPrefs.getPlaylistOrder(playlist.name)
+                                    val playlistSongs = remember(songs, playlist, order) {
+                                        val base = playlist.songIds.mapNotNull { id -> songs.find { it.id == id } }
+                                        when (order) {
+                                            "AZ" -> base.sortedBy { it.title.lowercase() }
+                                            "ZA" -> base.sortedByDescending { it.title.lowercase() }
+                                            else -> base
+                                        }
+                                    }
+
+                                    DropdownMenuItem(
+                                        text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                                        onClick = {
+                                            menuExpandedPlaylistId = null
+                                            if (playlistSongs.isNotEmpty()) {
+                                                playbackViewModel.updateDisplayOrder(playlistSongs)
+                                                playbackViewModel.play(playlistSongs.first())
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                                        onClick = {
+                                            menuExpandedPlaylistId = null
+                                            val currentQueue = playbackViewModel.queue.value
+                                            val toAdd = playlistSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                            toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                                        onClick = {
+                                            menuExpandedPlaylistId = null
+                                            val currentQueue = playbackViewModel.queue.value
+                                            val toAdd = playlistSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                            toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                        },
+                                    )
                                     DropdownMenuItem(
                                         text = {
                                             Text(
@@ -914,16 +951,30 @@ fun PlaylistDetailScreen(
     val songs by playlistViewModel.songs.collectAsState()
     val playerState by playbackViewModel.playerState.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
+    val context = LocalContext.current
+    val appPrefs =
+        remember {
+            com.cvc953.localplayer.preferences
+                .AppPrefs(context)
+        }
 
     BackHandler { onBack() }
 
-    val playlist =
-        remember(playlists, playlistName) { playlists.find { it.name == playlistName } }
+    val playlist = remember(playlists, playlistName) { playlists.find { it.name == playlistName } }
+
+    // Orden de la playlist: PLAYLIST, AZ, ZA
+    var order by rememberSaveable(playlistName) { mutableStateOf(appPrefs.getPlaylistOrder(playlistName)) }
+    LaunchedEffect(order) { appPrefs.setPlaylistOrder(playlistName, order) }
 
     val playlistSongs =
-        remember(songs, playlist) {
+        remember(songs, playlist, order) {
             if (playlist != null) {
-                songs.filter { it.id in playlist.songIds }
+                val base = playlist.songIds.mapNotNull { id -> songs.find { it.id == id } }
+                when (order) {
+                    "AZ" -> base.sortedBy { it.title.lowercase() }
+                    "ZA" -> base.sortedByDescending { it.title.lowercase() }
+                    else -> base
+                }
             } else {
                 emptyList()
             }
@@ -943,7 +994,7 @@ fun PlaylistDetailScreen(
     var selectedSongsToRemove by remember { mutableStateOf(setOf<Long>()) }
     var isRemoveMode by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
+    // val context = LocalContext.current
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
@@ -973,6 +1024,41 @@ fun PlaylistDetailScreen(
                     color = md_textSecondary,
                     fontSize = 12.sp,
                 )
+            }
+
+            // Dropdown para orden
+            var sortMenuExpanded by remember { mutableStateOf(false) }
+            Box {
+                IconButton(onClick = { sortMenuExpanded = true }) {
+                    Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = MaterialTheme.colorScheme.onBackground)
+                }
+                DropdownMenu(
+                    expanded = sortMenuExpanded,
+                    onDismissRequest = { sortMenuExpanded = false },
+                    containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Por playlist", color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            order = "PLAYLIST"
+                            sortMenuExpanded = false
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Título A-Z", color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            order = "AZ"
+                            sortMenuExpanded = false
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Título Z-A", color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            order = "ZA"
+                            sortMenuExpanded = false
+                        },
+                    )
+                }
             }
         }
 
@@ -1111,7 +1197,7 @@ fun PlaylistDetailScreen(
                             isPlaying = isCurrent,
                             onClick = {
                                 if (!isRemoveMode) {
-                                    // Usar el orden de la playlist como cola de reproduccion
+                                    // Usar el orden elegido para reproducir
                                     playbackViewModel.updateDisplayOrder(playlistSongs)
                                     playbackViewModel.play(song)
                                 }
