@@ -49,7 +49,6 @@ import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.StoragePermissionHandler
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
-import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
@@ -769,7 +768,6 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
             val playerState by playbackViewModel.playerState.collectAsState()
             val showPlayerScreen by playerViewModel.isPlayerScreenVisible.collectAsState()
             val showSettings by playerViewModel.isSettingsVisible.collectAsState()
-            val showEqualizer by playerViewModel.isEqualizerVisible.collectAsState()
             val activity = context as? Activity
             var lastBackPressTime by remember { mutableStateOf(0L) }
 
@@ -812,7 +810,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
             Scaffold(
                 containerColor = MaterialTheme.colorScheme.background,
                 bottomBar = {
-                    if (!showPlayerScreen && !showSettings && !showAbout && !showEqualizer) {
+                    if (!showPlayerScreen && !showSettings && !showAbout) {
                         Column {
                             if (playerState.currentSong != null) {
                                 MiniPlayer(
@@ -982,9 +980,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                     .viewModel()
                             SettingsScreen(
                                 settingsViewModel = /* Provide your SettingsViewModel here */ remember { SettingsViewModel() },
-                                equalizerEnabled = mainViewModel.equalizerEnabled.collectAsState().value,
-                                onToggleEqualizer = { enabled -> mainViewModel.toggleEqualizer(enabled) },
-                                onOpenEqualizer = { playerViewModel.showEqualizer(true) },
+                                // Eliminado: equalizerEnabled, onToggleEqualizer, onOpenEqualizer
                                 onClose = { playerViewModel.closeSettingsScreen() },
                                 onThemeChange = { mode ->
                                     try {
@@ -993,18 +989,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                     }
                                 },
                             )
-                            if (playerViewModel.isEqualizerVisible.collectAsState().value) {
-                                val context = LocalContext.current
-                                val equalizerViewModel =
-                                    remember {
-                                        EqualizerViewModel(context.applicationContext as android.app.Application)
-                                    }
-                                EqualizerScreen(
-                                    // equalizerViewModel = equalizerViewModel,
-                                    mainViewModel = mainViewModel,
-                                    onClose = { playerViewModel.closeEqualizerScreen() },
-                                )
-                            }
+                            // Eliminado: EqualizerScreen y lógica relacionada
                         }
                     }
                 }

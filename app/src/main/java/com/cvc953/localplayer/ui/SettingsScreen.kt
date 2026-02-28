@@ -55,9 +55,6 @@ import com.cvc953.localplayer.viewmodel.SettingsViewModel
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     folderViewModel: FolderViewModel = viewModel(),
-    equalizerEnabled: Boolean,
-    onToggleEqualizer: (Boolean) -> Unit,
-    onOpenEqualizer: () -> Unit,
     onClose: () -> Unit,
     onThemeChange: (String) -> Unit = {},
 ) {
@@ -171,41 +168,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Ecualizador", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
-            // Equalizer toggle
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Activar ecualizador", color = MaterialTheme.colorScheme.onBackground)
-                    Text(
-                        "Usar ecualizador nativo del sistema",
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                    )
-                }
-                Switch(
-                    checked = equalizerEnabled,
-                    onCheckedChange = { onToggleEqualizer(it) },
-                    colors =
-                        SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary,
-                            checkedTrackColor = MaterialTheme.colorScheme.onBackground,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.onBackground,
-                            uncheckedTrackColor = Color.White.copy(alpha = 0.12f),
-                        ),
-                )
-            }
-
-            // Open detailed equalizer screen for vertical sliders
-            Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = { onOpenEqualizer() },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            ) {
-                Text("Abrir ecualizador avanzado")
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
+            // ...existing code...
 
             Button(
                 onClick = { launcher.launch(null) },
