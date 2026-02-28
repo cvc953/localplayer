@@ -47,16 +47,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cvc953.localplayer.viewmodel.SettingsViewModel
 import com.cvc953.localplayer.viewmodel.FolderViewModel
+import com.cvc953.localplayer.viewmodel.SettingsViewModel
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     folderViewModel: FolderViewModel = viewModel(),
+    equalizerEnabled: Boolean,
+    onToggleEqualizer: (Boolean) -> Unit,
     onOpenEqualizer: () -> Unit,
     onClose: () -> Unit,
+    onThemeChange: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val settings by settingsViewModel.settings.collectAsState()
@@ -101,7 +104,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Theme selector
-            val themeOptions = listOf("system", "light", "dark")
+            val themeOptions = listOf("sistema", "claro", "oscuro")
             var expanded by remember { mutableStateOf(false) }
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
@@ -131,6 +134,10 @@ fun SettingsScreen(
                                 )
                             }, onClick = {
                                 settingsViewModel.updateTheme(t)
+                                try {
+                                    onThemeChange(t)
+                                } catch (_: Exception) {
+                                }
                                 expanded = false
                             })
                         }
@@ -177,8 +184,8 @@ fun SettingsScreen(
                     )
                 }
                 Switch(
-                    checked = settings.equalizerEnabled,
-                    onCheckedChange = { settingsViewModel.updateOtherSetting("equalizerEnabled", it) },
+                    checked = equalizerEnabled,
+                    onCheckedChange = { onToggleEqualizer(it) },
                     colors =
                         SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,

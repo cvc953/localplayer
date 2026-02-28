@@ -167,8 +167,7 @@ class MusicService : Service() {
 
             Log.e("MusicService", "✓ Song loaded: $title by $artist")
 
-            // Limpiar carátula anterior
-            albumArt?.recycle()
+            // Clear previous album art reference (do not recycle — avoid racing with Notification/Framework)
             albumArt = null
 
             loadAlbumArt(songUri)
@@ -221,10 +220,16 @@ class MusicService : Service() {
 
         val artworkBitmap =
             try {
-                if (albumArt != null && albumArt!!.width > 0) {
+                val candidate = if (albumArt != null && !albumArt!!.isRecycled && albumArt!!.width > 0) {
                     albumArt
                 } else {
                     BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
+                }
+                // Ensure we won't pass a recycled bitmap to the notification builder
+                if (candidate != null && candidate.isRecycled) {
+                    BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
+                } else {
+                    candidate
                 }
             } catch (e: Exception) {
                 Log.e("MusicService", "Error getting artwork: ${e.message}")
@@ -327,13 +332,11 @@ class MusicService : Service() {
                     if (bitmap != null) {
                         val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
 
-                        // Reciclar la anterior si es diferente
-                        if (albumArt != null && albumArt != scaledBitmap) {
-                            albumArt!!.recycle()
-                        }
-
+                        // Replace cached album art (do not recycle previous bitmap here)
                         albumArt = scaledBitmap
-                        if (bitmap != scaledBitmap) bitmap.recycle()
+                        if (bitmap != scaledBitmap) {
+                            try { bitmap.recycle() } catch (_: Exception) {}
+                        }
 
                         Log.e("MusicService", "✓ Album art loaded and scaled")
                         updateMediaSession()
@@ -351,7 +354,7 @@ class MusicService : Service() {
     }
 
     override fun onDestroy() {
-        albumArt?.recycle()
+        // Don't explicitly recycle albumArt; let the system GC handle it to avoid races
         mediaSession.isActive = false
         mediaSession.release()
         super.onDestroy()

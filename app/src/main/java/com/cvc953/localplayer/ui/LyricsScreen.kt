@@ -32,8 +32,30 @@ fun LyricsScreen(
     modifier: Modifier = Modifier,
     onLineClick: (Long) -> Unit = {},
 ) {
+    val ttml by lyricsViewModel.ttmlLyrics.collectAsState()
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val currentPosition by playbackViewModel.currentPosition.collectAsState()
+
+    // prefer TTML view when available
+    val localTtml = ttml
+    if (localTtml != null) {
+        TtmlLyricsView(lines = localTtml.lines, currentPosition = currentPosition, modifier = modifier) { pos ->
+            try { playbackViewModel.seekTo(pos) } catch (_: Exception) {}
+        }
+    } else {
+        LyricsView(lyrics = lyrics, currentPosition = currentPosition, modifier = modifier) { pos ->
+            try { playbackViewModel.seekTo(pos) } catch (_: Exception) {}
+        }
+    }
+}
+
+@Composable
+fun LyricsView(
+    lyrics: List<LrcLine>,
+    currentPosition: Long,
+    modifier: Modifier = Modifier,
+    onLineClick: (Long) -> Unit = {},
+) {
     val listState = rememberLazyListState()
 
     val currentIndex =
@@ -45,10 +67,12 @@ fun LyricsScreen(
 
     // Scroll automático centrado
     LaunchedEffect(currentIndex) {
-        listState.animateScrollToItem(
-            index = currentIndex,
-            scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
-        )
+        try {
+            listState.animateScrollToItem(
+                index = currentIndex,
+                scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
+            )
+        } catch (_: Exception) {}
     }
 
     val gapThreshold = 7000L
@@ -96,6 +120,7 @@ fun LyricsScreen(
                     }
                 }
             }
+
             itemsIndexed(lyrics) { index, line ->
                 Box(
                     modifier =
@@ -142,7 +167,6 @@ fun LyricsScreen(
     }
 }
 
-@Suppress("ktlint:standard:function-naming")
 /**
  * Vista de letras con sincronización palabra por palabra para TTML
  */
@@ -164,10 +188,12 @@ fun TtmlLyricsView(
 
     // Scroll automático centrado
     LaunchedEffect(currentIndex) {
-        listState.animateScrollToItem(
-            index = currentIndex,
-            scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
-        )
+        try {
+            listState.animateScrollToItem(
+                index = currentIndex,
+                scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
+            )
+        } catch (_: Exception) {}
     }
 
     Box(
@@ -265,48 +291,6 @@ fun TtmlLyricsView(
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Composable
-fun LyricsView(
-    lyrics: List<LrcLine>,
-    currentPosition: Long,
-    modifier: Modifier = Modifier,
-    onLineClick: (Long) -> Unit = {},
-) {
-    val listState = rememberLazyListState()
-    val currentIndex =
-        remember(currentPosition) {
-            lyrics.indexOfLast { it.timeMs <= currentPosition }.coerceAtLeast(0)
-        }
-    LaunchedEffect(currentIndex) {
-        listState.animateScrollToItem(
-            index = currentIndex,
-            scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
-        )
-    }
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
-        LazyColumn(
-            state = listState,
-            contentPadding = PaddingValues(vertical = 120.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            itemsIndexed(lyrics) { index, line ->
-                Box(
-                    modifier = Modifier.fillMaxSize().clickable { onLineClick(line.timeMs) },
-                ) {
-                    LyricLine(
-                        text = line.text,
-                        active = index == currentIndex,
-                    )
                 }
             }
         }

@@ -14,21 +14,35 @@ import org.xmlpull.v1.XmlPullParserFactory
 object TtmlParser {
 
     private const val NS_ITUNES = "http://music.apple.com/lyric-ttml-internal"
-    
+
+    // Reuse factory to avoid expensive re-instantiation
+    private val factory: XmlPullParserFactory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
+
+    // Simple in-memory cache to avoid reparsing identical TTML content
+    private val cache = mutableMapOf<Int, TtmlLyrics>()
+
     fun parseTtml(content: String): TtmlLyrics {
+        // cheap fingerprint: hashCode + length to reduce collision chance
+        val key = content.hashCode() xor content.length
+        synchronized(cache) {
+            cache[key]?.let { return it }
+        }
+
         return try {
-            android.util.Log.d("TtmlParser", "Iniciando parseo de TTML, ${content.length} chars")
-            val factory = XmlPullParserFactory.newInstance()
-            factory.isNamespaceAware = true
             val parser = factory.newPullParser()
             parser.setInput(content.reader())
-            
+
             val result = parseTtmlDocument(parser)
-            android.util.Log.d("TtmlParser", "✓ Parseado completo: ${result.lines.size} líneas")
+
+            synchronized(cache) {
+                // keep cache bounded
+                if (cache.size > 50) cache.clear()
+                cache[key] = result
+            }
+
             result
         } catch (e: Exception) {
-            android.util.Log.e("TtmlParser", "✗ Error parseando TTML", e)
-            e.printStackTrace()
+            android.util.Log.e("TtmlParser", "Error parseando TTML", e)
             TtmlLyrics() // Return empty lyrics on error
         }
     }
@@ -39,7 +53,7 @@ object TtmlParser {
         var timingMode = "Word"
 
         var eventType = parser.eventType
-        while (eventType != XmlPullParser.END_DOCUMENT) {
+            while (eventType != XmlPullParser.END_DOCUMENT) {
             when (eventType) {
                 XmlPullParser.START_TAG -> {
                     when (parser.name) {
@@ -49,7 +63,7 @@ object TtmlParser {
                         }
                         "div" -> {
                             // Parse lyrics lines within div
-                            lines.addAll(parseDiv(parser))
+                                lines.addAll(parseDiv(parser))
                         }
                     }
                 }
@@ -90,11 +104,7 @@ object TtmlParser {
             when (parser.next()) {
                 XmlPullParser.START_TAG -> {
                     if (parser.name == "p") {
-                        parseParagraph(parser)?.let { 
-                            lines.add(it)
-                            android.util.Log.d("TtmlParser", "Línea parseada: '${it.text}' con ${it.syllabus.size} sílabas")
-                        }
-                        // parseParagraph ya consumió su END_TAG
+                        parseParagraph(parser)?.let { lines.add(it) }
                     } else {
                         depth++
                     }
@@ -106,8 +116,6 @@ object TtmlParser {
                 }
             }
         }
-
-        android.util.Log.d("TtmlParser", "Div parseado: ${lines.size} líneas")
         return lines
     }
 

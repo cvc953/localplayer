@@ -243,6 +243,35 @@ class MainViewModel(
                     }
                 }
             }
+            // Listen for audio session id changes and initialize equalizer once when session appears
+            pc.setOnAudioSessionIdChangedListener { sessionId ->
+                try {
+                    android.util.Log.d("MainViewModel", "Audio session changed: $sessionId")
+                    if (_equalizerEnabled.value) {
+                        val target = if (sessionId != 0) sessionId else 0
+                        if (target != lastEqSessionId) {
+                            try { equalizerManager.init(target) } catch (_: Exception) {}
+                            lastEqSessionId = target
+                            try { equalizerManager.setEnabled(_equalizerEnabled.value) } catch (_: Exception) {}
+                            // Reaplicar preset o bandas personalizadas
+                            if (_selectedPresetIndex.value != -1) {
+                                // Si hay preset del sistema seleccionado
+                                val idx = _selectedPresetIndex.value
+                                android.util.Log.d("MainViewModel", "Reaplicando preset del sistema idx=$idx")
+                                setEqualizerPreset(idx)
+                            } else {
+                                // Si es preset personalizado, reaplicar niveles actuales
+                                val levels = _bandLevels.value
+                                android.util.Log.d("MainViewModel", "Reaplicando bandas personalizadas: $levels")
+                                levels.forEachIndexed { i, v ->
+                                    try { equalizerManager.setBandLevel(i.toShort(), v.toShort()) } catch (_: Exception) {}
+                                }
+                            }
+                        }
+                    }
+                } catch (_: Exception) {
+                }
+            }
         } catch (_: Exception) {
         }
     }
@@ -277,6 +306,9 @@ class MainViewModel(
 
     private val _userPresets = MutableStateFlow<List<Pair<String, List<Int>>>>(emptyList())
     val userPresets: StateFlow<List<Pair<String, List<Int>>>> = _userPresets
+
+    // track last initialized sessionId to avoid re-initializing equalizer repeatedly
+    private var lastEqSessionId: Int = 0
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
@@ -565,7 +597,12 @@ class MainViewModel(
         // Delegate playback to PlaybackViewModel to avoid duplicate MediaPlayer instances
         try {
             playbackViewModel.play(song)
-            loadLyricsForSong(song)
+            // Prefetch lyrics using centralized LyricsViewModel which supports caching
+            try {
+                // Prefetch TTML parsing in background and cache it; UI will load from cache
+                lyricsViewModel.prefetchTtml(song)
+            } catch (_: Exception) {
+            }
         } catch (e: Exception) {
             android.util.Log.e("MainViewModel", "Error delegating playSong", e)
             playNextSong()
@@ -718,8 +755,29 @@ class MainViewModel(
         appPrefs.setEqualizerEnabled(enabled)
         _equalizerEnabled.value = enabled
         try {
+            android.util.Log.d("MainViewModel", "toggleEqualizer($enabled) called")
+            // Ensure Equalizer is initialized with a real audio session id before enabling
+            try {
+                val pc = PlayerController.getInstance(getApplication(), viewModelScope)
+                val sessionId = try { pc.getAudioSessionId() } catch (e: Exception) {
+                    android.util.Log.d("MainViewModel", "Error getting audioSessionId: ${e.message}"); 0 }
+                val target = if (sessionId != 0) sessionId else 0
+                android.util.Log.d("MainViewModel", "toggleEqualizer -> initializing equalizer with sessionId=$target (last=$lastEqSessionId)")
+                if (target != lastEqSessionId) {
+                    val ok = try { equalizerManager.init(target) } catch (e: Exception) {
+                        android.util.Log.d("MainViewModel", "Error initializing EqualizerManager: ${e.message}"); false }
+                    android.util.Log.d("MainViewModel", "equalizer init result=$ok for sessionId=$target")
+                    lastEqSessionId = target
+                }
+            } catch (e: Exception) {
+                android.util.Log.d("MainViewModel", "Error in sessionId block: ${e.message}")
+                try { if (lastEqSessionId != 0) { equalizerManager.init(0); lastEqSessionId = 0 } } catch (e: Exception) {
+                    android.util.Log.d("MainViewModel", "Error fallback init: ${e.message}") }
+            }
+            android.util.Log.d("MainViewModel", "Calling equalizerManager.setEnabled($enabled)")
             equalizerManager.setEnabled(enabled)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            android.util.Log.d("MainViewModel", "Error in toggleEqualizer: ${e.message}")
         }
     }
 
@@ -743,8 +801,20 @@ class MainViewModel(
     fun setEqualizerPreset(index: Int) {
         appPrefs.setEqualizerPresetIndex(index)
         _selectedPresetIndex.value = index
-        try {
-            equalizerManager.usePreset(index)
+            try {
+                // ensure initialized (only if session changed)
+                try {
+                    val pc = PlayerController.getInstance(getApplication(), viewModelScope)
+                    val sessionId = try { pc.getAudioSessionId() } catch (_: Exception) { 0 }
+                    val target = if (sessionId != 0) sessionId else 0
+                    if (target != lastEqSessionId) {
+                        try { equalizerManager.init(target) } catch (_: Exception) {}
+                        lastEqSessionId = target
+                    }
+                } catch (_: Exception) {
+                    try { if (lastEqSessionId != 0) { equalizerManager.init(0); lastEqSessionId = 0 } } catch (_: Exception) {}
+                }
+                equalizerManager.usePreset(index)
             // when applying preset, update band levels state
             val bc = equalizerManager.getNumberOfBands().toInt()
             val levels = mutableListOf<Int>()
@@ -762,8 +832,19 @@ class MainViewModel(
         bandIndex: Int,
         level: Int,
     ) {
-        try {
-            equalizerManager.setBandLevel(bandIndex.toShort(), level.toShort())
+            try {
+                try {
+                    val pc = PlayerController.getInstance(getApplication(), viewModelScope)
+                    val sessionId = try { pc.getAudioSessionId() } catch (_: Exception) { 0 }
+                    val target = if (sessionId != 0) sessionId else 0
+                    if (target != lastEqSessionId) {
+                        try { equalizerManager.init(target) } catch (_: Exception) {}
+                        lastEqSessionId = target
+                    }
+                } catch (_: Exception) {
+                    try { if (lastEqSessionId != 0) { equalizerManager.init(0); lastEqSessionId = 0 } } catch (_: Exception) {}
+                }
+                equalizerManager.setBandLevel(bandIndex.toShort(), level.toShort())
             val copy = _bandLevels.value.toMutableList()
             if (bandIndex in copy.indices) {
                 copy[bandIndex] = level
@@ -782,10 +863,22 @@ class MainViewModel(
     }
 
     fun resetBandLevels() {
-        try {
-            val bc = _bandCount.value
-            val zeros = List(bc) { 0 }
-            for (i in 0 until bc) equalizerManager.setBandLevel(i.toShort(), 0)
+            try {
+                val bc = _bandCount.value
+                // ensure initialized (only if session changed)
+                try {
+                    val pc = PlayerController.getInstance(getApplication(), viewModelScope)
+                    val sessionId = try { pc.getAudioSessionId() } catch (_: Exception) { 0 }
+                    val target = if (sessionId != 0) sessionId else 0
+                    if (target != lastEqSessionId) {
+                        try { equalizerManager.init(target) } catch (_: Exception) {}
+                        lastEqSessionId = target
+                    }
+                } catch (_: Exception) {
+                    try { if (lastEqSessionId != 0) { equalizerManager.init(0); lastEqSessionId = 0 } } catch (_: Exception) {}
+                }
+                val zeros = List(bc) { 0 }
+                for (i in 0 until bc) equalizerManager.setBandLevel(i.toShort(), 0)
             _bandLevels.value = zeros
             appPrefs.setCustomBandLevels(zeros)
             _selectedPresetIndex.value = -1
