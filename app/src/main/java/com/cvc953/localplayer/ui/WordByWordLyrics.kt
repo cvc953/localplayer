@@ -1,7 +1,8 @@
 package com.cvc953.localplayer.ui
 
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,11 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,38 +41,31 @@ fun SyllableLyric(
     modifier: Modifier = Modifier,
 ) {
     val baseColor = Color(0xFF707070)
+    val activeColor = MaterialTheme.colorScheme.onBackground
     val baseFontSize = 30f
 
-    val text = syllable.text
-    val charCount = text.length.coerceAtLeast(1)
     val rawProgress = if (syllable.durationMs > 0) {
         ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
     } else 0f
-    val targetProgress = if (isLineActive && currentPosition >= syllable.timeMs) rawProgress else 0f
+    // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
+    val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
+    val targetProgress = if (isLineActive && currentPosition >= syllable.timeMs) clampedProgress else 0f
 
-    val animatedProgress by animateFloatAsState(targetValue = targetProgress, animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing))
-    val revealCount = (animatedProgress * charCount).toInt().coerceIn(0, charCount)
-
-    val revealed = if (revealCount > 0) text.substring(0, revealCount) else ""
-    val rest = if (revealCount < charCount) text.substring(revealCount) else ""
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = if (isLineActive) tween(durationMillis = 180, easing = LinearEasing) else snap(),
+    )
 
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
-        Text(
-            buildAnnotatedString {
-                if (revealed.isNotEmpty()) {
-                    withStyle(SpanStyle(color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold, fontSize = baseFontSize.sp)) {
-                        append(revealed)
-                    }
-                }
-                if (rest.isNotEmpty()) {
-                    withStyle(SpanStyle(color = baseColor, fontWeight = FontWeight.Bold, fontSize = baseFontSize.sp)) {
-                        append(rest)
-                    }
-                }
-            },
-            lineHeight = (baseFontSize + 10f).sp,
+        ProgressiveFillSyllableText(
+            text = syllable.text,
+            progress = animatedProgress,
+            baseColor = baseColor,
+            activeColor = activeColor,
+            fontSizeSp = baseFontSize,
+            lineHeightSp = baseFontSize + 10f,
         )
     }
 }
@@ -92,37 +84,66 @@ fun BackgroundSyllableLyric(
     // Solo mostrar si la línea está activa
     if (!isLineActive) return
     val baseColor = Color(0xFF585858)
+    val activeColor = Color(0xFFB0B0B0)
     val baseFontSize = 20f
 
-    val text = syllable.text
-    val charCount = text.length.coerceAtLeast(1)
     val rawProgress = if (syllable.durationMs > 0) {
         ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
     } else 0f
-    val targetProgress = if (currentPosition >= syllable.timeMs) rawProgress else 0f
-    val animatedProgress by animateFloatAsState(targetValue = targetProgress, animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing))
-    val revealCount = (animatedProgress * charCount).toInt().coerceIn(0, charCount)
-
-    val revealed = if (revealCount > 0) text.substring(0, revealCount) else ""
-    val rest = if (revealCount < charCount) text.substring(revealCount) else ""
+    // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
+    val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
+    val targetProgress = if (currentPosition >= syllable.timeMs) clampedProgress else 0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = targetProgress,
+        animationSpec = if (isLineActive) tween(durationMillis = 180, easing = LinearEasing) else snap(),
+    )
 
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
+        ProgressiveFillSyllableText(
+            text = syllable.text,
+            progress = animatedProgress,
+            baseColor = baseColor,
+            activeColor = activeColor,
+            fontSizeSp = baseFontSize,
+            lineHeightSp = baseFontSize + 8f,
+        )
+    }
+}
+
+@Composable
+private fun ProgressiveFillSyllableText(
+    text: String,
+    progress: Float,
+    baseColor: Color,
+    activeColor: Color,
+    fontSizeSp: Float,
+    lineHeightSp: Float,
+) {
+    val clampedProgress = progress.coerceIn(0f, 1f)
+
+    Box {
         Text(
-            buildAnnotatedString {
-                if (revealed.isNotEmpty()) {
-                    withStyle(SpanStyle(color = Color(0xFFB0B0B0), fontSize = baseFontSize.sp, fontWeight = FontWeight.Bold)) {
-                        append(revealed)
+            text = text,
+            color = baseColor,
+            fontSize = fontSizeSp.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = lineHeightSp.sp,
+        )
+        Text(
+            text = text,
+            color = activeColor,
+            fontSize = fontSizeSp.sp,
+            fontWeight = FontWeight.Bold,
+            lineHeight = lineHeightSp.sp,
+            modifier =
+                Modifier.drawWithContent {
+                    val clipRight = size.width * clampedProgress
+                    clipRect(right = clipRight) {
+                        this@drawWithContent.drawContent()
                     }
-                }
-                if (rest.isNotEmpty()) {
-                    withStyle(SpanStyle(color = baseColor, fontSize = baseFontSize.sp, fontWeight = FontWeight.Bold)) {
-                        append(rest)
-                    }
-                }
-            },
-            lineHeight = (baseFontSize + 8f).sp,
+                },
         )
     }
 }

@@ -172,27 +172,52 @@ object TtmlParser {
                                 cleanedText = cleanedText.trimStart()
                             }
 
-                            // Detectar si continúa en la siguiente palabra (no termina con espacio)
-                            val continuesWord = cleanedText.isNotEmpty() && !cleanedText.endsWith(" ")
-
-                            // Si continúa la palabra, eliminar el espacio final
-                            val finalText = if (continuesWord) {
-                                cleanedText.trimEnd()
+                            // Si hay múltiples palabras en el span, dividirlas
+                            val words = cleanedText.split("[\\s\\u00A0]+".toRegex()).filter { it.isNotEmpty() }
+                            
+                            if (words.size > 1) {
+                                // Múltiples palabras: distribuir tiempo proporcionalmente
+                                val timePerWord = updatedSyllable.durationMs / words.size
+                                words.forEachIndexed { idx, word ->
+                                    val wordStartTime = updatedSyllable.timeMs + (idx * timePerWord)
+                                    val wordContinuesWord = false
+                                    
+                                    val wordSyllable = updatedSyllable.copy(
+                                        text = word,
+                                        timeMs = wordStartTime,
+                                        durationMs = timePerWord,
+                                        continuesWord = wordContinuesWord
+                                    )
+                                    
+                                    syllabus.add(wordSyllable)
+                                    textBuilder.append(word)
+                                    if (idx < words.lastIndex) textBuilder.append(" ")
+                                }
+                                previousContinuesWord = false
                             } else {
-                                cleanedText
+                                // Una sola palabra: proceso normal
+                                // Detectar si continúa en la siguiente palabra (no termina con espacio)
+                                val continuesWord = cleanedText.isNotEmpty() && !cleanedText.endsWith(" ")
+
+                                // Si continúa la palabra, eliminar el espacio final
+                                val finalText = if (continuesWord) {
+                                    cleanedText.trimEnd()
+                                } else {
+                                    cleanedText
+                                }
+
+                                if (finalText.isNotEmpty()) {
+                                    val cleanedSyllable = updatedSyllable.copy(
+                                        text = finalText,
+                                        continuesWord = continuesWord
+                                    )
+
+                                    syllabus.add(cleanedSyllable)
+                                    textBuilder.append(finalText)
+                                }
+
+                                previousContinuesWord = continuesWord
                             }
-
-                            if (finalText.isNotEmpty()) {
-                                val cleanedSyllable = updatedSyllable.copy(
-                                    text = finalText,
-                                    continuesWord = continuesWord
-                                )
-
-                                syllabus.add(cleanedSyllable)
-                                textBuilder.append(finalText)
-                            }
-
-                            previousContinuesWord = continuesWord
                             
                             // Detectar cierre de paréntesis
                             if (syllable.text.endsWith(")")) {
@@ -218,14 +243,26 @@ object TtmlParser {
             }
         }
 
+        // Detectar sílabas sostenidas (gaps entre sílabas consecutivas)
+        val syllabusWithSustain = syllabus.mapIndexed { i, syl ->
+            if (i < syllabus.size - 1) {
+                val nextSyl = syllabus[i + 1]
+                val gap = nextSyl.timeMs - (syl.timeMs + syl.durationMs)
+                val isSustained = gap > 50  // Gap > 50ms indica sílaba sostenida
+                syl.copy(isSustained = isSustained)
+            } else {
+                syl
+            }
+        }
+
         // Construir el texto de la línea a partir de las sílabas, respetando continuesWord
         val lineText = buildString {
-            syllabus.forEachIndexed { i, syl ->
+            syllabusWithSustain.forEachIndexed { i, syl ->
                 if (i > 0 && !syl.continuesWord) append(" ")
                 append(syl.text)
             }
         }.trim()
-        if (lineText.isEmpty() && syllabus.isEmpty()) {
+        if (lineText.isEmpty() && syllabusWithSustain.isEmpty()) {
             return null
         }
 
@@ -233,7 +270,7 @@ object TtmlParser {
             timeMs = timeMs,
             durationMs = durationMs,
             text = lineText,
-            syllabus = syllabus
+            syllabus = syllabusWithSustain
         )
     }
 
