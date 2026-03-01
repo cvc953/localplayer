@@ -1163,7 +1163,7 @@ fun PlaylistHeader(
             fontSize = 16.sp,
             color = MaterialTheme.extendedColors.textSecondary,
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         val buttonColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
 
         Row(
@@ -1235,6 +1235,7 @@ fun PlaylistHeader(
                     }
                 }
             }
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
