@@ -47,21 +47,37 @@ class PlaybackViewModel(
     private val _currentPosition = MutableStateFlow(0L)
     val currentPosition: StateFlow<Long> = _currentPosition
 
+    // Track current album being played (album name and artist)
+    private var currentAlbumName: String? = null
+    private var currentAlbumArtist: String? = null
+    private var _nextAlbumName: String? = null
+    private var _nextAlbumArtist: String? = null
+
+
+    // Callback to load next album
+    private var onAlbumEndedCallback: ((String, String) -> Unit)? = null
+
     init {
         // Restore persisted playback state (queue, shuffle, repeat, last position)
         try {
             val prefs = com.cvc953.localplayer.preferences.AppPrefs(getApplication())
             val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
             val allSongs = repo.loadSongs()
+            
+            // Restore next album info
+            _nextAlbumName = prefs.loadNextAlbumName()
+            _nextAlbumArtist = prefs.loadNextAlbumArtist()
+            
             val queueUris = prefs.loadPlaybackQueue()
             if (queueUris.isNotEmpty()) {
                 val restored = queueUris.mapNotNull { uriStr ->
                     allSongs.find { it.uri.toString() == uriStr }
                 }
                 if (restored.isNotEmpty()) {
-                    _queue.value = restored
+                    var queueToUse = restored
                     // set shuffle/repeat flags
-                    _isShuffle.value = prefs.loadShuffleEnabled()
+                    val shuffleEnabled = prefs.loadShuffleEnabled()
+                    _isShuffle.value = shuffleEnabled
                     prefs.loadRepeatMode()?.let { modeStr ->
                         try {
                             _repeatMode.value = com.cvc953.localplayer.ui.RepeatMode.valueOf(modeStr)
@@ -69,22 +85,46 @@ class PlaybackViewModel(
                         } catch (_: Exception) {}
                     }
 
-                    // If there was a last song, attempt to start player controller in paused state
                     val lastUri = prefs.loadLastSongUri()
-                    val startIndex = if (lastUri != null) restored.indexOfFirst { it.uri.toString() == lastUri } else -1
+                    val startIndexOrig = if (lastUri != null) restored.indexOfFirst { it.uri.toString() == lastUri } else -1
+                    var startIndex = startIndexOrig
+                    if (shuffleEnabled && startIndexOrig >= 0) {
+                        val currentSong = restored[startIndexOrig]
+                        val rest = restored.filter { it != currentSong }.shuffled()
+                        queueToUse = listOf(currentSong) + rest
+                        startIndex = 0
+                    }
+                    _queue.value = queueToUse
                     if (startIndex >= 0) {
                         try {
-                            playerController.playNow(restored, startIndex)
-                            val pos = prefs.loadPlaybackPosition()
-                            if (pos > 0L) playerController.seekTo(pos)
-                            // Respect last playing flag
                             val wasPlaying = prefs.loadIsPlaying()
-                            if (!wasPlaying) playerController.pause()
+                            val pos = prefs.loadPlaybackPosition()
+                            // Inicializa el reproductor en pausa, hace seek y reanuda solo si corresponde
+                            playerController.playNow(
+                                queueToUse,
+                                startIndex,
+                                startPaused = !wasPlaying,
+                                seekToPosition = if (pos > 0L) pos else null,
+                                resumeAfterSeek = wasPlaying
+                            )
                             _currentPosition.value = pos
+                            // Lanzar MusicService para mostrar la notificación aunque esté en pausa
+                            val song = queueToUse.getOrNull(startIndex)
+                            if (song != null) {
+                                val intent = Intent(getApplication<Application>(), MusicService::class.java).apply {
+                                    action = MusicService.ACTION_UPDATE_STATE
+                                    putExtra("IS_PLAYING", wasPlaying)
+                                    putExtra("POSITION", pos)
+                                    putExtra("SONG_URI", song.uri.toString())
+                                    putExtra("TITLE", song.title)
+                                    putExtra("ARTIST", song.artist)
+                                }
+                                ContextCompat.startForegroundService(getApplication(), intent)
+                            }
                         } catch (_: Exception) {}
                     } else {
                         // no last song, keep controller queue in sync without starting playback
-                        try { playerController.queueEnd(restored) } catch (_: Exception) {}
+                        try { playerController.queueEnd(queueToUse) } catch (_: Exception) {}
                     }
                 }
             }
@@ -110,9 +150,16 @@ class PlaybackViewModel(
                 // Si la canción no es la única en la cola, sincroniza la cola con la lista actual
                 val queue = _queue.value
                 val index = queue.indexOfFirst { it.id == song.id }
-                if (queue.size > 1 && index >= 0) {
-                    playerController.playNow(queue, index)
+                if (queue.size > 1) {
+                    // Si tenemos una cola establecida con >1 canción, usa playNow
+                    // Si la canción está en la cola, reproduce desde ese índice; si no, desde el principio
+                    val indexToPlay = if (index >= 0) index else 0
+                    playerController.playNow(queue, indexToPlay)
+                } else if (queue.size == 1) {
+                    // Si la cola tiene solo 1 canción, asegúrate de que sea la correcta
+                    playerController.playNow(queue, 0)
                 } else {
+                    // Si no hay cola establecida, reproduce solo esta canción
                     playerController.playSong(song)
                 }
                 _currentPosition.value = 0L
@@ -184,6 +231,97 @@ class PlaybackViewModel(
         }
     }
 
+    fun playAlbum(albumName: String, artistName: String, songs: List<Song>) {
+        currentAlbumName = albumName
+        currentAlbumArtist = artistName
+        
+        // Find the next album immediately
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+                val allSongs = repo.loadSongs()
+                
+                // Extract unique albums from all songs
+                val uniqueAlbums = mutableListOf<Pair<String, String>>()
+                val seenKeys = mutableSetOf<String>()
+                
+                for (song in allSongs) {
+                    val albumKey = "${song.album.trim().lowercase()}|${song.artist.trim().lowercase()}"
+                    if (seenKeys.add(albumKey)) {
+                        uniqueAlbums.add(Pair(song.album.trim(), song.artist.trim()))
+                    }
+                }
+                
+                // Sort albums alphabetically by name
+                val sortedAlbums = uniqueAlbums.sortedBy { it.first.lowercase() }
+                
+                // Find current album and get the next one
+                val currentIndex = sortedAlbums.indexOfFirst { (name, artist) ->
+                    name.equals(albumName, ignoreCase = true) && artist.equals(artistName, ignoreCase = true)
+                }
+                
+                if (currentIndex >= 0 && currentIndex < sortedAlbums.size - 1) {
+                    val nextAlbum = sortedAlbums[currentIndex + 1]
+                    _nextAlbumName = nextAlbum.first
+                    _nextAlbumArtist = nextAlbum.second
+                    // Persist next album info
+                    try {
+                        prefs.saveNextAlbum(_nextAlbumName, _nextAlbumArtist)
+                    } catch (_: Exception) {}
+                }
+            } catch (e: Exception) {
+                // Silently ignore errors
+            }
+        }
+        
+        // Configure listener for when the album ends naturally
+        playerController.setOnQueueEndedListener {
+            if (currentAlbumName == albumName && currentAlbumArtist == artistName) {
+                if (_nextAlbumName != null && _nextAlbumArtist != null) {
+                    loadNextAlbumAutomatically(_nextAlbumName!!, _nextAlbumArtist!!)
+                }
+            }
+        }
+        
+        // Configure listener for when user skips to next at the end of album
+        playerController.setOnNextAtEndListener {
+            if (currentAlbumName == albumName && currentAlbumArtist == artistName) {
+                if (_nextAlbumName != null && _nextAlbumArtist != null) {
+                    loadNextAlbumAutomatically(_nextAlbumName!!, _nextAlbumArtist!!)
+                }
+            }
+        }
+    }
+
+    fun setNextAlbumCallback(callback: ((nextAlbumName: String, nextAlbumArtist: String) -> Unit)?) {
+        onAlbumEndedCallback = callback
+    }
+
+    fun loadNextAlbumAutomatically(nextAlbumName: String, nextAlbumArtist: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+                val allSongs = repo.loadSongs()
+                
+                // Get all songs from the next album
+                val nextAlbumSongs = allSongs.filter { song ->
+                    song.album.trim().equals(nextAlbumName, ignoreCase = true) &&
+                        song.artist.trim().equals(nextAlbumArtist, ignoreCase = true)
+                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                
+                if (nextAlbumSongs.isNotEmpty()) {
+                    // Setup for the next album (this reconfigures listeners)
+                    playAlbum(nextAlbumName, nextAlbumArtist, nextAlbumSongs)
+                    // Start playing the next album
+                    updateDisplayOrder(nextAlbumSongs)
+                    play(nextAlbumSongs.first())
+                }
+            } catch (e: Exception) {
+                // Silently ignore errors
+            }
+        }
+    }
+
     fun stop() {
         playerController.stop()
         _currentPosition.value = 0L
@@ -241,7 +379,7 @@ class PlaybackViewModel(
 
     fun updateDisplayOrder(songs: List<Song>) {
         _queue.value = songs
-        try { prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() }); playerController.replaceQueue(_queue.value, keepCurrentSong = true) } catch (_: Exception) {}
+        try { prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() }) } catch (_: Exception) {}
     }
 
     fun toggleShuffle() {
@@ -266,6 +404,12 @@ class PlaybackViewModel(
             // clear persisted explicit queue when user toggles shuffle to avoid restoring a stale order
             prefs.savePlaybackQueue(emptyList())
         } catch (_: Exception) {}
+    }
+
+    fun setShuffle(enabled: Boolean) {
+        if (_isShuffle.value != enabled) {
+            toggleShuffle()
+        }
     }
 
     fun toggleRepeat() {
@@ -306,8 +450,17 @@ class PlaybackViewModel(
         if (queue.isEmpty() || playerState.value.currentSong == null) return
         val currentIndex = queue.indexOf(currentSong)
         val nextIndex = if (currentIndex >= 0 && currentIndex + 1 < queue.size) currentIndex + 1 else 0
-        val next = queue[nextIndex]
-        play(next)
+        
+        // Check if we're at the end of the queue and trigger next album logic
+        if (currentIndex == queue.size - 1) {
+            // We're at the last song, trigger the next album logic
+            if (_nextAlbumName != null && _nextAlbumArtist != null) {
+                loadNextAlbumAutomatically(_nextAlbumName!!, _nextAlbumArtist!!)
+            }
+        } else {
+            val next = queue[nextIndex]
+            play(next)
+        }
     }
 
     fun playPreviousSong() {

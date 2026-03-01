@@ -203,4 +203,15 @@ class AppPrefs(context: Context) {
     }
 
     fun loadIsPlaying(): Boolean = prefs.getBoolean("playback_is_playing", false)
+
+    fun saveNextAlbum(albumName: String?, artistName: String?) {
+        prefs.edit().apply {
+            putString("next_album_name", albumName)
+            putString("next_album_artist", artistName)
+            apply()
+        }
+    }
+
+    fun loadNextAlbumName(): String? = prefs.getString("next_album_name", null)
+    fun loadNextAlbumArtist(): String? = prefs.getString("next_album_artist", null)
 }

@@ -1,31 +1,144 @@
 package com.cvc953.localplayer.controller
 
 import android.app.Application
+import android.media.audiofx.Equalizer
+import android.util.Log
 
 class EqualizerController(private val application: Application) {
-    // Placeholder for actual equalizer implementation
-    private var enabled = false
-    private var bands = listOf(0, 0, 0, 0, 0)
-    private var presets = listOf("Normal", "Pop", "Rock", "Jazz", "Classical")
-    private var selectedPreset: String? = null
+    private var equalizer: Equalizer? = null
+    private var audioSessionId: Int = 0
 
-    fun isEnabled(): Boolean = enabled
-    fun setEnabled(value: Boolean) { enabled = value }
+    fun initializeWithAudioSession(sessionId: Int) {
+        try {
+            // Release previous equalizer if exists
+            equalizer?.release()
+            
+            audioSessionId = sessionId
+            equalizer = Equalizer(0, sessionId).apply {
+                enabled = true
+            }
+            Log.d("EqualizerController", "Equalizer initialized with session $sessionId, bands=${equalizer?.numberOfBands}")
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error initializing equalizer", e)
+        }
+    }
 
-    fun getBands(): List<Int> = bands
+    fun release() {
+        try {
+            equalizer?.release()
+            equalizer = null
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error releasing equalizer", e)
+        }
+    }
+
+    fun isEnabled(): Boolean = equalizer?.enabled ?: false
+    
+    fun setEnabled(value: Boolean) {
+        try {
+            equalizer?.enabled = value
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error setting enabled", e)
+        }
+    }
+
+    fun getBandCount(): Int = equalizer?.numberOfBands?.toInt() ?: 0
+
+    fun getBands(): List<Int> {
+        val eq = equalizer ?: return emptyList()
+        return try {
+            (0 until eq.numberOfBands.toInt()).map { band ->
+                eq.getBandLevel(band.toShort()).toInt()
+            }
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error getting bands", e)
+            emptyList()
+        }
+    }
+
+    fun getBandFreqs(): List<Int> {
+        val eq = equalizer ?: return emptyList()
+        return try {
+            (0 until eq.numberOfBands.toInt()).map { band ->
+                eq.getCenterFreq(band.toShort()) / 1000 // Convert mHz to Hz
+            }
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error getting band freqs", e)
+            emptyList()
+        }
+    }
+
+    fun getBandLevelRange(): Pair<Int, Int> {
+        val eq = equalizer ?: return Pair(0, 0)
+        return try {
+            val range = eq.bandLevelRange
+            Pair(range[0].toInt(), range[1].toInt())
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error getting band level range", e)
+            Pair(0, 0)
+        }
+    }
+
     fun setBandLevel(band: Int, level: Int) {
-        if (band in bands.indices) {
-            bands = bands.toMutableList().also { it[band] = level }
+        try {
+            equalizer?.setBandLevel(band.toShort(), level.toShort())
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error setting band level", e)
         }
     }
 
     fun resetBandLevels() {
-        bands = List(bands.size) { 0 }
+        val eq = equalizer ?: return
+        try {
+            for (band in 0 until eq.numberOfBands.toInt()) {
+                eq.setBandLevel(band.toShort(), 0)
+            }
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error resetting bands", e)
+        }
     }
 
-    fun getPresets(): List<String> = presets
-    fun selectPreset(preset: String) {
-        if (preset in presets) selectedPreset = preset
+    fun getPresets(): List<String> {
+        val eq = equalizer ?: return emptyList()
+        return try {
+            (0 until eq.numberOfPresets.toInt()).map { preset ->
+                eq.getPresetName(preset.toShort())
+            }
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error getting presets", e)
+            emptyList()
+        }
     }
-    fun getSelectedPreset(): String? = selectedPreset
+
+    fun selectPreset(index: Int) {
+        try {
+            equalizer?.usePreset(index.toShort())
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error selecting preset", e)
+        }
+    }
+
+    fun getCurrentPreset(): Short? {
+        return try {
+            equalizer?.currentPreset
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error getting current preset", e)
+            null
+        }
+    }
+
+    fun getSelectedPreset(): String? {
+        val eq = equalizer ?: return null
+        return try {
+            val currentPreset = eq.currentPreset
+            if (currentPreset >= 0) {
+                eq.getPresetName(currentPreset)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error getting selected preset", e)
+            null
+        }
+    }
 }

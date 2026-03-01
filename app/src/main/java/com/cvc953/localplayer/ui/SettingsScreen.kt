@@ -7,38 +7,15 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,21 +23,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cvc953.localplayer.viewmodel.FolderViewModel
-import com.cvc953.localplayer.viewmodel.SettingsViewModel
+import com.cvc953.localplayer.viewmodel.MainViewModel
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun SettingsScreen(
-    settingsViewModel: SettingsViewModel,
-    folderViewModel: FolderViewModel = viewModel(),
+    viewModel: MainViewModel,
     onClose: () -> Unit,
-    onThemeChange: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
-    val settings by settingsViewModel.settings.collectAsState()
-    val folderEntries by folderViewModel.folderEntries.collectAsState()
+    val folderEntries by viewModel.folderEntries.collectAsState()
+    val theme by viewModel.themeMode.collectAsState()
+    val autoScan by viewModel.autoScanEnabled.collectAsState()
+    val eqEnabled by viewModel.equalizerEnabled.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(
@@ -74,7 +49,7 @@ fun SettingsScreen(
                     )
                 } catch (_: Exception) {
                 }
-                folderViewModel.addMusicFolder(uri.toString())
+                viewModel.addMusicFolder(uri.toString())
                 Toast.makeText(context, "Carpeta añadida", Toast.LENGTH_SHORT).show()
             }
         }
@@ -117,12 +92,12 @@ fun SettingsScreen(
                         onClick = { expanded = true },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     ) {
-                        Text(settings.theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
+                        Text(theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
                     }
                     DropdownMenu(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
-                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                        containerColor = MaterialTheme.colorScheme.surface,
                     ) {
                         themeOptions.forEach { t ->
                             DropdownMenuItem(text = {
@@ -130,11 +105,7 @@ fun SettingsScreen(
                                     t.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
                                 )
                             }, onClick = {
-                                settingsViewModel.updateTheme(t)
-                                try {
-                                    onThemeChange(t)
-                                } catch (_: Exception) {
-                                }
+                                viewModel.setThemeMode(t)
                                 expanded = false
                             })
                         }
@@ -144,7 +115,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
             // Auto-scan option
-            val autoScan by folderViewModel.autoScanEnabled.collectAsState()
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Escaneo automático", color = MaterialTheme.colorScheme.onBackground)
@@ -156,7 +126,7 @@ fun SettingsScreen(
                 }
                 Switch(
                     checked = autoScan,
-                    onCheckedChange = { folderViewModel.setAutoScan(it) },
+                    onCheckedChange = { viewModel.toggleAutoScan(it) },
                     colors =
                         SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,
@@ -168,7 +138,41 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            // ...existing code...
+            Text("Ecualizador", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
+            // Equalizer toggle
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Activar ecualizador", color = MaterialTheme.colorScheme.onBackground)
+                    Text(
+                        "Usar ecualizador nativo del sistema",
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        fontSize = 12.sp,
+                    )
+                }
+                Switch(
+                    checked = eqEnabled,
+                    onCheckedChange = { viewModel.toggleEqualizer(it) },
+                    colors =
+                        SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.onBackground,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.onBackground,
+                            uncheckedTrackColor = Color.White.copy(alpha = 0.12f),
+                        ),
+                )
+            }
+
+            // Open detailed equalizer screen for vertical sliders
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = { viewModel.openEqualizerScreen() },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            ) {
+                Text("Abrir ecualizador avanzado")
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             Button(
                 onClick = { launcher.launch(null) },
@@ -199,7 +203,7 @@ fun SettingsScreen(
                                 )
                             }
                             IconButton(onClick = {
-                                folderViewModel.removeMusicFolder(entry.uri)
+                                viewModel.removeMusicFolder(entry.uri)
                                 Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
                             }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.onBackground)
