@@ -902,7 +902,7 @@ class MainViewModel(
                 "Classical" to listOf("classical", "classic", "class"),
                 "Dance" to listOf("dance"),
                 "Folk" to listOf("folk"),
-                "Hip Hop" to listOf("hiphop", "hip", "hop"),
+                "Hip Hop" to listOf("hiphop"),
                 "Jazz" to listOf("jazz"),
                 "Pop" to listOf("pop"),
                 "Rock" to listOf("rock"),
