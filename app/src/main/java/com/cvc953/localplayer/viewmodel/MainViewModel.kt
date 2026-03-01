@@ -118,6 +118,9 @@ class MainViewModel(
 
     private val appPrefs = AppPrefs(application)
 
+    // track last initialized sessionId to avoid re-initializing equalizer repeatedly
+    private var lastEqSessionId: Int = 0
+
     private val _isSettingsVisible = MutableStateFlow(false)
     val isSettingsVisible: StateFlow<Boolean> = _isSettingsVisible
     private val _isEqualizerVisible = MutableStateFlow(false)
@@ -139,6 +142,16 @@ class MainViewModel(
     fun openEqualizerScreen() {
         _isEqualizerVisible.value = true
         _isEqualizerVisible.value = true
+        try {
+            val pc = PlayerController.getInstance(getApplication(), viewModelScope)
+            val currentSessionId = pc.getAudioSessionId()
+            if (currentSessionId != 0 && currentSessionId != lastEqSessionId) {
+                lastEqSessionId = currentSessionId
+                equalizerController.initializeWithAudioSession(currentSessionId)
+            }
+            updateEqualizerStateFromDevice()
+        } catch (_: Exception) {
+        }
     }
 
     fun closeEqualizerScreen() {
@@ -278,6 +291,15 @@ class MainViewModel(
                     }
                 }
             }
+            val currentSessionId = pc.getAudioSessionId()
+            if (currentSessionId != 0 && currentSessionId != lastEqSessionId) {
+                lastEqSessionId = currentSessionId
+                android.util.Log.d("MainViewModel", "Using current audio session: $currentSessionId")
+                equalizerController.initializeWithAudioSession(currentSessionId)
+                viewModelScope.launch {
+                    updateEqualizerStateFromDevice()
+                }
+            }
         } catch (_: Exception) {
         }
 
@@ -337,9 +359,6 @@ class MainViewModel(
 
     private val _bandLevelRange = MutableStateFlow(Pair(-1500, 1500))
     val bandLevelRange: StateFlow<Pair<Int, Int>> = _bandLevelRange
-
-    // track last initialized sessionId to avoid re-initializing equalizer repeatedly
-    private var lastEqSessionId: Int = 0
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
