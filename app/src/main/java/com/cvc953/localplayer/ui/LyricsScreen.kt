@@ -59,14 +59,14 @@ fun LyricsView(
     val listState = rememberLazyListState()
 
     val currentIndex =
-        remember(currentPosition) {
+        remember(lyrics, currentPosition) {
             lyrics
                 .indexOfLast { it.timeMs <= currentPosition }
-                .coerceAtLeast(0)
         }
 
     // Scroll automático centrado
     LaunchedEffect(currentIndex) {
+        if (currentIndex < 0) return@LaunchedEffect
         try {
             listState.animateScrollToItem(
                 index = currentIndex,
