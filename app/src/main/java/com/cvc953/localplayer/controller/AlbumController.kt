@@ -24,9 +24,16 @@ class AlbumController(
             else artist.trim().split(',', '/').map { it.trim() }.filter { it.isNotEmpty() }
 
         val mainArtist = normalizeArtistName(album.artist).firstOrNull() ?: album.artist
-        return repository.loadSongs().filter { song ->
+        val allSongs = repository.loadSongs()
+        val strictMatches = allSongs.filter { song ->
             normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
             normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+        }
+
+        if (strictMatches.isNotEmpty()) return strictMatches
+
+        return allSongs.filter { song ->
+            normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) }
         }
     }
 }

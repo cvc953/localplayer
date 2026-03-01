@@ -10,6 +10,8 @@ import org.json.JSONObject
 import java.io.File
 
 object TtmlCache {
+    private const val CACHE_SCHEMA_VERSION = 2
+
     private fun cacheDir(context: Context): File {
         val dir = File(context.cacheDir, "ttml_cache")
         if (!dir.exists()) dir.mkdirs()
@@ -114,7 +116,7 @@ object TtmlCache {
     }
 
     fun keyForFile(path: String, lastModified: Long): String {
-        val input = "$path|$lastModified"
+        val input = "$CACHE_SCHEMA_VERSION|$path|$lastModified"
         return input.hashCode().toString() + ".json"
     }
 }

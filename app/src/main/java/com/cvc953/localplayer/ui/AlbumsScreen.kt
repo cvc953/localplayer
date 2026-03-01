@@ -782,15 +782,21 @@ fun AlbumDetailScreen(
     val songs by albumViewModel.songs.collectAsState()
     val playerState by playbackViewModel.playerState.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
-    // Solo considerar el primer nombre de artista normalizado para filtrar canciones
-    val mainArtist = normalizeArtistName(artistName).firstOrNull() ?: artistName
+    // Filtrar canciones del álbum donde el artista participa (en cualquier posición)
     val albumSongs =
-        remember(songs, albumName, mainArtist) {
+        remember(songs, albumName, artistName) {
+            val normalizedRequestedArtists = normalizeArtistName(artistName).map { it.trim() }
             songs
                 .filter { song ->
-                    normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
-                        normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
-                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                    val albumMatches = normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) }
+                    val artistMatches = normalizeArtistName(song.artist).any { artist ->
+                        normalizedRequestedArtists.any { requestedArtist ->
+                            artist.trim().equals(requestedArtist, ignoreCase = true)
+                        }
+                    }
+                    albumMatches && artistMatches
+                }
+                .sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
         }
     val context = LocalContext.current
 
@@ -871,21 +877,23 @@ fun AlbumHeader(
         modifier = modifier.fillMaxWidth().padding(8.dp),
     ) {
         val songs by viewModel.songs.collectAsState()
-        val mainArtist = normalizeArtistName(artistName).firstOrNull() ?: artistName
         val albumSongs =
-            remember(songs, albumName, mainArtist) {
+            remember(songs, albumName, artistName) {
+                val normalizedRequestedArtists = normalizeArtistName(artistName).map { it.trim() }
                 songs
                     .filter { song ->
-                        normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
-                            normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
-                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                        val albumMatches = normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) }
+                        val artistMatches = normalizeArtistName(song.artist).any { artist ->
+                            normalizedRequestedArtists.any { requestedArtist ->
+                                artist.trim().equals(requestedArtist, ignoreCase = true)
+                            }
+                        }
+                        albumMatches && artistMatches
+                    }
+                    .sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
             }
         var albumArt by remember { mutableStateOf<Bitmap?>(null) }
-        val firstSong =
-            songs.firstOrNull { song ->
-                normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
-                    normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
-            }
+        val firstSong = albumSongs.firstOrNull()
         val context = LocalContext.current
 
         LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
@@ -979,7 +987,7 @@ fun AlbumHeader(
                     onClick = {
                         if (albumSongs.isNotEmpty()) {
                             playbackViewModel.setShuffle(false)
-                            playbackViewModel.playAlbum(albumName, mainArtist, albumSongs)
+                            playbackViewModel.playAlbum(albumName, artistName, albumSongs)
                             playbackViewModel.updateDisplayOrder(albumSongs)
                             playbackViewModel.play(albumSongs.first())
                         }
@@ -1015,7 +1023,7 @@ fun AlbumHeader(
                         if (albumSongs.isNotEmpty()) {
                             val shuffled = albumSongs.shuffled()
                             playbackViewModel.setShuffle(true)
-                            playbackViewModel.playAlbum(albumName, mainArtist, shuffled)
+                            playbackViewModel.playAlbum(albumName, artistName, shuffled)
                             playbackViewModel.updateDisplayOrder(shuffled)
                             playbackViewModel.play(shuffled.first())
                         }
