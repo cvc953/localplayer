@@ -7,19 +7,34 @@ import android.util.Log
 class EqualizerController(private val application: Application) {
     private var equalizer: Equalizer? = null
     private var audioSessionId: Int = 0
+    private var savedEnabledState: Boolean = false
 
     fun initializeWithAudioSession(sessionId: Int) {
         try {
+            // Save the enabled state before reinitializing to prevent transient audio pops
+            savedEnabledState = equalizer?.enabled ?: false
+            
             // Release previous equalizer if exists
             equalizer?.release()
             
             audioSessionId = sessionId
             equalizer = Equalizer(0, sessionId).apply {
-                enabled = true
+                enabled = false
             }
-            Log.d("EqualizerController", "Equalizer initialized with session $sessionId, bands=${equalizer?.numberOfBands}")
+            Log.d("EqualizerController", "Equalizer initialized with session $sessionId, bands=${equalizer?.numberOfBands}, restoring enabled=$savedEnabledState")
         } catch (e: Exception) {
             Log.e("EqualizerController", "Error initializing equalizer", e)
+        }
+    }
+
+    fun restoreSavedEnabledState() {
+        try {
+            if (savedEnabledState && equalizer != null) {
+                equalizer?.enabled = true
+                Log.d("EqualizerController", "Restored equalizer enabled state: true")
+            }
+        } catch (e: Exception) {
+            Log.e("EqualizerController", "Error restoring enabled state", e)
         }
     }
 
