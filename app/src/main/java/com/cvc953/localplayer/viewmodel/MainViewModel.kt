@@ -411,73 +411,110 @@ class MainViewModel(
     // Historial de reproducción para soportar "Anterior" respetando el orden
     private val playHistory: MutableList<Song> = mutableListOf()
 
+    // Job para debouncing del auto-scan
+    private var autoScanJob: Job? = null
+
     // Observer para detectar cambios en la biblioteca de música
     private val mediaStoreObserver =
         object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 super.onChange(selfChange)
+                android.util.Log.d("MainViewModel", "MediaStore onChange detected, selfChange=$selfChange")
+                
                 // Detectar cambios en la biblioteca y refrescar (si está activado)
-                if (appPrefs.isAutoScanEnabled()) refreshMusicLibrary()
+                if (appPrefs.isAutoScanEnabled()) {
+                    android.util.Log.d("MainViewModel", "Auto-scan enabled, scheduling library refresh")
+                    scheduleLibraryRefresh()
+                } else {
+                    android.util.Log.d("MainViewModel", "Auto-scan disabled, skipping refresh")
+                }
             }
         }
+
+    private fun scheduleLibraryRefresh() {
+        // Cancelar el job anterior si existe (debouncing)
+        autoScanJob?.cancel()
+        
+        // Programar un nuevo escaneo con delay de 2 segundos
+        autoScanJob = viewModelScope.launch(Dispatchers.IO) {
+            try {
+                android.util.Log.d("MainViewModel", "Debouncing auto-scan for 2 seconds...")
+                delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
+                android.util.Log.d("MainViewModel", "Starting auto-scan library refresh")
+                refreshMusicLibrary()
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Error in auto-scan", e)
+            }
+        }
+    }
 
     private fun refreshMusicLibrary() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                android.util.Log.d("MainViewModel", "refreshMusicLibrary: Starting scan")
                 // When auto-scan is enabled we must force a full rescan to detect newly added files
                 val newSongs = if (appPrefs.isAutoScanEnabled()) repository.forceRescanSongs() else repository.loadSongs()
                 val currentSongs = _songs.value
 
-                // Solo actualizar si hay cambios (nuevas canciones o eliminadas)
-                if (newSongs.size != currentSongs.size) {
+                android.util.Log.d("MainViewModel", "refreshMusicLibrary: Found ${newSongs.size} songs, current has ${currentSongs.size}")
+
+                // Actualizar si hay cambios en el número de canciones o en los IDs
+                val currentIds = currentSongs.map { it.id }.toSet()
+                val newIds = newSongs.map { it.id }.toSet()
+                val hasChanges = currentIds != newIds
+
+                if (hasChanges) {
+                    android.util.Log.d("MainViewModel", "refreshMusicLibrary: Changes detected, updating library")
                     _songs.value = newSongs.sortedBy { it.title }
+                } else {
+                    android.util.Log.d("MainViewModel", "refreshMusicLibrary: No changes detected")
                 }
             } catch (e: Exception) {
-                // Silenciosamente ignorar errores de lectura
+                android.util.Log.e("MainViewModel", "Error refreshing library", e)
             }
         }
-
-        /** Import playlists from provided JSON strings. Returns number imported. */
-        suspend fun importPlaylistsFromJsonStrings(jsonStrings: List<String>): Int =
-            withContext(Dispatchers.IO) {
-                try {
-                    var imported = 0
-                    jsonStrings.forEach { text ->
-                        try {
-                            val array =
-                                if (text.trimStart().startsWith("[")) {
-                                    org.json.JSONArray(text)
-                                } else {
-                                    org.json.JSONArray().apply {
-                                        put(org.json.JSONObject(text))
-                                    }
-                                }
-                            for (i in 0 until array.length()) {
-                                val obj = array.getJSONObject(i)
-                                val name = obj.optString("name", "").trim()
-                                if (name.isEmpty()) continue
-                                val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
-                                val ids = mutableListOf<Long>()
-                                for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
-
-                                if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }) continue
-
-                                val updated = _playlists.value + Playlist(name = name, songIds = ids)
-                                _playlists.value = updated
-                                savePlaylistsToPrefs(updated)
-                                imported++
-                            }
-                        } catch (_: Exception) {
-                            // ignore parse errors per-string
-                        }
-                    }
-                    imported
-                } catch (e: Exception) {
-                    android.util.Log.e("MainViewModel", "Error importing playlists from strings", e)
-                    0
-                }
-            }
     }
+
+    /** Import playlists from provided JSON strings. Returns number imported. */
+    suspend fun importPlaylistsFromJsonStrings(jsonStrings: List<String>): Int =
+        withContext(Dispatchers.IO) {
+            try {
+                var imported = 0
+                jsonStrings.forEach { text ->
+                    try {
+                        val array =
+                            if (text.trimStart().startsWith("[")) {
+                                org.json.JSONArray(text)
+                            } else {
+                                org.json.JSONArray().apply {
+                                    put(org.json.JSONObject(text))
+                                }
+                            }
+                        for (i in 0 until array.length()) {
+                            val obj = array.getJSONObject(i)
+                            val name = obj.optString("name", "").trim()
+                            if (name.isEmpty()) continue
+                            val idsArr = obj.optJSONArray("songIds") ?: org.json.JSONArray()
+                            val ids = mutableListOf<Long>()
+                            for (j in 0 until idsArr.length()) ids.add(idsArr.optLong(j))
+
+                            if (_playlists.value.any { it.name.equals(name, ignoreCase = true) }) continue
+
+                            val updated = _playlists.value + Playlist(name = name, songIds = ids)
+                            _playlists.value = updated
+                            savePlaylistsToPrefs(updated)
+                            imported++
+                        }
+                    } catch (_: Exception) {
+                        // ignore parse errors per-string
+                    }
+                }
+                imported
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Error importing playlists from strings", e)
+                0
+            }
+        }
 
     fun manualRefreshLibrary() {
         viewModelScope.launch(Dispatchers.IO) {
@@ -807,6 +844,8 @@ class MainViewModel(
     }
 
     override fun onCleared() {
+        // Cancelar cualquier auto-scan pendiente
+        autoScanJob?.cancel()
         // Deregistrar el observer cuando el ViewModel se destruye
         getApplication<Application>().contentResolver.unregisterContentObserver(mediaStoreObserver)
         // Release equalizer to free resources
@@ -815,14 +854,22 @@ class MainViewModel(
     }
 
     fun toggleAutoScan(enabled: Boolean) {
+        android.util.Log.d("MainViewModel", "toggleAutoScan: $enabled")
         appPrefs.setAutoScanEnabled(enabled)
         _autoScanEnabled.value = enabled
-        // If enabling auto-scan, trigger an immediate refresh so new files are picked up
+        
         if (enabled) {
+            // If enabling auto-scan, trigger an immediate refresh so new files are picked up
+            android.util.Log.d("MainViewModel", "Auto-scan enabled, triggering immediate refresh")
             try {
                 refreshMusicLibrary()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Error refreshing after enabling auto-scan", e)
             }
+        } else {
+            // If disabling, cancel any pending scan
+            android.util.Log.d("MainViewModel", "Auto-scan disabled, cancelling pending scans")
+            autoScanJob?.cancel()
         }
     }
 
