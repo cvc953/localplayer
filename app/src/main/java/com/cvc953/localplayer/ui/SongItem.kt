@@ -8,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,14 +20,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -134,6 +142,8 @@ fun SongItem(
 
         var menuExpanded by remember { mutableStateOf(false) }
         var showPlaylistDialog by remember { mutableStateOf(false) }
+        var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+        var newPlaylistName by remember { mutableStateOf("") }
 
         Box {
             IconButton(onClick = { menuExpanded = true }) {
@@ -228,25 +238,118 @@ fun SongItem(
             AlertDialog(
                 onDismissRequest = { showPlaylistDialog = false },
                 containerColor = MaterialTheme.extendedColors.surfaceSheet,
-                title = { Text("Agregar a lista", color = MaterialTheme.colorScheme.onSurface) },
+                title = { Text("Agregar a Playlist", color = MaterialTheme.colorScheme.onSurface) },
                 text = {
-                    LazyColumn {
-                        items(playlists) { playlist ->
-                            Text(
-                                text = playlist.name,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onAddToPlaylist?.invoke(
-                                                playlist.name,
-                                                song.id,
-                                            )
-                                            showPlaylistDialog = false
-                                        }.padding(12.dp),
-                                fontSize = 14.sp,
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
+                        ) {
+                            Button(
+                                onClick = { showCreatePlaylistDialog = true },
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            ) {
+                                Text("Crear playlist")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(0.dp).padding(vertical = 3.dp))
+
+                        if (showCreatePlaylistDialog) {
+                            AlertDialog(
+                                onDismissRequest = {
+                                    showCreatePlaylistDialog = false
+                                    newPlaylistName = ""
+                                },
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                title = { Text("Nueva lista", color = MaterialTheme.colorScheme.onBackground) },
+                                text = {
+                                    OutlinedTextField(
+                                        value = newPlaylistName,
+                                        onValueChange = { newPlaylistName = it },
+                                        singleLine = true,
+                                        placeholder = { Text("Nombre de la lista") },
+                                        colors =
+                                            TextFieldDefaults.colors(
+                                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                cursorColor = MaterialTheme.colorScheme.primary,
+                                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                            ),
+                                    )
+                                },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            if (newPlaylistName.isNotBlank()) {
+                                                playlistViewModel.createPlaylist(newPlaylistName)
+                                                playlistViewModel.addSongToPlaylist(newPlaylistName, song.id)
+                                                Toast.makeText(context, "Creado y agregado a $newPlaylistName", Toast.LENGTH_SHORT).show()
+                                                newPlaylistName = ""
+                                                showCreatePlaylistDialog = false
+                                                showPlaylistDialog = false
+                                            }
+                                        },
+                                    ) {
+                                        Text("Crear", color = MaterialTheme.colorScheme.primary)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showCreatePlaylistDialog = false }) {
+                                        Text("Cancelar", color = MaterialTheme.colorScheme.onBackground)
+                                    }
+                                },
                             )
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                            items(playlists) { playlist ->
+                                Card(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 6.dp)
+                                            .clickable {
+                                                onAddToPlaylist?.invoke(playlist.name, song.id)
+                                                Toast.makeText(context, "Agregado a ${playlist.name}", Toast.LENGTH_SHORT).show()
+                                                showPlaylistDialog = false
+                                            },
+                                    colors =
+                                        CardDefaults.cardColors(
+                                            containerColor = LocalExtendedColors.current.surfaceSheet,
+                                        ),
+                                    shape = RoundedCornerShape(8.dp),
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                        Spacer(Modifier.width(12.dp))
+                                        Column {
+                                            Text(
+                                                text = playlist.name,
+                                                color = MaterialTheme.colorScheme.onBackground,
+                                                fontSize = 14.sp,
+                                            )
+                                            Text(
+                                                text = "${playlist.songIds.size} canciones",
+                                                color = LocalExtendedColors.current.textSecondarySoft,
+                                                fontSize = 12.sp,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 },
