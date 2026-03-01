@@ -874,10 +874,11 @@ fun AlbumHeader(
         val mainArtist = normalizeArtistName(artistName).firstOrNull() ?: artistName
         val albumSongs =
             remember(songs, albumName, mainArtist) {
-                songs.filter { song ->
-                    normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
-                        normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
-                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                songs
+                    .filter { song ->
+                        normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
+                            normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
             }
         var albumArt by remember { mutableStateOf<Bitmap?>(null) }
         val firstSong =
@@ -962,7 +963,7 @@ fun AlbumHeader(
         val buttonColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
 
         Text(text = "${albumSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1034,6 +1035,7 @@ fun AlbumHeader(
                     }
                 }
             }
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
