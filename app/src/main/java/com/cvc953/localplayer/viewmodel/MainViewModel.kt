@@ -147,9 +147,12 @@ class MainViewModel(
             val currentSessionId = pc.getAudioSessionId()
             if (currentSessionId != 0 && currentSessionId != lastEqSessionId) {
                 lastEqSessionId = currentSessionId
-                equalizerController.initializeWithAudioSession(currentSessionId)
+                viewModelScope.launch {
+                    safelyReinitializeEqualizer(currentSessionId)
+                }
+            } else {
+                updateEqualizerStateFromDevice()
             }
-            updateEqualizerStateFromDevice()
         } catch (_: Exception) {
         }
     }
@@ -287,19 +290,7 @@ class MainViewModel(
                     android.util.Log.d("MainViewModel", "Audio session changed: $sessionId")
                     
                     viewModelScope.launch {
-                        // Disable EQ during transition
-                        try {
-                            if (appPrefs.isEqualizerEnabled()) {
-                                equalizerController.setEnabled(false)
-                            }
-                        } catch (_: Exception) {}
-                        
-                        // Wait for audio system to stabilize (80ms buffer)
-                        kotlinx.coroutines.delay(80)
-                        
-                        // Now reinitialize with new session
-                        equalizerController.initializeWithAudioSession(sessionId)
-                        updateEqualizerStateFromDevice()
+                        safelyReinitializeEqualizer(sessionId)
                     }
                 }
             }
@@ -307,8 +298,9 @@ class MainViewModel(
             if (currentSessionId != 0 && currentSessionId != lastEqSessionId) {
                 lastEqSessionId = currentSessionId
                 android.util.Log.d("MainViewModel", "Using current audio session: $currentSessionId")
-                equalizerController.initializeWithAudioSession(currentSessionId)
-                updateEqualizerStateFromDevice()
+                viewModelScope.launch {
+                    safelyReinitializeEqualizer(currentSessionId)
+                }
             }
         } catch (_: Exception) {
         }
@@ -319,6 +311,18 @@ class MainViewModel(
         _bandLevels.value = emptyList()
         _equalizerPresets.value = emptyList()
         _selectedPresetName.value = null
+    }
+
+    private suspend fun safelyReinitializeEqualizer(sessionId: Int) {
+        try {
+            equalizerController.setEnabled(false)
+        } catch (_: Exception) {
+        }
+
+        kotlinx.coroutines.delay(80)
+
+        equalizerController.initializeWithAudioSession(sessionId)
+        updateEqualizerStateFromDevice()
     }
 
     private fun updateEqualizerStateFromDevice() {
