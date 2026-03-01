@@ -270,6 +270,7 @@ class MainViewModel(
         // Ensure when the PlayerController's internal queue is exhausted, MainViewModel advances
         try {
             val pc = PlayerController.getInstance(getApplication(), viewModelScope)
+            
             pc.setOnQueueEndedListener {
                 viewModelScope.launch {
                     try {
@@ -279,14 +280,25 @@ class MainViewModel(
                 }
             }
             // Listen for audio session changes to initialize equalizer
+            // Use a small delay to allow audio subsystem to stabilize before reinitializing EQ
             pc.setOnAudioSessionIdChangedListener { sessionId ->
                 if (sessionId != 0 && sessionId != lastEqSessionId) {
                     lastEqSessionId = sessionId
-                    android.util.Log.d("MainViewModel", "Audio session changed: $sessionId, initializing equalizer")
-                    equalizerController.initializeWithAudioSession(sessionId)
+                    android.util.Log.d("MainViewModel", "Audio session changed: $sessionId")
                     
-                    // Update equalizer state from real device equalizer
                     viewModelScope.launch {
+                        // Disable EQ during transition
+                        try {
+                            if (appPrefs.isEqualizerEnabled()) {
+                                equalizerController.setEnabled(false)
+                            }
+                        } catch (_: Exception) {}
+                        
+                        // Wait for audio system to stabilize (80ms buffer)
+                        kotlinx.coroutines.delay(80)
+                        
+                        // Now reinitialize with new session
+                        equalizerController.initializeWithAudioSession(sessionId)
                         updateEqualizerStateFromDevice()
                     }
                 }
@@ -296,9 +308,7 @@ class MainViewModel(
                 lastEqSessionId = currentSessionId
                 android.util.Log.d("MainViewModel", "Using current audio session: $currentSessionId")
                 equalizerController.initializeWithAudioSession(currentSessionId)
-                viewModelScope.launch {
-                    updateEqualizerStateFromDevice()
-                }
+                updateEqualizerStateFromDevice()
             }
         } catch (_: Exception) {
         }
@@ -336,6 +346,10 @@ class MainViewModel(
                 val savedEnabled = appPrefs.isEqualizerEnabled()
                 equalizerController.setEnabled(savedEnabled)
                 _equalizerEnabled.value = savedEnabled
+                
+                // Restore the equalizer to its previous enabled state after full initialization
+                // to prevent transient audio clicks/pops during session transitions
+                equalizerController.restoreSavedEnabledState()
                 
                 android.util.Log.d("MainViewModel", "Equalizer state updated: $bandCount bands, range=${_bandLevelRange.value}")
             }

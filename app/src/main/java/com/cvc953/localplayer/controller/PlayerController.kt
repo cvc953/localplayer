@@ -108,16 +108,17 @@ class PlayerController(
                     try { mp.start() } catch (_: Exception) {}
                     pendingResume = false
                 }
+                
+                // Notify audio session id changed immediately after audio starts
+                try {
+                    val sid = audioSessionId
+                    Log.d("PlayerController", "MediaPlayer created audioSessionId=$sid")
+                    onAudioSessionIdChanged?.invoke(sid)
+                } catch (t: Throwable) {
+                    Log.w("PlayerController", "onAudioSessionIdChanged invoke failed", t)
+                }
             }
             prepareAsync()
-            // notify listener about audio session id once created
-            try {
-                val sid = audioSessionId
-                Log.d("PlayerController", "MediaPlayer created audioSessionId=$sid")
-                onAudioSessionIdChanged?.invoke(sid)
-            } catch (t: Throwable) {
-                Log.w("PlayerController", "onAudioSessionIdChanged invoke failed", t)
-            }
             setOnCompletionListener {
                 if (currentIndex + 1 < queue.size) {
                     currentIndex++

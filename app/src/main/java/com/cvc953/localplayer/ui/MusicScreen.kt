@@ -811,55 +811,69 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                     BottomNavItem.Playlists,
                 )
 
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.background,
-                bottomBar = {
-                    if (!showPlayerScreen && !showSettings && !showAbout) {
-                        Column {
-                            if (playerState.currentSong != null) {
-                                MiniPlayer(
-                                    song = playerState.currentSong!!,
-                                    isPlaying = playerState.isPlaying,
-                                    onPlayPause = { playbackViewModel.togglePlayPause() },
-                                    onClick = { playerViewModel.openPlayerScreen() },
-                                    onNext = { playbackViewModel.playNextSong() },
-                                )
-                            }
-                            NavigationBar(
-                                containerColor = LocalExtendedColors.current.surfaceSheet,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                            ) {
-                                navItems.forEach { item ->
-                                    NavigationBarItem(
-                                        icon = {
-                                            Icon(item.icon, contentDescription = item.title)
-                                        },
-                                        label = { Text(item.title) },
-                                        selected = selectedTab == item.route,
-                                        onClick = {
-                                            selectedTab = item.route
-                                            if (item.route != BottomNavItem.Albums.route) selectedAlbumName = null
-                                            if (item.route != BottomNavItem.Artists.route) selectedArtistName = null
-                                            if (item.route != BottomNavItem.Playlists.route) selectedPlaylistName = null
-                                        },
-                                        colors =
-                                            NavigationBarItemDefaults.colors(
-                                                selectedIconColor = MaterialTheme.colorScheme.background,
-                                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                indicatorColor = MaterialTheme.colorScheme.primary,
-                                            ),
-                                    )
+            Box(modifier = Modifier.fillMaxSize()) {
+                val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel =
+                    androidx.lifecycle.viewmodel.compose
+                        .viewModel()
+                val showEqualizer by mainViewModel.isEqualizerVisible.collectAsState()
+
+                Scaffold(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    bottomBar = {
+                    Column(
+                        modifier = Modifier.pointerInput(showPlayerScreen || showSettings || showAbout) {
+                            if (showPlayerScreen || showSettings || showAbout) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        awaitPointerEvent()
+                                    }
                                 }
                             }
                         }
+                    ) {
+                        if (playerState.currentSong != null) {
+                            MiniPlayer(
+                                song = playerState.currentSong!!,
+                                isPlaying = playerState.isPlaying,
+                                onPlayPause = { playbackViewModel.togglePlayPause() },
+                                onClick = { playerViewModel.openPlayerScreen() },
+                                onNext = { playbackViewModel.playNextSong() },
+                            )
+                        }
+                        NavigationBar(
+                            containerColor = LocalExtendedColors.current.surfaceSheet,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ) {
+                            navItems.forEach { item ->
+                                NavigationBarItem(
+                                    icon = {
+                                        Icon(item.icon, contentDescription = item.title)
+                                    },
+                                    label = { Text(item.title) },
+                                    selected = selectedTab == item.route,
+                                    onClick = {
+                                        selectedTab = item.route
+                                        if (item.route != BottomNavItem.Albums.route) selectedAlbumName = null
+                                        if (item.route != BottomNavItem.Artists.route) selectedArtistName = null
+                                        if (item.route != BottomNavItem.Playlists.route) selectedPlaylistName = null
+                                    },
+                                    colors =
+                                        NavigationBarItemDefaults.colors(
+                                            selectedIconColor = MaterialTheme.colorScheme.background,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            indicatorColor = MaterialTheme.colorScheme.primary,
+                                        ),
+                                )
+                            }
+                        }
                     }
-                },
-            ) { padding ->
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.onBackground),
-                ) {
+                    },
+                ) { padding ->
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.onBackground),
+                    ) {
                     when (selectedTab) {
                         BottomNavItem.Songs.route -> {
                             SongsContent(
@@ -978,57 +992,56 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                             }
                         }
                     }
-                    if (showPlayerScreen) {
-                        Box(modifier = Modifier.fillMaxSize().zIndex(1f)) {
-                            PlayerScreen(
-                                onBack = { playerViewModel.closePlayerScreen() },
-                                onNavigateToArtist = { artistName ->
-                                    playerViewModel.closePlayerScreen()
-                                    selectedTab = BottomNavItem.Artists.route
-                                    selectedArtistName = artistName
-                                },
-                                onNavigateToAlbum = { albumName, artistName ->
-                                    playerViewModel.closePlayerScreen()
-                                    val found =
-                                        albumViewModel.albums.value.find {
-                                            it.name.equals(albumName, ignoreCase = true) &&
-                                                it.artist.equals(artistName, ignoreCase = true)
-                                        }
-                                    if (found != null) {
-                                        albumViewModel.selectAlbum(found)
-                                    } else {
-                                        albumViewModel.selectAlbum(
-                                            com.cvc953.localplayer.model
-                                                .Album(albumName, artistName, 0),
-                                        )
-                                    }
-                                    selectedTab = BottomNavItem.Albums.route
-                                    selectedAlbumName = "$albumName|$artistName"
-                                },
-                            )
-                        }
                     }
-                    val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel =
-                        androidx.lifecycle.viewmodel.compose
-                            .viewModel()
-                    val showEqualizer by mainViewModel.isEqualizerVisible.collectAsState()
-                    if (showEqualizer) {
-                        Box(modifier = Modifier.fillMaxSize().zIndex(3f)) {
-                            EqualizerScreen(viewModel = mainViewModel, onClose = { mainViewModel.closeEqualizerScreen() })
-                        }
-                    } else if (showSettings) {
-                        Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
-                            SettingsScreen(
-                                viewModel = mainViewModel,
-                                onClose = { playerViewModel.closeSettingsScreen() },
-                            )
-                        }
+                } // end Box container
+
+                if (showPlayerScreen) {
+                    Box(modifier = Modifier.fillMaxSize().zIndex(1f)) {
+                        PlayerScreen(
+                            onBack = { playerViewModel.closePlayerScreen() },
+                            onNavigateToArtist = { artistName ->
+                                playerViewModel.closePlayerScreen()
+                                selectedTab = BottomNavItem.Artists.route
+                                selectedArtistName = artistName
+                            },
+                            onNavigateToAlbum = { albumName, artistName ->
+                                playerViewModel.closePlayerScreen()
+                                val found =
+                                    albumViewModel.albums.value.find {
+                                        it.name.equals(albumName, ignoreCase = true) &&
+                                            it.artist.equals(artistName, ignoreCase = true)
+                                    }
+                                if (found != null) {
+                                    albumViewModel.selectAlbum(found)
+                                } else {
+                                    albumViewModel.selectAlbum(
+                                        com.cvc953.localplayer.model
+                                            .Album(albumName, artistName, 0),
+                                    )
+                                }
+                                selectedTab = BottomNavItem.Albums.route
+                                selectedAlbumName = "$albumName|$artistName"
+                            },
+                        )
                     }
                 }
-            } // end Box container
-        } // end Scaffold
-    } // end else branch
-} // end StoragePermissionHandler
+
+                if (showEqualizer) {
+                    Box(modifier = Modifier.fillMaxSize().zIndex(3f)) {
+                        EqualizerScreen(viewModel = mainViewModel, onClose = { mainViewModel.closeEqualizerScreen() })
+                    }
+                } else if (showSettings) {
+                    Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
+                        SettingsScreen(
+                            viewModel = mainViewModel,
+                            onClose = { playerViewModel.closeSettingsScreen() },
+                        )
+                    }
+                }
+            }
+        } // end else branch
+    } // end StoragePermissionHandler
+} // end MainMusicScreen
 
 /*@Suppress("ktlint:standard:function-naming")
 @Composable
