@@ -1,4 +1,3 @@
-
 @file:Suppress("ktlint:standard:no-wildcard-imports")
 
 package com.cvc953.localplayer.ui
@@ -16,6 +15,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,10 +43,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -68,11 +72,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -370,9 +376,11 @@ fun ArtistsScreen(
                                             modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
                                         ) {
                                             // Solo usar las canciones del artista actual para el dropdown (más rápido)
-                                            val artistSongs = songs.filter {
-                                                it.artist.trim().equals(artist.name.trim(), ignoreCase = true)
-                                            }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+                                            val artistSongs =
+                                                songs
+                                                    .filter {
+                                                        it.artist.trim().equals(artist.name.trim(), ignoreCase = true)
+                                                    }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
                                             val firstSongOfArtist = artistSongs.firstOrNull()
                                             DropdownMenuItem(
                                                 text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
@@ -431,7 +439,7 @@ fun ArtistsScreen(
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         state = listState,
-                        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
+                        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(sortedArtists) { artist ->
@@ -617,7 +625,7 @@ fun ArtistsScreen(
                         modifier =
                             Modifier
                                 .align(Alignment.CenterEnd)
-                                .padding(end = 4.dp)
+                                // .padding(end = 4.dp)
                                 .width(28.dp)
                                 .fillMaxHeight()
                                 .onGloballyPositioned { coords ->
@@ -702,6 +710,8 @@ fun ArtistDetailScreen(
     playbackViewModel: PlaybackViewModel,
     playlistViewModel: PlaylistViewModel,
     artistName: String,
+    onAlbumClick: (albumName: String, artistName: String) -> Unit,
+    onViewAllSongs: () -> Unit,
     onBack: () -> Unit,
 ) {
     val repo = remember { SongRepository(artistViewModel.getApplication<Application>()) }
@@ -737,22 +747,18 @@ fun ArtistDetailScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // Mostrar el número real de canciones
-                Text(
-                    text = "${artistSongs.size} canciones",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.extendedColors.textSecondary,
-                )
             }
         }
+
+        val maxItems = 6
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item { ArtistHeader(artistViewModel, artistName) }
-            items(artistSongsSorted) { song ->
+            item { ArtistHeader(artistViewModel, artistName, playbackViewModel, modifier = Modifier, onViewAllSongs) }
+            items(artistSongsSorted.take(maxItems)) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
                 SongItem(
@@ -770,6 +776,81 @@ fun ArtistDetailScreen(
                     },
                 )
             }
+            // LazyRow de álbumes del artista
+            item {
+                val albums =
+                    remember(artistSongs) {
+                        artistSongs
+                            .groupBy { it.album.ifBlank { "Desconocido" } }
+                            .filterKeys { it.isNotBlank() }
+                            .toList()
+                    }
+                if (albums.isNotEmpty()) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "Álbumes",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(start = 8.dp, top = 8.dp, bottom = 8.dp),
+                        )
+                        LazyRow(
+                            // contentPadding = PaddingValues(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            items(albums) { (albumName, albumSongs) ->
+                                val context = LocalContext.current
+                                val representativeSong = albumSongs.firstOrNull()
+                                var albumArt by remember(representativeSong?.uri) { mutableStateOf<Bitmap?>(null) }
+                                LaunchedEffect(representativeSong?.uri) {
+                                    withContext(Dispatchers.IO) {
+                                        try {
+                                            val uri = representativeSong?.uri ?: return@withContext
+                                            val retriever = MediaMetadataRetriever()
+                                            retriever.setDataSource(context, uri)
+                                            retriever.embeddedPicture?.let {
+                                                albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                                            }
+                                            retriever.release()
+                                        } catch (_: Exception) {
+                                        }
+                                    }
+                                }
+                                Column(
+                                    modifier =
+                                        Modifier
+                                            .width(120.dp)
+                                            .clickable { onAlbumClick(albumName, artistName) },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Image(
+                                        painter =
+                                            albumArt?.let { BitmapPainter(it.asImageBitmap()) }
+                                                ?: painterResource(R.drawable.ic_default_album),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Crop,
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = albumName,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 14.sp,
+                                        maxLines = 1,
+                                        textAlign = TextAlign.Center,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Text(
+                                        text = "${albumSongs.size} canciones",
+                                        color = md_textSecondary,
+                                        fontSize = 12.sp,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -779,18 +860,18 @@ fun ArtistDetailScreen(
 fun ArtistHeader(
     artistViewModel: ArtistViewModel,
     artistName: String,
+    playbackViewModel: PlaybackViewModel,
+    modifier: Modifier,
+    onViewAllSongs: () -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+    Column(modifier = modifier.fillMaxWidth().padding(8.dp)) {
         val songs by artistViewModel.getSongsForArtist(artistName).collectAsState(initial = emptyList())
         val repo = remember { SongRepository(artistViewModel.getApplication<Application>()) }
         val allSongs = remember { repo.loadSongs() }
-        // val playerState by playbackViewModel.playerState.collectAsState()
-        // val playlists by playlistViewModel.playlists.collectAsState()
         val artistSongs =
             remember(allSongs, artistName) {
                 allSongs.filter { song -> normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) } }
             }
-        // val artistSongs = remember(songs, artistName) { songs.filter { it.artist == artistName } }
         var artistArt by remember { mutableStateOf<Bitmap?>(null) }
         val firstSong = artistSongs.firstOrNull()
         val context = LocalContext.current
@@ -845,7 +926,12 @@ fun ArtistHeader(
         Image(
             painter = artistArt?.asImageBitmap()?.let { BitmapPainter(it) } ?: painterResource(R.drawable.ic_default_album),
             contentDescription = null,
-            modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp)),
+            modifier =
+                Modifier
+                    .fillMaxWidth(1f)
+                    .aspectRatio(1f)
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop,
         )
 
@@ -856,13 +942,31 @@ fun ArtistHeader(
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(text = "${artistSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        val buttonColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = "Canciones", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            Text(
+                text = "Ver todas",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.extendedColors.textSecondary,
+                modifier = Modifier.clickable { onViewAllSongs() },
+            )
+        }
     }
 }
 

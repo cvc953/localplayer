@@ -27,15 +27,29 @@ class PlayerController(
     private var progressJob: Job? = null
     private var onQueueEnded: (() -> Unit)? = null
     private var onAudioSessionIdChanged: ((Int) -> Unit)? = null
+    private var onNextAtEnd: (() -> Unit)? = null
 
+    private var pendingSeek: Long? = null
+    private var pendingResume: Boolean = false
     fun playNow(
         songs: List<Song>,
         startIndex: Int = 0,
+        startPaused: Boolean = false,
+        seekToPosition: Long? = null,
+        resumeAfterSeek: Boolean = false,
     ) {
+        val isSameQueue = queue.size == songs.size && queue.zip(songs).all { it.first.id == it.second.id }
+        val isSameIndex = currentIndex == startIndex
+        if (isSameQueue && isSameIndex && currentIndex in queue.indices) {
+            // Ya está sonando la misma canción en la misma posición, no reiniciar
+            return
+        }
         queue.clear()
         queue.addAll(songs)
         currentIndex = startIndex
-        playCurrent()
+        pendingSeek = seekToPosition
+        pendingResume = resumeAfterSeek
+        playCurrent(startPaused)
     }
 
     fun playSong(song: Song) {
@@ -68,45 +82,58 @@ class PlayerController(
         }
     }
 
-    private fun playCurrent() {
+    private fun playCurrent(startPaused: Boolean = false) {
         if (currentIndex !in queue.indices) {
             stop()
             return
         }
         val song = queue[currentIndex]
-        play(song)
+        play(song, startPaused)
     }
 
-    private fun play(song: Song) {
+    private fun play(song: Song, startPaused: Boolean = false) {
         mediaPlayer?.release()
-        mediaPlayer =
-            MediaPlayer().apply {
-                setDataSource(context, song.uri)
-                prepare()
-                start()
-                // notify listener about audio session id once created
-                try {
-                    val sid = audioSessionId
-                    Log.d("PlayerController", "MediaPlayer created audioSessionId=$sid")
-                    onAudioSessionIdChanged?.invoke(sid)
-                } catch (t: Throwable) {
-                    Log.w("PlayerController", "onAudioSessionIdChanged invoke failed", t)
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(context, song.uri)
+            setOnPreparedListener { mp ->
+                // Si hay un seek pendiente, hacerlo aquí
+                pendingSeek?.let { pos ->
+                    try { mp.seekTo(pos.toInt()) } catch (_: Exception) {}
+                    pendingSeek = null
                 }
-                setOnCompletionListener {
-                    if (currentIndex + 1 < queue.size) {
-                        currentIndex++
-                        playCurrent()
-                    } else {
-                        _state.update { it.copy(isPlaying = false) }
-                        try {
-                            onQueueEnded?.invoke()
-                        } catch (_: Exception) {
-                        }
+                // Actualizar duración real al preparar
+                val realDuration = try { mp.duration.toLong() } catch (_: Exception) { song.duration }
+                _state.update { it.copy(duration = realDuration) }
+                if (!startPaused || pendingResume) {
+                    try { mp.start() } catch (_: Exception) {}
+                    pendingResume = false
+                }
+            }
+            prepareAsync()
+            // notify listener about audio session id once created
+            try {
+                val sid = audioSessionId
+                Log.d("PlayerController", "MediaPlayer created audioSessionId=$sid")
+                onAudioSessionIdChanged?.invoke(sid)
+            } catch (t: Throwable) {
+                Log.w("PlayerController", "onAudioSessionIdChanged invoke failed", t)
+            }
+            setOnCompletionListener {
+                if (currentIndex + 1 < queue.size) {
+                    currentIndex++
+                    playCurrent()
+                } else {
+                    _state.update { it.copy(isPlaying = false) }
+                    try {
+                        onQueueEnded?.invoke()
+                    } catch (_: Exception) {
                     }
                 }
             }
+        }
 
-        _state.value = PlayerState(currentSong = song, isPlaying = true, position = 0L, duration = mediaPlayer?.duration?.toLong() ?: 0L)
+        // Inicializar el estado con la duración del Song, se actualizará al preparar
+        _state.value = PlayerState(currentSong = song, isPlaying = !startPaused || pendingResume, position = 0L, duration = song.duration)
 
         startProgressUpdates()
     }
@@ -166,7 +193,13 @@ class PlayerController(
     }
 
     fun seekTo(position: Long) {
-        mediaPlayer?.seekTo(position.toInt())
+        mediaPlayer?.let { mp ->
+            val wasPlaying = try { mp.isPlaying } catch (_: Exception) { false }
+            try {
+                mp.seekTo(position.toInt())
+                if (!wasPlaying) mp.pause() // Forzar pausa si estaba en pausa
+            } catch (_: Exception) {}
+        }
         _state.update { s -> s.copy(position = position) }
     }
 
@@ -176,6 +209,7 @@ class PlayerController(
             playCurrent()
         } else {
             stop()
+            onNextAtEnd?.invoke()
         }
     }
 
@@ -229,6 +263,10 @@ class PlayerController(
 
     fun setOnQueueEndedListener(listener: (() -> Unit)?) {
         onQueueEnded = listener
+    }
+
+    fun setOnNextAtEndListener(listener: (() -> Unit)?) {
+        onNextAtEnd = listener
     }
 
     companion object {

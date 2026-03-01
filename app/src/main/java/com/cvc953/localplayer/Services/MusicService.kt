@@ -62,17 +62,32 @@ class MusicService : Service() {
 
         // Observe player state and update notification when it changes
         serviceJob = serviceScope.launch {
+            var lastSongUri: String? = null
             playerController.state.collect { st ->
-                st.currentSong?.let {
-                    title = it.title.ifBlank { "Reproduciendo" }
-                    artist = it.artist
+                val newSong = st.currentSong
+                val newSongUri = newSong?.uri?.toString()
+                if (newSongUri != null && newSongUri != lastSongUri) {
+                    // Cambió la canción, recarga carátula
+                    title = newSong.title.ifBlank { "Reproduciendo" }
+                    artist = newSong.artist
+                    isPlaying = st.isPlaying
+                    positionMs = st.position
+                    durationMs = st.duration
+                    lastSongUri = newSongUri
+                    currentSongUri = newSongUri
+                    albumArt = null
+                    loadAlbumArt(newSongUri)
+                } else if (newSong != null) {
+                    // Misma canción, solo actualiza estado
+                    title = newSong.title.ifBlank { "Reproduciendo" }
+                    artist = newSong.artist
                     isPlaying = st.isPlaying
                     positionMs = st.position
                     durationMs = st.duration
                     updateMediaSession()
                     updateNotification()
-                } ?: run {
-                    // No current song
+                } else {
+                    // No hay canción actual
                     isPlaying = st.isPlaying
                     positionMs = st.position
                     durationMs = st.duration
@@ -154,25 +169,33 @@ class MusicService : Service() {
             }
         }
 
-        // Nueva canción
+
+        // Nueva canción, pero solo si es diferente o cambia el estado de reproducción
         val songTitle = intent?.getStringExtra("TITLE")
         val songArtist = intent?.getStringExtra("ARTIST")
         val songUri = intent?.getStringExtra("SONG_URI")
+        val requestedIsPlaying = intent?.getBooleanExtra("IS_PLAYING", true) ?: true
 
         if (!songUri.isNullOrEmpty()) {
-            title = songTitle ?: "Reproduciendo"
-            artist = songArtist ?: ""
-            isPlaying = intent?.getBooleanExtra("IS_PLAYING", true) ?: true
-            currentSongUri = songUri
+            val isSameSong = (songUri == currentSongUri)
+            val isSameState = (requestedIsPlaying == isPlaying)
+            if (!isSameSong || !isSameState) {
+                title = songTitle ?: "Reproduciendo"
+                artist = songArtist ?: ""
+                isPlaying = requestedIsPlaying
+                currentSongUri = songUri
 
-            Log.e("MusicService", "✓ Song loaded: $title by $artist")
+                Log.e("MusicService", "✓ Song loaded: $title by $artist")
 
-            // Clear previous album art reference (do not recycle — avoid racing with Notification/Framework)
-            albumArt = null
+                // Clear previous album art reference (do not recycle — avoid racing with Notification/Framework)
+                albumArt = null
 
-            loadAlbumArt(songUri)
-            updateMediaSession()
-            updateNotification()
+                loadAlbumArt(songUri)
+                updateMediaSession()
+                updateNotification()
+            } else {
+                Log.e("MusicService", "✓ Ignored duplicate song/state intent: $title by $artist")
+            }
         }
 
         return START_STICKY

@@ -52,7 +52,6 @@ import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
-import com.cvc953.localplayer.viewmodel.SettingsViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.launch
 
@@ -762,26 +761,31 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 }
             }
         } else {
-            var selectedAlbumName by remember { mutableStateOf<String?>(null) }
-            var selectedArtistName by remember { mutableStateOf<String?>(null) }
-            var selectedPlaylistName by remember { mutableStateOf<String?>(null) }
+            var selectedAlbumName by rememberSaveable { mutableStateOf<String?>(null) }
+            var selectedArtistName by rememberSaveable { mutableStateOf<String?>(null) }
+            var selectedPlaylistName by rememberSaveable { mutableStateOf<String?>(null) }
             val playerState by playbackViewModel.playerState.collectAsState()
             val showPlayerScreen by playerViewModel.isPlayerScreenVisible.collectAsState()
             val showSettings by playerViewModel.isSettingsVisible.collectAsState()
             val activity = context as? Activity
             var lastBackPressTime by remember { mutableStateOf(0L) }
 
+            var hasSentPlaybackIntent by remember { mutableStateOf(false) }
             LaunchedEffect(playerState.isPlaying) {
-                val intent =
-                    Intent(
-                        context,
-                        com.cvc953.localplayer.services.MusicService::class.java,
-                    ).apply {
-                        action = com.cvc953.localplayer.services.MusicService.ACTION_UPDATE_STATE
-                        putExtra("IS_PLAYING", playerState.isPlaying)
-                    }
-                androidx.core.content.ContextCompat
-                    .startForegroundService(context, intent)
+                if (hasSentPlaybackIntent) {
+                    val intent =
+                        Intent(
+                            context,
+                            com.cvc953.localplayer.services.MusicService::class.java,
+                        ).apply {
+                            action = com.cvc953.localplayer.services.MusicService.ACTION_UPDATE_STATE
+                            putExtra("IS_PLAYING", playerState.isPlaying)
+                        }
+                    androidx.core.content.ContextCompat
+                        .startForegroundService(context, intent)
+                } else {
+                    hasSentPlaybackIntent = true
+                }
             }
 
             BackHandler {
@@ -867,12 +871,10 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                         }
 
                         BottomNavItem.Albums.route -> {
-                            // Use a single instance of AlbumViewModel for both screens
-                            val context = LocalContext.current
+                            // Usar SIEMPRE la misma instancia de AlbumViewModel
                             val albumViewModel: AlbumViewModel =
-                                remember {
-                                    AlbumViewModel(context.applicationContext as Application)
-                                }
+                                androidx.lifecycle.viewmodel.compose
+                                    .viewModel()
                             val albumKey = selectedAlbumName
                             if (albumKey == null) {
                                 AlbumsScreen(
@@ -933,6 +935,26 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                         playlistViewModel = playlistViewModel,
                                         artistName = artistName,
                                         onBack = { selectedArtistName = null },
+                                        onAlbumClick = { albumName, artistName ->
+                                            val found =
+                                                albumViewModel.albums.value.find {
+                                                    it.name.equals(albumName, ignoreCase = true) &&
+                                                        it.artist.equals(artistName, ignoreCase = true)
+                                                }
+                                            if (found != null) {
+                                                albumViewModel.selectAlbum(found)
+                                            } else {
+                                                albumViewModel.selectAlbum(
+                                                    com.cvc953.localplayer.model
+                                                        .Album(albumName, artistName, 0),
+                                                )
+                                            }
+                                            selectedAlbumName = "$albumName|$artistName"
+                                            selectedTab = BottomNavItem.Albums.route
+                                        },
+                                        onViewAllSongs = {
+                                            selectedArtistSongsView = true
+                                        },
                                     )
                                 }
                             }
@@ -965,31 +987,41 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                     selectedTab = BottomNavItem.Artists.route
                                     selectedArtistName = artistName
                                 },
-                                onNavigateToAlbum = { albumName ->
+                                onNavigateToAlbum = { albumName, artistName ->
                                     playerViewModel.closePlayerScreen()
+                                    val found =
+                                        albumViewModel.albums.value.find {
+                                            it.name.equals(albumName, ignoreCase = true) &&
+                                                it.artist.equals(artistName, ignoreCase = true)
+                                        }
+                                    if (found != null) {
+                                        albumViewModel.selectAlbum(found)
+                                    } else {
+                                        albumViewModel.selectAlbum(
+                                            com.cvc953.localplayer.model
+                                                .Album(albumName, artistName, 0),
+                                        )
+                                    }
                                     selectedTab = BottomNavItem.Albums.route
-                                    selectedAlbumName = albumName
+                                    selectedAlbumName = "$albumName|$artistName"
                                 },
                             )
                         }
                     }
-                    if (showSettings) {
+                    val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel =
+                        androidx.lifecycle.viewmodel.compose
+                            .viewModel()
+                    val showEqualizer by mainViewModel.isEqualizerVisible.collectAsState()
+                    if (showEqualizer) {
+                        Box(modifier = Modifier.fillMaxSize().zIndex(3f)) {
+                            EqualizerScreen(viewModel = mainViewModel, onClose = { mainViewModel.closeEqualizerScreen() })
+                        }
+                    } else if (showSettings) {
                         Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
-                            val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel =
-                                androidx.lifecycle.viewmodel.compose
-                                    .viewModel()
                             SettingsScreen(
-                                settingsViewModel = /* Provide your SettingsViewModel here */ remember { SettingsViewModel() },
-                                // Eliminado: equalizerEnabled, onToggleEqualizer, onOpenEqualizer
+                                viewModel = mainViewModel,
                                 onClose = { playerViewModel.closeSettingsScreen() },
-                                onThemeChange = { mode ->
-                                    try {
-                                        mainViewModel.setThemeMode(mode)
-                                    } catch (_: Exception) {
-                                    }
-                                },
                             )
-                            // Eliminado: EqualizerScreen y lógica relacionada
                         }
                     }
                 }

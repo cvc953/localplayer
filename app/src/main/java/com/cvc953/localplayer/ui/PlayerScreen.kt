@@ -124,7 +124,7 @@ fun PlayerScreen(
     songViewModel: SongViewModel = viewModel(),
     onBack: () -> Unit,
     onNavigateToArtist: (String) -> Unit = {},
-    onNavigateToAlbum: (String) -> Unit = {},
+    onNavigateToAlbum: (String, String) -> Unit = { _, _ -> },
 ) {
     val showLyrics by playerViewModel.showLyrics.collectAsState()
     val playerState by playbackViewModel.playerState.collectAsState()
@@ -151,10 +151,13 @@ fun PlayerScreen(
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
     var isFavorite by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val upcoming =
-        remember(queue, playerState, songs, isShuffle, repeatMode) {
-            playbackViewModel.getUpcomingSongs()
-        }
+    // Use the actual queue order for upcoming songs (after the current song)
+    val currentSongIndex = queue.indexOfFirst { it.id == playerState.currentSong?.id }
+    val upcoming = if (currentSongIndex >= 0 && currentSongIndex + 1 < queue.size) {
+        queue.subList(currentSongIndex + 1, queue.size)
+    } else {
+        emptyList()
+    }
     val listState = rememberLazyListState()
     val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
@@ -163,6 +166,7 @@ fun PlayerScreen(
     // Extraer información de formato de audio
     var audioFormat by remember { mutableStateOf("") }
     var audioBitrate by remember { mutableStateOf("") }
+    var audioSampleRate by remember { mutableStateOf("") }
 
     LaunchedEffect(song.uri) {
         withContext(Dispatchers.IO) {
@@ -171,57 +175,38 @@ fun PlayerScreen(
                 retriever.setDataSource(context, song.uri)
 
                 // Obtener mime type para el formato
-                val mimeType =
-                    retriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_MIMETYPE,
-                    )
-                audioFormat =
-                    when {
-                        mimeType?.contains("flac", ignoreCase = true) ==
-                            true -> {
-                            "FLAC"
-                        }
-
-                        mimeType?.contains("mpeg", ignoreCase = true) ==
-                            true -> {
-                            "MP3"
-                        }
-
-                        mimeType?.contains("mp4", ignoreCase = true) ==
-                            true -> {
-                            "M4A"
-                        }
-
-                        mimeType?.contains("wav", ignoreCase = true) ==
-                            true -> {
-                            "WAV"
-                        }
-
-                        else -> {
-                            mimeType
-                                ?.substringAfterLast("/")
-                                ?.uppercase()
-                                ?: "Unknown"
-                        }
-                    }
+                val mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
+                audioFormat = when {
+                    mimeType?.contains("flac", ignoreCase = true) == true -> "FLAC"
+                    mimeType?.contains("mpeg", ignoreCase = true) == true -> "MP3"
+                    mimeType?.contains("mp4", ignoreCase = true) == true -> "M4A"
+                    mimeType?.contains("wav", ignoreCase = true) == true -> "WAV"
+                    else -> mimeType?.substringAfterLast("/")?.uppercase() ?: "Unknown"
+                }
 
                 // Obtener bitrate
-                val bitrate =
-                    retriever.extractMetadata(
-                        MediaMetadataRetriever.METADATA_KEY_BITRATE,
-                    )
-                audioBitrate =
-                    if (bitrate != null) {
-                        val kbps = bitrate.toInt() / 1000
-                        "$kbps kbps"
-                    } else {
-                        ""
-                    }
+                val bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
+                audioBitrate = if (bitrate != null) {
+                    val kbps = bitrate.toInt() / 1000
+                    "$kbps kbps"
+                } else {
+                    ""
+                }
+
+                // Obtener sample rate (Hz)
+                val sampleRate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
+                audioSampleRate = if (sampleRate != null) {
+                    val khz = sampleRate.toInt() / 1000.0
+                    String.format("%.1f kHz", khz)
+                } else {
+                    ""
+                }
 
                 retriever.release()
             } catch (_: Exception) {
                 audioFormat = ""
                 audioBitrate = ""
+                audioSampleRate = ""
             }
         }
     }
@@ -232,7 +217,7 @@ fun PlayerScreen(
         // caused by shuffle reordering the upcoming list every second.
         if (showQueue && draggingIndex == null) {
             dragList.clear()
-            // Show only upcoming songs (exclude currently playing)
+            // Show only upcoming songs (exclude currently playing), in true playback order
             dragList.addAll(upcoming)
         }
     }
@@ -405,7 +390,7 @@ fun PlayerScreen(
                     album = song.album,
                     albumArt = albumArt,
                     onArtistClick = { onNavigateToArtist(song.artist) },
-                    onAlbumClick = { onNavigateToAlbum(song.album) },
+                    onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
                 )
 
                 Spacer(Modifier.height(32.dp))
@@ -416,6 +401,7 @@ fun PlayerScreen(
                     isPlaying = playerState.isPlaying,
                     audioFormat = audioFormat,
                     audioBitrate = audioBitrate,
+                    audioSampleRate = audioSampleRate,
                 )
 
                 Spacer(Modifier.height(24.dp))
@@ -1350,16 +1336,32 @@ fun PlayerControls(
     isPlaying: Boolean,
     audioFormat: String = "",
     audioBitrate: String = "",
+    audioSampleRate: String = "",
 ) {
     val playerState by playbackViewModel.playerState.collectAsState()
     val isShuffle by playbackViewModel.isShuffle.collectAsState()
     val repeatMode by playbackViewModel.repeatMode.collectAsState()
 
+    var sliderPosition by remember { mutableStateOf(0f) }
+    var isUserSeeking by remember { mutableStateOf(false) }
+    // Sincroniza el slider con el estado global solo si no se está arrastrando
+    LaunchedEffect(playerState.position, playerState.duration, isUserSeeking) {
+        if (!isUserSeeking) {
+            sliderPosition = playerState.position.toFloat().coerceIn(0f, playerState.duration.toFloat())
+        }
+    }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
             Slider(
-                value = playerState.position.toFloat(),
-                onValueChange = { playbackViewModel.seekTo(it.toLong()) },
+                value = sliderPosition,
+                onValueChange = {
+                    isUserSeeking = true
+                    sliderPosition = it
+                },
+                onValueChangeFinished = {
+                    playbackViewModel.seekTo(sliderPosition.toLong())
+                    isUserSeeking = false
+                },
                 valueRange = 0f..playerState.duration.toFloat(),
                 modifier = Modifier.fillMaxWidth().height(20.dp),
                 colors =
@@ -1473,18 +1475,16 @@ fun PlayerControls(
         }
 
         // Información de formato de audio
-        if (audioFormat.isNotEmpty() || audioBitrate.isNotEmpty()) {
+        if (audioFormat.isNotEmpty() || audioBitrate.isNotEmpty() || audioSampleRate.isNotEmpty()) {
             Spacer(Modifier.height(20.dp))
             Text(
                 text =
                     buildString {
                         if (audioFormat.isNotEmpty()) append(audioFormat)
-                        if (audioFormat.isNotEmpty() &&
-                            audioBitrate.isNotEmpty()
-                        ) {
-                            append(" • ")
-                        }
+                        if (audioFormat.isNotEmpty() && audioBitrate.isNotEmpty()) append(" • ")
                         if (audioBitrate.isNotEmpty()) append(audioBitrate)
+                        if ((audioFormat.isNotEmpty() || audioBitrate.isNotEmpty()) && audioSampleRate.isNotEmpty()) append(" • ")
+                        if (audioSampleRate.isNotEmpty()) append(audioSampleRate)
                     },
                 color = LocalExtendedColors.current.texMeta,
                 fontSize = 11.sp,

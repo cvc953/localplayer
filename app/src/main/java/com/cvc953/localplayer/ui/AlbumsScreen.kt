@@ -1,4 +1,3 @@
-
 @file:Suppress("ktlint:standard:no-wildcard-imports")
 
 package com.cvc953.localplayer.ui
@@ -41,10 +40,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -66,6 +69,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -129,36 +133,42 @@ fun AlbumsScreen(
     }
 
     // Agrupar álbumes por artista usando normalización
-    data class AlbumKey(val name: String, val artist: String)
-    val expandedAlbums = remember(albums) {
-        val seen = mutableSetOf<AlbumKey>()
-        val result = mutableListOf<com.cvc953.localplayer.model.Album>()
-        for (album in albums) {
-            val artistNames = normalizeArtistName(album.artist)
-            val mainArtist = artistNames.firstOrNull()?.trim() ?: album.artist.trim()
-            for (albumName in normalizeAlbumName(album.name)) {
-                val normAlbum = albumName.trim()
-                val normArtist = mainArtist
-                val key = AlbumKey(normAlbum, normArtist)
-                if (normAlbum.isNotEmpty() && normArtist.isNotEmpty() && seen.add(key)) {
-                    result.add(album.copy(name = normAlbum, artist = normArtist))
+    data class AlbumKey(
+        val name: String,
+        val artist: String,
+    )
+    val expandedAlbums =
+        remember(albums) {
+            val seen = mutableSetOf<AlbumKey>()
+            val result = mutableListOf<com.cvc953.localplayer.model.Album>()
+            for (album in albums) {
+                val artistNames = normalizeArtistName(album.artist)
+                val mainArtist = artistNames.firstOrNull()?.trim() ?: album.artist.trim()
+                for (albumName in normalizeAlbumName(album.name)) {
+                    val normAlbum = albumName.trim()
+                    val normArtist = mainArtist
+                    val key = AlbumKey(normAlbum, normArtist)
+                    if (normAlbum.isNotEmpty() && normArtist.isNotEmpty() && seen.add(key)) {
+                        result.add(album.copy(name = normAlbum, artist = normArtist))
+                    }
                 }
             }
+            result
         }
-        result
-    }
 
-    val filteredAlbums = remember(expandedAlbums, searchQuery) {
-        val q = searchQuery.trim().lowercase()
-        if (q.isEmpty()) expandedAlbums else expandedAlbums.filter { it.name.lowercase().contains(q) }
-    }
-
-    val sortedAlbums = remember(filteredAlbums, sortMode) {
-        when (sortMode) {
-            AlbumSortMode.TITLE_ASC -> filteredAlbums.sortedBy { it.name.lowercase() }
-            AlbumSortMode.TITLE_DESC -> filteredAlbums.sortedByDescending { it.name.lowercase() }
+    val filteredAlbums =
+        remember(expandedAlbums, searchQuery) {
+            val q = searchQuery.trim().lowercase()
+            if (q.isEmpty()) expandedAlbums else expandedAlbums.filter { it.name.lowercase().contains(q) }
         }
-    }
+
+    val sortedAlbums =
+        remember(filteredAlbums, sortMode) {
+            when (sortMode) {
+                AlbumSortMode.TITLE_ASC -> filteredAlbums.sortedBy { it.name.lowercase() }
+                AlbumSortMode.TITLE_DESC -> filteredAlbums.sortedByDescending { it.name.lowercase() }
+            }
+        }
     val listState = rememberLazyListState()
     val gridState = rememberLazyGridState()
     val scope = rememberCoroutineScope()
@@ -271,10 +281,11 @@ fun AlbumsScreen(
                         items(sortedAlbums) { album ->
                             val context = LocalContext.current
                             // Buscar la primera canción usando normalización para coincidencia real
-                            val firstSong = songs.firstOrNull { song ->
-                                normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
-                                normalizeArtistName(song.artist).any { it.equals(album.artist.trim(), ignoreCase = true) }
-                            }
+                            val firstSong =
+                                songs.firstOrNull { song ->
+                                    normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
+                                        normalizeArtistName(song.artist).any { it.equals(album.artist.trim(), ignoreCase = true) }
+                                }
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
@@ -375,10 +386,16 @@ fun AlbumsScreen(
                                             modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
                                         ) {
                                             // Solo usar las canciones del álbum actual para el dropdown (más rápido)
-                                            val albumSongs = songs.filter { song ->
-                                                normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
-                                                normalizeArtistName(song.artist).any { it.equals(album.artist.trim(), ignoreCase = true) }
-                                            }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                            val albumSongs =
+                                                songs
+                                                    .filter { song ->
+                                                        normalizeAlbumName(
+                                                            song.album,
+                                                        ).any { it.equals(album.name.trim(), ignoreCase = true) } &&
+                                                            normalizeArtistName(
+                                                                song.artist,
+                                                            ).any { it.equals(album.artist.trim(), ignoreCase = true) }
+                                                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
                                             val firstSongOfAlbum = albumSongs.firstOrNull()
 
                                             DropdownMenuItem(
@@ -423,10 +440,11 @@ fun AlbumsScreen(
                                 )
                                 // Contar canciones igual que en AlbumDetailScreen (solo primer artista normalizado)
                                 val mainArtist = normalizeArtistName(album.artist).firstOrNull() ?: album.artist
-                                val songCount = songs.count { song ->
-                                    normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
-                                    normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
-                                }
+                                val songCount =
+                                    songs.count { song ->
+                                        normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
+                                            normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+                                    }
                                 Text(
                                     text = "$songCount canciones",
                                     color = MaterialTheme.extendedColors.textSecondary,
@@ -444,7 +462,7 @@ fun AlbumsScreen(
                                 start = 16.dp,
                                 top = 16.dp,
                                 bottom = 16.dp,
-                                end = 4.dp,
+                                end = 16.dp,
                             ),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -650,7 +668,7 @@ fun AlbumsScreen(
                         modifier =
                             Modifier
                                 .align(Alignment.CenterEnd)
-                                .padding(end = 4.dp)
+                                // .padding(end = 4.dp)
                                 .width(28.dp)
                                 .fillMaxHeight()
                                 .onGloballyPositioned { coords ->
@@ -766,12 +784,14 @@ fun AlbumDetailScreen(
     val playlists by playlistViewModel.playlists.collectAsState()
     // Solo considerar el primer nombre de artista normalizado para filtrar canciones
     val mainArtist = normalizeArtistName(artistName).firstOrNull() ?: artistName
-    val albumSongs = remember(songs, albumName, mainArtist) {
-        songs.filter { song ->
-            normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
-            normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
-        }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
-    }
+    val albumSongs =
+        remember(songs, albumName, mainArtist) {
+            songs
+                .filter { song ->
+                    normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
+                        normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+        }
     val context = LocalContext.current
 
     BackHandler { onBack() }
@@ -809,7 +829,7 @@ fun AlbumDetailScreen(
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item { AlbumHeader(albumViewModel, albumName, artistName) }
+            item { AlbumHeader(albumViewModel, albumName, artistName, playbackViewModel) }
             items(albumSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
@@ -844,27 +864,27 @@ fun AlbumHeader(
     viewModel: AlbumViewModel,
     albumName: String,
     artistName: String,
+    playbackViewModel: PlaybackViewModel,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+        modifier = modifier.fillMaxWidth().padding(8.dp),
     ) {
         val songs by viewModel.songs.collectAsState()
-        // Solo considerar el primer nombre de artista normalizado
         val mainArtist = normalizeArtistName(artistName).firstOrNull() ?: artistName
-        val albumSongs = remember(songs, albumName, mainArtist) {
-            songs.filter { song ->
-                normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
-                normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+        val albumSongs =
+            remember(songs, albumName, mainArtist) {
+                songs.filter { song ->
+                    normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
+                        normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
             }
-        }
         var albumArt by remember { mutableStateOf<Bitmap?>(null) }
-        val firstSong = songs.firstOrNull { song ->
-            normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
-            normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
-        }
+        val firstSong =
+            songs.firstOrNull { song ->
+                normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) } &&
+                    normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+            }
         val context = LocalContext.current
 
         LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
@@ -916,7 +936,12 @@ fun AlbumHeader(
         Image(
             painter = albumArt?.asImageBitmap()?.let { BitmapPainter(it) } ?: painterResource(R.drawable.ic_default_album),
             contentDescription = null,
-            modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp)),
+            modifier =
+                Modifier
+                    .fillMaxWidth(1f)
+                    .aspectRatio(1f)
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop,
         )
 
@@ -933,7 +958,83 @@ fun AlbumHeader(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // Botones igual que PlaylistHeader
+        val buttonColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+
         Text(text = "${albumSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .height(32.dp),
+            ) {
+                Button(
+                    onClick = {
+                        if (albumSongs.isNotEmpty()) {
+                            playbackViewModel.setShuffle(false)
+                            playbackViewModel.playAlbum(albumName, mainArtist, albumSongs)
+                            playbackViewModel.updateDisplayOrder(albumSongs)
+                            playbackViewModel.play(albumSongs.first())
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = "Reproducir ahora",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(2.dp))
+                        Text("Reproducir", color = Color.White, fontSize = 14.sp)
+                    }
+                }
+            }
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .height(32.dp),
+            ) {
+                Button(
+                    onClick = {
+                        if (albumSongs.isNotEmpty()) {
+                            val shuffled = albumSongs.shuffled()
+                            playbackViewModel.setShuffle(true)
+                            playbackViewModel.playAlbum(albumName, mainArtist, shuffled)
+                            playbackViewModel.updateDisplayOrder(shuffled)
+                            playbackViewModel.play(shuffled.first())
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Default.Shuffle, contentDescription = "Aleatorio", tint = Color.White, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(2.dp))
+                        Text("Aleatorio", color = Color.White, fontSize = 14.sp)
+                    }
+                }
+            }
+        }
     }
 }
 

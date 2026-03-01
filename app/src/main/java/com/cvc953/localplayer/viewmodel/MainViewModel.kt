@@ -1,3 +1,4 @@
+
 package com.cvc953.localplayer.viewmodel
 
 import android.app.Application
@@ -16,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.cvc953.localplayer.controller.PlayerController
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
@@ -41,10 +43,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.cvc953.localplayer.controller.PlayerController
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import kotlin.collections.get
+import kotlin.collections.set
 
 /*class MainViewModel(
     application: Application,
@@ -80,8 +83,24 @@ data class LyricLine(
 )*/
 
 class MainViewModel(
-    application: Application,
+    application: Application
 ) : AndroidViewModel(application) {
+    private val _selectedPresetIndex = MutableStateFlow(0)
+    val selectedPresetIndex: StateFlow<Int> = _selectedPresetIndex
+    private val _bandCount = MutableStateFlow(0)
+    val bandCount: StateFlow<Int> = _bandCount
+
+    private val _bandFreqs = MutableStateFlow<List<Int>>(emptyList())
+    val bandFreqs: StateFlow<List<Int>> = _bandFreqs
+
+    private val _bandLevels = MutableStateFlow<List<Int>>(emptyList())
+    val bandLevels: StateFlow<List<Int>> = _bandLevels
+
+    private val _equalizerPresets = MutableStateFlow<List<String>>(emptyList())
+    val equalizerPresets: StateFlow<List<String>> = _equalizerPresets
+
+    private val _selectedPresetName = MutableStateFlow<String?>(null)
+    val selectedPresetName: StateFlow<String?> = _selectedPresetName
     companion object {
         var instance: MainViewModel? = null
         private const val PREFS_NAME = "music_prefs"
@@ -225,6 +244,9 @@ class MainViewModel(
     private val _playerState = MutableStateFlow(PlayerState())
     val playerState: StateFlow<PlayerState> = _playerState
 
+    private val equalizerController = com.cvc953.localplayer.controller.EqualizerController(application)
+
+
     init {
         // Keep MainViewModel's player state in sync with the centralized PlaybackViewModel
         viewModelScope.launch {
@@ -243,12 +265,62 @@ class MainViewModel(
                     }
                 }
             }
-            // Eliminado: lógica de EqualizerManager
+            // Listen for audio session changes to initialize equalizer
+            pc.setOnAudioSessionIdChangedListener { sessionId ->
+                if (sessionId != 0 && sessionId != lastEqSessionId) {
+                    lastEqSessionId = sessionId
+                    android.util.Log.d("MainViewModel", "Audio session changed: $sessionId, initializing equalizer")
+                    equalizerController.initializeWithAudioSession(sessionId)
+                    
+                    // Update equalizer state from real device equalizer
+                    viewModelScope.launch {
+                        updateEqualizerStateFromDevice()
+                    }
+                }
+            }
         } catch (_: Exception) {
         }
+
+        // Initial equalizer state (will be updated when audio session is available)
+        _bandCount.value = 0
+        _bandFreqs.value = emptyList()
+        _bandLevels.value = emptyList()
+        _equalizerPresets.value = emptyList()
+        _selectedPresetName.value = null
     }
 
-    
+    private fun updateEqualizerStateFromDevice() {
+        try {
+            val bandCount = equalizerController.getBandCount()
+            _bandCount.value = bandCount
+            
+            if (bandCount > 0) {
+                _bandFreqs.value = equalizerController.getBandFreqs()
+                _bandLevels.value = equalizerController.getBands()
+                _equalizerPresets.value = sanitizePresetNames(equalizerController.getPresets())
+                _selectedPresetName.value = equalizerController.getSelectedPreset()?.let { sanitizePresetName(it) }
+                _bandLevelRange.value = equalizerController.getBandLevelRange()
+                
+                // Load custom band levels from preferences if available
+                val savedLevels = appPrefs.getCustomBandLevels()
+                if (savedLevels.size == bandCount) {
+                    savedLevels.forEachIndexed { index, level ->
+                        equalizerController.setBandLevel(index, level)
+                    }
+                    _bandLevels.value = savedLevels
+                }
+                
+                // Apply saved enabled state
+                val savedEnabled = appPrefs.isEqualizerEnabled()
+                equalizerController.setEnabled(savedEnabled)
+                _equalizerEnabled.value = savedEnabled
+                
+                android.util.Log.d("MainViewModel", "Equalizer state updated: $bandCount bands, range=${_bandLevelRange.value}")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "Error updating equalizer state", e)
+        }
+    }
 
     private val _equalizerEnabled = MutableStateFlow(appPrefs.isEqualizerEnabled())
     val equalizerEnabled: StateFlow<Boolean> = _equalizerEnabled
@@ -259,33 +331,18 @@ class MainViewModel(
     private val _themeMode = MutableStateFlow(appPrefs.getThemeMode())
     val themeMode: StateFlow<String> = _themeMode
 
-    private val _equalizerPresets = MutableStateFlow<List<String>>(emptyList())
-    val equalizerPresets: StateFlow<List<String>> = _equalizerPresets
-
-    private val _selectedPresetIndex = MutableStateFlow(appPrefs.getEqualizerPresetIndex())
-    val selectedPresetIndex: StateFlow<Int> = _selectedPresetIndex
-    private val _selectedPresetName = MutableStateFlow<String?>(null)
-    val selectedPresetName: StateFlow<String?> = _selectedPresetName
-
-    private val _bandCount = MutableStateFlow(0)
-    val bandCount: StateFlow<Int> = _bandCount
-
-    private val _bandFreqs = MutableStateFlow<List<Int>>(emptyList())
-    val bandFreqs: StateFlow<List<Int>> = _bandFreqs
-
-    private val _bandLevels = MutableStateFlow<List<Int>>(emptyList())
-    val bandLevels: StateFlow<List<Int>> = _bandLevels
 
     private val _userPresets = MutableStateFlow<List<Pair<String, List<Int>>>>(emptyList())
     val userPresets: StateFlow<List<Pair<String, List<Int>>>> = _userPresets
+
+    private val _bandLevelRange = MutableStateFlow(Pair(-1500, 1500))
+    val bandLevelRange: StateFlow<Pair<Int, Int>> = _bandLevelRange
 
     // track last initialized sessionId to avoid re-initializing equalizer repeatedly
     private var lastEqSessionId: Int = 0
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
-
-    
 
     // Modos
     private val _isShuffle = MutableStateFlow(false)
@@ -719,9 +776,10 @@ class MainViewModel(
     override fun onCleared() {
         // Deregistrar el observer cuando el ViewModel se destruye
         getApplication<Application>().contentResolver.unregisterContentObserver(mediaStoreObserver)
+        // Release equalizer to free resources
+        equalizerController.release()
         super.onCleared()
     }
-
 
     fun toggleAutoScan(enabled: Boolean) {
         appPrefs.setAutoScanEnabled(enabled)
@@ -740,10 +798,11 @@ class MainViewModel(
         _themeMode.value = mode
     }
 
-
-
-
-
+    fun toggleEqualizer(enabled: Boolean) {
+        appPrefs.setEqualizerEnabled(enabled)
+        _equalizerEnabled.value = enabled
+        equalizerController.setEnabled(enabled)
+    }
 
     fun removeUserPreset(name: String) {
         appPrefs.removeUserPreset(name)
@@ -751,50 +810,49 @@ class MainViewModel(
         if (_selectedPresetName.value == name) _selectedPresetName.value = null
     }
 
-    // Normalize vendor-provided preset names by extracting known genre/keyword fragments
-    private fun sanitizePresetNames(input: List<String>): List<String> {
-        if (input.isEmpty()) return input
-        val keywords =
+    // Normalize vendor-provided preset names to stable, readable labels
+    private fun sanitizePresetName(raw: String): String {
+        val cleaned = raw.lowercase().replace(Regex("[^a-z0-9]"), "")
+        if (cleaned.isBlank()) return raw.trim().replace(Regex("\\s+"), " ")
+
+        val canonical =
             listOf(
-                "normal",
-                "classical",
-                "class",
-                "jazz",
-                "pop",
-                "rock",
-                "dance",
-                "hiphop",
-                "hip",
-                "hop",
-                "electronic",
-                "vocal",
-                "flat",
-                "speech",
-                "bass",
-                "treble",
-                "latin",
-                "blues",
-                "acoustic",
-                "metal",
-                "folk",
-                "reggae",
-                "soul",
-                "rnb",
+                "Normal" to listOf("normal"),
+                "Flat" to listOf("flat"),
+                "Classical" to listOf("classical", "classic", "class"),
+                "Dance" to listOf("dance"),
+                "Folk" to listOf("folk"),
+                "Hip Hop" to listOf("hiphop", "hip", "hop"),
+                "Jazz" to listOf("jazz"),
+                "Pop" to listOf("pop"),
+                "Rock" to listOf("rock"),
+                "Metal" to listOf("metal"),
+                "Electronic" to listOf("electronic", "electro"),
+                "Vocal" to listOf("vocal", "voice"),
+                "Speech" to listOf("speech"),
+                "Bass" to listOf("bass"),
+                "Treble" to listOf("treble"),
+                "Latin" to listOf("latin"),
+                "Blues" to listOf("blues"),
+                "Acoustic" to listOf("acoustic"),
+                "Reggae" to listOf("reggae"),
+                "Soul" to listOf("soul"),
+                "R&B" to listOf("rnb"),
             )
 
-        return input.map { raw ->
-            var s = raw.lowercase().replace(Regex("[^a-z0-9]"), " ").trim()
-            val parts = mutableListOf<String>()
-            for (kw in keywords) {
-                if (s.contains(kw)) {
-                    // add keyword capitalized and remove from s
-                    parts.add(kw.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
-                    s = s.replace(kw, " ")
-                }
+        val mapped = canonical.firstOrNull { (_, needles) -> needles.any { cleaned.contains(it) } }?.first
+        if (mapped != null) return mapped
+
+        return raw
+            .trim()
+            .replace(Regex("\\s+"), " ")
+            .split(" ")
+            .joinToString(" ") { token ->
+                token.replaceFirstChar { ch -> if (ch.isLowerCase()) ch.titlecase() else ch.toString() }
             }
-            if (parts.isNotEmpty()) parts.joinToString(" ") else raw.trim().replace(Regex("\\s+"), " ")
-        }
     }
+
+    private fun sanitizePresetNames(input: List<String>): List<String> = input.map { sanitizePresetName(it) }
 
     fun openPlayerScreen() {
         _isPlayerScreenVisible.value = true
@@ -1405,4 +1463,52 @@ class MainViewModel(
                 0
             }
         }
+
+    fun applyUserPreset(name: String) {
+        val preset = _userPresets.value.find { it.first == name }
+        if (preset != null) {
+            preset.second.forEachIndexed { index, level ->
+                equalizerController.setBandLevel(index, level)
+            }
+            _bandLevels.value = preset.second
+            _selectedPresetName.value = name
+            _selectedPresetIndex.value = -1 // User preset, not a system preset
+            appPrefs.setCustomBandLevels(preset.second)
+        }
+    }
+
+    fun setEqualizerPreset(index: Int) {
+        if (index in _equalizerPresets.value.indices) {
+            equalizerController.selectPreset(index)
+            _selectedPresetIndex.value = index
+            _selectedPresetName.value = _equalizerPresets.value[index]
+            appPrefs.setEqualizerPresetIndex(index)
+            // Update band levels to reflect preset
+            _bandLevels.value = equalizerController.getBands()
+        }
+    }
+
+    fun setBandLevel(
+        band: Int,
+        level: Int,
+    ) {
+        val current = _bandLevels.value.toMutableList()
+        if (band in current.indices) {
+            equalizerController.setBandLevel(band, level)
+            current[band] = level
+            _bandLevels.value = current
+            _selectedPresetName.value = null // Custom levels, no longer a preset
+            _selectedPresetIndex.value = -1
+            appPrefs.setCustomBandLevels(current)
+        }
+    }
+
+    fun resetBandLevels() {
+        equalizerController.resetBandLevels()
+        val zeroed = List(_bandLevels.value.size) { 0 }
+        _bandLevels.value = zeroed
+        appPrefs.setCustomBandLevels(zeroed)
+        _selectedPresetName.value = null
+        _selectedPresetIndex.value = -1
+    }
 }
