@@ -595,6 +595,7 @@ class SongRepository(
                         uri = uri,
                         duration = duration,
                         albumArt = null,
+                        filePath = filePath,
                         trackNumber = it.getInt(trackNumberCol),
                         discNumber = it.getInt(discNumberCol),
                     )

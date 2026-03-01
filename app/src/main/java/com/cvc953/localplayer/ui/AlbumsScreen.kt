@@ -1041,7 +1041,8 @@ fun AlbumHeader(
 }
 
 // Normaliza nombres de álbumes, separando por ',' y '/' (puedes ajustar si hay excepciones)
-fun normalizeAlbumName(artist: String): List<String> {
-    val trimmed = artist.trim()
-    return trimmed.split(',', '/').map { it.trim() }.filter { it.isNotEmpty() }
+fun normalizeAlbumName(albumName: String): List<String> {
+    // Los álbumes NO deben dividirse por comas, solo trimear
+    val trimmed = albumName.trim()
+    return if (trimmed.isNotEmpty()) listOf(trimmed) else emptyList()
 }

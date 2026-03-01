@@ -43,8 +43,10 @@ class SongViewModel(
             _error.value = null
             try {
                 val result = if (forceRescan) controller.forceRescan() else controller.getAllSongs()
+                android.util.Log.d("SongViewModel", "loadSongs: Loaded ${result.size} songs, forceRescan=$forceRescan")
                 _songs.value = result
             } catch (e: Exception) {
+                android.util.Log.e("SongViewModel", "loadSongs: Error", e)
                 _songs.value = emptyList()
                 _error.value = "Error cargando canciones: ${e.message}"
             } finally {

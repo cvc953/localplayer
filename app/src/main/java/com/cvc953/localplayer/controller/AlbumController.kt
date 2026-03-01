@@ -17,8 +17,8 @@ class AlbumController(
     fun getAlbumByName(name: String): Album? = getAllAlbums().find { it.name.equals(name, ignoreCase = true) }
 
     fun getSongsForAlbum(album: Album): List<Song> {
-        // Normalización igual que en la UI: solo el primer artista normalizado
-        fun normalizeAlbumName(name: String): List<String> = name.trim().split(',', '/').map { it.trim() }.filter { it.isNotEmpty() }
+        // Normalización: los álbumes NO se dividen por comas, solo los artistas
+        fun normalizeAlbumName(name: String): List<String> = if (name.trim().isNotEmpty()) listOf(name.trim()) else emptyList()
         fun normalizeArtistName(artist: String): List<String> =
             if (artist.trim().equals("AC/DC", ignoreCase = true)) listOf("AC/DC")
             else artist.trim().split(',', '/').map { it.trim() }.filter { it.isNotEmpty() }
