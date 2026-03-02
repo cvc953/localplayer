@@ -36,7 +36,6 @@ fun LyricLine(
     LyricLine(text = text, active = active, modifier = Modifier)
 }
 
-
 @Composable
 fun LyricLine(
     text: String,
@@ -61,7 +60,7 @@ fun LyricLine(
     ) {
         Text(
             text = text.trimStart(),
-            color = if (active) MaterialTheme.colorScheme.onBackground else Color.Gray,
+            color = if (active) Color.White else Color.Gray,
             fontSize = fontSize.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Left,

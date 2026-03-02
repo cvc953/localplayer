@@ -1,7 +1,11 @@
 package com.cvc953.localplayer.controller
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
 import android.media.MediaPlayer
+import android.os.Build
 import android.util.Log
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.PlayerState
@@ -16,10 +20,15 @@ import kotlinx.coroutines.launch
 class PlayerController(
     private val context: Context,
     private val scope: CoroutineScope? = null,
-) {
+) : AudioManager.OnAudioFocusChangeListener {
     private var mediaPlayer: MediaPlayer? = null
     private val queue = mutableListOf<Song>()
     private var currentIndex = -1
+    
+    // Audio focus
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private var audioFocusRequest: AudioFocusRequest? = null
+    private var pausedByAudioFocus: Boolean = false
 
     private val _state = MutableStateFlow(PlayerState())
     val state: StateFlow<PlayerState> = _state
@@ -93,6 +102,10 @@ class PlayerController(
 
     private fun play(song: Song, startPaused: Boolean = false) {
         mediaPlayer?.release()
+        
+        // Request audio focus before starting playback
+        requestAudioFocus()
+        
         mediaPlayer = MediaPlayer().apply {
             setDataSource(context, song.uri)
             setOnPreparedListener { mp ->
@@ -125,6 +138,7 @@ class PlayerController(
                     playCurrent()
                 } else {
                     _state.update { it.copy(isPlaying = false) }
+                    releaseAudioFocus()
                     try {
                         onQueueEnded?.invoke()
                     } catch (_: Exception) {
@@ -190,6 +204,7 @@ class PlayerController(
         progressJob?.cancel()
         mediaPlayer?.release()
         mediaPlayer = null
+        releaseAudioFocus()
         _state.value = PlayerState()
     }
 
@@ -227,6 +242,7 @@ class PlayerController(
         progressJob?.cancel()
         mediaPlayer?.release()
         mediaPlayer = null
+        releaseAudioFocus()
     }
 
     fun getCurrentPosition(): Long {
@@ -268,6 +284,122 @@ class PlayerController(
 
     fun setOnNextAtEndListener(listener: (() -> Unit)?) {
         onNextAtEnd = listener
+    }
+
+    /**
+     * Request audio focus for music playback.
+     * Called when playback starts to ensure this app has priority for audio output.
+     */
+    private fun requestAudioFocus() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val audioAttributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+                
+                audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(audioAttributes)
+                    .setOnAudioFocusChangeListener(this)
+                    .build()
+                
+                val result = audioManager.requestAudioFocus(audioFocusRequest!!)
+                Log.d("PlayerController", "Audio focus requested (Android 8+): ${if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) "GRANTED" else "DENIED"}")
+            } else {
+                @Suppress("DEPRECATION")
+                val result = audioManager.requestAudioFocus(
+                    this,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN
+                )
+                Log.d("PlayerController", "Audio focus requested (Android <8): ${if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) "GRANTED" else "DENIED"}")
+            }
+            pausedByAudioFocus = false
+        } catch (e: Exception) {
+            Log.w("PlayerController", "Error requesting audio focus", e)
+        }
+    }
+
+    /**
+     * Release audio focus when playback ends.
+     * Allows other apps to play audio.
+     */
+    private fun releaseAudioFocus() {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                audioFocusRequest?.let {
+                    audioManager.abandonAudioFocusRequest(it)
+                    Log.d("PlayerController", "Audio focus released (Android 8+)")
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.abandonAudioFocus(this)
+                Log.d("PlayerController", "Audio focus released (Android <8)")
+            }
+            pausedByAudioFocus = false
+        } catch (e: Exception) {
+            Log.w("PlayerController", "Error releasing audio focus", e)
+        }
+    }
+
+    /**
+     * Handle audio focus changes from the system.
+     * Called when another app gains focus or when we regain focus.
+     */
+    override fun onAudioFocusChange(focusChange: Int) {
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_GAIN -> {
+                // We gained audio focus, resume playback if we paused due to focus loss
+                Log.d("PlayerController", "Audio focus: GAINED")
+                if (pausedByAudioFocus && mediaPlayer != null) {
+                    try {
+                        mediaPlayer?.start()
+                        _state.update { it.copy(isPlaying = true) }
+                        pausedByAudioFocus = false
+                    } catch (e: Exception) {
+                        Log.w("PlayerController", "Error resuming after audio focus gain", e)
+                    }
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS -> {
+                // We lost audio focus permanently, pause playback
+                Log.d("PlayerController", "Audio focus: LOST permanently")
+                try {
+                    if (mediaPlayer?.isPlaying == true) {
+                        mediaPlayer?.pause()
+                        _state.update { it.copy(isPlaying = false) }
+                        pausedByAudioFocus = true
+                    }
+                } catch (e: Exception) {
+                    Log.w("PlayerController", "Error pausing after audio focus loss", e)
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+                // We lost audio focus temporarily (e.g., incoming call), pause playback
+                Log.d("PlayerController", "Audio focus: LOST (transient)")
+                try {
+                    if (mediaPlayer?.isPlaying == true) {
+                        mediaPlayer?.pause()
+                        _state.update { it.copy(isPlaying = false) }
+                        pausedByAudioFocus = true
+                    }
+                } catch (e: Exception) {
+                    Log.w("PlayerController", "Error pausing due to transient audio focus loss", e)
+                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                // We lost audio focus transiently but can continue playing at lower volume
+                // (e.g., navigation instructions, message notification)
+                Log.d("PlayerController", "Audio focus: LOST (transient, can duck)")
+                try {
+                    // Reduce volume to 30% for ducking
+                    mediaPlayer?.setVolume(0.3f, 0.3f)
+                    pausedByAudioFocus = false
+                } catch (e: Exception) {
+                    Log.w("PlayerController", "Error applying audio duck", e)
+                }
+            }
+        }
     }
 
     companion object {
