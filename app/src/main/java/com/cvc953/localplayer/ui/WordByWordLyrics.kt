@@ -41,12 +41,15 @@ fun SyllableLyric(
     modifier: Modifier = Modifier,
 ) {
     val baseColor = Color(0xFF707070)
-    val activeColor = MaterialTheme.colorScheme.onBackground
+    val activeColor = Color.White
     val baseFontSize = 30f
 
-    val rawProgress = if (syllable.durationMs > 0) {
-        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
-    } else 0f
+    val rawProgress =
+        if (syllable.durationMs > 0) {
+            ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
     // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
     val targetProgress = if (isLineActive && currentPosition >= syllable.timeMs) clampedProgress else 0f
@@ -87,9 +90,12 @@ fun BackgroundSyllableLyric(
     val activeColor = Color(0xFFB0B0B0)
     val baseFontSize = 20f
 
-    val rawProgress = if (syllable.durationMs > 0) {
-        ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
-    } else 0f
+    val rawProgress =
+        if (syllable.durationMs > 0) {
+            ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
+        } else {
+            0f
+        }
     // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
     val targetProgress = if (currentPosition >= syllable.timeMs) clampedProgress else 0f
@@ -112,6 +118,7 @@ fun BackgroundSyllableLyric(
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 private fun ProgressiveFillSyllableText(
     text: String,
@@ -233,14 +240,14 @@ fun LoadingDotsAnimation(
     val dotCount = 3
     val colorSteps =
         listOf(
-            // Color(0xFF505050), // gris oscuro
-            // Color(0xFF888888), // gris medio
-            // Color(0xFFCCCCCC), // gris claro
-            // Color.White, // blanco
-            LocalExtendedColors.current.textSecondarySoft,
-            LocalExtendedColors.current.textSecondary,
-            LocalExtendedColors.current.textSecondaryStrong,
-            MaterialTheme.colorScheme.onBackground,
+            Color(0xFF505050), // gris oscuro
+            Color(0xFF888888), // gris medio
+            Color(0xFFCCCCCC), // gris claro
+            Color.White, // blanco
+            // LocalExtendedColors.current.textSecondarySoft,
+            // LocalExtendedColors.current.textSecondary,
+            // LocalExtendedColors.current.textSecondaryStrong,
+            // MaterialTheme.colorScheme.onBackground,
         )
     val minSize = 14f
     val maxSize = 22f

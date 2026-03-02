@@ -89,6 +89,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
@@ -107,6 +108,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.util.getDominantColor
+import com.cvc953.localplayer.util.withLowTransparency
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
@@ -148,6 +151,7 @@ fun PlayerScreen(
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val ttmlLyrics by lyricsViewModel.ttmlLyrics.collectAsState()
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
+    var dominantColor by remember { mutableStateOf(Color.Black) }
     var showQueue by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
@@ -156,11 +160,12 @@ fun PlayerScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     // Use the actual queue order for upcoming songs (after the current song)
     val currentSongIndex = queue.indexOfFirst { it.id == playerState.currentSong?.id }
-    val upcoming = if (currentSongIndex >= 0 && currentSongIndex + 1 < queue.size) {
-        queue.subList(currentSongIndex + 1, queue.size)
-    } else {
-        emptyList()
-    }
+    val upcoming =
+        if (currentSongIndex >= 0 && currentSongIndex + 1 < queue.size) {
+            queue.subList(currentSongIndex + 1, queue.size)
+        } else {
+            emptyList()
+        }
     val listState = rememberLazyListState()
     val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
@@ -179,31 +184,34 @@ fun PlayerScreen(
 
                 // Obtener mime type para el formato
                 val mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
-                audioFormat = when {
-                    mimeType?.contains("flac", ignoreCase = true) == true -> "FLAC"
-                    mimeType?.contains("mpeg", ignoreCase = true) == true -> "MP3"
-                    mimeType?.contains("mp4", ignoreCase = true) == true -> "M4A"
-                    mimeType?.contains("wav", ignoreCase = true) == true -> "WAV"
-                    else -> mimeType?.substringAfterLast("/")?.uppercase() ?: "Unknown"
-                }
+                audioFormat =
+                    when {
+                        mimeType?.contains("flac", ignoreCase = true) == true -> "FLAC"
+                        mimeType?.contains("mpeg", ignoreCase = true) == true -> "MP3"
+                        mimeType?.contains("mp4", ignoreCase = true) == true -> "M4A"
+                        mimeType?.contains("wav", ignoreCase = true) == true -> "WAV"
+                        else -> mimeType?.substringAfterLast("/")?.uppercase() ?: "Unknown"
+                    }
 
                 // Obtener bitrate
                 val bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
-                audioBitrate = if (bitrate != null) {
-                    val kbps = bitrate.toInt() / 1000
-                    "$kbps kbps"
-                } else {
-                    ""
-                }
+                audioBitrate =
+                    if (bitrate != null) {
+                        val kbps = bitrate.toInt() / 1000
+                        "$kbps kbps"
+                    } else {
+                        ""
+                    }
 
                 // Obtener sample rate (Hz)
                 val sampleRate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
-                audioSampleRate = if (sampleRate != null) {
-                    val khz = sampleRate.toInt() / 1000.0
-                    String.format("%.1f kHz", khz)
-                } else {
-                    ""
-                }
+                audioSampleRate =
+                    if (sampleRate != null) {
+                        val khz = sampleRate.toInt() / 1000.0
+                        String.format("%.1f kHz", khz)
+                    } else {
+                        ""
+                    }
 
                 retriever.release()
             } catch (_: Exception) {
@@ -243,6 +251,15 @@ fun PlayerScreen(
             }
     }
 
+    // Calcular color dominante basado en la carátula
+    LaunchedEffect(albumArt) {
+        if (albumArt != null) {
+            dominantColor = albumArt!!.getDominantColor(Color.Black) // .withLowTransparency(0.1f)
+        } else {
+            dominantColor = Color.Black // .withLowTransparency(0.1f)
+        }
+    }
+
     LaunchedEffect(song.id, playlists) {
         isFavorite = playlistViewModel.isSongInPlaylist("Favoritos", song.id)
     }
@@ -261,7 +278,7 @@ fun PlayerScreen(
                 .offset { IntOffset(0, offsetY.value.toInt()) }
                 .background(
                     Brush.verticalGradient(
-                        listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background),
+                        listOf(dominantColor.darken(0.5f), Color.Black),
                     ),
                 ),
     ) {
@@ -325,6 +342,7 @@ fun PlayerScreen(
                                 currentPosition =
                                     playerState.position,
                                 modifier = Modifier.fillMaxSize(),
+                                dominantColor = dominantColor,
                                 onLineClick = { targetMs -> playbackViewModel.seekTo(targetMs) },
                             )
                         }
@@ -336,6 +354,7 @@ fun PlayerScreen(
                                 currentPosition =
                                     playerState.position,
                                 modifier = Modifier.fillMaxSize(),
+                                dominantColor = dominantColor,
                                 onLineClick = { targetMs -> playbackViewModel.seekTo(targetMs) },
                             )
                         }
@@ -394,7 +413,11 @@ fun PlayerScreen(
                     artist = song.artist,
                     album = song.album,
                     albumArt = albumArt,
-                    onArtistClick = { onNavigateToArtist(song.artist) },
+                    onArtistClick = {
+                        // Extraer artista principal cuando hay múltiples artistas
+                        val mainArtist = normalizeArtistName(song.artist).firstOrNull() ?: song.artist
+                        onNavigateToArtist(mainArtist)
+                    },
                     onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
                 )
 
@@ -447,7 +470,7 @@ fun PlayerScreen(
                                     Icons.Outlined.FavoriteBorder
                                 },
                             contentDescription = "Favoritos",
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            tint = Color.White,
                         )
                     }
 
@@ -457,7 +480,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                             contentDescription = "Ver cola",
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            tint = Color.White,
                         )
                     }
 
@@ -467,7 +490,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                             contentDescription = "Agregar a playlist",
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            tint = Color.White,
                         )
                     }
 
@@ -477,7 +500,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.Lyrics,
                             contentDescription = "Mostrar letras",
-                            tint = MaterialTheme.colorScheme.onBackground,
+                            tint = Color.White,
                         )
                     }
                 }
@@ -1147,7 +1170,7 @@ fun SongTitleSection(
     ) {
         Text(
             text = title,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = Color.White,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -1160,7 +1183,7 @@ fun SongTitleSection(
         Box {
             Text(
                 text = if (album.isNotEmpty()) "$artist - $album" else artist,
-                color = LocalExtendedColors.current.textSecondaryStrong,
+                color = MaterialTheme.extendedColors.textSecondary,
                 fontSize = 14.sp,
                 maxLines = 1,
                 modifier = Modifier.clickable { showMenu = true },
@@ -1389,9 +1412,9 @@ fun PlayerControls(
                 modifier = Modifier.fillMaxWidth().height(20.dp),
                 colors =
                     SliderDefaults.colors(
-                        thumbColor = MaterialTheme.colorScheme.onBackground,
+                        thumbColor = Color.White,
                         activeTrackColor = MaterialTheme.colorScheme.primary,
-                        inactiveTrackColor = MaterialTheme.colorScheme.outline,
+                        inactiveTrackColor = MaterialTheme.extendedColors.textSecondarySoft,
                     ),
             )
 
@@ -1432,7 +1455,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.Shuffle,
                     contentDescription = "Shuffle",
-                    tint = if (isShuffle) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
+                    tint = if (isShuffle) MaterialTheme.colorScheme.primary else Color.White,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1441,7 +1464,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     null,
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = Color.White,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1464,7 +1487,7 @@ fun PlayerControls(
                             Icons.Rounded.PlayArrow
                         },
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = Color.White,
                     modifier = Modifier.size(buttonSize * 0.5f),
                 )
             }
@@ -1473,7 +1496,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipNext,
                     null,
-                    tint = MaterialTheme.colorScheme.onBackground,
+                    tint = Color.White,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1490,7 +1513,7 @@ fun PlayerControls(
                         if (repeatMode != RepeatMode.NONE) {
                             MaterialTheme.colorScheme.primary
                         } else {
-                            MaterialTheme.colorScheme.onBackground
+                            Color.White
                         },
                     modifier = Modifier.size(buttonSize),
                 )

@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -19,17 +18,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.unit.dp
 import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun LyricsScreen(
     lyricsViewModel: LyricsViewModel,
     playbackViewModel: PlaybackViewModel,
     modifier: Modifier = Modifier,
+    dominantColor: Color = Color.Black,
     onLineClick: (Long) -> Unit = {},
 ) {
     val ttml by lyricsViewModel.ttmlLyrics.collectAsState()
@@ -39,21 +42,34 @@ fun LyricsScreen(
     // prefer TTML view when available
     val localTtml = ttml
     if (localTtml != null) {
-        TtmlLyricsView(lines = localTtml.lines, currentPosition = currentPosition, modifier = modifier) { pos ->
-            try { playbackViewModel.seekTo(pos) } catch (_: Exception) {}
+        TtmlLyricsView(
+            lines = localTtml.lines,
+            currentPosition = currentPosition,
+            modifier = modifier,
+            dominantColor = dominantColor,
+        ) { pos ->
+            try {
+                playbackViewModel.seekTo(pos)
+            } catch (_: Exception) {
+            }
         }
     } else {
-        LyricsView(lyrics = lyrics, currentPosition = currentPosition, modifier = modifier) { pos ->
-            try { playbackViewModel.seekTo(pos) } catch (_: Exception) {}
+        LyricsView(lyrics = lyrics, currentPosition = currentPosition, modifier = modifier, dominantColor = dominantColor) { pos ->
+            try {
+                playbackViewModel.seekTo(pos)
+            } catch (_: Exception) {
+            }
         }
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun LyricsView(
     lyrics: List<LrcLine>,
     currentPosition: Long,
     modifier: Modifier = Modifier,
+    dominantColor: Color = Color.Black,
     onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
@@ -72,7 +88,8 @@ fun LyricsView(
                 index = currentIndex,
                 scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
             )
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     val gapThreshold = 7000L
@@ -84,8 +101,8 @@ fun LyricsView(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            MaterialTheme.colorScheme.background,
-                            MaterialTheme.colorScheme.background,
+                            dominantColor.darken(0.5f),
+                            Color.Black,
                         ),
                     ),
                 ),
@@ -175,6 +192,7 @@ fun TtmlLyricsView(
     lines: List<TtmlLine>,
     currentPosition: Long,
     modifier: Modifier = Modifier,
+    dominantColor: Color = Color.Black,
     onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
@@ -193,7 +211,8 @@ fun TtmlLyricsView(
                 index = currentIndex,
                 scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
             )
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     Box(
@@ -203,8 +222,8 @@ fun TtmlLyricsView(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            MaterialTheme.colorScheme.background,
-                            MaterialTheme.colorScheme.background,
+                            dominantColor.darken(0.5f),
+                            Color.Black,
                         ),
                     ),
                 ),
@@ -296,3 +315,10 @@ fun TtmlLyricsView(
         }
     }
 }
+
+fun Color.darken(factor: Float = 0.7f): Color =
+    this.copy(
+        red = this.red * factor,
+        green = this.green * factor,
+        blue = this.blue * factor,
+    )

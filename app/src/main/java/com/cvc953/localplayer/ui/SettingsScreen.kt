@@ -195,6 +195,8 @@ fun SettingsScreen(
             Text("Carpetas configuradas:", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
 
+            var folderToDelete by remember { mutableStateOf<MainViewModel.FolderEntry?>(null) }
+
             if (folderEntries.isEmpty()) {
                 Text("Ninguna carpeta configurada", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
             } else {
@@ -210,14 +212,43 @@ fun SettingsScreen(
                                 )
                             }
                             IconButton(onClick = {
-                                viewModel.removeMusicFolder(entry.uri)
-                                Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
+                                folderToDelete = entry
                             }) {
                                 Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.onBackground)
                             }
                         }
                     }
                 }
+            }
+
+            // Diálogo de confirmación para eliminar carpeta
+            folderToDelete?.let { entry ->
+                AlertDialog(
+                    onDismissRequest = { folderToDelete = null },
+                    title = { Text("Eliminar carpeta") },
+                    text = {
+                        Text("¿Eliminar la carpeta \"${entry.name}\"?\n\nLas ${entry.count} canciones de esta carpeta ya no se mostrarán en la app.")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                viewModel.removeMusicFolder(entry.uri)
+                                Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
+                                folderToDelete = null
+                            }
+                        ) {
+                            Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { folderToDelete = null }) {
+                            Text("Cancelar")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    textContentColor = MaterialTheme.colorScheme.onSurface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
     }
