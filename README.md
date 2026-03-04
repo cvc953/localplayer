@@ -36,12 +36,13 @@
 
 ## 📸 Capturas de Pantalla
 
-<img width="1080" height="2400" alt="imagen" src="https://github.com/user-attachments/assets/1a5e148e-729f-43d6-96af-0200e26f183c" />
-<img width="1080" height="2400" alt="imagen" src="https://github.com/user-attachments/assets/83fb9703-f073-437c-b626-c946205f8271" />
-<img width="1080" height="2400" alt="imagen" src="https://github.com/user-attachments/assets/412cab5a-17a3-4bad-af56-0bab34b59c1b" />
-<img width="1080" height="2400" alt="imagen" src="https://github.com/user-attachments/assets/986c0678-5725-49bf-85bb-f4f6737a27f8" />
+![player](https://github.com/user-attachments/assets/f28e7b38-e331-4429-b42a-045cb2085f92)
 
+![lyric](https://github.com/user-attachments/assets/6a588e3d-b202-4414-93aa-de7b545b0a63)
 
+![home](https://github.com/user-attachments/assets/bb7af540-edc9-44a3-8367-035b73e5655f)
+
+![Album](https://github.com/user-attachments/assets/ba193088-5c18-45cd-b050-66c54b341842)
 
 
 
