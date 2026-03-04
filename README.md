@@ -36,14 +36,13 @@
 
 ## 📸 Capturas de Pantalla
 
-<img style="display: block; margin: auto;" src = "https://github.com/user-attachments/assets/f28e7b38-e331-4429-b42a-045cb2085f92"/>
+<img style="display: block; margin: auto;" src = "https://github.com/user-attachments/assets/ca1434f1-34a2-4ad3-873e-0c9f3f7e8cce"/>
 
-<img style="display: block; margin: auto;" src = "https://github.com/user-attachments/assets/6a588e3d-b202-4414-93aa-de7b545b0a63"/>
+<img style="display: block; margin: auto;" src = "https://github.com/user-attachments/assets/6735b1d1-6df9-4808-9b70-04caa70108ff"/>
 
 <img style="display: block; margin: auto;" src = "https://github.com/user-attachments/assets/bb7af540-edc9-44a3-8367-035b73e5655f"/>
 
 <img style="display: block; margin: auto;" src = "https://github.com/user-attachments/assets/ba193088-5c18-45cd-b050-66c54b341842"/>
-
 
 ## 🛠️ Tecnologías
 
