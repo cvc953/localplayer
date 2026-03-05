@@ -379,6 +379,8 @@ fun ArtistsScreen(
                                                 onClick = {
                                                     menuExpanded = false
                                                     if (artistSongs.isNotEmpty()) {
+                                                        playbackViewModel.setShuffle(false)
+                                                        playbackViewModel.playArtist(artist.name, artistSongs)
                                                         playbackViewModel.updateDisplayOrder(artistSongs)
                                                         playbackViewModel.play(artistSongs[0])
                                                     }
@@ -554,6 +556,8 @@ fun ArtistsScreen(
                                             onClick = {
                                                 menuExpanded = false
                                                 if (artistSongs.isNotEmpty()) {
+                                                    playbackViewModel.setShuffle(false)
+                                                    playbackViewModel.playArtist(artist.name, artistSongs)
                                                     playbackViewModel.updateDisplayOrder(artistSongs)
                                                     playbackViewModel.play(artistSongs[0])
                                                 }
@@ -757,6 +761,8 @@ fun ArtistDetailScreen(
                     song = song,
                     isPlaying = isCurrent,
                     onClick = {
+                        playbackViewModel.setShuffle(false)
+                        playbackViewModel.playArtist(artistName, artistSongsSorted)
                         playbackViewModel.updateDisplayOrder(artistSongsSorted)
                         playbackViewModel.play(song)
                     },

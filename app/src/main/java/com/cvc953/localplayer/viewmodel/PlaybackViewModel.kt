@@ -52,7 +52,13 @@ class PlaybackViewModel(
     private var currentAlbumArtist: String? = null
     private var _nextAlbumName: String? = null
     private var _nextAlbumArtist: String? = null
-
+    
+    // Track current artist being played
+    private var currentArtistName: String? = null
+    private var _nextArtistName: String? = null
+    
+    // Pending queue with all albums (set by playAlbum(), used by updateDisplayOrder())
+    private var _pendingFullQueue: List<Song>? = null
 
     // Callback to load next album
     private var onAlbumEndedCallback: ((String, String) -> Unit)? = null
@@ -239,7 +245,7 @@ class PlaybackViewModel(
         currentAlbumName = albumName
         currentAlbumArtist = artistName
         
-        // Load all albums and add them to the queue
+        // Load all albums and prepare full queue
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
@@ -278,13 +284,10 @@ class PlaybackViewModel(
                         fullQueue.addAll(albumSongs)
                     }
                     
-                    // Update the queue with all albums
+                    // Store the full queue to be used by updateDisplayOrder()
                     if (fullQueue.isNotEmpty()) {
-                        android.util.Log.d("PlaybackViewModel", "playAlbum - Setting queue with ${fullQueue.size} songs from ${queueAlbums.size} albums")
-                        _queue.value = fullQueue
-                        try { 
-                            prefs.savePlaybackQueue(fullQueue.map { it.uri.toString() })
-                        } catch (_: Exception) {}
+                        android.util.Log.d("PlaybackViewModel", "playAlbum - Prepared queue with ${fullQueue.size} songs from ${queueAlbums.size} albums")
+                        _pendingFullQueue = fullQueue
                     }
                     
                     // Find and save next album
@@ -317,6 +320,57 @@ class PlaybackViewModel(
                 if (_nextAlbumName != null && _nextAlbumArtist != null) {
                     loadNextAlbumAutomatically(_nextAlbumName!!, _nextAlbumArtist!!)
                 }
+            }
+        }
+    }
+
+    fun playArtist(artistName: String, songs: List<Song>) {
+        currentArtistName = artistName
+        
+        // Load all artists and prepare full queue
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+                val allSongs = repo.loadSongs()
+                
+                // Extract unique artists from all songs
+                val uniqueArtists = mutableSetOf<String>()
+                for (song in allSongs) {
+                    uniqueArtists.add(song.artist.trim())
+                }
+                
+                // Sort artists alphabetically
+                val sortedArtists = uniqueArtists.sorted()
+                
+                // Find current artist index
+                val currentIndex = sortedArtists.indexOfFirst { it.equals(artistName, ignoreCase = true) }
+                
+                if (currentIndex >= 0) {
+                    // Build complete queue starting from current artist
+                    val queueArtists = sortedArtists.drop(currentIndex) + sortedArtists.take(currentIndex)
+                    
+                    // Build full queue with all songs from all artists in order
+                    val fullQueue = mutableListOf<Song>()
+                    for (artist in queueArtists) {
+                        val artistSongs = allSongs.filter { song ->
+                            song.artist.trim().equals(artist, ignoreCase = true)
+                        }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+                        fullQueue.addAll(artistSongs)
+                    }
+                    
+                    // Store the full queue to be used by updateDisplayOrder()
+                    if (fullQueue.isNotEmpty()) {
+                        android.util.Log.d("PlaybackViewModel", "playArtist - Prepared queue with ${fullQueue.size} songs from ${queueArtists.size} artists")
+                        _pendingFullQueue = fullQueue
+                    }
+                    
+                    // Find and save next artist
+                    if (currentIndex < sortedArtists.size - 1) {
+                        _nextArtistName = sortedArtists[currentIndex + 1]
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlaybackViewModel", "Error loading artists for queue", e)
             }
         }
     }
@@ -406,7 +460,18 @@ class PlaybackViewModel(
     }
 
     fun updateDisplayOrder(songs: List<Song>) {
-        _queue.value = songs
+        // If playAlbum() prepared a full queue with all albums, use that instead
+        val queueToUse = if (_pendingFullQueue != null) {
+            android.util.Log.d("PlaybackViewModel", "updateDisplayOrder - Using full queue with ${_pendingFullQueue!!.size} songs (all albums)")
+            val fullQueue = _pendingFullQueue!!
+            _pendingFullQueue = null  // Clear after use
+            fullQueue
+        } else {
+            android.util.Log.d("PlaybackViewModel", "updateDisplayOrder - Using provided songs: ${songs.size} songs")
+            songs
+        }
+        
+        _queue.value = queueToUse
         try { prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() }) } catch (_: Exception) {}
     }
 

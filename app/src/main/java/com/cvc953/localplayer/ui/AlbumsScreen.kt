@@ -403,6 +403,8 @@ fun AlbumsScreen(
                                                 onClick = {
                                                     menuExpanded = false
                                                     if (albumSongs.isNotEmpty()) {
+                                                        playbackViewModel.setShuffle(false)
+                                                        playbackViewModel.playAlbum(album.name, album.artist, albumSongs)
                                                         playbackViewModel.updateDisplayOrder(albumSongs)
                                                         playbackViewModel.play(albumSongs[0])
                                                     }
@@ -591,6 +593,8 @@ fun AlbumsScreen(
                                                                 it.artist.trim().equals(album.artist.trim(), ignoreCase = true)
                                                         }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
                                                 if (albumSongs.isNotEmpty()) {
+                                                    playbackViewModel.setShuffle(false)
+                                                    playbackViewModel.playAlbum(album.name, album.artist, albumSongs)
                                                     playbackViewModel.updateDisplayOrder(albumSongs)
                                                     playbackViewModel.play(albumSongs.first())
                                                 }
@@ -844,6 +848,8 @@ fun AlbumDetailScreen(
                     isPlaying = isCurrent,
                     onClick = {
                         // Usar el orden del album como cola de reproduccion
+                        playbackViewModel.setShuffle(false)
+                        playbackViewModel.playAlbum(albumName, artistName, albumSongs)
                         playbackViewModel.updateDisplayOrder(albumSongs)
                         playbackViewModel.play(song)
                     },
