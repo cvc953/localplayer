@@ -8,11 +8,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,8 +34,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -105,7 +105,7 @@ fun SongItem(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color.Transparent)
+                .background(MaterialTheme.colorScheme.background)
                 .clickable { onClick() }
                 .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -223,10 +223,10 @@ fun SongItem(
                         val isFavorite = favorites?.songIds?.contains(song.id) == true
 
                         if (isFavorite) {
-                                        playlistViewModel.removeSongFromPlaylist(favoritesName, song.id)
+                            playlistViewModel.removeSongFromPlaylist(favoritesName, song.id)
                             Toast.makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT).show()
                         } else {
-                                        playlistViewModel.addSongToPlaylist(favoritesName, song.id)
+                            playlistViewModel.addSongToPlaylist(favoritesName, song.id)
                             Toast.makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT).show()
                         }
                     },
@@ -247,7 +247,10 @@ fun SongItem(
                         ) {
                             Button(
                                 onClick = { showCreatePlaylistDialog = true },
-                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                colors =
+                                    androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                    ),
                             ) {
                                 Text("Crear playlist")
                             }

@@ -1146,7 +1146,7 @@ fun PlaylistHeader(
             playlistSongIds = playlist?.songIds ?: emptyList(),
             songs = songs,
             context = context,
-            modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(4.dp)),
+            modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
@@ -1175,7 +1175,7 @@ fun PlaylistHeader(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(60.dp),
             ) {
                 Button(
                     onClick = {
@@ -1209,7 +1209,7 @@ fun PlaylistHeader(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(60.dp),
             ) {
                 Button(
                     onClick = {

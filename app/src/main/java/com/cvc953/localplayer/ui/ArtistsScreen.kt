@@ -753,7 +753,7 @@ fun ArtistDetailScreen(
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item { ArtistHeader(artistViewModel, artistName, playbackViewModel, modifier = Modifier, onViewAllSongs) }
+            item { ArtistHeader(artistViewModel, artistName, playbackViewModel, Modifier.padding(16.dp), onViewAllSongs) }
             items(artistSongsSorted.take(maxItems)) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
@@ -928,7 +928,7 @@ fun ArtistHeader(
                 Modifier
                     .fillMaxWidth(1f)
                     .aspectRatio(1f)
-                    .padding(horizontal = 16.dp)
+                    // .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop,
         )
