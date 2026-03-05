@@ -793,14 +793,14 @@ fun AlbumDetailScreen(
             songs
                 .filter { song ->
                     val albumMatches = normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) }
-                    val artistMatches = normalizeArtistName(song.artist).any { artist ->
-                        normalizedRequestedArtists.any { requestedArtist ->
-                            artist.trim().equals(requestedArtist, ignoreCase = true)
+                    val artistMatches =
+                        normalizeArtistName(song.artist).any { artist ->
+                            normalizedRequestedArtists.any { requestedArtist ->
+                                artist.trim().equals(requestedArtist, ignoreCase = true)
+                            }
                         }
-                    }
                     albumMatches && artistMatches
-                }
-                .sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
         }
     val context = LocalContext.current
 
@@ -839,7 +839,7 @@ fun AlbumDetailScreen(
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            item { AlbumHeader(albumViewModel, albumName, artistName, playbackViewModel) }
+            item { AlbumHeader(albumViewModel, albumName, artistName, playbackViewModel, Modifier.padding(16.dp)) }
             items(albumSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
@@ -889,14 +889,14 @@ fun AlbumHeader(
                 songs
                     .filter { song ->
                         val albumMatches = normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) }
-                        val artistMatches = normalizeArtistName(song.artist).any { artist ->
-                            normalizedRequestedArtists.any { requestedArtist ->
-                                artist.trim().equals(requestedArtist, ignoreCase = true)
+                        val artistMatches =
+                            normalizeArtistName(song.artist).any { artist ->
+                                normalizedRequestedArtists.any { requestedArtist ->
+                                    artist.trim().equals(requestedArtist, ignoreCase = true)
+                                }
                             }
-                        }
                         albumMatches && artistMatches
-                    }
-                    .sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
             }
         var albumArt by remember { mutableStateOf<Bitmap?>(null) }
         val firstSong = albumSongs.firstOrNull()
@@ -955,7 +955,7 @@ fun AlbumHeader(
                 Modifier
                     .fillMaxWidth(1f)
                     .aspectRatio(1f)
-                    .padding(horizontal = 16.dp)
+                    // .padding(horizontal = 16.dp)
                     .clip(RoundedCornerShape(8.dp)),
             contentScale = ContentScale.Crop,
         )
@@ -987,7 +987,7 @@ fun AlbumHeader(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(60.dp),
             ) {
                 Button(
                     onClick = {
@@ -1022,7 +1022,7 @@ fun AlbumHeader(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .height(32.dp),
+                        .height(60.dp),
             ) {
                 Button(
                     onClick = {

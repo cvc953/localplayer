@@ -382,15 +382,42 @@ fun PlayerScreen(
                 )
             }
         } else {
-            // CONTENIDO REAL
-            Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-            ) {
-                Spacer(Modifier.height(16.dp))
+            // CONTENIDO REAL - Layout responsivo
+            val screenWidth = LocalConfiguration.current.screenWidthDp
+            val screenHeight = LocalConfiguration.current.screenHeightDp
+            val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
 
-                // Imagen del álbum responsiva (máximo 70% del ancho)
+            // Determinar tipo de pantalla
+            val isCompactLayout = aspectRatio > 0.95f // Pantalla cuadrada
+            val isLandscape = aspectRatio > 1.2f // Landscape
+            val isTallLayout = aspectRatio < 0.8f // Rectangular alta (más espacio vertical)
+
+            // Tamaño dinámico de imagen
+            val imageWidthPercent =
+                when {
+                    isLandscape -> 0.35f  // Landscape: 35%
+                    isCompactLayout -> 0.50f  // Cuadrada: 50% (más compacto)
+                    isTallLayout -> 0.88f  // Rectangular alta: 88%
+                    else -> 0.75f  // Normal: 75%
+                }
+
+            // Spacers dinámicos según layout
+            val betweenSpacer =
+                when {
+                    isCompactLayout -> 6.dp  // Cuadrada: ultra compacto
+                    isTallLayout -> 24.dp  // Rectangular alta: mucho espacio
+                    isLandscape -> 12.dp  // Landscape: compacto
+                    else -> 16.dp  // Normal: medio
+                }
+
+            Column(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Spacer(Modifier.weight(1f))
+
+                // Imagen del álbum responsiva
                 Image(
                     painter =
                         albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
@@ -400,13 +427,13 @@ fun PlayerScreen(
                     contentDescription = null,
                     modifier =
                         Modifier
-                            .fillMaxWidth(0.9f)
+                            .fillMaxWidth(imageWidthPercent)
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(4.dp)),
+                            .clip(RoundedCornerShape(8.dp)),
                     contentScale = ContentScale.Crop,
                 )
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(betweenSpacer))
 
                 SongTitleSection(
                     title = song.title,
@@ -421,7 +448,7 @@ fun PlayerScreen(
                     onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
                 )
 
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(betweenSpacer))
 
                 PlayerControls(
                     playbackViewModel = playbackViewModel,
@@ -432,7 +459,7 @@ fun PlayerScreen(
                     audioSampleRate = audioSampleRate,
                 )
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(betweenSpacer))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -505,7 +532,7 @@ fun PlayerScreen(
                     }
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.weight(1f))
             }
 
             if (showAddToPlaylistDialog) {
@@ -1164,27 +1191,52 @@ fun SongTitleSection(
     var showMenu by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
+    val isCompactLayout = aspectRatio > 0.95f
+    val isTallLayout = aspectRatio < 0.8f
+
+    val titleFontSize =
+        when {
+            isCompactLayout -> 18.sp
+            isTallLayout -> 24.sp
+            else -> 22.sp
+        }
+    val subtitleFontSize =
+        when {
+            isCompactLayout -> 12.sp
+            isTallLayout -> 15.sp
+            else -> 14.sp
+        }
+    val horizontalPadding =
+        when {
+            isCompactLayout -> 12.dp
+            isTallLayout -> 20.dp
+            else -> 24.dp
+        }
+
     Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding),
         horizontalAlignment = Alignment.Start,
     ) {
         Text(
             text = title,
             color = Color.White,
-            fontSize = 22.sp,
+            fontSize = titleFontSize,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Visible,
             modifier = Modifier.fillMaxWidth().basicMarquee(),
         )
 
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
 
         Box {
             Text(
                 text = if (album.isNotEmpty()) "$artist - $album" else artist,
                 color = MaterialTheme.extendedColors.textSecondary,
-                fontSize = 14.sp,
+                fontSize = subtitleFontSize,
                 maxLines = 1,
                 modifier = Modifier.clickable { showMenu = true },
             )
@@ -1390,6 +1442,13 @@ fun PlayerControls(
 
     var sliderPosition by remember { mutableStateOf(0f) }
     var isUserSeeking by remember { mutableStateOf(false) }
+
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
+    val isCompactLayout = aspectRatio > 0.95f
+    val isTallLayout = aspectRatio < 0.8f
+
     // Sincroniza el slider con el estado global solo si no se está arrastrando
     LaunchedEffect(playerState.position, playerState.duration, isUserSeeking) {
         if (!isUserSeeking) {
@@ -1436,15 +1495,24 @@ fun PlayerControls(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(
+            Modifier.height(
+                when {
+                    isCompactLayout -> 6.dp
+                    isTallLayout -> 16.dp
+                    else -> 12.dp
+                },
+            ),
+        )
 
         val buttonSize =
             with(LocalDensity.current) {
-                (LocalConfiguration.current.screenWidthDp.dp * 0.20f)
+                when {
+                    isCompactLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.14f)
+                    isTallLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.20f)
+                    else -> (LocalConfiguration.current.screenWidthDp.dp * 0.18f)
+                }
             }
-        with(LocalDensity.current) {
-            (LocalConfiguration.current.screenWidthDp.dp * 0.13f)
-        }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -1522,7 +1590,15 @@ fun PlayerControls(
 
         // Información de formato de audio
         if (audioFormat.isNotEmpty() || audioBitrate.isNotEmpty() || audioSampleRate.isNotEmpty()) {
-            Spacer(Modifier.height(20.dp))
+            Spacer(
+                Modifier.height(
+                    when {
+                        isCompactLayout -> 8.dp
+                        isTallLayout -> 14.dp
+                        else -> 12.dp
+                    },
+                ),
+            )
             Text(
                 text =
                     buildString {
@@ -1533,7 +1609,12 @@ fun PlayerControls(
                         if (audioSampleRate.isNotEmpty()) append(audioSampleRate)
                     },
                 color = LocalExtendedColors.current.texMeta,
-                fontSize = 11.sp,
+                fontSize =
+                    when {
+                        isCompactLayout -> 9.sp
+                        isTallLayout -> 12.sp
+                        else -> 11.sp
+                    },
                 textAlign = TextAlign.Center,
             )
         }
