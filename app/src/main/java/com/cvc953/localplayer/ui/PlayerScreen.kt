@@ -388,30 +388,41 @@ fun PlayerScreen(
             val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
 
             // Determinar tipo de pantalla
-            val isCompactLayout = aspectRatio > 0.95f // Pantalla cuadrada
-            val isLandscape = aspectRatio > 1.2f // Landscape
-            val isTallLayout = aspectRatio < 0.8f // Rectangular alta (más espacio vertical)
-
+            val isCompactLayout = aspectRatio >= 0.90f && aspectRatio < 1.15f // Cuadrada (0.9-1.15)
+            val isNormalLayout = aspectRatio >= 1.15f && aspectRatio <= 1.6f // Normal/Media (1.15-1.6) - TU PANTALLA (1.5)
+            val isLandscape = aspectRatio > 1.6f // Landscape
+            val isTallLayout = aspectRatio < 0.80f // Rectangular alta
+            
             // Tamaño dinámico de imagen
             val imageWidthPercent =
                 when {
                     isLandscape -> 0.35f  // Landscape: 35%
-                    isCompactLayout -> 0.50f  // Cuadrada: 50% (más compacto)
+                    isCompactLayout -> 0.45f  // Cuadrada: 45%
+                    isNormalLayout -> 0.25f  // Normal/Media: 25% - TU PANTALLA (más pequeña para que represente ~35% del espacio)
                     isTallLayout -> 0.88f  // Rectangular alta: 88%
-                    else -> 0.75f  // Normal: 75%
+                    else -> 0.75f  // Default: 75%
                 }
 
             // Spacers dinámicos según layout
             val betweenSpacer =
                 when {
-                    isCompactLayout -> 6.dp  // Cuadrada: ultra compacto
-                    isTallLayout -> 24.dp  // Rectangular alta: mucho espacio
-                    isLandscape -> 12.dp  // Landscape: compacto
-                    else -> 16.dp  // Normal: medio
+                    isCompactLayout -> 4.dp  // Cuadrada: mínimo
+                    isNormalLayout -> 6.dp  // Normal/Media: muy compacto - TU PANTALLA
+                    isTallLayout -> 24.dp  // Rectangular alta: mucho
+                    isLandscape -> 12.dp  // Landscape: moderado
+                    else -> 16.dp  // Default
+                }
+
+            // Padding vertical dinámico
+            val verticalPadding = 
+                when {
+                    isCompactLayout -> 4.dp
+                    isNormalLayout -> 2.dp
+                    else -> 8.dp
                 }
 
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = verticalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -1194,24 +1205,28 @@ fun SongTitleSection(
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
-    val isCompactLayout = aspectRatio > 0.95f
-    val isTallLayout = aspectRatio < 0.8f
+    val isCompactLayout = aspectRatio >= 0.90f && aspectRatio <= 1.15f
+    val isNormalLayout = aspectRatio > 1.15f && aspectRatio <= 1.6f
+    val isTallLayout = aspectRatio < 0.80f
 
     val titleFontSize =
         when {
-            isCompactLayout -> 18.sp
+            isCompactLayout -> 16.sp
+            isNormalLayout -> 18.sp
             isTallLayout -> 24.sp
             else -> 22.sp
         }
     val subtitleFontSize =
         when {
-            isCompactLayout -> 12.sp
+            isCompactLayout -> 11.sp
+            isNormalLayout -> 12.sp
             isTallLayout -> 15.sp
             else -> 14.sp
         }
     val horizontalPadding =
         when {
-            isCompactLayout -> 12.dp
+            isCompactLayout -> 10.dp
+            isNormalLayout -> 12.dp
             isTallLayout -> 20.dp
             else -> 24.dp
         }
@@ -1446,7 +1461,8 @@ fun PlayerControls(
     val screenWidth = LocalConfiguration.current.screenWidthDp
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
-    val isCompactLayout = aspectRatio > 0.95f
+    val isCompactLayout = aspectRatio >= 0.90f && aspectRatio <= 1.15f
+    val isNormalLayout = aspectRatio > 1.15f && aspectRatio <= 1.6f
     val isTallLayout = aspectRatio < 0.8f
 
     // Sincroniza el slider con el estado global solo si no se está arrastrando
@@ -1498,7 +1514,8 @@ fun PlayerControls(
         Spacer(
             Modifier.height(
                 when {
-                    isCompactLayout -> 6.dp
+                    isCompactLayout -> 4.dp
+                    isNormalLayout -> 6.dp
                     isTallLayout -> 16.dp
                     else -> 12.dp
                 },
@@ -1509,6 +1526,7 @@ fun PlayerControls(
             with(LocalDensity.current) {
                 when {
                     isCompactLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.14f)
+                    isNormalLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.15f)
                     isTallLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.20f)
                     else -> (LocalConfiguration.current.screenWidthDp.dp * 0.18f)
                 }
@@ -1593,7 +1611,8 @@ fun PlayerControls(
             Spacer(
                 Modifier.height(
                     when {
-                        isCompactLayout -> 8.dp
+                        isCompactLayout -> 6.dp
+                        isNormalLayout -> 6.dp
                         isTallLayout -> 14.dp
                         else -> 12.dp
                     },
@@ -1612,6 +1631,7 @@ fun PlayerControls(
                 fontSize =
                     when {
                         isCompactLayout -> 9.sp
+                        isNormalLayout -> 10.sp
                         isTallLayout -> 12.sp
                         else -> 11.sp
                     },
