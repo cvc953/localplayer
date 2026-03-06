@@ -10,6 +10,8 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -335,7 +337,8 @@ fun SongsContent(
                     items(sortedSongs) { song ->
                         val isCurrent =
                             playerState.currentSong?.id == song.id
-                        var dragOffsetX by remember { mutableStateOf(0f) }
+                        val dragOffsetX = remember { Animatable(0f) }
+                        val itemScope = rememberCoroutineScope()
                         val density =
                             androidx.compose.ui.platform.LocalDensity
                                 .current
@@ -355,14 +358,17 @@ fun SongsContent(
 
                         val dragState =
                             rememberDraggableState { delta ->
-                                dragOffsetX =
-                                    (dragOffsetX + delta).coerceIn(
-                                        0f,
-                                        maxOffsetPx,
+                                itemScope.launch {
+                                    dragOffsetX.snapTo(
+                                        (dragOffsetX.value + delta).coerceIn(
+                                            0f,
+                                            maxOffsetPx,
+                                        ),
                                     )
+                                }
                             }
                         val progress =
-                            (dragOffsetX / maxOffsetPx).coerceIn(0f, 1f)
+                            (dragOffsetX.value / maxOffsetPx).coerceIn(0f, 1f)
 
                         Box(
                             modifier =
@@ -377,11 +383,21 @@ fun SongsContent(
                                             Orientation
                                                 .Horizontal,
                                         onDragStopped = {
-                                            if (dragOffsetX > thresholdPx) {
-                                                playbackViewModel.addToQueueNext(song)
+                                            itemScope.launch {
+                                                if (dragOffsetX.value > thresholdPx) {
+                                                    playbackViewModel.addToQueueNext(song)
+                                                    dragOffsetX.animateTo(
+                                                        maxOffsetPx,
+                                                        animationSpec = tween(500),
+                                                    )
+                                                    dragOffsetX.snapTo(0f)
+                                                } else {
+                                                    dragOffsetX.animateTo(
+                                                        0f,
+                                                        animationSpec = tween(300),
+                                                    )
+                                                }
                                             }
-                                            dragOffsetX =
-                                                0f
                                         },
                                     ),
                         ) {
@@ -400,6 +416,17 @@ fun SongsContent(
                                         Alignment
                                             .CenterStart,
                                 ) {
+                                    val iconWidth = with(density) { 24.dp.toPx() }
+                                    val spacerWidth = with(density) { 40.dp.toPx() }
+                                    val iconTriggerOffset = iconWidth + spacerWidth
+                                    val iconOffsetPx =
+                                        if (dragOffsetX.value > iconTriggerOffset) {
+                                            dragOffsetX.value - iconTriggerOffset
+                                        } else {
+                                            0f
+                                        }
+                                    val iconOffsetDp = with(density) { iconOffsetPx.toDp() }
+
                                     Row(
                                         modifier =
                                             Modifier
@@ -419,60 +446,57 @@ fun SongsContent(
                                             Alignment
                                                 .CenterVertically,
                                     ) {
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .offset(x = iconOffsetDp),
+                                        ) {
+                                            Icon(
+                                                imageVector =
+                                                    Icons.AutoMirrored.Filled.QueueMusic,
+                                                contentDescription =
+                                                null,
+                                                tint =
+                                                    Color.White,
+                                                modifier = Modifier.size(24.dp),
+                                            )
+                                        }
                                     }
                                 }
                             }
 
                             val offsetDp =
-                                with(density) { dragOffsetX.toDp() }
+                                with(density) { dragOffsetX.value.toDp() }
                             Box(
                                 modifier =
                                     Modifier.offset(
                                         x = offsetDp,
                                     ),
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    SongItem(
-                                        song = song,
-                                        isPlaying =
-                                            isCurrent &&
-                                                playerState
-                                                    .isPlaying,
-                                        onClick = {
-                                            // Usar el orden
-                                            // actual solo al
-                                            // reproducir desde
-                                            // esta vista
-                                            playbackViewModel.updateDisplayOrder(sortedSongs)
-                                            playbackViewModel.play(song)
-                                            // Ensure player UI is shown
-                                            // playerViewModel.showPlayerScreen(true)
-                                            // Si es necesario, iniciar servicio desde playbackViewModel
-                                        },
-                                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
-                                        playlists = playlists,
-                                        onAddToPlaylist = { playlistName, songId ->
-                                            playlistViewModel.addSongToPlaylist(playlistName, songId)
-                                        },
-                                    )
-
-                                    if (progress > 0f) {
-                                        Spacer(Modifier.width(12.dp))
-
-                                        Icon(
-                                            imageVector =
-                                                Icons.AutoMirrored.Filled.QueueMusic,
-                                            contentDescription =
-                                            null,
-                                            tint =
-                                                MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(28.dp),
-                                        )
-                                    }
-                                }
+                                SongItem(
+                                    song = song,
+                                    isPlaying =
+                                        isCurrent &&
+                                            playerState
+                                                .isPlaying,
+                                    onClick = {
+                                        // Usar el orden
+                                        // actual solo al
+                                        // reproducir desde
+                                        // esta vista
+                                        playbackViewModel.updateDisplayOrder(sortedSongs)
+                                        playbackViewModel.play(song)
+                                        // Ensure player UI is shown
+                                        // playerViewModel.showPlayerScreen(true)
+                                        // Si es necesario, iniciar servicio desde playbackViewModel
+                                    },
+                                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                                    playlists = playlists,
+                                    onAddToPlaylist = { playlistName, songId ->
+                                        playlistViewModel.addSongToPlaylist(playlistName, songId)
+                                    },
+                                )
                             }
                         }
                     }
