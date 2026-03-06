@@ -406,7 +406,7 @@ fun AlbumsScreen(
                                                     menuExpanded = false
                                                     if (albumSongs.isNotEmpty()) {
                                                         playbackViewModel.setShuffle(false)
-                                                        playbackViewModel.playAlbum(album.name, album.artist, albumSongs)
+                                                        playbackViewModel.playAlbum(album.name, album.artist, albumSongs, songs)
                                                         playbackViewModel.updateDisplayOrder(albumSongs)
                                                         playbackViewModel.play(albumSongs[0])
                                                     }
@@ -596,7 +596,7 @@ fun AlbumsScreen(
                                                         }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
                                                 if (albumSongs.isNotEmpty()) {
                                                     playbackViewModel.setShuffle(false)
-                                                    playbackViewModel.playAlbum(album.name, album.artist, albumSongs)
+                                                    playbackViewModel.playAlbum(album.name, album.artist, albumSongs, songs)
                                                     playbackViewModel.updateDisplayOrder(albumSongs)
                                                     playbackViewModel.play(albumSongs.first())
                                                 }
@@ -746,7 +746,7 @@ fun AlbumDetailScreen(
                     onClick = {
                         // Usar el orden del album como cola de reproduccion
                         playbackViewModel.setShuffle(false)
-                        playbackViewModel.playAlbum(albumName, artistName, albumSongs)
+                        playbackViewModel.playAlbum(albumName, artistName, albumSongs, songs)
                         playbackViewModel.updateDisplayOrder(albumSongs)
                         playbackViewModel.play(song)
                     },
@@ -890,7 +890,7 @@ fun AlbumHeader(
                     onClick = {
                         if (albumSongs.isNotEmpty()) {
                             playbackViewModel.setShuffle(false)
-                            playbackViewModel.playAlbum(albumName, artistName, albumSongs)
+                            playbackViewModel.playAlbum(albumName, artistName, albumSongs, songs)
                             playbackViewModel.updateDisplayOrder(albumSongs)
                             playbackViewModel.play(albumSongs.first())
                         }
@@ -926,7 +926,7 @@ fun AlbumHeader(
                         if (albumSongs.isNotEmpty()) {
                             val shuffled = albumSongs.shuffled()
                             playbackViewModel.setShuffle(true)
-                            playbackViewModel.playAlbum(albumName, artistName, shuffled)
+                            playbackViewModel.playAlbum(albumName, artistName, shuffled, songs)
                             playbackViewModel.updateDisplayOrder(shuffled)
                             playbackViewModel.play(shuffled.first())
                         }

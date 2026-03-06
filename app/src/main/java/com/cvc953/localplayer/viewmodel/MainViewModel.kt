@@ -154,14 +154,14 @@ class MainViewModel(
                 _playerState.value = state
             }
         }
-        // Ensure when the PlayerController's internal queue is exhausted, MainViewModel advances
+        // Ensure when the PlayerController's internal queue is exhausted, delegate to PlaybackViewModel
         try {
             val pc = PlayerController.getInstance(getApplication(), viewModelScope)
             
             pc.setOnQueueEndedListener {
                 viewModelScope.launch {
                     try {
-                        playNextSong()
+                        playbackViewModel.playNextSong()
                     } catch (_: Exception) {
                     }
                 }
@@ -178,13 +178,6 @@ class MainViewModel(
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
-
-    // Modos
-    private val _isShuffle = MutableStateFlow(false)
-    val isShuffle: StateFlow<Boolean> = _isShuffle
-
-    private val _repeatMode = MutableStateFlow(RepeatMode.NONE)
-    val repeatMode: StateFlow<RepeatMode> = _repeatMode
 
     // Letras
     private val _showLyrics = MutableStateFlow(false)
@@ -203,9 +196,6 @@ class MainViewModel(
     // Cola de reproducción
     private val _queue = MutableStateFlow<List<Song>>(emptyList())
     val queue: StateFlow<List<Song>> = _queue
-
-    // Cache para el orden aleatorio persistente mientras shuffle esté activo
-    private var cachedShuffledRemaining: List<Song>? = null
 
     // Historial de reproducción para soportar "Anterior" respetando el orden
     private val playHistory: MutableList<Song> = mutableListOf()
@@ -310,15 +300,12 @@ class MainViewModel(
         val list = _queue.value.toMutableList()
         list.add(0, song)
         _queue.value = list
-        // si hay caché de shuffle, quitar la canción añadida
-        cachedShuffledRemaining = cachedShuffledRemaining?.filter { it != song }
     }
 
     fun addToQueueEnd(song: Song) {
         val list = _queue.value.toMutableList()
         list.add(song)
         _queue.value = list
-        cachedShuffledRemaining = cachedShuffledRemaining?.filter { it != song }
     }
 
     fun moveQueueItem(
@@ -330,64 +317,12 @@ class MainViewModel(
         val item = list.removeAt(fromIndex)
         list.add(toIndex, item)
         _queue.value = list
-        // reordenar la caché no es necesario; el cache contiene sólo el resto
     }
 
     fun setUpcomingOrder(newOrder: List<Song>) {
         // Guardamos todo el orden de próximas canciones para que el drag funcione
         // tanto con cola manual como con el resto de la biblioteca.
         _queue.value = newOrder
-        // eliminar de la caché cualquier canción que ahora esté en la cola explícita
-        cachedShuffledRemaining = cachedShuffledRemaining?.filter { it !in _queue.value }
-    }
-
-    fun getUpcomingSongs(): List<Song> {
-        val current = playerState.value.currentSong ?: return _queue.value
-        // Usar displayOrder si está disponible, sino songs
-        val base = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
-        val upcoming = mutableListOf<Song>()
-
-        // Primero la cola explícita
-        upcoming.addAll(_queue.value)
-
-        val remaining =
-            when {
-                _isShuffle.value -> {
-                    // Usar caché si existe, si no generarla en este momento
-                    if (cachedShuffledRemaining == null) {
-                        val excluded = mutableSetOf<Song>()
-                        excluded.addAll(_queue.value)
-                        excluded.add(current)
-                        cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
-                    }
-                    // Asegurarnos de quitar cualquier canción que ahora esté en la cola
-                    cachedShuffledRemaining =
-                        cachedShuffledRemaining?.filter { it !in _queue.value }
-                    cachedShuffledRemaining ?: emptyList()
-                }
-
-                _repeatMode.value == RepeatMode.ALL -> {
-                    val idx = base.indexOf(current)
-                    if (idx == -1) base else base.drop(idx + 1) + base.take(idx)
-                }
-
-                else -> {
-                    val idx = base.indexOf(current)
-                    if (idx == -1) emptyList() else base.drop(idx + 1)
-                }
-            }
-
-        upcoming.addAll(remaining)
-        return upcoming
-    }
-
-    private fun popQueue(): Song? {
-        val current = _queue.value
-        if (current.isEmpty()) return null
-        val list = current.toMutableList()
-        val next = list.removeAt(0)
-        _queue.value = list
-        return next
     }
 
     init {
@@ -461,7 +396,8 @@ class MainViewModel(
             }
         } catch (e: Exception) {
             android.util.Log.e("MainViewModel", "Error delegating playSong", e)
-            playNextSong()
+            // Delegate to playbackViewModel to play next song
+            playbackViewModel.playNextSong()
         }
     }
 
@@ -471,132 +407,6 @@ class MainViewModel(
             playbackViewModel.togglePlayPause()
         } catch (e: Exception) {
             android.util.Log.e("MainViewModel", "togglePlayPause delegate failed", e)
-        }
-    }
-
-    fun playNextSong() {
-        // Usar displayOrder si está disponible, sino songs
-        val list = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
-        val currentSong = playerState.value.currentSong ?: return
-        if (list.isEmpty()) return
-
-        // Priorizar canciones en cola
-        popQueue()?.let { queued ->
-            // push current to history
-            playHistory.add(currentSong)
-            playSong(queued)
-            startService(getApplication(), queued)
-            return
-        }
-
-        val nextSong =
-            when {
-                _isShuffle.value -> {
-                    // Respetar el orden aleatorio persistente generado al activar shuffle
-                    if (cachedShuffledRemaining == null) {
-                        val excluded = mutableSetOf<Song>()
-                        excluded.addAll(_queue.value)
-                        excluded.add(currentSong)
-                        cachedShuffledRemaining = list.filter { it !in excluded }.shuffled()
-                    }
-                    val next = cachedShuffledRemaining?.firstOrNull()
-                    if (next != null) {
-                        // consumir el primero de la caché
-                        cachedShuffledRemaining = cachedShuffledRemaining?.drop(1)
-                        next
-                    } else {
-                        // fallback: elige cualquiera distinto
-                        if (list.size == 1) {
-                            currentSong
-                        } else {
-                            var randomSong: Song
-                            do {
-                                randomSong = list.random()
-                            } while (randomSong == currentSong)
-                            randomSong
-                        }
-                    }
-                }
-
-                _repeatMode.value == RepeatMode.ONE -> {
-                    // Repetir la misma canción
-                    currentSong
-                }
-
-                else -> {
-                    // Avanza normalmente
-                    val currentIndex = list.indexOf(currentSong)
-                    val nextIndex = currentIndex + 1
-                    if (nextIndex < list.size) {
-                        list[nextIndex]
-                    } else if (_repeatMode.value == RepeatMode.ALL) {
-                        list[0]
-                    } else {
-                        return // NO hay siguiente canción si RepeatMode.NONE y estamos al
-                    }
-                    // final
-                }
-            }
-
-        // push current to history and delegate playback
-        playHistory.add(currentSong)
-        try {
-            playbackViewModel.play(nextSong)
-        } catch (e: Exception) {
-            android.util.Log.e("MainViewModel", "playNextSong delegate failed", e)
-        }
-    }
-
-    fun playPreviousSong() {
-        // Usar displayOrder si está disponible, sino songs
-        val list = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
-        val currentSong = playerState.value.currentSong ?: return
-        if (list.isEmpty()) return
-        // Si hay historial, regresar a la última canción reproducida
-        if (playHistory.isNotEmpty()) {
-            val prev = playHistory.removeAt(playHistory.lastIndex)
-            playSong(prev)
-            startService(getApplication(), prev)
-            return
-        }
-
-        val previousSong =
-            when {
-                _isShuffle.value -> {
-                    // Si no hay historial, intentar tomar la última consumida de la caché
-                    // (no es trivial recuperar la "anterior" en shuffle sin historial)
-                    if (list.size == 1) {
-                        currentSong
-                    } else {
-                        var randomSong: Song
-                        do {
-                            randomSong = list.random()
-                        } while (randomSong == currentSong)
-                        randomSong
-                    }
-                }
-
-                _repeatMode.value == RepeatMode.ONE -> {
-                    currentSong
-                }
-
-                else -> {
-                    val currentIndex = list.indexOf(currentSong)
-                    val prevIndex = currentIndex - 1
-                    if (prevIndex >= 0) {
-                        list[prevIndex]
-                    } else if (_repeatMode.value == RepeatMode.ALL) {
-                        list.last()
-                    } else {
-                        return
-                    }
-                }
-            }
-
-        try {
-            playbackViewModel.play(previousSong)
-        } catch (e: Exception) {
-            android.util.Log.e("MainViewModel", "playPreviousSong delegate failed", e)
         }
     }
 
@@ -643,34 +453,6 @@ class MainViewModel(
 
     fun seekTo(position: Long) {
         playbackViewModel.seekTo(position)
-    }
-
-    // Cambiar aleatorio
-    fun toggleShuffle() {
-        _isShuffle.value = !_isShuffle.value
-        if (_isShuffle.value) {
-            // Generar y mantener un orden aleatorio en el momento de activar shuffle
-            val current = _playerState.value.currentSong
-            // Usar displayOrder si está disponible, sino songs
-            val base = if (_displayOrder.value.isNotEmpty()) _displayOrder.value else songs.value
-            val excluded = mutableSetOf<Song>()
-            current?.let { excluded.add(it) }
-            excluded.addAll(_queue.value)
-            cachedShuffledRemaining = base.filter { it !in excluded }.shuffled()
-        } else {
-            // Al desactivar shuffle limpiamos la caché
-            cachedShuffledRemaining = null
-        }
-    }
-
-    // Cambiar repetición
-    fun toggleRepeat() {
-        _repeatMode.value =
-            when (_repeatMode.value) {
-                RepeatMode.NONE -> RepeatMode.ONE
-                RepeatMode.ONE -> RepeatMode.ALL
-                RepeatMode.ALL -> RepeatMode.NONE
-            }
     }
 
     fun toggleLyrics() {

@@ -1,13 +1,15 @@
 package com.cvc953.localplayer.util
 
 import android.graphics.Bitmap
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.palette.graphics.Palette
 
 /**
  * Extrae el color dominante de un Bitmap usando Palette
- * Retorna el color dominante o un color por defecto si no es posible extraerlo
+ * Retorna el color dominante o un color por defecto
  */
+
 fun Bitmap.getDominantColor(defaultColor: Color): Color =
     try {
         val palette = Palette.from(this).generate()
