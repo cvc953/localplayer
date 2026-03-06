@@ -148,6 +148,7 @@ fun LyricsView(
                     LyricLine(
                         text = line.text,
                         active = index == currentIndex,
+                        isSecondaryVoice = line.isSecondaryVoice,
                     )
                 }
 
