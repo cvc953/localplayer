@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.viewmodel.EqualizerViewModel
+import com.cvc953.localplayer.viewmodel.FolderEntry
+import com.cvc953.localplayer.viewmodel.FolderViewModel
 import com.cvc953.localplayer.viewmodel.MainViewModel
 
 @Suppress("ktlint:standard:function-naming")
@@ -31,10 +33,11 @@ import com.cvc953.localplayer.viewmodel.MainViewModel
 fun SettingsScreen(
     viewModel: MainViewModel,
     equalizerViewModel: EqualizerViewModel,
+    folderViewModel: FolderViewModel,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
-    val folderEntries by viewModel.folderEntries.collectAsState()
+    val folderEntries by folderViewModel.folderEntries.collectAsState()
     val theme by viewModel.themeMode.collectAsState()
     val autoScan by viewModel.autoScanEnabled.collectAsState()
     val eqEnabled by equalizerViewModel.equalizerEnabled.collectAsState()
@@ -51,7 +54,7 @@ fun SettingsScreen(
                     )
                 } catch (_: Exception) {
                 }
-                viewModel.addMusicFolder(uri.toString())
+                folderViewModel.addMusicFolder(uri.toString())
                 Toast.makeText(context, "Carpeta añadida", Toast.LENGTH_SHORT).show()
             }
         }
@@ -197,7 +200,7 @@ fun SettingsScreen(
             Text("Carpetas configuradas:", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(8.dp))
 
-            var folderToDelete by remember { mutableStateOf<MainViewModel.FolderEntry?>(null) }
+            var folderToDelete by remember { mutableStateOf<FolderEntry?>(null) }
 
             if (folderEntries.isEmpty()) {
                 Text("Ninguna carpeta configurada", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
@@ -234,7 +237,7 @@ fun SettingsScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                viewModel.removeMusicFolder(entry.uri)
+                                folderViewModel.removeMusicFolder(entry.uri)
                                 Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
                                 folderToDelete = null
                             }

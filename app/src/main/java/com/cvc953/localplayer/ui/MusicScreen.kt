@@ -560,6 +560,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
         val albumViewModel: AlbumViewModel = viewModel()
         val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel()
         val equalizerViewModel: com.cvc953.localplayer.viewmodel.EqualizerViewModel = viewModel()
+        val folderViewModel: com.cvc953.localplayer.viewmodel.FolderViewModel = viewModel()
 
         var needPicker by remember { mutableStateOf(!appPrefs.hasMusicFolderUri()) }
         var selectedArtistSongsView by rememberSaveable { mutableStateOf(false) }
@@ -579,8 +580,8 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                         android.util.Log.w("MainMusicScreen", "takePersistableUriPermission failed", e)
                     }
                     android.util.Log.d("MainMusicScreen", "Storing music folder uri and starting scan: $uri")
-                    // Usar mainViewModel para que actualice la lista de carpetas configuradas
-                    mainViewModel.addMusicFolder(uri.toString())
+                    // Usar folderViewModel para que actualice la lista de carpetas configuradas
+                    folderViewModel.addMusicFolder(uri.toString())
                     needPicker = false
                     try {
                         android.widget.Toast
@@ -890,6 +891,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                         SettingsScreen(
                             viewModel = mainViewModel,
                             equalizerViewModel = equalizerViewModel,
+                            folderViewModel = folderViewModel,
                             onClose = { playerViewModel.closeSettingsScreen() },
                         )
                     }
