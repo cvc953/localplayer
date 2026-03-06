@@ -92,6 +92,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -282,6 +283,21 @@ fun PlayerScreen(
         )
     }
 
+    val forceLightForeground = dynamicColorEnabled && MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val playerPrimaryColor = if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
+    val playerSecondaryColor =
+        if (forceLightForeground) {
+            Color.White.copy(alpha = 0.74f)
+        } else {
+            LocalExtendedColors.current.textSecondary
+        }
+    val playerMetaColor =
+        if (forceLightForeground) {
+            Color.White.copy(alpha = 0.64f)
+        } else {
+            LocalExtendedColors.current.texMeta
+        }
+
     Box(
         modifier =
             Modifier
@@ -464,6 +480,8 @@ fun PlayerScreen(
                     artist = song.artist,
                     album = song.album,
                     albumArt = albumArt,
+                    primaryContentColor = playerPrimaryColor,
+                    secondaryContentColor = playerSecondaryColor,
                     onArtistClick = {
                         // Extraer artista principal cuando hay múltiples artistas
                         val mainArtist = normalizeArtistName(song.artist).firstOrNull() ?: song.artist
@@ -478,6 +496,9 @@ fun PlayerScreen(
                     playbackViewModel = playbackViewModel,
                     playerViewModel = playerViewModel,
                     isPlaying = playerState.isPlaying,
+                    foregroundColor = playerPrimaryColor,
+                    secondaryColor = playerSecondaryColor,
+                    metaColor = playerMetaColor,
                     audioFormat = audioFormat,
                     audioBitrate = audioBitrate,
                     audioSampleRate = audioSampleRate,
@@ -521,7 +542,7 @@ fun PlayerScreen(
                                     Icons.Outlined.FavoriteBorder
                                 },
                             contentDescription = "Favoritos",
-                            tint = Color.White,
+                            tint = playerPrimaryColor,
                         )
                     }
 
@@ -531,7 +552,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.QueueMusic,
                             contentDescription = "Ver cola",
-                            tint = Color.White,
+                            tint = playerPrimaryColor,
                         )
                     }
 
@@ -541,7 +562,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
                             contentDescription = "Agregar a playlist",
-                            tint = Color.White,
+                            tint = playerPrimaryColor,
                         )
                     }
 
@@ -551,7 +572,7 @@ fun PlayerScreen(
                         Icon(
                             imageVector = Icons.Default.Lyrics,
                             contentDescription = "Mostrar letras",
-                            tint = Color.White,
+                            tint = playerPrimaryColor,
                         )
                     }
                 }
@@ -1209,6 +1230,8 @@ fun SongTitleSection(
     artist: String,
     album: String,
     albumArt: Bitmap?,
+    primaryContentColor: Color,
+    secondaryContentColor: Color,
     onArtistClick: () -> Unit,
     onAlbumClick: () -> Unit,
 ) {
@@ -1251,7 +1274,7 @@ fun SongTitleSection(
     ) {
         Text(
             text = title,
-            color = Color.White,
+            color = primaryContentColor,
             fontSize = titleFontSize,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -1264,7 +1287,7 @@ fun SongTitleSection(
         Box {
             Text(
                 text = if (album.isNotEmpty()) "$artist - $album" else artist,
-                color = MaterialTheme.extendedColors.textSecondary,
+                color = secondaryContentColor,
                 fontSize = subtitleFontSize,
                 maxLines = 1,
                 modifier = Modifier.clickable { showMenu = true },
@@ -1461,6 +1484,9 @@ fun PlayerControls(
     playbackViewModel: PlaybackViewModel = viewModel(),
     playerViewModel: PlayerViewModel = viewModel(),
     isPlaying: Boolean,
+    foregroundColor: Color,
+    secondaryColor: Color,
+    metaColor: Color,
     audioFormat: String = "",
     audioBitrate: String = "",
     audioSampleRate: String = "",
@@ -1502,7 +1528,7 @@ fun PlayerControls(
                 modifier = Modifier.fillMaxWidth().height(20.dp),
                 colors =
                     SliderDefaults.colors(
-                        thumbColor = Color.White,
+                        thumbColor = foregroundColor,
                         activeTrackColor = MaterialTheme.colorScheme.primary,
                         inactiveTrackColor = MaterialTheme.extendedColors.textSecondarySoft,
                     ),
@@ -1515,12 +1541,12 @@ fun PlayerControls(
             ) {
                 Text(
                     text = formatDuration(playerState.position),
-                    color = LocalExtendedColors.current.textSecondarySoft,
+                    color = secondaryColor,
                     fontSize = 10.sp,
                 )
                 Text(
                     text = formatDuration(playerState.duration),
-                    color = LocalExtendedColors.current.textSecondarySoft,
+                    color = secondaryColor,
                     fontSize = 10.sp,
                 )
             }
@@ -1556,7 +1582,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.Shuffle,
                     contentDescription = "Shuffle",
-                    tint = if (isShuffle) MaterialTheme.colorScheme.primary else Color.White,
+                    tint = if (isShuffle) MaterialTheme.colorScheme.primary else foregroundColor,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1565,7 +1591,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     null,
-                    tint = Color.White,
+                            tint = foregroundColor,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1588,7 +1614,7 @@ fun PlayerControls(
                             Icons.Rounded.PlayArrow
                         },
                     contentDescription = null,
-                    tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(buttonSize * 0.5f),
                 )
             }
@@ -1597,7 +1623,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipNext,
                     null,
-                    tint = Color.White,
+                        tint = foregroundColor,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1614,7 +1640,7 @@ fun PlayerControls(
                         if (repeatMode != RepeatMode.NONE) {
                             MaterialTheme.colorScheme.primary
                         } else {
-                            Color.White
+                            foregroundColor
                         },
                     modifier = Modifier.size(buttonSize),
                 )
@@ -1642,7 +1668,7 @@ fun PlayerControls(
                         if ((audioFormat.isNotEmpty() || audioBitrate.isNotEmpty()) && audioSampleRate.isNotEmpty()) append(" • ")
                         if (audioSampleRate.isNotEmpty()) append(audioSampleRate)
                     },
-                color = LocalExtendedColors.current.texMeta,
+                color = metaColor,
                 fontSize =
                     when {
                         isCompactLayout -> 9.sp
