@@ -559,6 +559,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
         val artistViewModel: ArtistViewModel = viewModel()
         val albumViewModel: AlbumViewModel = viewModel()
         val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel()
+        val equalizerViewModel: com.cvc953.localplayer.viewmodel.EqualizerViewModel = viewModel()
 
         var needPicker by remember { mutableStateOf(!appPrefs.hasMusicFolderUri()) }
         var selectedArtistSongsView by rememberSaveable { mutableStateOf(false) }
@@ -666,7 +667,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 )
 
             Box(modifier = Modifier.fillMaxSize()) {
-                val showEqualizer by mainViewModel.isEqualizerVisible.collectAsState()
+                val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
 
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -882,12 +883,13 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
 
                 if (showEqualizer) {
                     Box(modifier = Modifier.fillMaxSize().zIndex(3f)) {
-                        EqualizerScreen(viewModel = mainViewModel, onClose = { mainViewModel.closeEqualizerScreen() })
+                        EqualizerScreen(viewModel = equalizerViewModel, onClose = { equalizerViewModel.closeEqualizerScreen() })
                     }
                 } else if (showSettings) {
                     Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
                         SettingsScreen(
                             viewModel = mainViewModel,
+                            equalizerViewModel = equalizerViewModel,
                             onClose = { playerViewModel.closeSettingsScreen() },
                         )
                     }

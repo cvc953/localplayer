@@ -23,19 +23,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import com.cvc953.localplayer.viewmodel.MainViewModel
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
+    equalizerViewModel: EqualizerViewModel,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
     val folderEntries by viewModel.folderEntries.collectAsState()
     val theme by viewModel.themeMode.collectAsState()
     val autoScan by viewModel.autoScanEnabled.collectAsState()
-    val eqEnabled by viewModel.equalizerEnabled.collectAsState()
+    val eqEnabled by equalizerViewModel.equalizerEnabled.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(
@@ -159,7 +161,7 @@ fun SettingsScreen(
                 }
                 Switch(
                     checked = eqEnabled,
-                    onCheckedChange = { viewModel.toggleEqualizer(it) },
+                    onCheckedChange = { equalizerViewModel.toggleEqualizer(it) },
                     colors =
                         SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,
@@ -173,7 +175,7 @@ fun SettingsScreen(
             // Open detailed equalizer screen for vertical sliders
             Spacer(modifier = Modifier.height(12.dp))
             Button(
-                onClick = { viewModel.openEqualizerScreen() },
+                onClick = { equalizerViewModel.openEqualizerScreen() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             ) {
                 Text("Abrir ecualizador avanzado")
