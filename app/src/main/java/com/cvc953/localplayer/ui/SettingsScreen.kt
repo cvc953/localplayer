@@ -9,11 +9,11 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import com.cvc953.localplayer.viewmodel.FolderEntry
 import com.cvc953.localplayer.viewmodel.FolderViewModel
@@ -40,7 +41,12 @@ fun SettingsScreen(
     val folderEntries by folderViewModel.folderEntries.collectAsState()
     val theme by viewModel.themeMode.collectAsState()
     val autoScan by viewModel.autoScanEnabled.collectAsState()
+    val dynamicColor by viewModel.dynamicColorEnabled.collectAsState()
     val eqEnabled by equalizerViewModel.equalizerEnabled.collectAsState()
+
+    val themeOptions = listOf("sistema", "claro", "oscuro")
+    var themeExpanded by remember { mutableStateOf(false) }
+    var folderToDelete by remember { mutableStateOf<FolderEntry?>(null) }
 
     val launcher =
         rememberLauncherForActivityResult(
@@ -59,202 +65,280 @@ fun SettingsScreen(
             }
         }
 
-    BackHandler {
-        onClose()
-    }
+    BackHandler(onBack = onClose)
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
+        LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "Ajustes",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f),
-                )
-                IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onBackground)
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Ajustes",
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                        Text(
+                            "Personaliza la app y tu biblioteca",
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.68f),
+                            fontSize = 13.sp,
+                        )
+                    }
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onBackground)
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Theme selector
-            val themeOptions = listOf("sistema", "claro", "oscuro")
-            var expanded by remember { mutableStateOf(false) }
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Tema", color = MaterialTheme.colorScheme.onBackground)
-                    Text(
-                        "Selecciona tema de la aplicación",
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                    )
-                }
-                Box {
-                    Button(
-                        onClick = { expanded = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    ) {
-                        Text(theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
+            item {
+                SettingsSectionCard(
+                    title = "Apariencia y comportamiento",
+                    subtitle = "Opciones globales de visualización y escaneo",
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Tema", color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                "Selecciona tema de la aplicación",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Box {
+                            OutlinedButton(onClick = { themeExpanded = true }) {
+                                Text(theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
+                            }
+                            DropdownMenu(
+                                expanded = themeExpanded,
+                                onDismissRequest = { themeExpanded = false },
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ) {
+                                themeOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                option.replaceFirstChar {
+                                                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                                                },
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.setThemeMode(option)
+                                            themeExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        containerColor = MaterialTheme.colorScheme.surface,
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Escaneo automático", color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                "Detectar cambios y escanear automáticamente",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Switch(
+                            checked = autoScan,
+                            onCheckedChange = { viewModel.toggleAutoScan(it) },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                                ),
+                        )
+                    }
+                }
+            }
+
+            item {
+                SettingsSectionCard(
+                    title = "Audio",
+                    subtitle = "Control del ecualizador y procesamiento de sonido",
+                ) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Activar ecualizador", color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                "Usar ecualizador nativo del sistema",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Switch(
+                            checked = eqEnabled,
+                            onCheckedChange = { equalizerViewModel.toggleEqualizer(it) },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = Color.White.copy(alpha = 0.12f),
+                                ),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+                    
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Color dinámico", color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                "Usar color de la carátula en el reproductor",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Switch(
+                            checked = dynamicColor,
+                            onCheckedChange = { viewModel.toggleDynamicColor(it) },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = Color.White.copy(alpha = 0.12f),
+                                ),
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    FilledTonalButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { equalizerViewModel.openEqualizerScreen() },
                     ) {
-                        themeOptions.forEach { t ->
-                            DropdownMenuItem(text = {
-                                Text(
-                                    t.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() },
+                        Icon(Icons.Default.Tune, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Abrir ecualizador avanzado")
+                    }
+                }
+            }
+
+            item {
+                SettingsSectionCard(
+                    title = "Biblioteca",
+                    subtitle = "Gestiona las carpetas que se incluyen en la música",
+                ) {
+                    FilledTonalButton(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { launcher.launch(null) },
+                    ) {
+                        Icon(Icons.Default.Folder, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Agregar carpeta")
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text("Carpetas configuradas", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    if (folderEntries.isEmpty()) {
+                        Text("Ninguna carpeta configurada", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        folderEntries.forEachIndexed { index, entry ->
+                            if (index > 0) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 6.dp),
+                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
                                 )
-                            }, onClick = {
-                                viewModel.setThemeMode(t)
-                                expanded = false
-                            })
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(entry.name, color = MaterialTheme.colorScheme.onSurface)
+                                    Text(
+                                        "${entry.count} canciones",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 12.sp,
+                                    )
+                                }
+                                IconButton(onClick = { folderToDelete = entry }) {
+                                    Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            // Auto-scan option
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Escaneo automático", color = MaterialTheme.colorScheme.onBackground)
-                    Text(
-                        "Detectar cambios y escanear automáticamente",
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                    )
-                }
-                Switch(
-                    checked = autoScan,
-                    onCheckedChange = { viewModel.toggleAutoScan(it) },
-                    colors =
-                        SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary,
-                            checkedTrackColor = MaterialTheme.colorScheme.onBackground,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.onBackground,
-                            uncheckedTrackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f),
-                        ),
-                )
+            item {
+                Spacer(modifier = Modifier.height(6.dp))
             }
+        }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Ecualizador", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
-            // Equalizer toggle
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Activar ecualizador", color = MaterialTheme.colorScheme.onBackground)
-                    Text(
-                        "Usar ecualizador nativo del sistema",
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                        fontSize = 12.sp,
-                    )
-                }
-                Switch(
-                    checked = eqEnabled,
-                    onCheckedChange = { equalizerViewModel.toggleEqualizer(it) },
-                    colors =
-                        SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary,
-                            checkedTrackColor = MaterialTheme.colorScheme.onBackground,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.onBackground,
-                            uncheckedTrackColor = Color.White.copy(alpha = 0.12f),
-                        ),
-                )
-            }
+        folderToDelete?.let { entry ->
+            AlertDialog(
+                onDismissRequest = { folderToDelete = null },
+                title = { Text("Eliminar carpeta") },
+                text = {
+                    Text("¿Eliminar la carpeta \"${entry.name}\"?\n\nLas ${entry.count} canciones de esta carpeta ya no se mostrarán en la app.")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            folderViewModel.removeMusicFolder(entry.uri)
+                            Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
+                            folderToDelete = null
+                        },
+                    ) {
+                        Text("Eliminar", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { folderToDelete = null }) {
+                        Text("Cancelar")
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.surface,
+                textContentColor = MaterialTheme.colorScheme.onSurface,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
 
-            // Open detailed equalizer screen for vertical sliders
+@Composable
+private fun SettingsSectionCard(
+    title: String,
+    subtitle: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = LocalExtendedColors.current.surfaceSheet),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, color = LocalExtendedColors.current.textSecondary, fontSize = 12.sp)
             Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = { equalizerViewModel.openEqualizerScreen() },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            ) {
-                Text("Abrir ecualizador avanzado")
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button(
-                onClick = { launcher.launch(null) },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-            ) {
-                Icon(Icons.Default.Folder, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Agregar carpeta")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text("Carpetas configuradas:", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            var folderToDelete by remember { mutableStateOf<FolderEntry?>(null) }
-
-            if (folderEntries.isEmpty()) {
-                Text("Ninguna carpeta configurada", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    items(folderEntries) { entry ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(entry.name, color = MaterialTheme.colorScheme.onBackground)
-                                Text(
-                                    "${entry.count} canciones",
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                                    fontSize = 12.sp,
-                                )
-                            }
-                            IconButton(onClick = {
-                                folderToDelete = entry
-                            }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Eliminar", tint = MaterialTheme.colorScheme.onBackground)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Diálogo de confirmación para eliminar carpeta
-            folderToDelete?.let { entry ->
-                AlertDialog(
-                    onDismissRequest = { folderToDelete = null },
-                    title = { Text("Eliminar carpeta") },
-                    text = {
-                        Text("¿Eliminar la carpeta \"${entry.name}\"?\n\nLas ${entry.count} canciones de esta carpeta ya no se mostrarán en la app.")
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                folderViewModel.removeMusicFolder(entry.uri)
-                                Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
-                                folderToDelete = null
-                            }
-                        ) {
-                            Text("Eliminar", color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { folderToDelete = null }) {
-                            Text("Cancelar")
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    textContentColor = MaterialTheme.colorScheme.onSurface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            content()
         }
     }
 }

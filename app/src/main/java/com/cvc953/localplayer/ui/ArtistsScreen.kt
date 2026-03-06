@@ -382,7 +382,7 @@ fun ArtistsScreen(
                                                     menuExpanded = false
                                                     if (artistSongs.isNotEmpty()) {
                                                         playbackViewModel.setShuffle(false)
-                                                        playbackViewModel.playArtist(artist.name, artistSongs)
+                                                        playbackViewModel.playArtist(artist.name, artistSongs, songs)
                                                         playbackViewModel.updateDisplayOrder(artistSongs)
                                                         playbackViewModel.play(artistSongs[0])
                                                     }
@@ -559,7 +559,7 @@ fun ArtistsScreen(
                                                 menuExpanded = false
                                                 if (artistSongs.isNotEmpty()) {
                                                     playbackViewModel.setShuffle(false)
-                                                    playbackViewModel.playArtist(artist.name, artistSongs)
+                                                    playbackViewModel.playArtist(artist.name, artistSongs, songs)
                                                     playbackViewModel.updateDisplayOrder(artistSongs)
                                                     playbackViewModel.play(artistSongs[0])
                                                 }
@@ -687,7 +687,7 @@ fun ArtistDetailScreen(
                     isPlaying = isCurrent,
                     onClick = {
                         playbackViewModel.setShuffle(false)
-                        playbackViewModel.playArtist(artistName, artistSongsSorted)
+                        playbackViewModel.playArtist(artistName, artistSongsSorted, allSongs)
                         playbackViewModel.updateDisplayOrder(artistSongsSorted)
                         playbackViewModel.play(song)
                     },

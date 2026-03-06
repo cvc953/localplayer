@@ -57,7 +57,7 @@ class PlaybackViewModel(
     private var currentArtistName: String? = null
     private var _nextArtistName: String? = null
     
-    // Pending queue with all albums (set by playAlbum(), used by updateDisplayOrder())
+    // Pending queue prepared by playAlbum()/playArtist(), consumed by updateDisplayOrder().
     private var _pendingFullQueue: List<Song>? = null
 
     // Callback to load next album
@@ -356,53 +356,71 @@ class PlaybackViewModel(
         }
     }
 
-    fun playArtist(artistName: String, songs: List<Song>) {
+    private fun prepareArtistQueueFromSongs(
+        allSongs: List<Song>,
+        artistName: String,
+    ): Pair<List<Song>, String?> {
+        val uniqueArtists = mutableSetOf<String>()
+        for (song in allSongs) {
+            uniqueArtists.add(song.artist.trim())
+        }
+
+        val sortedArtists = uniqueArtists.sortedBy { it.lowercase() }
+        val currentIndex = sortedArtists.indexOfFirst { it.equals(artistName, ignoreCase = true) }
+        if (currentIndex < 0) {
+            return Pair(emptyList(), null)
+        }
+
+        val queueArtists = sortedArtists.drop(currentIndex) + sortedArtists.take(currentIndex)
+        val fullQueue = mutableListOf<Song>()
+        for (queuedArtist in queueArtists) {
+            val artistSongs =
+                allSongs
+                    .filter { song -> song.artist.trim().equals(queuedArtist, ignoreCase = true) }
+                    .sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
+            fullQueue.addAll(artistSongs)
+        }
+
+        val nextArtist = if (currentIndex < sortedArtists.size - 1) sortedArtists[currentIndex + 1] else null
+        return Pair(fullQueue, nextArtist)
+    }
+
+    fun playArtist(
+        artistName: String,
+        songs: List<Song>,
+        allSongsForQueue: List<Song>? = null,
+    ) {
         currentArtistName = artistName
-        
-        // Load all artists and prepare full queue
-        viewModelScope.launch(Dispatchers.IO) {
+
+        // Fast path: build full queue immediately when caller already has the full library.
+        if (allSongsForQueue != null && allSongsForQueue.isNotEmpty()) {
             try {
-                val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
-                val allSongs = repo.loadSongs()
-                
-                // Extract unique artists from all songs
-                val uniqueArtists = mutableSetOf<String>()
-                for (song in allSongs) {
-                    uniqueArtists.add(song.artist.trim())
+                val sourceSongs = if (allSongsForQueue.isNotEmpty()) allSongsForQueue else songs
+                val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(sourceSongs, artistName)
+                if (fullQueue.isNotEmpty()) {
+                    _pendingFullQueue = fullQueue
+                    android.util.Log.d("PlaybackViewModel", "playArtist - Prepared immediate queue with ${fullQueue.size} songs")
                 }
-                
-                // Sort artists alphabetically
-                val sortedArtists = uniqueArtists.sorted()
-                
-                // Find current artist index
-                val currentIndex = sortedArtists.indexOfFirst { it.equals(artistName, ignoreCase = true) }
-                
-                if (currentIndex >= 0) {
-                    // Build complete queue starting from current artist
-                    val queueArtists = sortedArtists.drop(currentIndex) + sortedArtists.take(currentIndex)
-                    
-                    // Build full queue with all songs from all artists in order
-                    val fullQueue = mutableListOf<Song>()
-                    for (artist in queueArtists) {
-                        val artistSongs = allSongs.filter { song ->
-                            song.artist.trim().equals(artist, ignoreCase = true)
-                        }.sortedWith(compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }))
-                        fullQueue.addAll(artistSongs)
-                    }
-                    
-                    // Store the full queue to be used by updateDisplayOrder()
-                    if (fullQueue.isNotEmpty()) {
-                        android.util.Log.d("PlaybackViewModel", "playArtist - Prepared queue with ${fullQueue.size} songs from ${queueArtists.size} artists")
-                        _pendingFullQueue = fullQueue
-                    }
-                    
-                    // Find and save next artist
-                    if (currentIndex < sortedArtists.size - 1) {
-                        _nextArtistName = sortedArtists[currentIndex + 1]
-                    }
-                }
+                _nextArtistName = nextArtist
             } catch (e: Exception) {
-                android.util.Log.e("PlaybackViewModel", "Error loading artists for queue", e)
+                android.util.Log.e("PlaybackViewModel", "Error preparing immediate artists queue", e)
+            }
+        } else {
+            // Fallback path: load all songs asynchronously when caller only provides current artist songs.
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+                    val allSongs = repo.loadSongs()
+                    val sourceSongs = if (allSongs.isNotEmpty()) allSongs else songs
+                    val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(sourceSongs, artistName)
+                    if (fullQueue.isNotEmpty()) {
+                        _pendingFullQueue = fullQueue
+                        android.util.Log.d("PlaybackViewModel", "playArtist - Prepared async queue with ${fullQueue.size} songs")
+                    }
+                    _nextArtistName = nextArtist
+                } catch (e: Exception) {
+                    android.util.Log.e("PlaybackViewModel", "Error loading artists for queue", e)
+                }
             }
         }
     }
