@@ -30,6 +30,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -406,23 +407,6 @@ fun SongsContent(
                                                 .heightIn(
                                                     min =
                                                         68.dp,
-                                                ).graphicsLayer(
-                                                    alpha =
-                                                    progress,
-                                                    scaleX =
-                                                        0.9f +
-                                                            0.1f *
-                                                            progress,
-                                                    scaleY =
-                                                        0.9f +
-                                                            0.1f *
-                                                            progress,
-                                                    shape =
-                                                        RoundedCornerShape(
-                                                            12.dp,
-                                                        ),
-                                                    clip =
-                                                    true,
                                                 ).background(
                                                     MaterialTheme.colorScheme.primary,
                                                 ).padding(
@@ -435,22 +419,6 @@ fun SongsContent(
                                             Alignment
                                                 .CenterVertically,
                                     ) {
-                                        Icon(
-                                            imageVector =
-                                                Icons.AutoMirrored.Filled.QueueMusic,
-                                            contentDescription =
-                                            null,
-                                            tint =
-                                                MaterialTheme.colorScheme.onSurface,
-                                        )
-                                        Spacer(
-                                            Modifier.width(
-                                                10.dp,
-                                            ),
-                                        )
-                                        // Text("Añadir como
-                                        // siguiente", color
-                                        // = Color.White)
                                     }
                                 }
                             }
@@ -463,30 +431,48 @@ fun SongsContent(
                                         x = offsetDp,
                                     ),
                             ) {
-                                SongItem(
-                                    song = song,
-                                    isPlaying =
-                                        isCurrent &&
-                                            playerState
-                                                .isPlaying,
-                                    onClick = {
-                                        // Usar el orden
-                                        // actual solo al
-                                        // reproducir desde
-                                        // esta vista
-                                        playbackViewModel.updateDisplayOrder(sortedSongs)
-                                        playbackViewModel.play(song)
-                                        // Ensure player UI is shown
-                                        // playerViewModel.showPlayerScreen(true)
-                                        // Si es necesario, iniciar servicio desde playbackViewModel
-                                    },
-                                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
-                                    playlists = playlists,
-                                    onAddToPlaylist = { playlistName, songId ->
-                                        playlistViewModel.addSongToPlaylist(playlistName, songId)
-                                    },
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    SongItem(
+                                        song = song,
+                                        isPlaying =
+                                            isCurrent &&
+                                                playerState
+                                                    .isPlaying,
+                                        onClick = {
+                                            // Usar el orden
+                                            // actual solo al
+                                            // reproducir desde
+                                            // esta vista
+                                            playbackViewModel.updateDisplayOrder(sortedSongs)
+                                            playbackViewModel.play(song)
+                                            // Ensure player UI is shown
+                                            // playerViewModel.showPlayerScreen(true)
+                                            // Si es necesario, iniciar servicio desde playbackViewModel
+                                        },
+                                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                                        playlists = playlists,
+                                        onAddToPlaylist = { playlistName, songId ->
+                                            playlistViewModel.addSongToPlaylist(playlistName, songId)
+                                        },
+                                    )
+
+                                    if (progress > 0f) {
+                                        Spacer(Modifier.width(12.dp))
+
+                                        Icon(
+                                            imageVector =
+                                                Icons.AutoMirrored.Filled.QueueMusic,
+                                            contentDescription =
+                                            null,
+                                            tint =
+                                                MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(28.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -814,136 +800,83 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 Scaffold(
                     containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
-                    Column(
-                        modifier = Modifier.pointerInput(showPlayerScreen || showSettings || showAbout) {
-                            if (showPlayerScreen || showSettings || showAbout) {
-                                awaitPointerEventScope {
-                                    while (true) {
-                                        awaitPointerEvent()
+                        Column(
+                            modifier =
+                                Modifier.pointerInput(showPlayerScreen || showSettings || showAbout) {
+                                    if (showPlayerScreen || showSettings || showAbout) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                awaitPointerEvent()
+                                            }
+                                        }
                                     }
+                                },
+                        ) {
+                            if (playerState.currentSong != null) {
+                                MiniPlayer(
+                                    song = playerState.currentSong!!,
+                                    isPlaying = playerState.isPlaying,
+                                    onPlayPause = { playbackViewModel.togglePlayPause() },
+                                    onClick = { playerViewModel.openPlayerScreen() },
+                                    onNext = { playbackViewModel.playNextSong() },
+                                )
+                            }
+                            NavigationBar(
+                                containerColor = LocalExtendedColors.current.surfaceSheet,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ) {
+                                navItems.forEach { item ->
+                                    NavigationBarItem(
+                                        icon = {
+                                            Icon(item.icon, contentDescription = item.title)
+                                        },
+                                        label = { Text(item.title) },
+                                        selected = selectedTab == item.route,
+                                        onClick = {
+                                            selectedTab = item.route
+                                            if (item.route != BottomNavItem.Albums.route) selectedAlbumName = null
+                                            if (item.route != BottomNavItem.Artists.route) selectedArtistName = null
+                                            if (item.route != BottomNavItem.Playlists.route) selectedPlaylistName = null
+                                        },
+                                        colors =
+                                            NavigationBarItemDefaults.colors(
+                                                selectedIconColor = MaterialTheme.colorScheme.background,
+                                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                indicatorColor = MaterialTheme.colorScheme.primary,
+                                            ),
+                                    )
                                 }
                             }
                         }
-                    ) {
-                        if (playerState.currentSong != null) {
-                            MiniPlayer(
-                                song = playerState.currentSong!!,
-                                isPlaying = playerState.isPlaying,
-                                onPlayPause = { playbackViewModel.togglePlayPause() },
-                                onClick = { playerViewModel.openPlayerScreen() },
-                                onNext = { playbackViewModel.playNextSong() },
-                            )
-                        }
-                        NavigationBar(
-                            containerColor = LocalExtendedColors.current.surfaceSheet,
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ) {
-                            navItems.forEach { item ->
-                                NavigationBarItem(
-                                    icon = {
-                                        Icon(item.icon, contentDescription = item.title)
-                                    },
-                                    label = { Text(item.title) },
-                                    selected = selectedTab == item.route,
-                                    onClick = {
-                                        selectedTab = item.route
-                                        if (item.route != BottomNavItem.Albums.route) selectedAlbumName = null
-                                        if (item.route != BottomNavItem.Artists.route) selectedArtistName = null
-                                        if (item.route != BottomNavItem.Playlists.route) selectedPlaylistName = null
-                                    },
-                                    colors =
-                                        NavigationBarItemDefaults.colors(
-                                            selectedIconColor = MaterialTheme.colorScheme.background,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            indicatorColor = MaterialTheme.colorScheme.primary,
-                                        ),
-                                )
-                            }
-                        }
-                    }
                     },
                 ) { padding ->
                     Box(
                         modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.onBackground),
                     ) {
-                    when (selectedTab) {
-                        BottomNavItem.Songs.route -> {
-                            SongsContent(
-                                songViewModel = songViewModel,
-                                playbackViewModel = playbackViewModel,
-                                playlistViewModel = playlistViewModel,
-                                playerViewModel = playerViewModel,
-                            )
-                        }
-
-                        BottomNavItem.Albums.route -> {
-                            // Usar SIEMPRE la misma instancia de AlbumViewModel
-                            val albumViewModel: AlbumViewModel =
-                                androidx.lifecycle.viewmodel.compose
-                                    .viewModel()
-                            val albumKey = selectedAlbumName
-                            if (albumKey == null) {
-                                AlbumsScreen(
-                                    albumViewModel = albumViewModel,
-                                    playbackViewModel = playbackViewModel,
-                                    onAlbumClick = { albumName, artistName ->
-                                        // Ensure AlbumViewModel loads songs for this album
-                                        val found =
-                                            albumViewModel.albums.value.find {
-                                                it.name.equals(albumName, ignoreCase = true) &&
-                                                    it.artist.equals(artistName, ignoreCase = true)
-                                            }
-                                        if (found != null) {
-                                            albumViewModel.selectAlbum(found)
-                                        } else {
-                                            albumViewModel.selectAlbum(
-                                                com.cvc953.localplayer.model
-                                                    .Album(albumName, artistName, 0),
-                                            )
-                                        }
-                                        selectedAlbumName = "$albumName|$artistName"
-                                    },
-                                )
-                            } else {
-                                val parts = albumKey.split("|")
-                                val albumName = parts[0]
-                                val artistName = parts.getOrElse(1) { "Desconocido" }
-                                AlbumDetailScreen(
-                                    albumViewModel = albumViewModel,
+                        when (selectedTab) {
+                            BottomNavItem.Songs.route -> {
+                                SongsContent(
+                                    songViewModel = songViewModel,
                                     playbackViewModel = playbackViewModel,
                                     playlistViewModel = playlistViewModel,
-                                    albumName = albumName,
-                                    artistName = artistName,
-                                    onBack = { selectedAlbumName = null },
+                                    playerViewModel = playerViewModel,
                                 )
                             }
-                        }
 
-                        BottomNavItem.Artists.route -> {
-                            val artistName = selectedArtistName
-                            if (artistName == null) {
-                                ArtistsScreen(
-                                    artistViewModel = artistViewModel,
-                                    playbackViewModel = playbackViewModel,
-                                    onArtistClick = { selectedArtistName = it },
-                                )
-                            } else {
-                                if (selectedArtistName != null && selectedTab == BottomNavItem.Artists.route && selectedArtistSongsView) {
-                                    ArtistSongsScreen(
-                                        artistViewModel = artistViewModel,
-                                        artistName = artistName,
-                                        onBack = { selectedArtistSongsView = false },
-                                    )
-                                } else {
-                                    ArtistDetailScreen(
-                                        artistViewModel = artistViewModel,
+                            BottomNavItem.Albums.route -> {
+                                // Usar SIEMPRE la misma instancia de AlbumViewModel
+                                val albumViewModel: AlbumViewModel =
+                                    androidx.lifecycle.viewmodel.compose
+                                        .viewModel()
+                                val albumKey = selectedAlbumName
+                                if (albumKey == null) {
+                                    AlbumsScreen(
+                                        albumViewModel = albumViewModel,
                                         playbackViewModel = playbackViewModel,
-                                        playlistViewModel = playlistViewModel,
-                                        artistName = artistName,
-                                        onBack = { selectedArtistName = null },
                                         onAlbumClick = { albumName, artistName ->
+                                            // Ensure AlbumViewModel loads songs for this album
                                             val found =
                                                 albumViewModel.albums.value.find {
                                                     it.name.equals(albumName, ignoreCase = true) &&
@@ -958,34 +891,90 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                                 )
                                             }
                                             selectedAlbumName = "$albumName|$artistName"
-                                            selectedTab = BottomNavItem.Albums.route
                                         },
-                                        onViewAllSongs = {
-                                            selectedArtistSongsView = true
-                                        },
+                                    )
+                                } else {
+                                    val parts = albumKey.split("|")
+                                    val albumName = parts[0]
+                                    val artistName = parts.getOrElse(1) { "Desconocido" }
+                                    AlbumDetailScreen(
+                                        albumViewModel = albumViewModel,
+                                        playbackViewModel = playbackViewModel,
+                                        playlistViewModel = playlistViewModel,
+                                        albumName = albumName,
+                                        artistName = artistName,
+                                        onBack = { selectedAlbumName = null },
+                                    )
+                                }
+                            }
+
+                            BottomNavItem.Artists.route -> {
+                                val artistName = selectedArtistName
+                                if (artistName == null) {
+                                    ArtistsScreen(
+                                        artistViewModel = artistViewModel,
+                                        playbackViewModel = playbackViewModel,
+                                        onArtistClick = { selectedArtistName = it },
+                                    )
+                                } else {
+                                    if (selectedArtistName != null && selectedTab == BottomNavItem.Artists.route &&
+                                        selectedArtistSongsView
+                                    ) {
+                                        ArtistSongsScreen(
+                                            artistViewModel = artistViewModel,
+                                            artistName = artistName,
+                                            onBack = { selectedArtistSongsView = false },
+                                        )
+                                    } else {
+                                        ArtistDetailScreen(
+                                            artistViewModel = artistViewModel,
+                                            playbackViewModel = playbackViewModel,
+                                            playlistViewModel = playlistViewModel,
+                                            artistName = artistName,
+                                            onBack = { selectedArtistName = null },
+                                            onAlbumClick = { albumName, artistName ->
+                                                val found =
+                                                    albumViewModel.albums.value.find {
+                                                        it.name.equals(albumName, ignoreCase = true) &&
+                                                            it.artist.equals(artistName, ignoreCase = true)
+                                                    }
+                                                if (found != null) {
+                                                    albumViewModel.selectAlbum(found)
+                                                } else {
+                                                    albumViewModel.selectAlbum(
+                                                        com.cvc953.localplayer.model
+                                                            .Album(albumName, artistName, 0),
+                                                    )
+                                                }
+                                                selectedAlbumName = "$albumName|$artistName"
+                                                selectedTab = BottomNavItem.Albums.route
+                                            },
+                                            onViewAllSongs = {
+                                                selectedArtistSongsView = true
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+
+                            BottomNavItem.Playlists.route -> {
+                                val playlistName = selectedPlaylistName
+                                if (playlistName == null) {
+                                    PlaylistsScreen(
+                                        playlistViewModel = playlistViewModel,
+                                        onPlaylistClick = { selectedPlaylistName = it },
+                                        playbackViewModel = playbackViewModel,
+                                    )
+                                } else {
+                                    PlaylistDetailScreen(
+                                        playlistViewModel = playlistViewModel,
+                                        playlistName = playlistName,
+                                        onBack = { selectedPlaylistName = null },
+                                        playbackViewModel = playbackViewModel,
                                     )
                                 }
                             }
                         }
-
-                        BottomNavItem.Playlists.route -> {
-                            val playlistName = selectedPlaylistName
-                            if (playlistName == null) {
-                                PlaylistsScreen(
-                                    playlistViewModel = playlistViewModel,
-                                    onPlaylistClick = { selectedPlaylistName = it },
-                                    playbackViewModel = playbackViewModel,
-                                )
-                            } else {
-                                PlaylistDetailScreen(
-                                    playlistViewModel = playlistViewModel,
-                                    playlistName = playlistName,
-                                    onBack = { selectedPlaylistName = null },
-                                    playbackViewModel = playbackViewModel,
-                                )
-                            }
-                        }
-                    }
                     }
                 } // end Box container
 

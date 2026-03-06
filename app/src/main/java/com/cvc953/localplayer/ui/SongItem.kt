@@ -104,7 +104,6 @@ fun SongItem(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
                 .background(MaterialTheme.colorScheme.background)
                 .clickable { onClick() }
                 .padding(8.dp),
