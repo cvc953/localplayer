@@ -8,7 +8,7 @@ import androidx.palette.graphics.Palette
  * Extrae el color dominante de un Bitmap usando Palette
  * Retorna el color dominante o un color por defecto si no es posible extraerlo
  */
-fun Bitmap.getDominantColor(defaultColor: Color = Color.Black): Color =
+fun Bitmap.getDominantColor(defaultColor: Color): Color =
     try {
         val palette = Palette.from(this).generate()
         val vibrantColor = palette.vibrantSwatch
