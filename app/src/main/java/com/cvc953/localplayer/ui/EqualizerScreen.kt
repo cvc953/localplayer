@@ -40,19 +40,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import kotlin.math.abs
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun EqualizerScreen(
-    viewModel: MainViewModel,
+    viewModel: EqualizerViewModel,
     onClose: () -> Unit,
 ) {
     val bandCount by viewModel.bandCount.collectAsState()
     val bandFreqs by viewModel.bandFreqs.collectAsState()
     val bandLevels by viewModel.bandLevels.collectAsState()
-    val equalizerEnabled by viewModel.equalizerEnabled.collectAsState()
     val bandLevelRange by viewModel.bandLevelRange.collectAsState()
 
     BackHandler { onClose() }
