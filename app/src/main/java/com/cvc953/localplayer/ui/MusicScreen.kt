@@ -8,8 +8,6 @@ import android.app.Application
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -237,6 +235,13 @@ fun SongsContent(
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Refresh,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                },
                                 onClick = {
                                     songViewModel.manualRefreshLibrary()
                                     menuExpanded = false
@@ -247,6 +252,13 @@ fun SongsContent(
                                     Text(
                                         "Ajustes",
                                         color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Settings,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
                                 onClick = {
@@ -260,6 +272,13 @@ fun SongsContent(
                                     Text(
                                         "Acerca de",
                                         color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
                                 onClick = {
@@ -549,82 +568,44 @@ fun SongsContent(
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun MainMusicScreen(onOpenPlayer: () -> Unit) {
-    StoragePermissionHandler {
-        val context = LocalContext.current
-        val appPrefs = AppPrefs(context)
-        val songViewModel: SongViewModel = viewModel()
-        val playbackViewModel: PlaybackViewModel = viewModel()
-        val playlistViewModel: PlaylistViewModel = viewModel()
-        val playerViewModel: PlayerViewModel = viewModel()
-        val artistViewModel: ArtistViewModel = viewModel()
-        val albumViewModel: AlbumViewModel = viewModel()
-        val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel()
-        val equalizerViewModel: com.cvc953.localplayer.viewmodel.EqualizerViewModel = viewModel()
-        val folderViewModel: com.cvc953.localplayer.viewmodel.FolderViewModel = viewModel()
+    val context = LocalContext.current
+    val appPrefs = AppPrefs(context)
+    val songViewModel: SongViewModel = viewModel()
+    val playbackViewModel: PlaybackViewModel = viewModel()
+    val playlistViewModel: PlaylistViewModel = viewModel()
+    val playerViewModel: PlayerViewModel = viewModel()
+    val artistViewModel: ArtistViewModel = viewModel()
+    val albumViewModel: AlbumViewModel = viewModel()
+    val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel()
+    val equalizerViewModel: com.cvc953.localplayer.viewmodel.EqualizerViewModel = viewModel()
+    val folderViewModel: com.cvc953.localplayer.viewmodel.FolderViewModel = viewModel()
 
-        var needPicker by remember { mutableStateOf(!appPrefs.hasMusicFolderUri()) }
+    StoragePermissionHandler(
+        isFolderConfiguredInitially = appPrefs.hasMusicFolderUri(),
+        onFolderSelected = { uri ->
+            folderViewModel.addMusicFolder(uri)
+            songViewModel.manualRefreshLibrary()
+            albumViewModel.loadAlbums()
+            artistViewModel.loadArtists()
+        },
+        onSetupCompleted = {
+            songViewModel.manualRefreshLibrary()
+            albumViewModel.loadAlbums()
+            artistViewModel.loadArtists()
+        },
+    ) {
         var selectedArtistSongsView by rememberSaveable { mutableStateOf(false) }
         val showAbout by playerViewModel.isAboutVisible.collectAsState()
-        val launcher =
-            rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.OpenDocumentTree(),
-            ) { uri ->
-                android.util.Log.d("MainMusicScreen", "OpenDocumentTree returned: $uri")
-                if (uri != null) {
-                    try {
-                        context.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-                        )
-                    } catch (e: Exception) {
-                        android.util.Log.w("MainMusicScreen", "takePersistableUriPermission failed", e)
-                    }
-                    android.util.Log.d("MainMusicScreen", "Storing music folder uri and starting scan: $uri")
-                    // Usar folderViewModel para que actualice la lista de carpetas configuradas
-                    folderViewModel.addMusicFolder(uri.toString())
-                    needPicker = false
-                    try {
-                        android.widget.Toast
-                            .makeText(
-                                context,
-                                "Carpeta seleccionada",
-                                android.widget.Toast.LENGTH_SHORT,
-                            ).show()
-                    } catch (_: Exception) {
-                    }
-                }
-            }
 
         var selectedTab by rememberSaveable { mutableStateOf(BottomNavItem.Songs.route) }
-        if (needPicker) {
-            Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-                Column(
-                    modifier = Modifier.fillMaxSize().padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        text = "Selecciona la carpeta donde está tu música",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(
-                        onClick = { launcher.launch(null) },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    ) { Text("Elegir carpeta") }
-                }
-            }
-        } else {
-            var selectedAlbumName by rememberSaveable { mutableStateOf<String?>(null) }
-            var selectedArtistName by rememberSaveable { mutableStateOf<String?>(null) }
-            var selectedPlaylistName by rememberSaveable { mutableStateOf<String?>(null) }
-            val playerState by playbackViewModel.playerState.collectAsState()
-            val showPlayerScreen by playerViewModel.isPlayerScreenVisible.collectAsState()
-            val showSettings by playerViewModel.isSettingsVisible.collectAsState()
-            val activity = context as? Activity
-            var lastBackPressTime by remember { mutableStateOf(0L) }
+        var selectedAlbumName by rememberSaveable { mutableStateOf<String?>(null) }
+        var selectedArtistName by rememberSaveable { mutableStateOf<String?>(null) }
+        var selectedPlaylistName by rememberSaveable { mutableStateOf<String?>(null) }
+        val playerState by playbackViewModel.playerState.collectAsState()
+        val showPlayerScreen by playerViewModel.isPlayerScreenVisible.collectAsState()
+        val showSettings by playerViewModel.isSettingsVisible.collectAsState()
+        val activity = context as? Activity
+        var lastBackPressTime by remember { mutableStateOf(0L) }
 
             var hasSentPlaybackIntent by remember { mutableStateOf(false) }
             LaunchedEffect(playerState.isPlaying) {
@@ -667,7 +648,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                     BottomNavItem.Playlists,
                 )
 
-            Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize()) {
                 val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
 
                 Scaffold(
@@ -854,6 +835,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 if (showPlayerScreen) {
                     Box(modifier = Modifier.fillMaxSize().zIndex(1f)) {
                         PlayerScreen(
+                            mainViewModel = mainViewModel,
                             onBack = { playerViewModel.closePlayerScreen() },
                             onNavigateToArtist = { artistName ->
                                 playerViewModel.closePlayerScreen()
@@ -897,7 +879,6 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                     }
                 }
             }
-        } // end else branch
     } // end StoragePermissionHandler
 } // end MainMusicScreen
 

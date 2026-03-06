@@ -157,6 +157,13 @@ class AppPrefs(context: Context) {
         prefs.edit().putString("theme_mode", mode).apply()
     }
 
+    // Dynamic color preference: whether to apply album art dominant color as background
+    fun isDynamicColorEnabled(): Boolean = prefs.getBoolean("dynamic_color_enabled", true)
+
+    fun setDynamicColorEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("dynamic_color_enabled", enabled).apply()
+    }
+
     // Playback state persistence (queue, current song, position, shuffle, repeat, playing)
     fun savePlaybackQueue(uris: List<String>) {
         prefs.edit().putString("playback_queue", org.json.JSONArray(uris).toString()).apply()

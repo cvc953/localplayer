@@ -14,8 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,8 +24,6 @@ import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-
     BackHandler {
         onBack()
     }
@@ -209,6 +205,46 @@ fun AboutScreen(onBack: () -> Unit) {
                 TechItem(name = "Jetpack Compose", description = "Framework de UI")
                 TechItem(name = "Material Design 3", description = "Diseño")
                 TechItem(name = "Android MediaPlayer", description = "Reproducción de audio")
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Privacy Policy Section
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = "Política de privacidad",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+
+                Text(
+                    text = "Local Player no recopila, almacena ni comparte datos personales del usuario.",
+                    fontSize = 13.sp,
+                    color = LocalExtendedColors.current.textSecondary,
+                    lineHeight = 20.sp,
+                )
+
+                Text(
+                    text = "La app funciona de forma local en tu dispositivo y solo accede a archivos de audio y carpetas que tú selecciones.",
+                    fontSize = 13.sp,
+                    color = LocalExtendedColors.current.textSecondarySoft,
+                    lineHeight = 20.sp,
+                )
+
+                Text(
+                    text = "No se envía información a servidores externos.",
+                    fontSize = 13.sp,
+                    color = LocalExtendedColors.current.textSecondarySoft,
+                    lineHeight = 20.sp,
+                )
             }
 
             Spacer(modifier = Modifier.height(32.dp))

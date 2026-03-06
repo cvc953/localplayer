@@ -128,6 +128,7 @@ fun PlayerScreen(
     playlistViewModel: PlaylistViewModel = viewModel(),
     lyricsViewModel: LyricsViewModel = viewModel(),
     songViewModel: SongViewModel = viewModel(),
+    mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel(),
     onBack: () -> Unit,
     onNavigateToArtist: (String) -> Unit = {},
     onNavigateToAlbum: (String, String) -> Unit = { _, _ -> },
@@ -138,6 +139,7 @@ fun PlayerScreen(
     val songs by songViewModel.songs.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
     val isShuffle by playbackViewModel.isShuffle.collectAsState()
+    val dynamicColorEnabled by mainViewModel.dynamicColorEnabled.collectAsState()
     val repeatMode by playbackViewModel.repeatMode.collectAsState()
     val song = playerState.currentSong ?: return
     val offsetY = remember { Animatable(0f) }
@@ -269,6 +271,17 @@ fun PlayerScreen(
 
     LaunchedEffect(song) { lyricsViewModel.loadLyricsForSong(song) }
 
+    // Determine background based on dynamic color setting
+    val backgroundColor = if (dynamicColorEnabled) {
+        Brush.verticalGradient(
+            listOf(dominantColor.darken(0.5f), Color.Black),
+        )
+    } else {
+        Brush.verticalGradient(
+            listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background),
+        )
+    }
+
     Box(
         modifier =
             Modifier
@@ -276,11 +289,7 @@ fun PlayerScreen(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .offset { IntOffset(0, offsetY.value.toInt()) }
-                .background(
-                    Brush.verticalGradient(
-                        listOf(dominantColor.darken(0.5f), Color.Black),
-                    ),
-                ),
+                .background(backgroundColor),
     ) {
         // Barra de drag
         Box(

@@ -176,6 +176,9 @@ class MainViewModel(
     private val _themeMode = MutableStateFlow(appPrefs.getThemeMode())
     val themeMode: StateFlow<String> = _themeMode
 
+    private val _dynamicColorEnabled = MutableStateFlow(appPrefs.isDynamicColorEnabled())
+    val dynamicColorEnabled: StateFlow<Boolean> = _dynamicColorEnabled
+
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
 
@@ -441,6 +444,11 @@ class MainViewModel(
     fun setThemeMode(mode: String) {
         appPrefs.setThemeMode(mode)
         _themeMode.value = mode
+    }
+
+    fun toggleDynamicColor(enabled: Boolean) {
+        appPrefs.setDynamicColorEnabled(enabled)
+        _dynamicColorEnabled.value = enabled
     }
 
     fun openPlayerScreen() {
