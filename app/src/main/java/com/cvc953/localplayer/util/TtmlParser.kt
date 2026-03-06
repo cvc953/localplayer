@@ -28,23 +28,18 @@ object TtmlParser {
             cache[key]?.let { return it }
         }
 
-        return try {
-            val parser = factory.newPullParser()
-            parser.setInput(content.reader())
+        val parser = factory.newPullParser()
+        parser.setInput(content.reader())
 
-            val result = parseTtmlDocument(parser)
+        val result = parseTtmlDocument(parser)
 
-            synchronized(cache) {
-                // keep cache bounded
-                if (cache.size > 50) cache.clear()
-                cache[key] = result
-            }
-
-            result
-        } catch (e: Exception) {
-            android.util.Log.e("TtmlParser", "Error parseando TTML", e)
-            TtmlLyrics() // Return empty lyrics on error
+        synchronized(cache) {
+            // keep cache bounded
+            if (cache.size > 50) cache.clear()
+            cache[key] = result
         }
+
+        return result
     }
 
     private fun parseTtmlDocument(parser: XmlPullParser): TtmlLyrics {

@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
+import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.navigation.BottomNavItem
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.StoragePermissionHandler
@@ -320,373 +322,218 @@ fun SongsContent(
                         },
                     )
                 }
-
-                // Lista de canciones
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding =
-                        PaddingValues(
-                            start = 16.dp,
-                            top = 16.dp,
-                            bottom = 16.dp,
-                            end = 4.dp,
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(sortedSongs) { song ->
-                        val isCurrent =
-                            playerState.currentSong?.id == song.id
-                        val dragOffsetX = remember { Animatable(0f) }
-                        val itemScope = rememberCoroutineScope()
-                        val density =
-                            androidx.compose.ui.platform.LocalDensity
-                                .current
-                        var rowWidthPx by remember { mutableStateOf(0) }
-                        val maxOffsetPx =
-                            if (rowWidthPx > 0) {
-                                rowWidthPx.toFloat()
-                            } else {
-                                with(density) { 120.dp.toPx() }
-                            }
-                        val thresholdPx =
-                            if (rowWidthPx > 0) {
-                                (rowWidthPx * 0.4f)
-                            } else {
-                                with(density) { 72.dp.toPx() }
-                            }
-
-                        val dragState =
-                            rememberDraggableState { delta ->
-                                itemScope.launch {
-                                    dragOffsetX.snapTo(
-                                        (dragOffsetX.value + delta).coerceIn(
-                                            0f,
-                                            maxOffsetPx,
-                                        ),
-                                    )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // Lista de canciones
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding =
+                            PaddingValues(
+                                start = 16.dp,
+                                top = 16.dp,
+                                bottom = 16.dp,
+                                end = 4.dp,
+                            ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(sortedSongs) { song ->
+                            val isCurrent =
+                                playerState.currentSong?.id == song.id
+                            val dragOffsetX = remember { Animatable(0f) }
+                            val itemScope = rememberCoroutineScope()
+                            val density =
+                                androidx.compose.ui.platform.LocalDensity
+                                    .current
+                            var rowWidthPx by remember { mutableStateOf(0) }
+                            val maxOffsetPx =
+                                if (rowWidthPx > 0) {
+                                    rowWidthPx.toFloat()
+                                } else {
+                                    with(density) { 120.dp.toPx() }
                                 }
-                            }
-                        val progress =
-                            (dragOffsetX.value / maxOffsetPx).coerceIn(0f, 1f)
+                            val thresholdPx =
+                                if (rowWidthPx > 0) {
+                                    (rowWidthPx * 0.4f)
+                                } else {
+                                    with(density) { 72.dp.toPx() }
+                                }
 
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .onSizeChanged {
-                                        rowWidthPx =
-                                            it.width
-                                    }.draggable(
-                                        state = dragState,
-                                        orientation =
-                                            Orientation
-                                                .Horizontal,
-                                        onDragStopped = {
-                                            itemScope.launch {
-                                                if (dragOffsetX.value > thresholdPx) {
-                                                    playbackViewModel.addToQueueNext(song)
-                                                    dragOffsetX.animateTo(
-                                                        maxOffsetPx,
-                                                        animationSpec = tween(500),
-                                                    )
-                                                    dragOffsetX.snapTo(0f)
-                                                } else {
-                                                    dragOffsetX.animateTo(
-                                                        0f,
-                                                        animationSpec = tween(300),
-                                                    )
-                                                }
-                                            }
-                                        },
-                                    ),
-                        ) {
-                            if (progress > 0f) {
-                                Box(
-                                    modifier =
-                                        Modifier
-                                            .matchParentSize()
-                                            .padding(
-                                                horizontal =
-                                                    8.dp,
-                                                vertical =
-                                                    4.dp,
+                            val dragState =
+                                rememberDraggableState { delta ->
+                                    itemScope.launch {
+                                        dragOffsetX.snapTo(
+                                            (dragOffsetX.value + delta).coerceIn(
+                                                0f,
+                                                maxOffsetPx,
                                             ),
-                                    contentAlignment =
-                                        Alignment
-                                            .CenterStart,
-                                ) {
-                                    val iconWidth = with(density) { 24.dp.toPx() }
-                                    val spacerWidth = with(density) { 40.dp.toPx() }
-                                    val iconTriggerOffset = iconWidth + spacerWidth
-                                    val iconOffsetPx =
-                                        if (dragOffsetX.value > iconTriggerOffset) {
-                                            dragOffsetX.value - iconTriggerOffset
-                                        } else {
-                                            0f
-                                        }
-                                    val iconOffsetDp = with(density) { iconOffsetPx.toDp() }
-
-                                    Row(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .heightIn(
-                                                    min =
-                                                        68.dp,
-                                                ).background(
-                                                    MaterialTheme.colorScheme.primary,
-                                                ).padding(
-                                                    horizontal =
-                                                        16.dp,
-                                                    vertical =
-                                                        12.dp,
-                                                ),
-                                        verticalAlignment =
-                                            Alignment
-                                                .CenterVertically,
-                                    ) {
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .offset(x = iconOffsetDp),
-                                        ) {
-                                            Icon(
-                                                imageVector =
-                                                    Icons.AutoMirrored.Filled.QueueMusic,
-                                                contentDescription =
-                                                null,
-                                                tint =
-                                                    Color.White,
-                                                modifier = Modifier.size(24.dp),
-                                            )
-                                        }
+                                        )
                                     }
                                 }
-                            }
+                            val progress =
+                                (dragOffsetX.value / maxOffsetPx).coerceIn(0f, 1f)
 
-                            val offsetDp =
-                                with(density) { dragOffsetX.value.toDp() }
                             Box(
                                 modifier =
-                                    Modifier.offset(
-                                        x = offsetDp,
-                                    ),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .onSizeChanged {
+                                            rowWidthPx =
+                                                it.width
+                                        }.draggable(
+                                            state = dragState,
+                                            orientation =
+                                                Orientation
+                                                    .Horizontal,
+                                            onDragStopped = {
+                                                itemScope.launch {
+                                                    if (dragOffsetX.value > thresholdPx) {
+                                                        playbackViewModel.addToQueueNext(song)
+                                                        dragOffsetX.animateTo(
+                                                            maxOffsetPx,
+                                                            animationSpec = tween(300),
+                                                        )
+                                                        dragOffsetX.snapTo(0f)
+                                                    } else {
+                                                        dragOffsetX.animateTo(
+                                                            0f,
+                                                            animationSpec = tween(200),
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                        ),
                             ) {
-                                SongItem(
-                                    song = song,
-                                    isPlaying =
-                                        isCurrent &&
-                                            playerState
-                                                .isPlaying,
-                                    onClick = {
-                                        // Usar el orden
-                                        // actual solo al
-                                        // reproducir desde
-                                        // esta vista
-                                        playbackViewModel.updateDisplayOrder(sortedSongs)
-                                        playbackViewModel.play(song)
-                                        // Ensure player UI is shown
-                                        // playerViewModel.showPlayerScreen(true)
-                                        // Si es necesario, iniciar servicio desde playbackViewModel
-                                    },
-                                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
-                                    playlists = playlists,
-                                    onAddToPlaylist = { playlistName, songId ->
-                                        playlistViewModel.addSongToPlaylist(playlistName, songId)
-                                    },
-                                )
+                                if (progress > 0f) {
+                                    Box(
+                                        modifier =
+                                            Modifier
+                                                .matchParentSize()
+                                                .padding(
+                                                    horizontal =
+                                                        8.dp,
+                                                    vertical =
+                                                        4.dp,
+                                                ),
+                                        contentAlignment =
+                                            Alignment
+                                                .CenterStart,
+                                    ) {
+                                        val iconWidth = with(density) { 24.dp.toPx() }
+                                        val spacerWidth = with(density) { 40.dp.toPx() }
+                                        val iconTriggerOffset = iconWidth + spacerWidth
+                                        val iconOffsetPx =
+                                            if (dragOffsetX.value > iconTriggerOffset) {
+                                                dragOffsetX.value - iconTriggerOffset
+                                            } else {
+                                                0f
+                                            }
+                                        val iconOffsetDp = with(density) { iconOffsetPx.toDp() }
+
+                                        Row(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .heightIn(
+                                                        min =
+                                                            68.dp,
+                                                    ).background(
+                                                        MaterialTheme.colorScheme.primary,
+                                                    ).padding(
+                                                        horizontal =
+                                                            16.dp,
+                                                        vertical =
+                                                            12.dp,
+                                                    ),
+                                            verticalAlignment =
+                                                Alignment
+                                                    .CenterVertically,
+                                        ) {
+                                            Box(
+                                                modifier =
+                                                    Modifier
+                                                        .offset(x = iconOffsetDp),
+                                            ) {
+                                                Icon(
+                                                    imageVector =
+                                                        Icons.AutoMirrored.Filled.QueueMusic,
+                                                    contentDescription =
+                                                    null,
+                                                    tint =
+                                                        Color.White,
+                                                    modifier = Modifier.size(24.dp),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                val offsetDp =
+                                    with(density) { dragOffsetX.value.toDp() }
+                                Box(
+                                    modifier =
+                                        Modifier.offset(
+                                            x = offsetDp,
+                                        ),
+                                ) {
+                                    SongItem(
+                                        song = song,
+                                        isPlaying =
+                                            isCurrent &&
+                                                playerState
+                                                    .isPlaying,
+                                        onClick = {
+                                            // Usar el orden
+                                            // actual solo al
+                                            // reproducir desde
+                                            // esta vista
+                                            playbackViewModel.updateDisplayOrder(sortedSongs)
+                                            playbackViewModel.play(song)
+                                            // Ensure player UI is shown
+                                            // playerViewModel.showPlayerScreen(true)
+                                            // Si es necesario, iniciar servicio desde playbackViewModel
+                                        },
+                                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                                        playlists = playlists,
+                                        onAddToPlaylist = { playlistName, songId ->
+                                            playlistViewModel.addSongToPlaylist(playlistName, songId)
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            }
-
-            // Barra de scroll alfabético
-            if (sortMode == SortMode.TITLE_ASC ||
-                sortMode == SortMode.TITLE_DESC ||
-                sortMode == SortMode.ARTIST_ASC
-            ) {
-                val alphabet = listOf("#") + ('A'..'Z').map { it.toString() }
-                var columnHeight by remember { mutableStateOf(0f) }
-                val density = LocalDensity.current
-
-                fun scrollToLetter(letter: String) {
-                    currentScrollLetter = letter
-                    scope.launch {
-                        kotlinx.coroutines.delay(800)
-                        currentScrollLetter = null
-                    }
-                    val index =
-                        if (letter == "#") {
-                            sortedSongs.indexOfFirst {
-                                val firstChar =
-                                    when (sortMode) {
-                                        SortMode.ARTIST_ASC -> {
-                                            it.artist
-                                                .firstOrNull()
-                                                ?.uppercaseChar()
-                                        }
-
-                                        else -> {
-                                            it.title
-                                                .firstOrNull()
-                                                ?.uppercaseChar()
-                                        }
-                                    }
-                                firstChar == null ||
-                                    !firstChar.isLetter()
-                            }
-                        } else {
-                            sortedSongs.indexOfFirst {
-                                val firstChar =
-                                    when (sortMode) {
-                                        SortMode.ARTIST_ASC -> {
-                                            it.artist
-                                                .firstOrNull()
-                                                ?.uppercaseChar()
-                                        }
-
-                                        else -> {
-                                            it.title
-                                                .firstOrNull()
-                                                ?.uppercaseChar()
-                                        }
-                                    }
-                                firstChar == letter[0]
-                            }
-                        }
-                    if (index >= 0) {
-                        scope.launch { listState.scrollToItem(index) }
-                    }
-                }
-
-                Column(
-                    modifier =
-                        Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(end = 4.dp)
-                            .width(28.dp)
-                            .fillMaxHeight(0.8f)
-                            .onGloballyPositioned { coords ->
-                                columnHeight =
-                                    coords.size.height.toFloat()
-                            }.pointerInput(Unit) {
-                                detectDragGestures(
-                                    onDragStart = { offset ->
-                                        val index =
-                                            (
-                                                (
-                                                    offset.y /
-                                                        columnHeight
-                                                ) *
-                                                    alphabet.size
-                                            ).toInt()
-                                                .coerceIn(
-                                                    0,
-                                                    alphabet.lastIndex,
-                                                )
-                                        scrollToLetter(
-                                            alphabet[
-                                                index,
-                                            ],
-                                        )
-                                    },
-                                    onDrag = { change, _ ->
-                                        change.consume()
-                                        val y =
-                                            change.position
-                                                .y
-                                                .coerceIn(
-                                                    0f,
-                                                    columnHeight,
-                                                )
-                                        val index =
-                                            (
-                                                (
-                                                    y /
-                                                        columnHeight
-                                                ) *
-                                                    alphabet.size
-                                            ).toInt()
-                                                .coerceIn(
-                                                    0,
-                                                    alphabet.lastIndex,
-                                                )
-                                        scrollToLetter(
-                                            alphabet[
-                                                index,
-                                            ],
-                                        )
-                                    },
-                                )
+                    // Barra de scroll alfabético
+                    if (sortMode == SortMode.TITLE_ASC ||
+                        sortMode == SortMode.TITLE_DESC ||
+                        sortMode == SortMode.ARTIST_ASC
+                    ) {
+                        AlphabetScrollerContent(
+                            items = sortedSongs,
+                            getItemName = { song ->
+                                when (sortMode) {
+                                    SortMode.ARTIST_ASC -> song.artist
+                                    else -> song.title
+                                }
                             },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    alphabet.forEach { letter ->
-                        val isActive = currentScrollLetter == letter
-                        Text(
-                            text = letter,
-                            color =
-                                if (isActive) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                                },
-                            fontSize = if (isActive) 12.sp else 10.sp,
-                            fontWeight =
-                                if (isActive) {
-                                    FontWeight.Bold
-                                } else {
-                                    FontWeight.Medium
-                                },
-                            textAlign = TextAlign.Center,
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .wrapContentHeight(Alignment.CenterVertically)
-                                    .clickable {
-                                        scrollToLetter(
-                                            letter,
-                                        )
-                                    }, // .padding(vertical = 10.dp),
+                            currentScrollLetter = currentScrollLetter,
+                            onLetterSelected = { letter ->
+                                currentScrollLetter = letter
+                            },
+                            onScrollToIndex = { index, _ ->
+                                scope.launch {
+                                    listState.scrollToItem(index)
+                                }
+                            },
+                            viewAsGrid = false,
+                            scope = scope,
                         )
                     }
-                }
-            }
 
-            // Overlay de letra grande para feedback
-            currentScrollLetter?.let { letter ->
-                Box(
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .size(
-                                with(LocalDensity.current) {
-                                    (
-                                        LocalConfiguration.current
-                                            .screenWidthDp
-                                            .dp * 0.25f
-                                    )
-                                },
-                            ).background(
-                                MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
-                                RoundedCornerShape(16.dp),
-                            ).border(
-                                2.dp,
-                                MaterialTheme.colorScheme.primary,
-                                RoundedCornerShape(16.dp),
-                            ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = letter,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    // Overlay de letra grande para feedback
+                    currentScrollLetter?.let { letter ->
+                        ScrollLetterDisplay(letter = letter)
+                    }
                 }
             }
 

@@ -88,6 +88,8 @@ import androidx.core.graphics.component1
 import androidx.core.graphics.component2
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
+import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
@@ -639,134 +641,29 @@ fun AlbumsScreen(
                     }
                 }
                 if (sortedAlbums.isNotEmpty()) {
-                    val alphabet = listOf("#") + ('A'..'Z').map { it.toString() }
-                    var columnHeight by remember { mutableStateOf(0f) }
-
-                    fun scrollToLetter(letter: String) {
-                        currentScrollLetter = letter
-                        scope.launch {
-                            delay(800)
-                            currentScrollLetter = null
-                        }
-                        val index =
-                            if (letter == "#") {
-                                sortedAlbums.indexOfFirst { (albumName, _) ->
-                                    val firstChar = albumName.firstOrNull()?.uppercaseChar()
-                                    firstChar == null || !firstChar.isLetter()
-                                }
-                            } else {
-                                sortedAlbums.indexOfFirst { (albumName, _) ->
-                                    albumName.firstOrNull()?.uppercaseChar() == letter[0]
+                    AlphabetScrollerContent(
+                        items = sortedAlbums,
+                        getItemName = { it.name },
+                        currentScrollLetter = currentScrollLetter,
+                        onLetterSelected = { letter ->
+                            currentScrollLetter = letter
+                        },
+                        onScrollToIndex = { index, isGrid ->
+                            scope.launch {
+                                if (isGrid) {
+                                    gridState.scrollToItem(index)
+                                } else {
+                                    listState.scrollToItem(index)
                                 }
                             }
-                        if (index >= 0) {
-                            if (viewAsGrid) {
-                                scope.launch { gridState.scrollToItem(index) }
-                            } else {
-                                scope.launch { listState.scrollToItem(index) }
-                            }
-                        }
-                    }
-
-                    Column(
-                        modifier =
-                            Modifier
-                                .align(Alignment.CenterEnd)
-                                // .padding(end = 4.dp)
-                                .width(28.dp)
-                                .fillMaxHeight()
-                                .onGloballyPositioned { coords ->
-                                    columnHeight = coords.size.height.toFloat()
-                                }.pointerInput(Unit) {
-                                    detectDragGestures(
-                                        onDragStart = { offset ->
-                                            val index =
-                                                (
-                                                    (offset.y / columnHeight) *
-                                                        alphabet.size
-                                                ).toInt()
-                                                    .coerceIn(
-                                                        0,
-                                                        alphabet.lastIndex,
-                                                    )
-                                            scrollToLetter(alphabet[index])
-                                        },
-                                        onDrag = { change, _ ->
-                                            change.consume()
-                                            val y =
-                                                change.position.y.coerceIn(
-                                                    0f,
-                                                    columnHeight,
-                                                )
-                                            val index =
-                                                (
-                                                    (y / columnHeight) *
-                                                        alphabet.size
-                                                ).toInt()
-                                                    .coerceIn(
-                                                        0,
-                                                        alphabet.lastIndex,
-                                                    )
-                                            scrollToLetter(alphabet[index])
-                                        },
-                                    )
-                                },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                    ) {
-                        alphabet.forEach { letter ->
-                            val isActive = currentScrollLetter == letter
-                            Text(
-                                text = letter,
-                                color =
-                                    if (isActive) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                                    },
-                                fontSize = if (isActive) 12.sp else 10.sp,
-                                fontWeight =
-                                    if (isActive) FontWeight.Bold else FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .wrapContentHeight(Alignment.CenterVertically)
-                                        .clickable { scrollToLetter(letter) },
-                                // .padding(vertical = 1.5.dp),
-                            )
-                        }
-                    }
+                        },
+                        viewAsGrid = viewAsGrid,
+                        scope = scope,
+                    )
                 }
 
                 currentScrollLetter?.let { letter ->
-                    Box(
-                        modifier =
-                            Modifier
-                                .align(Alignment.Center)
-                                .size(
-                                    with(LocalDensity.current) {
-                                        LocalConfiguration.current
-                                            .screenWidthDp
-                                            .dp * 0.25f
-                                    },
-                                ).background(
-                                    MaterialTheme.colorScheme.background.copy(alpha = 0.8f),
-                                    RoundedCornerShape(16.dp),
-                                ).border(
-                                    2.dp,
-                                    MaterialTheme.colorScheme.primary,
-                                    RoundedCornerShape(16.dp),
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = letter,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 48.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    }
+                    ScrollLetterDisplay(letter = letter)
                 }
             }
         }
