@@ -36,14 +36,3 @@ fun parseLrc(content: String): List<LrcLine> {
     }
 }
 
-/**
- * Convierte letras TTML a formato LrcLine simple para compatibilidad
-
-fun TtmlLyrics.toLrcLines(): List<LrcLine> =
- lines.map { line ->
- LrcLine(
- timeMs = line.timeMs,
- text = line.text,
- )
- }
-*/
