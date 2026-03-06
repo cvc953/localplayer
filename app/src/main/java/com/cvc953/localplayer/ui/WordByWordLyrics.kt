@@ -86,8 +86,8 @@ fun BackgroundSyllableLyric(
 ) {
     // Solo mostrar si la línea está activa
     if (!isLineActive) return
-    val baseColor = Color(0xFF585858)
-    val activeColor = Color(0xFFB0B0B0)
+    val baseColor = Color(0xFF707070)
+    val activeColor = Color.White
     val baseFontSize = 20f
 
     val rawProgress =

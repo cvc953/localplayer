@@ -32,20 +32,25 @@ import androidx.compose.ui.unit.sp
 fun LyricLine(
     text: String,
     active: Boolean,
+    isSecondaryVoice: Boolean = false,
 ) {
-    LyricLine(text = text, active = active, modifier = Modifier)
+    LyricLine(text = text, active = active, isSecondaryVoice = isSecondaryVoice, modifier = Modifier)
 }
 
 @Composable
 fun LyricLine(
     text: String,
     active: Boolean,
+    isSecondaryVoice: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    // Match TTML behavior: secondary voice is only visible on the active line.
+    if (isSecondaryVoice && !active) return
+
     var lineCount by remember(text) { mutableStateOf(1) }
 
     val fontSize by animateFloatAsState(
-        targetValue = 30f,
+        targetValue = if (isSecondaryVoice) 20f else 30f,
         label = "fontSize",
     )
 
@@ -64,7 +69,7 @@ fun LyricLine(
             fontSize = fontSize.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Left,
-            lineHeight = (fontSize + 10).sp,
+            lineHeight = if (isSecondaryVoice) (fontSize + 8).sp else (fontSize + 10).sp,
             maxLines = Int.MAX_VALUE,
             softWrap = true,
             overflow = TextOverflow.Visible,
