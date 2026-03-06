@@ -368,6 +368,7 @@ fun PlayerScreen(
                                     playerState.position,
                                 modifier = Modifier.fillMaxSize(),
                                 dominantColor = dominantColor,
+                                useDynamicBackground = dynamicColorEnabled,
                                 onLineClick = { targetMs -> playbackViewModel.seekTo(targetMs) },
                             )
                         }
@@ -380,6 +381,7 @@ fun PlayerScreen(
                                     playerState.position,
                                 modifier = Modifier.fillMaxSize(),
                                 dominantColor = dominantColor,
+                                useDynamicBackground = dynamicColorEnabled,
                                 onLineClick = { targetMs -> playbackViewModel.seekTo(targetMs) },
                             )
                         }

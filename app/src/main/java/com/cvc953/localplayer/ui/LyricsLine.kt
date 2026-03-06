@@ -33,8 +33,17 @@ fun LyricLine(
     text: String,
     active: Boolean,
     isSecondaryVoice: Boolean = false,
+    activeColor: Color = Color.White,
+    inactiveColor: Color = Color.Gray,
 ) {
-    LyricLine(text = text, active = active, isSecondaryVoice = isSecondaryVoice, modifier = Modifier)
+    LyricLine(
+        text = text,
+        active = active,
+        isSecondaryVoice = isSecondaryVoice,
+        modifier = Modifier,
+        activeColor = activeColor,
+        inactiveColor = inactiveColor,
+    )
 }
 
 @Composable
@@ -43,6 +52,8 @@ fun LyricLine(
     active: Boolean,
     isSecondaryVoice: Boolean = false,
     modifier: Modifier = Modifier,
+    activeColor: Color = Color.White,
+    inactiveColor: Color = Color.Gray,
 ) {
     // Match TTML behavior: secondary voice is only visible on the active line.
     if (isSecondaryVoice && !active) return
@@ -65,7 +76,7 @@ fun LyricLine(
     ) {
         Text(
             text = text.trimStart(),
-            color = if (active) Color.White else Color.Gray,
+            color = if (active) activeColor else inactiveColor,
             fontSize = fontSize.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Left,

@@ -38,10 +38,10 @@ fun SyllableLyric(
     syllable: TtmlSyllable,
     currentPosition: Long,
     isLineActive: Boolean,
+    baseColor: Color,
+    activeColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    val baseColor = Color(0xFF707070)
-    val activeColor = Color.White
     val baseFontSize = 30f
 
     val rawProgress =
@@ -82,12 +82,12 @@ fun BackgroundSyllableLyric(
     syllable: TtmlSyllable,
     currentPosition: Long,
     isLineActive: Boolean,
+    baseColor: Color,
+    activeColor: Color,
     modifier: Modifier = Modifier,
 ) {
     // Solo mostrar si la línea está activa
     if (!isLineActive) return
-    val baseColor = Color(0xFF707070)
-    val activeColor = Color.White
     val baseFontSize = 20f
 
     val rawProgress =
@@ -164,6 +164,8 @@ fun WordByWordLine(
     syllables: List<TtmlSyllable>,
     currentPosition: Long,
     isActive: Boolean,
+    baseColor: Color = Color(0xFF707070),
+    activeColor: Color = Color.White,
     modifier: Modifier = Modifier,
 ) {
     // Separar sílabas principales de las de fondo (entre paréntesis)
@@ -190,6 +192,8 @@ fun WordByWordLine(
                                 syllable = syllable,
                                 currentPosition = currentPosition,
                                 isLineActive = isActive,
+                                baseColor = baseColor,
+                                activeColor = activeColor,
                             )
                         }
                     }
@@ -218,6 +222,8 @@ fun WordByWordLine(
                         syllable = syllable,
                         currentPosition = currentPosition,
                         isLineActive = isActive,
+                        baseColor = baseColor,
+                        activeColor = activeColor,
                     )
                 }
             }
@@ -234,6 +240,7 @@ fun LoadingDotsAnimation(
     isVisible: Boolean = true,
     durationMs: Long = 1000L, // Duración total del gap instrumental
     elapsedMs: Long = 0L, // Tiempo transcurrido actual
+    brightColor: Color = Color.White,
 ) {
     if (!isVisible) return
 
@@ -243,7 +250,7 @@ fun LoadingDotsAnimation(
             Color(0xFF505050), // gris oscuro
             Color(0xFF888888), // gris medio
             Color(0xFFCCCCCC), // gris claro
-            Color.White, // blanco
+            brightColor,
             // LocalExtendedColors.current.textSecondarySoft,
             // LocalExtendedColors.current.textSecondary,
             // LocalExtendedColors.current.textSecondaryStrong,
@@ -275,7 +282,7 @@ fun LoadingDotsAnimation(
                 val colorIndex = (dotProgress * (colorSteps.lastIndex)).toInt().coerceIn(0, colorSteps.lastIndex)
                 val baseColor = colorSteps[colorIndex]
                 // El último punto se vuelve blanco 500ms antes del final
-                val dotColor = if (i == dotCount - 1 && durationMs - elapsedMs <= lastDotWhiteThreshold) Color.White else baseColor
+                val dotColor = if (i == dotCount - 1 && durationMs - elapsedMs <= lastDotWhiteThreshold) brightColor else baseColor
 
                 // Tamaño animado: de min a max
                 val dotSize = minSize + (maxSize - minSize) * dotProgress

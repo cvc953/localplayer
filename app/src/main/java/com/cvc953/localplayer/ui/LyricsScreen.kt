@@ -15,13 +15,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import com.cvc953.localplayer.model.TtmlLine
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
@@ -33,6 +36,7 @@ fun LyricsScreen(
     playbackViewModel: PlaybackViewModel,
     modifier: Modifier = Modifier,
     dominantColor: Color = Color.Black,
+    useDynamicBackground: Boolean = true,
     onLineClick: (Long) -> Unit = {},
 ) {
     val ttml by lyricsViewModel.ttmlLyrics.collectAsState()
@@ -47,6 +51,7 @@ fun LyricsScreen(
             currentPosition = currentPosition,
             modifier = modifier,
             dominantColor = dominantColor,
+            useDynamicBackground = useDynamicBackground,
         ) { pos ->
             try {
                 playbackViewModel.seekTo(pos)
@@ -54,7 +59,13 @@ fun LyricsScreen(
             }
         }
     } else {
-        LyricsView(lyrics = lyrics, currentPosition = currentPosition, modifier = modifier, dominantColor = dominantColor) { pos ->
+        LyricsView(
+            lyrics = lyrics,
+            currentPosition = currentPosition,
+            modifier = modifier,
+            dominantColor = dominantColor,
+            useDynamicBackground = useDynamicBackground,
+        ) { pos ->
             try {
                 playbackViewModel.seekTo(pos)
             } catch (_: Exception) {
@@ -70,9 +81,19 @@ fun LyricsView(
     currentPosition: Long,
     modifier: Modifier = Modifier,
     dominantColor: Color = Color.Black,
+    useDynamicBackground: Boolean = true,
     onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
+
+    val forceLightForeground = useDynamicBackground && MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val activeLyricColor = if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
+    val inactiveLyricColor =
+        if (forceLightForeground) {
+            Color.White.copy(alpha = 0.62f)
+        } else {
+            LocalExtendedColors.current.textSecondary
+        }
 
     val currentIndex =
         remember(lyrics, currentPosition) {
@@ -99,12 +120,21 @@ fun LyricsView(
             modifier
                 .fillMaxSize()
                 .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            dominantColor.darken(0.5f),
-                            Color.Black,
-                        ),
-                    ),
+                    if (useDynamicBackground) {
+                        Brush.verticalGradient(
+                            listOf(
+                                dominantColor.darken(0.5f),
+                                Color.Black,
+                            ),
+                        )
+                    } else {
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                            ),
+                        )
+                    },
                 ),
     ) {
         LazyColumn(
@@ -131,6 +161,7 @@ fun LyricsView(
                                     isVisible = true,
                                     durationMs = firstLineStart,
                                     elapsedMs = currentPosition,
+                                    brightColor = activeLyricColor,
                                 )
                             }
                         }
@@ -149,6 +180,8 @@ fun LyricsView(
                         text = line.text,
                         active = index == currentIndex,
                         isSecondaryVoice = line.isSecondaryVoice,
+                        activeColor = activeLyricColor,
+                        inactiveColor = inactiveLyricColor,
                     )
                 }
 
@@ -175,6 +208,7 @@ fun LyricsView(
                                     isVisible = true,
                                     durationMs = gapDuration,
                                     elapsedMs = currentPosition - currentLineStart,
+                                    brightColor = activeLyricColor,
                                 )
                             }
                         }
@@ -194,9 +228,19 @@ fun TtmlLyricsView(
     currentPosition: Long,
     modifier: Modifier = Modifier,
     dominantColor: Color = Color.Black,
+    useDynamicBackground: Boolean = true,
     onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
+
+    val forceLightForeground = useDynamicBackground && MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val activeLyricColor = if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
+    val inactiveLyricColor =
+        if (forceLightForeground) {
+            Color.White.copy(alpha = 0.62f)
+        } else {
+            LocalExtendedColors.current.textSecondary
+        }
 
     val currentIndex =
         remember(currentPosition) {
@@ -221,12 +265,21 @@ fun TtmlLyricsView(
             modifier
                 .fillMaxSize()
                 .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            dominantColor.darken(0.5f),
-                            Color.Black,
-                        ),
-                    ),
+                    if (useDynamicBackground) {
+                        Brush.verticalGradient(
+                            listOf(
+                                dominantColor.darken(0.5f),
+                                Color.Black,
+                            ),
+                        )
+                    } else {
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.Transparent,
+                            ),
+                        )
+                    },
                 ),
     ) {
         LazyColumn(
@@ -254,6 +307,7 @@ fun TtmlLyricsView(
                                     isVisible = true,
                                     durationMs = firstLineStart,
                                     elapsedMs = currentPosition,
+                                    brightColor = activeLyricColor,
                                 )
                             }
                         }
@@ -274,12 +328,16 @@ fun TtmlLyricsView(
                             syllables = line.syllabus,
                             currentPosition = currentPosition,
                             isActive = index == currentIndex,
+                            baseColor = inactiveLyricColor,
+                            activeColor = activeLyricColor,
                         )
                     } else {
                         // Fallback a línea simple
                         LyricLine(
                             text = line.text,
                             active = index == currentIndex,
+                            activeColor = activeLyricColor,
+                            inactiveColor = inactiveLyricColor,
                         )
                     }
                 }
@@ -307,6 +365,7 @@ fun TtmlLyricsView(
                                     isVisible = true,
                                     durationMs = gapDuration,
                                     elapsedMs = currentPosition - currentLineEnd,
+                                    brightColor = activeLyricColor,
                                 )
                             }
                         }
