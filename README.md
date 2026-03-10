@@ -102,7 +102,7 @@ cd localplayer
    - Usa el menú de tres puntos para agregar a la cola
 
 4. **Ver letras**:
-   - Coloca archivos `.lrc` con el mismo nombre que tu canción
+   - Coloca archivos `.lrc` o `.ttml` con el mismo nombre que tu canción
    - En el reproductor, toca el ícono de letras
    - Las letras se sincronizarán automáticamente
 
@@ -151,11 +151,11 @@ Si encuentras algún bug o tienes una sugerencia, por favor abre un [issue](http
 
 ## 📝 Roadmap
 
-- [ ] Ecualizador integrado
-- [ ] Soporte para playlists
+- [x] Ecualizador integrado
+- [x] Soporte para playlists
 - [ ] Widgets para la pantalla de inicio
 - [ ] Temas personalizables
-- [ ] Escaneo de carpetas específicas
+- [x] Escaneo de carpetas específicas
 - [ ] Importar/Exportar configuración
 - [ ] Sleep timer
 
