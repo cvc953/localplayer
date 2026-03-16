@@ -71,8 +71,9 @@ dependencies {
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.runtime)
     implementation(libs.firebase.crashlytics.buildtools)
-	implementation(libs.androidx.compose.ui.text)
-	testImplementation(libs.junit)
+    implementation(libs.androidx.compose.ui.text)
+    implementation(libs.androidx.navigation.compose)
+    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -109,4 +110,7 @@ dependencies {
 
     // Palette para extraer color dominante
     implementation("androidx.palette:palette:1.0.0")
+
+    // Navigation Compose
+    implementation("androidx.navigation:navigation-compose:2.7.7")
 }

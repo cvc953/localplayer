@@ -2,7 +2,6 @@
 
 package com.cvc953.localplayer.ui
 
-import MiniPlayer
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -108,6 +107,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.getDominantColor
 import com.cvc953.localplayer.util.withLowTransparency
@@ -273,15 +273,16 @@ fun PlayerScreen(
     LaunchedEffect(song) { lyricsViewModel.loadLyricsForSong(song) }
 
     // Determine background based on dynamic color setting
-    val backgroundColor = if (dynamicColorEnabled) {
-        Brush.verticalGradient(
-            listOf(dominantColor.darken(0.5f), Color.Black),
-        )
-    } else {
-        Brush.verticalGradient(
-            listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background),
-        )
-    }
+    val backgroundColor =
+        if (dynamicColorEnabled) {
+            Brush.verticalGradient(
+                listOf(dominantColor.darken(0.7f), dominantColor.darken(0.1f)),
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.background),
+            )
+        }
 
     val forceLightForeground = dynamicColorEnabled && MaterialTheme.colorScheme.background.luminance() > 0.5f
     val playerPrimaryColor = if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
@@ -406,6 +407,7 @@ fun PlayerScreen(
                     onPlayPause = { playbackViewModel.togglePlayPause() },
                     onClick = { playerViewModel.toggleLyrics() },
                     onNext = { playbackViewModel.playNextSong() },
+                    modifier = Modifier,
                 )
             }
         } else {
@@ -413,39 +415,56 @@ fun PlayerScreen(
             val screenWidth = LocalConfiguration.current.screenWidthDp
             val screenHeight = LocalConfiguration.current.screenHeightDp
             val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
-            
+
             // LOG TEMPORAL - Debug ratio detection
-            android.util.Log.d("PlayerScreen", "Screen: ${screenWidth}x${screenHeight}, Ratio: $aspectRatio")
+            android.util.Log.d("PlayerScreen", "Screen: ${screenWidth}x$screenHeight, Ratio: $aspectRatio")
 
             // Determinar tipo de pantalla (maneja portrait Y landscape)
             val isCompactLayout = aspectRatio >= 0.90f && aspectRatio < 1.15f // Cuadrada
-            val isNormalLayout = (aspectRatio >= 1.15f && aspectRatio <= 1.6f) || 
-                                 (aspectRatio >= 0.50f && aspectRatio < 0.75f) // Normal landscape O portrait (TU 360x640=0.5625)
+            val isNormalLayout =
+                (aspectRatio >= 1.15f && aspectRatio <= 1.6f) ||
+                    (aspectRatio >= 0.50f && aspectRatio < 0.75f) // Normal landscape O portrait (TU 360x640=0.5625)
             val isLandscape = aspectRatio > 1.6f // Landscape ancho
             val isTallLayout = aspectRatio < 0.50f // Rectangular MUY alta (18:9 o más)
-            
+
             // Tamaño dinámico de imagen
             val imageWidthPercent =
                 when {
-                    isLandscape -> 0.35f  // Landscape: 35%
-                    isCompactLayout -> 0.45f  // Cuadrada: 45%
-                    isNormalLayout -> 0.80f  // Normal/Media: 80% - TU PANTALLA
-                    isTallLayout -> 0.88f  // Rectangular MUY alta: 88%
-                    else -> 0.75f  // Default: 75%
+                    isLandscape -> 0.35f
+
+                    // Landscape: 35%
+                    isCompactLayout -> 0.45f
+
+                    // Cuadrada: 45%
+                    isNormalLayout -> 0.80f
+
+                    // Normal/Media: 80% - TU PANTALLA
+                    isTallLayout -> 0.88f
+
+                    // Rectangular MUY alta: 88%
+                    else -> 0.75f // Default: 75%
                 }
 
             // Spacers dinámicos según layout
             val betweenSpacer =
                 when {
-                    isCompactLayout -> 4.dp  // Cuadrada: mínimo
-                    isNormalLayout -> 6.dp  // Normal/Media: muy compacto - AHORA SÍ DEBERÍA APLICARSE
-                    isTallLayout -> 24.dp  // Rectangular alta: mucho
-                    isLandscape -> 12.dp  // Landscape: moderado
-                    else -> 16.dp  // Default
+                    isCompactLayout -> 4.dp
+
+                    // Cuadrada: mínimo
+                    isNormalLayout -> 6.dp
+
+                    // Normal/Media: muy compacto - AHORA SÍ DEBERÍA APLICARSE
+                    isTallLayout -> 24.dp
+
+                    // Rectangular alta: mucho
+                    isLandscape -> 12.dp
+
+                    // Landscape: moderado
+                    else -> 16.dp // Default
                 }
 
             // Padding vertical dinámico
-            val verticalPadding = 
+            val verticalPadding =
                 when {
                     isCompactLayout -> 4.dp
                     isNormalLayout -> 2.dp
@@ -1244,8 +1263,9 @@ fun SongTitleSection(
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
     val isCompactLayout = aspectRatio >= 0.90f && aspectRatio <= 1.15f
-    val isNormalLayout = (aspectRatio >= 1.15f && aspectRatio <= 1.6f) || 
-                         (aspectRatio >= 0.50f && aspectRatio < 0.75f)
+    val isNormalLayout =
+        (aspectRatio >= 1.15f && aspectRatio <= 1.6f) ||
+            (aspectRatio >= 0.50f && aspectRatio < 0.75f)
     val isTallLayout = aspectRatio < 0.50f
 
     val titleFontSize =
@@ -1504,8 +1524,9 @@ fun PlayerControls(
     val screenHeight = LocalConfiguration.current.screenHeightDp
     val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
     val isCompactLayout = aspectRatio >= 0.90f && aspectRatio <= 1.15f
-    val isNormalLayout = (aspectRatio >= 1.15f && aspectRatio <= 1.6f) || 
-                         (aspectRatio >= 0.50f && aspectRatio < 0.75f)
+    val isNormalLayout =
+        (aspectRatio >= 1.15f && aspectRatio <= 1.6f) ||
+            (aspectRatio >= 0.50f && aspectRatio < 0.75f)
     val isTallLayout = aspectRatio < 0.50f
 
     // Sincroniza el slider con el estado global solo si no se está arrastrando
@@ -1593,7 +1614,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     null,
-                            tint = foregroundColor,
+                    tint = foregroundColor,
                     modifier = Modifier.size(buttonSize),
                 )
             }
@@ -1616,7 +1637,7 @@ fun PlayerControls(
                             Icons.Rounded.PlayArrow
                         },
                     contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(buttonSize * 0.5f),
                 )
             }
@@ -1625,7 +1646,7 @@ fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipNext,
                     null,
-                        tint = foregroundColor,
+                    tint = foregroundColor,
                     modifier = Modifier.size(buttonSize),
                 )
             }
