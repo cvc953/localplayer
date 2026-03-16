@@ -1,3 +1,5 @@
+package com.cvc953.localplayer.ui
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -49,6 +51,7 @@ fun MiniPlayer(
     onPlayPause: () -> Unit,
     onClick: () -> Unit,
     onNext: () -> Unit,
+    modifier: Modifier,
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }

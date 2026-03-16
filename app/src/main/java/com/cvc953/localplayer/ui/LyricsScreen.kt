@@ -10,12 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -123,8 +123,8 @@ fun LyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.5f),
-                                Color.Black,
+                                dominantColor.darken(0.7f),
+                                dominantColor.darken(0.1f),
                             ),
                         )
                     } else {
@@ -268,8 +268,8 @@ fun TtmlLyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.5f),
-                                Color.Black,
+                                dominantColor.darken(0.7f),
+                                dominantColor.darken(0.1f),
                             ),
                         )
                     } else {
