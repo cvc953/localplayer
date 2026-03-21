@@ -683,7 +683,14 @@ fun AlbumDetailScreen(
     val songs by albumViewModel.songs.collectAsState()
     val playerState by playbackViewModel.playerState.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
+
+    // Cargar canciones cuando el componente se compone
+    LaunchedEffect(albumName, artistName) {
+        albumViewModel.loadSongsForAlbumByName(albumName, artistName)
+    }
+
     // Filtrar canciones del álbum donde el artista participa (en cualquier posición)
+    // Nota: Aunque loadSongsForAlbumByName ya filtra, mantenemos este filtro por si acaso o para ordenar
     val albumSongs =
         remember(songs, albumName, artistName) {
             val normalizedRequestedArtists = normalizeArtistName(artistName).map { it.trim() }

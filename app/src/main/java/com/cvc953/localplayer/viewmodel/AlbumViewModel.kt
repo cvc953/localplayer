@@ -47,7 +47,7 @@ class AlbumViewModel(
             override fun onChange(selfChange: Boolean) {
                 super.onChange(selfChange)
                 android.util.Log.d("AlbumViewModel", "MediaStore onChange detected")
-                
+
                 // Detectar cambios en la biblioteca y refrescar (si está activado)
                 if (appPrefs.isAutoScanEnabled()) {
                     android.util.Log.d("AlbumViewModel", "Auto-scan enabled, scheduling library refresh")
@@ -61,18 +61,19 @@ class AlbumViewModel(
     private fun scheduleLibraryRefresh() {
         // Cancelar el job anterior si existe (debouncing)
         autoScanJob?.cancel()
-        
+
         // Programar un nuevo escaneo con delay de 2 segundos
-        autoScanJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                android.util.Log.d("AlbumViewModel", "Debouncing auto-scan for 2 seconds...")
-                delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
-                android.util.Log.d("AlbumViewModel", "Starting auto-scan library refresh")
-                refreshMusicLibrary()
-            } catch (e: Exception) {
-                android.util.Log.e("AlbumViewModel", "Error in auto-scan", e)
+        autoScanJob =
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    android.util.Log.d("AlbumViewModel", "Debouncing auto-scan for 2 seconds...")
+                    delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
+                    android.util.Log.d("AlbumViewModel", "Starting auto-scan library refresh")
+                    refreshMusicLibrary()
+                } catch (e: Exception) {
+                    android.util.Log.e("AlbumViewModel", "Error in auto-scan", e)
+                }
             }
-        }
     }
 
     private fun refreshMusicLibrary() {
@@ -82,7 +83,10 @@ class AlbumViewModel(
                 val newAlbums = controller.getAllAlbums()
                 val currentAlbums = _albums.value
 
-                android.util.Log.d("AlbumViewModel", "refreshMusicLibrary: Found ${newAlbums.size} albums, current has ${currentAlbums.size}")
+                android.util.Log.d(
+                    "AlbumViewModel",
+                    "refreshMusicLibrary: Found ${newAlbums.size} albums, current has ${currentAlbums.size}",
+                )
 
                 // Actualizar si hay cambios
                 if (newAlbums != currentAlbums) {
@@ -172,6 +176,54 @@ class AlbumViewModel(
         _selectedAlbum.value = null
         _songs.value = emptyList()
     }
+
+    // Nueva función para cargar canciones por nombre de álbum y artista
+    // Útil cuando se navega directamente al detalle sin pasar por la lista de álbumes
+    fun loadSongsForAlbumByName(
+        albumName: String,
+        artistName: String,
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Buscar el álbum que coincida con el nombre y el artista
+                val normalizedRequestedArtists = normalizeArtistName(artistName).map { it.trim() }
+                val matchingAlbum =
+                    controller.getAllAlbums().find { album ->
+                        val nameMatches = album.name.trim().equals(albumName.trim(), ignoreCase = true)
+                        val artistMatches =
+                            normalizeArtistName(album.artist).any { artist ->
+                                normalizedRequestedArtists.any { requestedArtist ->
+                                    artist.trim().equals(requestedArtist, ignoreCase = true)
+                                }
+                            }
+                        nameMatches && artistMatches
+                    }
+
+                if (matchingAlbum != null) {
+                    _songs.value = controller.getSongsForAlbum(matchingAlbum)
+                } else {
+                    // Si no encontramos el álbum exacto, intentamos cargar todas las canciones y filtrar localmente
+                    // Esto es un fallback, pero debería funcionar si la lógica de getAlbumByName falla
+                    // Por ahora, dejamos vacío o intentamos una búsqueda más amplia
+                    _songs.value = emptyList()
+                }
+            } catch (e: Exception) {
+                _songs.value = emptyList()
+            }
+        }
+    }
+
+    // Helper para normalizar artistas (copiado de AlbumController para evitar dependencia cíclica si fuera necesario, aunque aquí es interno)
+    private fun normalizeArtistName(artist: String): List<String> =
+        if (artist.trim().equals("AC/DC", ignoreCase = true)) {
+            listOf("AC/DC")
+        } else {
+            artist
+                .trim()
+                .split(',', '/')
+                .map { it.trim() }
+                .filter { it.isNotEmpty() }
+        }
 
     override fun onCleared() {
         // Desregistrar el observer cuando el ViewModel se destruya
