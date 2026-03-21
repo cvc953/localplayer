@@ -10,12 +10,18 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.exponentialDecay
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.AnchoredDraggableState
+import androidx.compose.foundation.gestures.DraggableAnchors
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.scrollBy
@@ -91,6 +97,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -120,6 +127,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+// Estados de anclaje para el reproductor
+enum class PlayerSheetState { Expanded, Collapsed }
+
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,14 +153,47 @@ fun PlayerScreen(
     val dynamicColorEnabled by mainViewModel.dynamicColorEnabled.collectAsState()
     val repeatMode by playbackViewModel.repeatMode.collectAsState()
     val song = playerState.currentSong ?: return
-    val offsetY = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+
+    // Calcular dimensiones en píxeles usando LocalDensity
     val screenHeightPx =
         with(LocalDensity.current) {
             LocalConfiguration.current.screenHeightDp.dp
                 .toPx()
         }
+
+    val velocityThresholdPx =
+        with(LocalDensity.current) {
+            400.dp.toPx()
+        }
+
+    // Configuración del estado anclado
+    val draggableState =
+        remember {
+            AnchoredDraggableState(
+                initialValue = PlayerSheetState.Expanded,
+                anchors =
+                    DraggableAnchors {
+                        PlayerSheetState.Expanded at 0f
+                        PlayerSheetState.Collapsed at screenHeightPx
+                    },
+                positionalThreshold = { totalDistance -> totalDistance * 0.5f }, // Cambia de estado al mover 50% de la distancia
+                velocityThreshold = { velocityThresholdPx }, // Momentum: 400dp/s
+                snapAnimationSpec = spring(dampingRatio = 0.6f), // Un poco más suave que MediumBouncy
+                decayAnimationSpec =
+                    androidx.compose.animation.core
+                        .exponentialDecay(frictionMultiplier = 1f),
+            )
+        }
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    // Manejar la transición de cierre cuando el estado se asienta en "Colapsado"
+    LaunchedEffect(draggableState.settledValue) {
+        if (draggableState.settledValue == PlayerSheetState.Collapsed) {
+            onBack()
+        }
+    }
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val ttmlLyrics by lyricsViewModel.ttmlLyrics.collectAsState()
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
@@ -273,10 +316,22 @@ fun PlayerScreen(
     LaunchedEffect(song) { lyricsViewModel.loadLyricsForSong(song) }
 
     // Determine background based on dynamic color setting
+    // Calculamos el progreso del deslizamiento (0.0 = Expandido, 1.0 = Colapsado)
+    val dragProgress = draggableState.offset / screenHeightPx
+
     val backgroundColor =
         if (dynamicColorEnabled) {
+            // Interpolamos el color del fondo basado en el progreso
+            // Si está colapsado (1.0), el fondo es oscuro (casi negro)
+            // Si está expandido (0.0), el fondo es el color dominante
+            val startColor = dominantColor.darken(0.7f)
+            val endColor = Color.Black // Fondo oscuro al colapsar
+
             Brush.verticalGradient(
-                listOf(dominantColor.darken(0.7f), dominantColor.darken(0.1f)),
+                listOf(
+                    lerp(startColor, endColor, dragProgress.coerceIn(0f, 1f)),
+                    lerp(dominantColor.darken(0.1f), Color.Black, dragProgress.coerceIn(0f, 1f)),
+                ),
             )
         } else {
             Brush.verticalGradient(
@@ -305,52 +360,10 @@ fun PlayerScreen(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .offset { IntOffset(0, offsetY.value.toInt()) }
-                .background(backgroundColor),
+                .offset { IntOffset(0, draggableState.offset.toInt()) }
+                .background(backgroundColor)
+                .anchoredDraggable(draggableState, orientation = Orientation.Vertical),
     ) {
-        // Barra de drag
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .offset { IntOffset(0, offsetY.value.toInt()) }
-                    .pointerInput(Unit) {
-                        detectVerticalDragGestures(
-                            onVerticalDrag = { _, dragAmount ->
-                                scope.launch {
-                                    offsetY.snapTo(
-                                        (
-                                            offsetY.value +
-                                                dragAmount
-                                        ).coerceAtLeast(
-                                            0f,
-                                        ),
-                                    )
-                                }
-                            },
-                            onDragEnd = {
-                                scope.launch {
-                                    if (offsetY.value >
-                                        screenHeightPx *
-                                        0.25f
-                                    ) {
-                                        offsetY.animateTo(
-                                            screenHeightPx,
-                                            tween(250),
-                                        )
-                                        onBack()
-                                    } else {
-                                        offsetY.animateTo(
-                                            0f,
-                                            tween(250),
-                                        )
-                                    }
-                                }
-                            },
-                        )
-                    },
-        )
-
         if (showLyrics) {
             Column(modifier = Modifier.fillMaxSize()) {
                 // ZONA DE LETRAS
