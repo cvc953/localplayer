@@ -2,6 +2,7 @@ package com.cvc953.localplayer.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -27,6 +28,7 @@ import com.cvc953.localplayer.viewmodel.SongViewModel
  */
 @Composable
 fun AppNavigation(
+    modifier: Modifier = Modifier,
     navController: NavHostController,
     songViewModel: SongViewModel = viewModel(),
     playbackViewModel: PlaybackViewModel = viewModel(),
@@ -36,6 +38,7 @@ fun AppNavigation(
     albumViewModel: AlbumViewModel = viewModel(),
 ) {
     NavHost(
+        modifier = modifier,
         navController = navController,
         startDestination = Screen.Songs.route,
     ) {

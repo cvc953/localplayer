@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +18,10 @@ import com.cvc953.localplayer.ui.navigation.BottomNavItem
 import com.cvc953.localplayer.ui.navigation.Screen
 
 @Composable
-fun BottomNavigationBar(navController: androidx.navigation.NavHostController) {
+fun BottomNavigationBar(
+    navController: androidx.navigation.NavHostController,
+    modifier: Modifier = Modifier,
+) {
     val navItems =
         listOf(
             BottomNavItem.Songs,
@@ -55,12 +59,13 @@ fun BottomNavigationBar(navController: androidx.navigation.NavHostController) {
 
     Column(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth(),
     ) {
         NavigationBar(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurface,
+            windowInsets = WindowInsets(0),
         ) {
             navItems.forEach { item ->
                 NavigationBarItem(

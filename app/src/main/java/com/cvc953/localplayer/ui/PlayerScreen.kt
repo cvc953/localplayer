@@ -5,25 +5,18 @@ package com.cvc953.localplayer.ui
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.exponentialDecay
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.AnchoredDraggableState
-import androidx.compose.foundation.gestures.DraggableAnchors
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,11 +28,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -51,6 +42,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
@@ -64,6 +56,7 @@ import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -97,7 +90,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -109,16 +101,16 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.getDominantColor
-import com.cvc953.localplayer.util.withLowTransparency
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
+import com.cvc953.localplayer.viewmodel.MainViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
@@ -126,9 +118,6 @@ import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-// Estados de anclaje para el reproductor
-enum class PlayerSheetState { Expanded, Collapsed }
 
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,10 +128,11 @@ fun PlayerScreen(
     playlistViewModel: PlaylistViewModel = viewModel(),
     lyricsViewModel: LyricsViewModel = viewModel(),
     songViewModel: SongViewModel = viewModel(),
-    mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel(),
-    onBack: () -> Unit,
+    mainViewModel: MainViewModel = viewModel(),
+    onCollapse: () -> Unit,
     onNavigateToArtist: (String) -> Unit = {},
     onNavigateToAlbum: (String, String) -> Unit = { _, _ -> },
+    onBackgroundColorChanged: (Color) -> Unit = {},
 ) {
     val showLyrics by playerViewModel.showLyrics.collectAsState()
     val playerState by playbackViewModel.playerState.collectAsState()
@@ -154,46 +144,8 @@ fun PlayerScreen(
     val repeatMode by playbackViewModel.repeatMode.collectAsState()
     val song = playerState.currentSong ?: return
 
-    // Calcular dimensiones en píxeles usando LocalDensity
-    val screenHeightPx =
-        with(LocalDensity.current) {
-            LocalConfiguration.current.screenHeightDp.dp
-                .toPx()
-        }
-
-    val velocityThresholdPx =
-        with(LocalDensity.current) {
-            400.dp.toPx()
-        }
-
-    // Configuración del estado anclado
-    val draggableState =
-        remember {
-            AnchoredDraggableState(
-                initialValue = PlayerSheetState.Expanded,
-                anchors =
-                    DraggableAnchors {
-                        PlayerSheetState.Expanded at 0f
-                        PlayerSheetState.Collapsed at screenHeightPx
-                    },
-                positionalThreshold = { totalDistance -> totalDistance * 0.5f }, // Cambia de estado al mover 50% de la distancia
-                velocityThreshold = { velocityThresholdPx }, // Momentum: 400dp/s
-                snapAnimationSpec = spring(dampingRatio = 0.6f), // Un poco más suave que MediumBouncy
-                decayAnimationSpec =
-                    androidx.compose.animation.core
-                        .exponentialDecay(frictionMultiplier = 1f),
-            )
-        }
-
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-
-    // Manejar la transición de cierre cuando el estado se asienta en "Colapsado"
-    LaunchedEffect(draggableState.settledValue) {
-        if (draggableState.settledValue == PlayerSheetState.Collapsed) {
-            onBack()
-        }
-    }
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val ttmlLyrics by lyricsViewModel.ttmlLyrics.collectAsState()
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
@@ -213,7 +165,7 @@ fun PlayerScreen(
             emptyList()
         }
     val listState = rememberLazyListState()
-    val dragList = remember { mutableStateListOf<com.cvc953.localplayer.model.Song>() }
+    val dragList = remember { mutableStateListOf<Song>() }
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
 
@@ -306,31 +258,28 @@ fun PlayerScreen(
         }
     }
 
+    // Notificar al padre del color de fondo (topo del gradiente)
+    LaunchedEffect(dominantColor, dynamicColorEnabled) {
+        val topColor = if (dynamicColorEnabled) dominantColor.darken(0.7f) else Color.Transparent
+        onBackgroundColorChanged(topColor)
+    }
+
     LaunchedEffect(song.id, playlists) {
         isFavorite = playlistViewModel.isSongInPlaylist("Favoritos", song.id)
     }
 
     BackHandler(enabled = showLyrics) { playerViewModel.toggleLyrics() }
-    BackHandler(enabled = !showLyrics) { onBack() }
+    BackHandler(enabled = !showLyrics) { onCollapse() }
 
     LaunchedEffect(song) { lyricsViewModel.loadLyricsForSong(song) }
 
     // Determine background based on dynamic color setting
-    // Calculamos el progreso del deslizamiento (0.0 = Expandido, 1.0 = Colapsado)
-    val dragProgress = draggableState.offset / screenHeightPx
-
     val backgroundColor =
         if (dynamicColorEnabled) {
-            // Interpolamos el color del fondo basado en el progreso
-            // Si está colapsado (1.0), el fondo es oscuro (casi negro)
-            // Si está expandido (0.0), el fondo es el color dominante
-            val startColor = dominantColor.darken(0.7f)
-            val endColor = Color.Black // Fondo oscuro al colapsar
-
             Brush.verticalGradient(
                 listOf(
-                    lerp(startColor, endColor, dragProgress.coerceIn(0f, 1f)),
-                    lerp(dominantColor.darken(0.1f), Color.Black, dragProgress.coerceIn(0f, 1f)),
+                    dominantColor.darken(0.7f),
+                    dominantColor.darken(0.1f),
                 ),
             )
         } else {
@@ -358,11 +307,7 @@ fun PlayerScreen(
         modifier =
             Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .offset { IntOffset(0, draggableState.offset.toInt()) }
-                .background(backgroundColor)
-                .anchoredDraggable(draggableState, orientation = Orientation.Vertical),
+                .background(backgroundColor),
     ) {
         if (showLyrics) {
             Column(modifier = Modifier.fillMaxSize()) {
@@ -430,7 +375,7 @@ fun PlayerScreen(
             val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
 
             // LOG TEMPORAL - Debug ratio detection
-            android.util.Log.d("PlayerScreen", "Screen: ${screenWidth}x$screenHeight, Ratio: $aspectRatio")
+            Log.d("PlayerScreen", "Screen: ${screenWidth}x$screenHeight, Ratio: $aspectRatio")
 
             // Determinar tipo de pantalla (maneja portrait Y landscape)
             val isCompactLayout = aspectRatio >= 0.90f && aspectRatio < 1.15f // Cuadrada
@@ -489,7 +434,7 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Spacer(Modifier.weight(1f))
+                // Spacer(Modifier.weight(0.6f))
 
                 // Imagen del álbum responsiva
                 Image(
@@ -630,7 +575,7 @@ fun PlayerScreen(
                                         showCreatePlaylistDialog = true
                                     },
                                     colors =
-                                        androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        ButtonDefaults.buttonColors(
                                             containerColor = MaterialTheme.colorScheme.primary,
                                         ),
                                 ) {
