@@ -34,12 +34,13 @@ fun AboutScreen(onBack: () -> Unit) {
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background),
     ) {
-        // Custom Top Bar without extra paddings (fixes odd spacing)
+        // Custom Top Bar with status bar padding
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
+                    .statusBarsPadding()
                     .height(56.dp),
         ) {
             Row(

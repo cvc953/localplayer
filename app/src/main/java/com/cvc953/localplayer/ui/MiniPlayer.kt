@@ -31,7 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -51,7 +53,9 @@ fun MiniPlayer(
     onPlayPause: () -> Unit,
     onClick: () -> Unit,
     onNext: () -> Unit,
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
+    backgroundBrush: Brush? = null,
+    contentAlpha: Float = 1f,
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
@@ -69,45 +73,59 @@ fun MiniPlayer(
         }
     }
 
-    Row(
+    Column(
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
-                .background(LocalExtendedColors.current.surfaceSheet) // color similar a la app
-                .clickable { onClick() }
-                .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+                .background(
+                    backgroundBrush ?: Brush.verticalGradient(
+                        listOf(
+                            LocalExtendedColors.current.surfaceSheet,
+                            LocalExtendedColors.current.surfaceSheet,
+                        ),
+                    ),
+                ),
     ) {
-        Image(
-            painter =
-                albumArt?.let { BitmapPainter(it.asImageBitmap()) }
-                    ?: painterResource(R.drawable.ic_default_album),
-            contentDescription = null,
-            modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop,
-        )
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = song.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, fontWeight = FontWeight.SemiBold)
-            Text(text = song.artist, color = LocalExtendedColors.current.textSecondarySoft, fontSize = 12.sp, maxLines = 1)
-        }
-
-        IconButton(onClick = onPlayPause) {
-            Icon(
-                imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onClick() }
+                    .padding(12.dp)
+                    .graphicsLayer { alpha = contentAlpha },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Image(
+                painter =
+                    albumArt?.let { BitmapPainter(it.asImageBitmap()) }
+                        ?: painterResource(R.drawable.ic_default_album),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop,
             )
-        }
 
-        IconButton(onClick = onNext) {
-            Icon(
-                imageVector = Icons.Default.SkipNext,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = song.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, fontWeight = FontWeight.SemiBold)
+                Text(text = song.artist, color = LocalExtendedColors.current.textSecondarySoft, fontSize = 12.sp, maxLines = 1)
+            }
+
+            IconButton(onClick = onPlayPause) {
+                Icon(
+                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+
+            IconButton(onClick = onNext) {
+                Icon(
+                    imageVector = Icons.Default.SkipNext,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
     }
 }
