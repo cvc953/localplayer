@@ -434,7 +434,8 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                // Spacer(Modifier.weight(0.6f))
+                //
+				// Spacer(Modifier.weight(0.6f))
 
                 // Imagen del álbum responsiva
                 Image(
