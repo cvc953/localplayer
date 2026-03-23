@@ -1,11 +1,62 @@
 package com.cvc953.localplayer.ui.theme
-
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+// primary / Accent color for the app, used in sliders, icons, etc.
+val md_primary = Color(0xFF2196F3)
+val md_onPrimary = Color.White
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+// background color for surfaces like the player and settings cards
+val md_background = Color.Black
+val md_onBackground = Color.White
+
+// Surface color for the main background of the app, used in the main activity and the player screen
+val md_surface = Color(0xFF1A1A1A)
+val md_onSurface = Color.White
+val md_surfaceVariant = Color(0xFF404040)
+
+// Text Variant colors for primary and secondary text on surfaces
+val md_textSecondary = Color(0xFF808080)
+val md_textPrimary = Color.White.copy(alpha = 0.7f)
+
+// Overlay color for the player screen, used to darken the background when the controls are visible
+val md_overlay = Color.Black.copy(alpha = 0.8f)
+
+// Extra surface colors for cards and dialogs
+val md_surfaceSheet = Color(0xFF121212)
+val md_surfaceImagePlaceholder = Color(0xFFB0B0B0)
+
+// Text variants (fine-gradient)
+val md_textMeta = Color(0xFF808080)
+val md_textSecondaryStrong = Color(0xFFAAAAAA)
+val md_textSecondarySoft = Color(0xFFB0B0B0)
+
+// Tracks / outlines
+val md_outlineSoft = Color(0xFF404040)
+
+// Gradients
+val md_surfaceGradientTop = Color(0xFF0F0F0F)
+
+// light Background
+val md_lightBackground = Color(0xFFF5F5F5)
+val md_lightOnBackground = Color(0xFF000000)
+
+// light surfaces
+val md_lightSurface = Color.White
+val md_lightOnSurface = Color(0xFF1A1A1A)
+
+// Variants / containers
+val md_lightSurfaceVariant = Color(0xFFE0E0E0)
+val md_lightSurfaceSheet = Color(0xFFFAFAFA)
+
+// Text
+val md_lightTextSecondary = Color(0xFF616161)
+val md_lightTextSecondarySoft = Color(0xFF9E9E9E)
+val md_lightTextSecondaryStrong = Color(0xFF424242)
+
+// Text Variants
+val md_textMeta_Light = Color(0xFF6F6F6F)
+
+val md_surfaceSheet_Light = Color(0xFFE8E8E8)
+
+// Outline
+val md_lightOutlineSoft = Color(0xFFBDBDBD)

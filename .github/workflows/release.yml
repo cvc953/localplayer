@@ -83,6 +83,31 @@ jobs:
           fi
           cp "$APK_PATH" "release/LocalPlayer-${{ steps.extract_version.outputs.VERSION }}.apk"
           (cd release && sha256sum "LocalPlayer-${{ steps.extract_version.outputs.VERSION }}.apk" > checksums.txt)
+      
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION="${{ steps.extract_version.outputs.VERSION }}"
+          CHANGELOG_FILE="CHANGELOG.md"
+          
+          if [[ ! -f "$CHANGELOG_FILE" ]]; then
+            echo "CHANGELOG_CONTENT=No hay changelog disponible para esta versión." >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Extraer la sección del changelog para esta versión
+          # Busca desde "## [$VERSION]" hasta la siguiente línea que empiece con "## ["
+          CHANGELOG=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" "$CHANGELOG_FILE")
+          
+          if [[ -z "$CHANGELOG" ]]; then
+            echo "CHANGELOG_CONTENT=No se encontraron cambios documentados para la versión $VERSION." >> $GITHUB_OUTPUT
+          else
+            # Guardar en un archivo temporal para evitar problemas con caracteres especiales
+            echo "$CHANGELOG" > release/changelog_content.txt
+            echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_OUTPUT
+            cat release/changelog_content.txt >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
        
       
       - name: Upload APK artifact
@@ -105,6 +130,12 @@ jobs:
             release/checksums.txt
           body: |
             ## Local Player v${{ steps.extract_version.outputs.VERSION }}
+            
+            ### 📝 Cambios en esta versión
+            
+            ${{ steps.changelog.outputs.CHANGELOG_CONTENT }}
+            
+            ---
             
             ### 📥 Descarga
             

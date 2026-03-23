@@ -1,89 +1,222 @@
 package com.cvc953.localplayer.util
 
 import android.Manifest
-import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.cvc953.localplayer.ui.extendedColors
 
 @Composable
 fun StoragePermissionHandler(
-    content: @Composable () -> Unit
+    isFolderConfiguredInitially: Boolean,
+    onFolderSelected: (String) -> Unit,
+    onSetupCompleted: () -> Unit = {},
+    content: @Composable () -> Unit,
 ) {
-    val context = LocalContext.current
+    val context = androidx.compose.ui.platform.LocalContext.current
 
-    val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_AUDIO
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    }
-
-    /*val isGranted = remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-        )
-    }*/
-
-    val isGranted = rememberSaveable {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, permission) ==
-                    PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            isGranted.value = true
+    val permission =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_AUDIO
         } else {
-            Toast.makeText(context, "Se necesita acceso a la música", Toast.LENGTH_SHORT).show()
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+    val hasPermission =
+        rememberSaveable {
+            mutableStateOf(
+                ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED,
+            )
+        }
+    val hasFolderConfigured = rememberSaveable { mutableStateOf(isFolderConfiguredInitially) }
+    val setupWasInitiallyCompleted = rememberSaveable {
+        mutableStateOf(hasPermission.value && hasFolderConfigured.value)
+    }
+
+    val permissionLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { granted ->
+            hasPermission.value = granted
+            if (!granted) {
+                Toast.makeText(context, "Se necesita acceso a la musica", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    val folderLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                    onFolderSelected(uri.toString())
+                    hasFolderConfigured.value = true
+                    Toast.makeText(context, "Carpeta seleccionada", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    android.util.Log.w("StoragePermissionHandler", "No se pudo guardar permiso persistente", e)
+                    Toast.makeText(context, "No se pudo guardar acceso a la carpeta", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+    LaunchedEffect(hasPermission.value, hasFolderConfigured.value) {
+        val setupCompleted = hasPermission.value && hasFolderConfigured.value
+        if (setupCompleted && !setupWasInitiallyCompleted.value) {
+            setupWasInitiallyCompleted.value = true
+            onSetupCompleted()
         }
     }
 
-    if (isGranted.value) {
-        // **Solo aquí llamamos a composables**
+    if (hasPermission.value && hasFolderConfigured.value) {
         content()
-    } else {
-        // mostramos mensaje
+        return
+    }
+
+    val scrollState = rememberScrollState()
+
+    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .verticalScroll(scrollState)
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "La app necesita permiso para acceder a tu música",
-                color = Color.White, fontSize = 18.sp, textAlign = TextAlign.Center, fontWeight = FontWeight.Bold
+                text = "Configurar biblioteca",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { launcher.launch(permission) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2196F3)
-                )
+            Text(
+                text = "Un paso rapido para acceder a tu musica local",
+                color = MaterialTheme.extendedColors.textSecondary,
+                fontSize = 13.sp,
+            )
+
+            SetupSectionCard(
+                title = "1. Permiso de almacenamiento",
+                subtitle = "Necesario para leer tus archivos de audio",
             ) {
-                Text("Dar permiso")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (hasPermission.value) Icons.Default.CheckCircle else Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = if (hasPermission.value) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.textSecondary,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = if (hasPermission.value) "Permiso concedido" else "Permiso pendiente",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                FilledTonalButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        if (!hasPermission.value) {
+                            permissionLauncher.launch(permission)
+                        }
+                    },
+                    enabled = !hasPermission.value,
+                    colors =
+                        ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            disabledContentColor = MaterialTheme.extendedColors.textSecondary,
+                        ),
+                ) {
+                    Text(if (hasPermission.value) "Permiso activo" else "Dar permiso")
+                }
             }
+
+            SetupSectionCard(
+                title = "2. Carpeta de musica",
+                subtitle = "Selecciona donde guardas tus canciones",
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (hasFolderConfigured.value) Icons.Default.CheckCircle else Icons.Default.Folder,
+                        contentDescription = null,
+                        tint = if (hasFolderConfigured.value) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.textSecondary,
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = if (hasFolderConfigured.value) "Carpeta configurada" else "Carpeta pendiente",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                FilledTonalButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { folderLauncher.launch(null) },
+                    enabled = hasPermission.value,
+                    colors =
+                        ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            disabledContentColor = MaterialTheme.extendedColors.textSecondary,
+                        ),
+                ) {
+                    Text("Elegir carpeta")
+                }
+                if (!hasPermission.value) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Primero debes conceder el permiso de almacenamiento.",
+                        color = MaterialTheme.extendedColors.textSecondary,
+                        fontSize = 12.sp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SetupSectionCard(
+    title: String,
+    subtitle: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.extendedColors.surfaceSheet),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            Text(subtitle, color = MaterialTheme.extendedColors.textSecondary, fontSize = 12.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            content()
         }
     }
 }
