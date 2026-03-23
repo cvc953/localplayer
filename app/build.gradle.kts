@@ -70,7 +70,6 @@ dependencies {
     implementation(libs.androidx.compose.ui.unit)
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.runtime)
-    implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
@@ -92,8 +91,6 @@ dependencies {
 
     // MediaSession y compatibilidad con notificaciones
     implementation("androidx.media:media:1.7.0")
-// ExoPlayer
-    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
 // Para PendingIntent y compatibilidad
     implementation("androidx.core:core-ktx:1.12.0")
 
