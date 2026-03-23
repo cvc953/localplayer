@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:no-wildcard-imports")
+
 package com.cvc953.localplayer.ui
 
 import androidx.activity.compose.BackHandler
@@ -12,69 +14,76 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cvc953.localplayer.R
+import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
+@Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-    
     BackHandler {
         onBack()
     }
-    
+
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background),
     ) {
-        // Top App Bar
-        TopAppBar(
-            title = {
-                Text(
-                    "Acerca de",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
+        // Custom Top Bar with status bar padding
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .statusBarsPadding()
+                    .height(56.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(start = 4.dp, end = 12.dp),
+            ) {
                 IconButton(onClick = onBack) {
                     Icon(
                         Icons.Default.ArrowBack,
                         contentDescription = "Atrás",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF121212),
-                scrolledContainerColor = Color(0xFF121212)
-            )
-        )
+                Text(
+                    "Acerca de",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 4.dp),
+                )
+            }
+        }
 
         // Content
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+            verticalArrangement = Arrangement.Top,
         ) {
             // App Name and Icon
             Text(
                 text = "Local Player",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -82,8 +91,8 @@ fun AboutScreen(onBack: () -> Unit) {
             Text(
                 text = "v1.0",
                 fontSize = 14.sp,
-                color = Color(0xFFB0B0B0),
-                textAlign = TextAlign.Center
+                color = LocalExtendedColors.current.textSecondarySoft,
+                textAlign = TextAlign.Center,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -92,56 +101,58 @@ fun AboutScreen(onBack: () -> Unit) {
             Text(
                 text = "Reproductor de música local ligero y moderno",
                 fontSize = 16.sp,
-                color = Color(0xFFCCCCCC),
+                // color = Color(0xFFCCCCCC),
+                color = LocalExtendedColors.current.textSecondary,
                 textAlign = TextAlign.Center,
-                lineHeight = 24.sp
+                lineHeight = 24.sp,
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             // Features Section
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp))
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = "Características",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 FeatureItem(
                     title = "Reproducción local",
-                    description = "Accede a tu música sin internet"
+                    description = "Accede a tu música sin internet",
                 )
 
                 FeatureItem(
                     title = "Soporte para letras",
-                    description = "Visualiza las letras mientras reproduces"
+                    description = "Visualiza las letras mientras reproduces",
                 )
 
                 FeatureItem(
                     title = "Cola de reproducción",
-                    description = "Organiza tus próximas canciones"
+                    description = "Organiza tus próximas canciones",
                 )
 
                 FeatureItem(
-                    title = "Búsqueda y filtrado",
-                    description = "Encuentra tus canciones rápidamente"
+                    title = "Búsqueda",
+                    description = "Encuentra tus canciones rápidamente",
                 )
 
                 FeatureItem(
                     title = "Modos de repetición",
-                    description = "Shuffle, repetir uno o repetir todo"
+                    description = "Shuffle, repetir uno o repetir todo",
                 )
 
                 FeatureItem(
                     title = "Información de audio",
-                    description = "Visualiza el formato y bitrate"
+                    description = "Visualiza el formato y bitrate",
                 )
             }
 
@@ -149,16 +160,17 @@ fun AboutScreen(onBack: () -> Unit) {
 
             // Developer Section
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp))
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                        .padding(16.dp),
             ) {
                 Text(
                     text = "Desarrollador",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -166,7 +178,8 @@ fun AboutScreen(onBack: () -> Unit) {
                 Text(
                     text = "Cristian Villalobos C.",
                     fontSize = 14.sp,
-                    color = Color(0xFFCCCCCC)
+                    // color = Color(0xFFCCCCCC),
+                    color = LocalExtendedColors.current.textSecondary,
                 )
             }
 
@@ -174,16 +187,17 @@ fun AboutScreen(onBack: () -> Unit) {
 
             // Tech Stack Section
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFF1A1A1A), RoundedCornerShape(12.dp))
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                        .padding(16.dp),
             ) {
                 Text(
                     text = "Tecnologías",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -194,14 +208,54 @@ fun AboutScreen(onBack: () -> Unit) {
                 TechItem(name = "Android MediaPlayer", description = "Reproducción de audio")
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Privacy Policy Section
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                        .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = "Política de privacidad",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+
+                Text(
+                    text = "Local Player no recopila, almacena ni comparte datos personales del usuario.",
+                    fontSize = 13.sp,
+                    color = LocalExtendedColors.current.textSecondary,
+                    lineHeight = 20.sp,
+                )
+
+                Text(
+                    text = "La app funciona de forma local en tu dispositivo y solo accede a archivos de audio y carpetas que tú selecciones.",
+                    fontSize = 13.sp,
+                    color = LocalExtendedColors.current.textSecondarySoft,
+                    lineHeight = 20.sp,
+                )
+
+                Text(
+                    text = "No se envía información a servidores externos.",
+                    fontSize = 13.sp,
+                    color = LocalExtendedColors.current.textSecondarySoft,
+                    lineHeight = 20.sp,
+                )
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
             // Footer
             Text(
                 text = "© 2026 Local Player. Todos los derechos reservados.",
                 fontSize = 12.sp,
-                color = Color(0xFF808080),
-                textAlign = TextAlign.Center
+                color = LocalExtendedColors.current.textSecondary,
+                textAlign = TextAlign.Center,
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -209,49 +263,52 @@ fun AboutScreen(onBack: () -> Unit) {
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 private fun FeatureItem(
     title: String,
-    description: String
+    description: String,
 ) {
     Column {
         Text(
             text = title,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF2196F3)
+            color = MaterialTheme.colorScheme.primary,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = description,
             fontSize = 12.sp,
-            color = Color(0xFFB0B0B0)
+            color = LocalExtendedColors.current.textSecondarySoft,
         )
     }
 }
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 private fun TechItem(
     name: String,
-    description: String
+    description: String,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF2196F3)
+                color = MaterialTheme.colorScheme.primary,
             )
             Text(
                 text = description,
                 fontSize = 12.sp,
-                color = Color(0xFFB0B0B0)
+                color = LocalExtendedColors.current.textSecondarySoft,
             )
         }
     }
