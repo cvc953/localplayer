@@ -8,10 +8,58 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Próximas características
-- Ecualizador integrado
-- Soporte para playlists
 - Widgets para la pantalla de inicio
 - Temas personalizables
+
+## [1.0.4] - 2026-03-23
+
+### Añadido
+- 🎵 Soporte para letras TTML (sílabas sincronizadas, word-by-word, animaciones de puntos para gaps instrumentales)
+- 🎛️ Ecualizador integrado con gestión de presets de usuario y persistencia de estado
+- 📂 Gestión de carpetas de música mediante FolderViewModel
+- 🎤 Soporte para voces secundarias en letras sincronizadas
+- 🔤 Scroller alfabético en pantallas de álbumes, artistas y música
+- 🎨 Colores dinámicos del reproductor y letras basados en luminancia del fondo
+- ⚙️ Toggle de colores dinámicos en pantalla de ajustes
+- 🔄 Auto-scan de biblioteca con debounce para evitar rescans innecesarios
+- 💿 Carga de canciones agrupadas por álbum y artista (AlbumViewModel)
+- ▶️ Reproducción directa por artista (playArtist)
+- 🔁 Modo de repetición sincronizado entre PlayerController y PlaybackViewModel
+- 🔊 Gestión de enfoque de audio en el reproductor
+- 📋 Preferencias de ordenamiento de playlists persistidas
+- 📦 Exportar e importar playlists desde/hacia archivos JSON
+- ➕ Crear nuevas playlists y agregar canciones desde el diálogo del reproductor
+- ⭐ Funcionalidad de favoritos en canciones
+- 🔍 Menús desplegables en álbumes y artistas para opciones de reproducción
+- 🎵 Track number y disc number en el modelo de datos de canciones
+
+### Cambiado
+- 🧭 Arquitectura de navegación refactorizada a Navigation Compose
+- 🖥️ UI del reproductor completamente rediseñada
+- 📊 Lógica de reproducción delegada a PlaybackViewModel (arquitectura más limpia)
+- 🎛️ Ecualizador refactorizado a EqualizerViewModel dedicado
+- 🎨 Sistema de temas mejorado con ExtendedColors y manejo consistente de colores
+- ⚙️ Pantalla de ajustes refactorizada con toggle de ecualizador y colores dinámicos
+- 🎯 Manejo de arrastre en listas de canciones mejorado para mayor responsividad
+- 📱 Manejo del status bar refactorizado en MainActivity
+
+### Corregido
+- 🐛 Cálculo de duración de gaps en la animación de puntos de letras
+- 🐛 Errores de compilación de Kotlin y mejoras en responsividad de UI
+- 🐛 Manejo de relación de aspecto en la pantalla del reproductor
+- 🐛 Scroll de letras que no se centraba correctamente en la posición actual
+- 🐛 Inicialización del ecualizador al cambiar de sesión de audio
+- 🐛 Normalización de nombres de álbumes para mejor coincidencia
+
+### Eliminado
+- 🗑️ Dependencias no utilizadas de Firebase Crashlytics y ExoPlayer
+- 🗑️ Código comentado y componentes Spacer innecesarios
+
+### Técnico
+- ViewModels dedicados: Artist, Equalizer, Folder, Lyrics, Playback, Player, Playlist, Settings
+- Parser TTML con soporte para sílabas continuas y unión de palabras entre líneas
+- Auto-scan de biblioteca en ViewModels con debounce
+- Extracción de changelog automatizada en workflow de GitHub Actions
 
 ## [1.0.0] - 2026-01-25
 
@@ -52,5 +100,6 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `Corregido` para correcciones de bugs
 - `Seguridad` para vulnerabilidades corregidas
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/cvc953/localplayer/compare/v1.0.0...v1.0.4
 [1.0.0]: https://github.com/cvc953/localplayer/releases/tag/v1.0.0
