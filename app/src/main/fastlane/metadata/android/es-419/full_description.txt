@@ -1,0 +1,13 @@
+Local Player es un reproductor de audio nativo para Android diseñado para quienes buscan simplicidad, elegancia y una experiencia de escucha inmersiva.
+
+Construido con Jetpack Compose y Material 3, ofrece una interfaz moderna que destaca por su soporte avanzado de letras.
+
+Características principales:
+• Letras Sincronizadas: Soporte completo para archivos .lrc (línea por línea) y .ttml (sincronización precisa palabra por palabra).
+• Motor Media3: Utiliza la última tecnología de Google (ExoPlayer/Media3) para una reproducción fluida y de alta fidelidad.
+• Interfaz Moderna: Diseño minimalista con Material Design 3 y temas dinámicos.
+• Adaptación Visual: La interfaz y los controles extraen el color dominante de la carátula del álbum (androidx.palette).
+• Privacidad Total: Sin anuncios, sin rastreadores y sin necesidad de internet. Tu música y tus datos se quedan en tu dispositivo.
+• Formatos: Compatible con MP3, FLAC, WAV, AAC y más.
+
+Local Player es un proyecto de código abierto bajo licencia MIT, enfocado en ser una herramienta funcional, rápida y respetuosa con el usuario.

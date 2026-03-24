@@ -1,0 +1,1 @@
+Modern local music player with word-by-word synchronized lyrics support.
