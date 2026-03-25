@@ -121,7 +121,7 @@ fun AppNavigation(
             route = Screen.ArtistSongs.route,
             arguments = artistSongsArguments,
         ) { backStackEntry ->
-            val artistName = backStackEntry.arguments?.getString(Screen.ArtistSongs.ARG_ARTIST_NAME) ?: ""
+            val artistName = RouteParams.decode(backStackEntry.arguments?.getString(Screen.ArtistSongs.ARG_ARTIST_NAME))
 
             ArtistSongsScreen(
                 artistViewModel = artistViewModel,

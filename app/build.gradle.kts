@@ -19,7 +19,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -80,34 +80,30 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // Third-party
     implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // Media3
     implementation("androidx.media3:media3-exoplayer:1.2.1")
     implementation("androidx.media3:media3-ui:1.2.1")
     implementation("androidx.media3:media3-session:1.2.1")
 
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.media3:media3-exoplayer:1.2.1")
-    implementation("androidx.media3:media3-ui:1.2.1")
-
     // MediaSession y compatibilidad con notificaciones
     implementation("androidx.media:media:1.7.0")
-// Para PendingIntent y compatibilidad
-    implementation("androidx.core:core-ktx:1.12.0")
 
-    // ViewModel + Compose
+    // Compose Material icons
     implementation("androidx.compose.material:material-icons-extended:1.6.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.3")
 
-// StateFlow + collectAsState
-    implementation("androidx.compose.runtime:runtime-livedata")
+    // ViewModel + Lifecycle
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.activity:activity-compose:1.9.3")
+
+    // StateFlow + collectAsState
+    implementation("androidx.compose.runtime:runtime-livedata")
 
     // Palette para extraer color dominante
     implementation("androidx.palette:palette:1.0.0")
-
-    // Navigation Compose
-    implementation("androidx.navigation:navigation-compose:2.7.7")
 }

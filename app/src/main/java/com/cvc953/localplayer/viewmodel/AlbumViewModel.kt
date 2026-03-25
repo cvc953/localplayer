@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
@@ -102,7 +103,7 @@ class AlbumViewModel(
     }
 
     // Persistent grid/list view preference
-    private val prefs = application.getSharedPreferences("music_prefs", 0)
+    private val prefs = application.getSharedPreferences("music_prefs", Context.MODE_PRIVATE)
 
     @Suppress("ktlint:standard:property-naming")
     private val PREF_VIEW_AS_GRID = "pref_view_as_grid"
