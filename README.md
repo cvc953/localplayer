@@ -154,7 +154,7 @@ Si encuentras algún bug o tienes una sugerencia, por favor abre un [issue](http
 - [x] Ecualizador integrado
 - [x] Soporte para playlists
 - [ ] Widgets para la pantalla de inicio
-- [ ] Temas personalizables
+- [x] Temas personalizables
 - [x] Escaneo de carpetas específicas
 - [ ] Importar/Exportar configuración
 - [ ] Sleep timer
@@ -165,12 +165,6 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 
 ## 👤 Autor
 
-**Cristian** - [@cvc953](https://github.com/cvc953)
-
-## 🙏 Agradecimientos
-
-- [Material Icons](https://fonts.google.com/icons)
-- [Jetpack Compose](https://developer.android.com/jetpack/compose)
-- Comunidad de Android
+**Cristian Villalobos** - [@cvc953](https://github.com/cvc953)
 
 ---
