@@ -7,9 +7,14 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
@@ -18,11 +23,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.ui.theme.predefinedThemeColors
 import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import com.cvc953.localplayer.viewmodel.FolderEntry
 import com.cvc953.localplayer.viewmodel.FolderViewModel
@@ -41,6 +49,7 @@ fun SettingsScreen(
     val theme by viewModel.themeMode.collectAsState()
     val autoScan by viewModel.autoScanEnabled.collectAsState()
     val dynamicColor by viewModel.dynamicColorEnabled.collectAsState()
+    val primaryColorHex by viewModel.primaryColorHex.collectAsState()
     val eqEnabled by equalizerViewModel.equalizerEnabled.collectAsState()
 
     val themeOptions = listOf("sistema", "claro", "oscuro")
@@ -139,6 +148,61 @@ fun SettingsScreen(
                         }
                     }
 
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Color de acento", color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                "Selecciona el color de acento de la app",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        items(predefinedThemeColors) { themeColor ->
+                            val isSelected = themeColor.hex == primaryColorHex
+                            val borderColor = if (isSelected) themeColor.color else Color.Transparent
+                            val borderWidth = if (isSelected) 3.dp else 0.dp
+
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .then(
+                                            if (borderWidth > 0.dp) {
+                                                Modifier.border(borderWidth, borderColor, CircleShape)
+                                            } else {
+                                                Modifier
+                                            },
+                                        ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Surface(
+                                    modifier = Modifier.size(32.dp),
+                                    shape = CircleShape,
+                                    color = themeColor.color,
+                                    onClick = { viewModel.setPrimaryColor(themeColor.hex) },
+                                ) {
+                                    if (isSelected) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = themeColor.name,
+                                                tint = themeColor.onColor,
+                                                modifier = Modifier.size(18.dp),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
@@ -170,28 +234,6 @@ fun SettingsScreen(
                         modifier = Modifier.padding(vertical = 12.dp),
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
-
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Escaneo automático", color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                "Detectar cambios y escanear automáticamente",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
-                        Switch(
-                            checked = autoScan,
-                            onCheckedChange = { viewModel.toggleAutoScan(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
-                                ),
-                        )
-                    }
                 }
             }
 
@@ -239,6 +281,28 @@ fun SettingsScreen(
                     title = "Biblioteca",
                     subtitle = "Gestiona las carpetas que se incluyen en la música",
                 ) {
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Escaneo automático", color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                "Detectar cambios y escanear automáticamente",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Switch(
+                            checked = autoScan,
+                            onCheckedChange = { viewModel.toggleAutoScan(it) },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                                ),
+                        )
+                    }
+
                     FilledTonalButton(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { launcher.launch(null) },
@@ -293,7 +357,9 @@ fun SettingsScreen(
                 onDismissRequest = { folderToDelete = null },
                 title = { Text("Eliminar carpeta") },
                 text = {
-                    Text("¿Eliminar la carpeta \"${entry.name}\"?\n\nLas ${entry.count} canciones de esta carpeta ya no se mostrarán en la app.")
+                    Text(
+                        "¿Eliminar la carpeta \"${entry.name}\"?\n\nLas ${entry.count} canciones de esta carpeta ya no se mostrarán en la app.",
+                    )
                 },
                 confirmButton = {
                     TextButton(

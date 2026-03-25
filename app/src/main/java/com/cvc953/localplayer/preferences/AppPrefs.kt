@@ -2,22 +2,26 @@ package com.cvc953.localplayer.preferences
 
 import android.content.Context
 
-class AppPrefs(context: Context) {
+class AppPrefs(
+    context: Context,
+) {
     // Playlist order preference (per playlist)
-    fun getPlaylistOrder(playlistName: String): String =
-        prefs.getString("playlist_order_$playlistName", "PLAYLIST") ?: "PLAYLIST"
+    fun getPlaylistOrder(playlistName: String): String = prefs.getString("playlist_order_$playlistName", "PLAYLIST") ?: "PLAYLIST"
 
-    fun setPlaylistOrder(playlistName: String, order: String) {
+    fun setPlaylistOrder(
+        playlistName: String,
+        order: String,
+    ) {
         prefs.edit().putString("playlist_order_$playlistName", order).apply()
     }
 
-    private val prefs = context.getSharedPreferences(
-        "localplayer_prefs",
-        Context.MODE_PRIVATE
-    )
+    private val prefs =
+        context.getSharedPreferences(
+            "localplayer_prefs",
+            Context.MODE_PRIVATE,
+        )
 
-    fun isFirstScanDone(): Boolean =
-        prefs.getBoolean("first_scan_done", false)
+    fun isFirstScanDone(): Boolean = prefs.getBoolean("first_scan_done", false)
 
     fun setFirstScanDone() {
         prefs.edit().putBoolean("first_scan_done", true).apply()
@@ -131,7 +135,10 @@ class AppPrefs(context: Context) {
         }
     }
 
-    fun addUserPreset(name: String, levels: List<Int>) {
+    fun addUserPreset(
+        name: String,
+        levels: List<Int>,
+    ) {
         val list = getUserPresets().toMutableList()
         list.add(Pair(name, levels))
         setUserPresets(list)
@@ -162,6 +169,13 @@ class AppPrefs(context: Context) {
 
     fun setDynamicColorEnabled(enabled: Boolean) {
         prefs.edit().putBoolean("dynamic_color_enabled", enabled).apply()
+    }
+
+    // Primary color preference: hex string for theme accent color (e.g. "#2196F3")
+    fun getPrimaryColor(): String = prefs.getString("primary_color_hex", "#2196F3") ?: "#2196F3"
+
+    fun setPrimaryColor(hex: String) {
+        prefs.edit().putString("primary_color_hex", hex).apply()
     }
 
     // Playback state persistence (queue, current song, position, shuffle, repeat, playing)
@@ -211,7 +225,10 @@ class AppPrefs(context: Context) {
 
     fun loadIsPlaying(): Boolean = prefs.getBoolean("playback_is_playing", false)
 
-    fun saveNextAlbum(albumName: String?, artistName: String?) {
+    fun saveNextAlbum(
+        albumName: String?,
+        artistName: String?,
+    ) {
         prefs.edit().apply {
             putString("next_album_name", albumName)
             putString("next_album_artist", artistName)
@@ -220,5 +237,6 @@ class AppPrefs(context: Context) {
     }
 
     fun loadNextAlbumName(): String? = prefs.getString("next_album_name", null)
+
     fun loadNextAlbumArtist(): String? = prefs.getString("next_album_artist", null)
 }
