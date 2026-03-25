@@ -1,8 +1,8 @@
 package com.cvc953.localplayer.controller
 
+import com.cvc953.localplayer.model.Settings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import com.cvc953.localplayer.model.Settings
 
 class SettingsController {
     private val _settings = MutableStateFlow(Settings())
@@ -12,7 +12,10 @@ class SettingsController {
         _settings.value = _settings.value.copy(theme = theme)
     }
 
-    fun updateOtherSetting(key: String, value: Any) {
-        // Implementa la lógica para actualizar otros ajustes
+    fun updateOtherSetting(
+        key: String,
+        value: Any,
+    ) {
+        // lógica para actualizar otros ajustes
     }
 }

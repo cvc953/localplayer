@@ -26,5 +26,4 @@ class SettingsViewModel(
             settingsController.updateOtherSetting(key, value)
         }
     }
-
 }

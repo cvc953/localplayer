@@ -3,8 +3,8 @@ package com.cvc953.localplayer.util
 import android.content.Context
 import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.model.TtmlLyrics
-import com.cvc953.localplayer.model.TtmlSyllable
 import com.cvc953.localplayer.model.TtmlMetadata
+import com.cvc953.localplayer.model.TtmlSyllable
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -18,7 +18,10 @@ object TtmlCache {
         return dir
     }
 
-    fun loadCached(context: Context, key: String): TtmlLyrics? {
+    fun loadCached(
+        context: Context,
+        key: String,
+    ): TtmlLyrics? {
         return try {
             val f = File(cacheDir(context), key)
             if (!f.exists()) return null
@@ -26,14 +29,16 @@ object TtmlCache {
             val root = JSONObject(text)
             val type = root.optString("type", "Word")
             val metaObj = root.optJSONObject("metadata") ?: JSONObject()
-            val metadata = TtmlMetadata(
-                source = metaObj.optString("source", "TTML"),
-                title = metaObj.optString("title", ""),
-                language = metaObj.optString("language", ""),
-                songWriters = (metaObj.optJSONArray("songWriters") ?: JSONArray()).let { arr ->
-                    List(arr.length()) { i -> arr.optString(i) }
-                }
-            )
+            val metadata =
+                TtmlMetadata(
+                    source = metaObj.optString("source", "TTML"),
+                    title = metaObj.optString("title", ""),
+                    language = metaObj.optString("language", ""),
+                    songWriters =
+                        (metaObj.optJSONArray("songWriters") ?: JSONArray()).let { arr ->
+                            List(arr.length()) { i -> arr.optString(i) }
+                        },
+                )
 
             val linesArr = root.optJSONArray("lines") ?: JSONArray()
             val lines = mutableListOf<TtmlLine>()
@@ -72,7 +77,11 @@ object TtmlCache {
         }
     }
 
-    fun saveCached(context: Context, key: String, ttml: TtmlLyrics) {
+    fun saveCached(
+        context: Context,
+        key: String,
+        ttml: TtmlLyrics,
+    ) {
         try {
             val f = File(cacheDir(context), key)
             val root = JSONObject()
@@ -115,7 +124,10 @@ object TtmlCache {
         }
     }
 
-    fun keyForFile(path: String, lastModified: Long): String {
+    fun keyForFile(
+        path: String,
+        lastModified: Long,
+    ): String {
         val input = "$CACHE_SCHEMA_VERSION|$path|$lastModified"
         return input.hashCode().toString() + ".json"
     }
