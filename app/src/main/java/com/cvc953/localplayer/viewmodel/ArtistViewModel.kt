@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.viewmodel
 
 import android.app.Application
+import android.content.Context
 import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
@@ -60,7 +61,7 @@ class ArtistViewModel(
             override fun onChange(selfChange: Boolean) {
                 super.onChange(selfChange)
                 android.util.Log.d("ArtistViewModel", "MediaStore onChange detected")
-                
+
                 // Detectar cambios en la biblioteca y refrescar (si está activado)
                 if (appPrefs.isAutoScanEnabled()) {
                     android.util.Log.d("ArtistViewModel", "Auto-scan enabled, scheduling library refresh")
@@ -74,18 +75,19 @@ class ArtistViewModel(
     private fun scheduleLibraryRefresh() {
         // Cancelar el job anterior si existe (debouncing)
         autoScanJob?.cancel()
-        
+
         // Programar un nuevo escaneo con delay de 2 segundos
-        autoScanJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                android.util.Log.d("ArtistViewModel", "Debouncing auto-scan for 2 seconds...")
-                delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
-                android.util.Log.d("ArtistViewModel", "Starting auto-scan library refresh")
-                refreshMusicLibrary()
-            } catch (e: Exception) {
-                android.util.Log.e("ArtistViewModel", "Error in auto-scan", e)
+        autoScanJob =
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    android.util.Log.d("ArtistViewModel", "Debouncing auto-scan for 2 seconds...")
+                    delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
+                    android.util.Log.d("ArtistViewModel", "Starting auto-scan library refresh")
+                    refreshMusicLibrary()
+                } catch (e: Exception) {
+                    android.util.Log.e("ArtistViewModel", "Error in auto-scan", e)
+                }
             }
-        }
     }
 
     private fun refreshMusicLibrary() {
@@ -95,7 +97,10 @@ class ArtistViewModel(
                 val newArtists = controller.getAllArtists()
                 val currentArtists = _artists.value
 
-                android.util.Log.d("ArtistViewModel", "refreshMusicLibrary: Found ${newArtists.size} artists, current has ${currentArtists.size}")
+                android.util.Log.d(
+                    "ArtistViewModel",
+                    "refreshMusicLibrary: Found ${newArtists.size} artists, current has ${currentArtists.size}",
+                )
 
                 // Actualizar si hay cambios
                 if (newArtists != currentArtists) {
@@ -111,7 +116,7 @@ class ArtistViewModel(
     }
 
     // Persistent grid/list view preference
-    private val prefs = application.getSharedPreferences("music_prefs", 0)
+    private val prefs = application.getSharedPreferences("music_prefs", Context.MODE_PRIVATE)
     private val PREF_VIEW_AS_GRID = "pref_view_as_grid_artist"
 
     fun isGridViewPreferred(): Boolean = prefs.getBoolean(PREF_VIEW_AS_GRID, true)

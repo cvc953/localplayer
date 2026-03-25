@@ -35,17 +35,12 @@ jobs:
       - name: Prepare signing keystore
         env:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
-          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
-          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         run: |
-          if [[ -n "$SIGNING_KEYSTORE_BASE64" ]]; then
-            echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/release.keystore
-            echo "ANDROID_SIGNING_STORE_FILE=release.keystore" >> $GITHUB_ENV
+          if [[ -z "$SIGNING_KEYSTORE_BASE64" ]]; then
+            echo "::error::Signing keystore secret is missing. Cannot build release APK."
+            exit 1
           fi
-          if [[ -n "$ANDROID_SIGNING_STORE_PASSWORD" ]]; then echo "ANDROID_SIGNING_STORE_PASSWORD=$ANDROID_SIGNING_STORE_PASSWORD" >> $GITHUB_ENV; fi
-          if [[ -n "$ANDROID_SIGNING_KEY_ALIAS" ]]; then echo "ANDROID_SIGNING_KEY_ALIAS=$ANDROID_SIGNING_KEY_ALIAS" >> $GITHUB_ENV; fi
-          if [[ -n "$ANDROID_SIGNING_KEY_PASSWORD" ]]; then echo "ANDROID_SIGNING_KEY_PASSWORD=$ANDROID_SIGNING_KEY_PASSWORD" >> $GITHUB_ENV; fi
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > app/release.keystore
       
       - name: Extract version from tag
         id: extract_version
@@ -61,24 +56,24 @@ jobs:
           echo "Building version: $VERSION"
       
       - name: Build Release APK
+        env:
+          ANDROID_SIGNING_STORE_FILE: release.keystore
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
         run: |
-          if [[ -n "$ANDROID_SIGNING_STORE_FILE" && -n "$ANDROID_SIGNING_STORE_PASSWORD" && -n "$ANDROID_SIGNING_KEY_ALIAS" && -n "$ANDROID_SIGNING_KEY_PASSWORD" ]]; then
-            ./gradlew assembleRelease
-          else
-            echo "Signing secrets missing; building Debug APK as fallback" >&2
-            ./gradlew assembleDebug
+          if [[ -z "$ANDROID_SIGNING_STORE_PASSWORD" || -z "$ANDROID_SIGNING_KEY_ALIAS" || -z "$ANDROID_SIGNING_KEY_PASSWORD" ]]; then
+            echo "::error::Signing secrets are incomplete. Cannot build release APK."
+            exit 1
           fi
+          ./gradlew assembleRelease
         
       - name: Collect APK and checksums
         run: |
           mkdir -p release
-          # Prefer signed release APK; fallback to debug if release not built
           APK_PATH=$(find app/build/outputs/apk/release -type f -name "*.apk" ! -name "*unsigned*" | head -n 1)
           if [[ -z "$APK_PATH" ]]; then
-            APK_PATH=$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -n 1)
-          fi
-          if [[ -z "$APK_PATH" ]]; then
-            echo "No APK produced under app/build/outputs/apk/release" >&2
+            echo "::error::No signed APK found in app/build/outputs/apk/release"
             exit 1
           fi
           cp "$APK_PATH" "release/LocalPlayer-${{ steps.extract_version.outputs.VERSION }}.apk"

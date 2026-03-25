@@ -11,6 +11,23 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Widgets para la pantalla de inicio
 - Temas personalizables
 
+## [1.0.5] - 2026-03-25
+
+### Añadido
+- 🎨 Selección de color de acento dinámico en pantalla de ajustes
+- 📱 Screenshots de la app para Play Store (álbum, biblioteca, letras, reproductor) en inglés y español
+- 📄 Metadatos de Fastlane para publicación en Play Store (EN y ES)
+
+### Cambiado
+- 🎨 Manejo de temas refactorizado para soportar colores de acento personalizados
+- 💾 Persistencia de color de acento seleccionado en preferencias
+
+### Corregido
+- 🐛 Parser TTML detectaba múltiples palabras separadas por `-` como una sola palabra
+
+### Técnico
+- Documentación Openspec para integración de bottom-sheet (planificación)
+
 ## [1.0.4] - 2026-03-23
 
 ### Añadido
@@ -100,6 +117,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `Corregido` para correcciones de bugs
 - `Seguridad` para vulnerabilidades corregidas
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/cvc953/localplayer/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/cvc953/localplayer/compare/v1.0.0...v1.0.4
 [1.0.0]: https://github.com/cvc953/localplayer/releases/tag/v1.0.0

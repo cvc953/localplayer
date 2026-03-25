@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -107,7 +108,10 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
 
         val miniPlayerBrush =
             Brush.verticalGradient(
-                listOf(playerBackgroundColor, playerBackgroundColor),
+                listOf(
+                    lerp(playerBackgroundColor, MaterialTheme.colorScheme.surfaceVariant, miniPlayerAlpha.coerceIn(0f, 1f)),
+                    lerp(playerBackgroundColor, MaterialTheme.colorScheme.surfaceVariant, miniPlayerAlpha.coerceIn(0f, 1f)),
+                ),
             )
 
         LaunchedEffect(Unit) {

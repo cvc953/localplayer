@@ -82,7 +82,7 @@ data class LyricLine(
 )*/
 
 class MainViewModel(
-    application: Application
+    application: Application,
 ) : AndroidViewModel(application) {
     companion object {
         var instance: MainViewModel? = null
@@ -157,7 +157,7 @@ class MainViewModel(
         // Ensure when the PlayerController's internal queue is exhausted, delegate to PlaybackViewModel
         try {
             val pc = PlayerController.getInstance(getApplication(), viewModelScope)
-            
+
             pc.setOnQueueEndedListener {
                 viewModelScope.launch {
                     try {
@@ -178,6 +178,9 @@ class MainViewModel(
 
     private val _dynamicColorEnabled = MutableStateFlow(appPrefs.isDynamicColorEnabled())
     val dynamicColorEnabled: StateFlow<Boolean> = _dynamicColorEnabled
+
+    private val _primaryColorHex = MutableStateFlow(appPrefs.getPrimaryColor())
+    val primaryColorHex: StateFlow<String> = _primaryColorHex
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
@@ -212,7 +215,7 @@ class MainViewModel(
             override fun onChange(selfChange: Boolean) {
                 super.onChange(selfChange)
                 android.util.Log.d("MainViewModel", "MediaStore onChange detected, selfChange=$selfChange")
-                
+
                 // Detectar cambios en la biblioteca y refrescar (si está activado)
                 if (appPrefs.isAutoScanEnabled()) {
                     android.util.Log.d("MainViewModel", "Auto-scan enabled, scheduling library refresh")
@@ -226,18 +229,19 @@ class MainViewModel(
     private fun scheduleLibraryRefresh() {
         // Cancelar el job anterior si existe (debouncing)
         autoScanJob?.cancel()
-        
+
         // Programar un nuevo escaneo con delay de 2 segundos
-        autoScanJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                android.util.Log.d("MainViewModel", "Debouncing auto-scan for 2 seconds...")
-                delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
-                android.util.Log.d("MainViewModel", "Starting auto-scan library refresh")
-                refreshMusicLibrary()
-            } catch (e: Exception) {
-                android.util.Log.e("MainViewModel", "Error in auto-scan", e)
+        autoScanJob =
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    android.util.Log.d("MainViewModel", "Debouncing auto-scan for 2 seconds...")
+                    delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
+                    android.util.Log.d("MainViewModel", "Starting auto-scan library refresh")
+                    refreshMusicLibrary()
+                } catch (e: Exception) {
+                    android.util.Log.e("MainViewModel", "Error in auto-scan", e)
+                }
             }
-        }
     }
 
     private fun refreshMusicLibrary() {
@@ -425,7 +429,7 @@ class MainViewModel(
         android.util.Log.d("MainViewModel", "toggleAutoScan: $enabled")
         appPrefs.setAutoScanEnabled(enabled)
         _autoScanEnabled.value = enabled
-        
+
         if (enabled) {
             // If enabling auto-scan, trigger an immediate refresh so new files are picked up
             android.util.Log.d("MainViewModel", "Auto-scan enabled, triggering immediate refresh")
@@ -449,6 +453,11 @@ class MainViewModel(
     fun toggleDynamicColor(enabled: Boolean) {
         appPrefs.setDynamicColorEnabled(enabled)
         _dynamicColorEnabled.value = enabled
+    }
+
+    fun setPrimaryColor(hex: String) {
+        appPrefs.setPrimaryColor(hex)
+        _primaryColorHex.value = hex
     }
 
     fun openPlayerScreen() {
@@ -530,7 +539,7 @@ class MainViewModel(
                                     "LyricsDebug",
                                     "✓ TTML parseado: ${parsed.lines.size} líneas, type=${parsed.type}",
                                 )
-                                
+
                                 // Solo usar TTML si tiene líneas
                                 if (parsed.lines.isNotEmpty()) {
                                     parsed.lines.forEachIndexed { i, line ->
@@ -609,7 +618,7 @@ class MainViewModel(
                                         "✓ Match TTML encontrado: ${file.name}",
                                     )
                                     val parsed = TtmlParser.parseTtml(text)
-                                    
+
                                     // Solo usar TTML si tiene líneas
                                     if (parsed.lines.isNotEmpty()) {
                                         _ttmlLyrics.value = parsed
@@ -758,5 +767,4 @@ class MainViewModel(
             android.util.Log.e("MainViewModel", "Error al cargar última canción", e)
         }
     }
-
 }
