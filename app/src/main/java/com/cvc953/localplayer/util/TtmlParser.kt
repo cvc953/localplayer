@@ -20,6 +20,8 @@ object TtmlParser {
     // Simple in-memory cache to avoid reparsing identical TTML content
     private val cache = mutableMapOf<Int, TtmlLyrics>()
 
+    val dashChars = setOf('-', '\u2013', '\u2014', '\u2010')
+
     fun parseTtml(content: String): TtmlLyrics {
         // cheap fingerprint: hashCode + length to reduce collision chance
         val key = content.hashCode() xor content.length
@@ -74,7 +76,9 @@ object TtmlParser {
                 val lastPrev = prevLine.syllabus.last()
                 val firstCurr = currLine.syllabus.first()
                 // Si la última sílaba de la línea anterior y la primera de la actual no terminan ni empiezan con espacio, es una palabra partida
-                if (!lastPrev.text.endsWith(" ") && !firstCurr.text.startsWith(" ")) {
+                if ((!lastPrev.text.endsWith(" ") && !firstCurr.text.startsWith(" ")) &&
+                    !dashChars.contains(lastPrev.text.lastOrNull())
+                ) {
                     // Marcar la primera sílaba de la línea actual como continuación de palabra
                     val newFirst = firstCurr.copy(continuesWord = true)
                     val newSyllabus = currLine.syllabus.toMutableList()
@@ -170,7 +174,11 @@ object TtmlParser {
                             }
 
                             // Si hay múltiples palabras en el span, dividirlas
-                            val words = cleanedText.split("[\\s\\u00A0]+".toRegex()).filter { it.isNotEmpty() }
+                            val words =
+                                cleanedText
+                                    .split(
+                                        "[\\s\\u00A0\\-\\u2013\\u2014\\u2010]+".toRegex(),
+                                    ).filter { it.isNotEmpty() }
 
                             if (words.size > 1) {
                                 // Múltiples palabras: distribuir tiempo proporcionalmente
@@ -195,7 +203,9 @@ object TtmlParser {
                             } else {
                                 // Una sola palabra: proceso normal
                                 // Detectar si continúa en la siguiente palabra (no termina con espacio)
-                                val continuesWord = cleanedText.isNotEmpty() && !cleanedText.endsWith(" ")
+                                val continuesWord =
+                                    cleanedText.isNotEmpty() && !cleanedText.endsWith(" ") &&
+                                        !dashChars.contains(cleanedText.trimEnd().lastOrNull())
 
                                 // Si continúa la palabra, eliminar el espacio final
                                 val finalText =

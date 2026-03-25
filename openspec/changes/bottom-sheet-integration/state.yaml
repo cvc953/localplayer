@@ -1,0 +1,21 @@
+# SDD State: bottom-sheet-integration
+project: localplayer
+change: bottom-sheet-integration
+artifact_store:
+  mode: openspec
+  backend: openspec
+current_phase: sdd-tasks
+started_at: 2026-03-16T00:00:00Z
+dependencies: []
+status: completed
+
+# Phase progression
+# sdd-explore -> sdd-propose -> sdd-spec -> sdd-design -> sdd-tasks -> sdd-apply -> sdd-verify -> sdd-archive
+
+# Artifacts created
+artifacts:
+  - exploration.md
+  - proposal.md
+  - specs/ui/spec.md
+  - design.md
+  - tasks.md

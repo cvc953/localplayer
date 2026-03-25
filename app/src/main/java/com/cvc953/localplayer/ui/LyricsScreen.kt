@@ -123,7 +123,7 @@ fun LyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.7f),
+                                dominantColor.darken(0.6f),
                                 dominantColor.darken(0.1f),
                             ),
                         )
@@ -268,7 +268,7 @@ fun TtmlLyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.7f),
+                                dominantColor.darken(0.6f),
                                 dominantColor.darken(0.1f),
                             ),
                         )
@@ -377,6 +377,13 @@ fun TtmlLyricsView(
 }
 
 fun Color.darken(factor: Float = 0.7f): Color =
+    this.copy(
+        red = this.red * factor,
+        green = this.green * factor,
+        blue = this.blue * factor,
+    )
+
+fun Color.luminance(factor: Float = 0.7f): Color =
     this.copy(
         red = this.red * factor,
         green = this.green * factor,
