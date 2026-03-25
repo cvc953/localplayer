@@ -1,0 +1,31 @@
+# openspec/config.yaml
+schema: spec-driven
+
+context: |
+  Tech stack: Kotlin + Jetpack Compose + Material3 + Navigation Compose
+  Architecture: MVVM with ViewModels
+  Dependencies: Media3, Firebase Crashlytics, Coil
+  Build: Gradle with Kotlin DSL
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Identify affected modules/packages
+  specs:
+    - Use Given/When/Then format for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group tasks by phase (infrastructure, implementation, testing)
+    - Use hierarchical numbering (1.1, 1.2, etc.)
+    - Keep tasks small enough to complete in one session
+  apply:
+    - Follow existing code patterns and conventions
+    - Use Material3 components
+  verify:
+    - Run tests if test infrastructure exists
+    - Compare implementation against every spec scenario
+  archive:
+    - Warn before merging destructive deltas (large removals)
