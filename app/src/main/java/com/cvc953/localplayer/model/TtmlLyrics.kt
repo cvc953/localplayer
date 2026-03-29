@@ -51,15 +51,9 @@ data class TtmlLine(
     val agent: String? = null,
     /**
      * Alineación de la línea según el agente.
-     * v1 = LEFT, v2 = RIGHT, v3 = LEFT
+     * v1 = LEFT, v2 = RIGHT, v3 = RIGHT
      */
     val alignment: TtmlAlignment = TtmlAlignment.LEFT,
-    /**
-     * Fracción máxima del ancho de pantalla que puede ocupar esta línea.
-     * 1.0 = línea ocupa todo el ancho
-     * 0.67 = línea ocupa 2/3 del ancho (cuando hay múltiples voces)
-     */
-    val maxWidthFraction: Float = 1f,
 )
 
 /**

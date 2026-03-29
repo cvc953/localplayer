@@ -182,7 +182,7 @@ fun LyricsView(
                     LyricLine(
                         text = line.text,
                         active = index == currentIndex,
-                        isSecondaryVoice = line.isSecondaryVoice,
+                        isSecondaryVoice = false,
                         activeColor = activeLyricColor,
                         inactiveColor = inactiveLyricColor,
                     )
@@ -194,7 +194,7 @@ fun LyricsView(
                     val nextLineStart = lyrics[index + 1].timeMs
                     val gapDuration = nextLineStart - currentLineStart
 
-                    // Si hay un gap > 1500ms, mostrar animación de puntos
+                    // Si hay un gap > gapThreshold, mostrar animación de puntos
                     if (gapDuration > gapThreshold) {
                         // Mostrar la animacion solo si estamos dentro del gap
                         val isGapActive = currentPosition >= currentLineStart && currentPosition < nextLineStart
@@ -225,6 +225,7 @@ fun LyricsView(
 /**
  * Vista de letras con sincronización palabra por palabra para TTML
  */
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun TtmlLyricsView(
     lines: List<TtmlLine>,
@@ -244,6 +245,14 @@ fun TtmlLyricsView(
         } else {
             LocalExtendedColors.current.textSecondary
         }
+
+    // Detectar si hay múltiples voces (diferentes agentes)
+    val hasMultipleVoices =
+        remember(lines) {
+            lines.mapNotNull { it.agent }.distinct().size > 1
+        }
+    // Porcentaje máximo de ancho: 100% si una voz, 66.6% (2/3) si múltiples voces
+    val maxWidthFraction = if (hasMultipleVoices) 0.666f else 1f
 
     val currentIndex =
         remember(currentPosition) {
@@ -328,9 +337,10 @@ fun TtmlLyricsView(
                         baseColor = inactiveLyricColor,
                         activeColor = activeLyricColor,
                         horizontalAlignment = line.alignment,
+                        maxWidthFraction = maxWidthFraction,
                         modifier =
                             Modifier
-                                .fillMaxWidth(line.maxWidthFraction)
+                                .fillMaxWidth()
                                 .clickable { onLineClick(line.timeMs) },
                     )
                 } else {
@@ -341,9 +351,10 @@ fun TtmlLyricsView(
                         activeColor = activeLyricColor,
                         inactiveColor = inactiveLyricColor,
                         horizontalAlignment = line.alignment,
+                        maxWidthFraction = maxWidthFraction,
                         modifier =
                             Modifier
-                                .fillMaxWidth(line.maxWidthFraction)
+                                .fillMaxWidth()
                                 .clickable { onLineClick(line.timeMs) },
                     )
                 }

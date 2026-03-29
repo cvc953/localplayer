@@ -169,6 +169,7 @@ fun WordByWordLine(
     activeColor: Color = Color.White,
     modifier: Modifier = Modifier,
     horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
+    maxWidthFraction: Float = 1f, // 1 = 100%, 0.666f = 2/3
 ) {
     // Separar sílabas principales de las de fondo (entre paréntesis)
     val mainSyllables = syllables.filter { !it.isBackground }
@@ -197,7 +198,7 @@ fun WordByWordLine(
         FlowRow(
             horizontalArrangement = flowHorizontalArrangement,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(maxWidthFraction),
         ) {
             var wordBuffer = mutableListOf<TtmlSyllable>()
 
@@ -234,7 +235,7 @@ fun WordByWordLine(
             FlowRow(
                 horizontalArrangement = flowHorizontalArrangement,
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(maxWidthFraction),
             ) {
                 backgroundSyllables.forEach { syllable ->
                     BackgroundSyllableLyric(

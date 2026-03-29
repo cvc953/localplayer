@@ -89,30 +89,10 @@ object TtmlParser {
             }
         }
 
-        // --- Calcular maxWidthFraction para líneas que overlap con diferente alineación ---
-        val processedLines =
-            lines.mapIndexed { index, line ->
-                val lineEnd = line.timeMs + line.durationMs
-                // Buscar si hay alguna línea que overlap en el tiempo con diferente alineación
-                val hasOverlapWithDifferentAlignment =
-                    lines.any { otherLine ->
-                        otherLine !== line &&
-                            otherLine.alignment != line.alignment &&
-                            otherLine.timeMs < lineEnd &&
-                            (otherLine.timeMs + otherLine.durationMs) > line.timeMs
-                    }
-
-                if (hasOverlapWithDifferentAlignment) {
-                    line.copy(maxWidthFraction = 0.67f)
-                } else {
-                    line
-                }
-            }
-
         return TtmlLyrics(
             type = timingMode,
             metadata = metadata,
-            lines = processedLines,
+            lines = lines,
         )
     }
 

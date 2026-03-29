@@ -11,7 +11,7 @@ import org.json.JSONObject
 import java.io.File
 
 object TtmlCache {
-    private const val CACHE_SCHEMA_VERSION = 5 // Incremented for maxWidthFraction support
+    private const val CACHE_SCHEMA_VERSION = 4 // Incremented for agent/alignment support
 
     private fun cacheDir(context: Context): File {
         val dir = File(context.cacheDir, "ttml_cache")
@@ -80,7 +80,6 @@ object TtmlCache {
                         transliteration = if (ln.has("transliteration")) ln.optString("transliteration").ifEmpty { null } else null,
                         agent = agent,
                         alignment = alignment,
-                        maxWidthFraction = ln.optDouble("maxWidthFraction", 1.0).toFloat(),
                     ),
                 )
             }
@@ -119,9 +118,6 @@ object TtmlCache {
                 ln.transliteration?.let { lnObj.put("transliteration", it) }
                 ln.agent?.let { lnObj.put("agent", it) }
                 lnObj.put("alignment", ln.alignment.name)
-                if (ln.maxWidthFraction != 1f) {
-                    lnObj.put("maxWidthFraction", ln.maxWidthFraction.toDouble())
-                }
 
                 val sylArr = JSONArray()
                 ln.syllabus.forEach { s ->

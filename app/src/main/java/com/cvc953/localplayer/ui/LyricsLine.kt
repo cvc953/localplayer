@@ -37,6 +37,7 @@ fun LyricLine(
     activeColor: Color = Color.White,
     inactiveColor: Color = Color.Gray,
     horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
+    maxWidthFraction: Float = 1f,
 ) {
     LyricLine(
         text = text,
@@ -46,6 +47,7 @@ fun LyricLine(
         activeColor = activeColor,
         inactiveColor = inactiveColor,
         horizontalAlignment = horizontalAlignment,
+        maxWidthFraction = maxWidthFraction,
     )
 }
 
@@ -58,6 +60,7 @@ fun LyricLine(
     activeColor: Color = Color.White,
     inactiveColor: Color = Color.Gray,
     horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
+    maxWidthFraction: Float = 1f,
 ) {
     // Match TTML behavior: secondary voice is only visible on the active line.
     if (isSecondaryVoice && !active) return
@@ -88,19 +91,24 @@ fun LyricLine(
                 .padding(horizontal = 24.dp),
         contentAlignment = alignment,
     ) {
-        Text(
-            text = text.trimStart(),
-            color = if (active) activeColor else inactiveColor,
-            fontSize = fontSize.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = textAlign,
-            lineHeight = if (isSecondaryVoice) (fontSize + 8).sp else (fontSize + 10).sp,
-            maxLines = Int.MAX_VALUE,
-            softWrap = true,
-            overflow = TextOverflow.Visible,
-            onTextLayout = { result ->
-                lineCount = result.lineCount
-            },
-        )
+        Box(
+            modifier = Modifier.fillMaxWidth(maxWidthFraction),
+            contentAlignment = alignment,
+        ) {
+            Text(
+                text = text.trimStart(),
+                color = if (active) activeColor else inactiveColor,
+                fontSize = fontSize.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = textAlign,
+                lineHeight = if (isSecondaryVoice) (fontSize + 8).sp else (fontSize + 10).sp,
+                maxLines = Int.MAX_VALUE,
+                softWrap = true,
+                overflow = TextOverflow.Visible,
+                onTextLayout = { result ->
+                    lineCount = result.lineCount
+                },
+            )
+        }
     }
 }
