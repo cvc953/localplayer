@@ -203,13 +203,6 @@ class SongRepository(
                     continue
                 }
 
-                // Excluir archivos muy cortos (notificaciones, efectos de sonido)
-                // Duración mínima: 30 segundos (30000 ms)
-                if (duration < 30000) {
-                    excluded++
-                    continue
-                }
-
                 // No cargar carátula durante el escaneo para mayor velocidad
                 // Las carátulas se cargarán bajo demanda cuando se necesiten
                 list.add(
