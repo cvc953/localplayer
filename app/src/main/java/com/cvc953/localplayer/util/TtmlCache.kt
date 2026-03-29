@@ -11,7 +11,7 @@ import org.json.JSONObject
 import java.io.File
 
 object TtmlCache {
-    private const val CACHE_SCHEMA_VERSION = 4 // Incremented for agent/alignment support
+    private const val CACHE_SCHEMA_VERSION = 5 // Incremented for maxWidthFraction support
 
     private fun cacheDir(context: Context): File {
         val dir = File(context.cacheDir, "ttml_cache")

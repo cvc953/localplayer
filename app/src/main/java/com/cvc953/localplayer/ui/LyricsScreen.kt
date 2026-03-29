@@ -330,7 +330,7 @@ fun TtmlLyricsView(
                         horizontalAlignment = line.alignment,
                         modifier =
                             Modifier
-                                .fillMaxWidth()
+                                .fillMaxWidth(line.maxWidthFraction)
                                 .clickable { onLineClick(line.timeMs) },
                     )
                 } else {
@@ -343,7 +343,7 @@ fun TtmlLyricsView(
                         horizontalAlignment = line.alignment,
                         modifier =
                             Modifier
-                                .fillMaxWidth()
+                                .fillMaxWidth(line.maxWidthFraction)
                                 .clickable { onLineClick(line.timeMs) },
                     )
                 }
