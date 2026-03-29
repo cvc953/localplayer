@@ -26,11 +26,17 @@ enum class TtmlAlignment {
 
 /**
  * Determina la alineación basada en el agente
+ * - v1, v3: LEFT (artista principal, grupo)
+ * - null, v2, v4, etc: LEFT (sin agente = alineación por defecto izquierda)
  */
 fun alignmentFromAgent(agent: String?): TtmlAlignment =
     when (agent) {
         "v1", "v3" -> TtmlAlignment.LEFT
-        else -> TtmlAlignment.RIGHT // v2, v4, etc.
+
+        "v2" -> TtmlAlignment.RIGHT
+
+        // Segundo artista
+        else -> TtmlAlignment.LEFT // null, v4, etc. -> LEFT por defecto
     }
 
 /**

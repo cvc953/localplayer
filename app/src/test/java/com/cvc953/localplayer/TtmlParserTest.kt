@@ -127,4 +127,33 @@ class TtmlParserTest {
         assertEquals("v3", result.lines[2].agent)
         assertEquals(TtmlAlignment.LEFT, result.lines[2].alignment)
     }
+
+    @Test
+    fun testNoAgentAlignment() {
+        // TTML sin ttm:agent debe tener alineación LEFT (por defecto)
+        val ttml =
+            """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <tt xmlns="http://www.w3.org/ns/ttml" 
+                xmlns:itunes="http://music.apple.com/lyric-ttml-internal"
+                itunes:timing="Word">
+              <body>
+                <div>
+                  <p begin="00:00:10.000" end="00:00:14.000">
+                    <span begin="00:00:10.000" end="00:00:14.000">Line sin agente</span>
+                  </p>
+                </div>
+              </body>
+            </tt>
+            """.trimIndent()
+
+        val result = TtmlParser.parseTtml(ttml)
+
+        assertNotNull(result)
+        assertEquals(1, result.lines.size)
+
+        // Sin agente -> LEFT
+        assertNull(result.lines[0].agent)
+        assertEquals(TtmlAlignment.LEFT, result.lines[0].alignment)
+    }
 }
