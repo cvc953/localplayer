@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -23,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
+import com.cvc953.localplayer.model.TtmlAlignment
 import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.LrcLine
@@ -316,30 +319,33 @@ fun TtmlLyricsView(
             }
 
             itemsIndexed(lines) { index, line ->
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .clickable { onLineClick(line.timeMs) },
-                ) {
-                    // Si la línea tiene sílabas, mostrar sincronización palabra por palabra
-                    if (line.syllabus.isNotEmpty()) {
-                        WordByWordLine(
-                            syllables = line.syllabus,
-                            currentPosition = currentPosition,
-                            isActive = index == currentIndex,
-                            baseColor = inactiveLyricColor,
-                            activeColor = activeLyricColor,
-                        )
-                    } else {
-                        // Fallback a línea simple
-                        LyricLine(
-                            text = line.text,
-                            active = index == currentIndex,
-                            activeColor = activeLyricColor,
-                            inactiveColor = inactiveLyricColor,
-                        )
-                    }
+                // Si la línea tiene sílabas, mostrar sincronización palabra por palabra
+                if (line.syllabus.isNotEmpty()) {
+                    WordByWordLine(
+                        syllables = line.syllabus,
+                        currentPosition = currentPosition,
+                        isActive = index == currentIndex,
+                        baseColor = inactiveLyricColor,
+                        activeColor = activeLyricColor,
+                        horizontalAlignment = line.alignment,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onLineClick(line.timeMs) },
+                    )
+                } else {
+                    // Fallback a línea simple
+                    LyricLine(
+                        text = line.text,
+                        active = index == currentIndex,
+                        activeColor = activeLyricColor,
+                        inactiveColor = inactiveLyricColor,
+                        horizontalAlignment = line.alignment,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onLineClick(line.timeMs) },
+                    )
                 }
 
                 // Detectar gap grande entre esta linea y la siguiente

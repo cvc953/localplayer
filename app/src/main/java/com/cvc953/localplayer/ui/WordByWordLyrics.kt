@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.model.TtmlAlignment
 import com.cvc953.localplayer.model.TtmlSyllable
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
@@ -167,19 +168,36 @@ fun WordByWordLine(
     baseColor: Color = Color(0xFF707070),
     activeColor: Color = Color.White,
     modifier: Modifier = Modifier,
+    horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
 ) {
     // Separar sílabas principales de las de fondo (entre paréntesis)
     val mainSyllables = syllables.filter { !it.isBackground }
     val backgroundSyllables = syllables.filter { it.isBackground }
 
+    // Determinar alineación horizontal para FlowRow
+    val flowHorizontalArrangement =
+        when (horizontalAlignment) {
+            TtmlAlignment.LEFT -> Arrangement.Start
+            TtmlAlignment.RIGHT -> Arrangement.End
+        }
+
     Column(
-        modifier = modifier.padding(horizontal = 24.dp, vertical = 0.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 0.dp),
         verticalArrangement = Arrangement.Center,
+        horizontalAlignment =
+            when (horizontalAlignment) {
+                TtmlAlignment.LEFT -> Alignment.Start
+                TtmlAlignment.RIGHT -> Alignment.End
+            },
     ) {
         // Agrupar sílabas que forman una palabra
         FlowRow(
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = flowHorizontalArrangement,
             verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxWidth(),
         ) {
             var wordBuffer = mutableListOf<TtmlSyllable>()
 
@@ -214,8 +232,9 @@ fun WordByWordLine(
         if (backgroundSyllables.isNotEmpty() && isActive) {
             Spacer(modifier = Modifier.padding(top = 2.dp))
             FlowRow(
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = flowHorizontalArrangement,
                 verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 backgroundSyllables.forEach { syllable ->
                     BackgroundSyllableLyric(

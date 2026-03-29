@@ -34,6 +34,10 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     // Signing config for Release using environment variables provided by CI
     val keystorePath = System.getenv("ANDROID_SIGNING_STORE_FILE")
     val keystorePassword = System.getenv("ANDROID_SIGNING_STORE_PASSWORD")

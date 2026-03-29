@@ -4,6 +4,7 @@ import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.model.TtmlMetadata
 import com.cvc953.localplayer.model.TtmlSyllable
+import com.cvc953.localplayer.model.alignmentFromAgent
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 
@@ -68,7 +69,7 @@ object TtmlParser {
             eventType = parser.next()
         }
 
-        // --- Nueva lógica para unir palabras entre líneas ---
+        // --- Unir palabras entre líneas (palabras partidas) ---
         for (i in 1 until lines.size) {
             val prevLine = lines[i - 1]
             val currLine = lines[i]
@@ -88,10 +89,30 @@ object TtmlParser {
             }
         }
 
+        // --- Calcular maxWidthFraction para líneas que overlap con diferente alineación ---
+        val processedLines =
+            lines.mapIndexed { index, line ->
+                val lineEnd = line.timeMs + line.durationMs
+                // Buscar si hay alguna línea que overlap en el tiempo con diferente alineación
+                val hasOverlapWithDifferentAlignment =
+                    lines.any { otherLine ->
+                        otherLine !== line &&
+                            otherLine.alignment != line.alignment &&
+                            otherLine.timeMs < lineEnd &&
+                            (otherLine.timeMs + otherLine.durationMs) > line.timeMs
+                    }
+
+                if (hasOverlapWithDifferentAlignment) {
+                    line.copy(maxWidthFraction = 0.67f)
+                } else {
+                    line
+                }
+            }
+
         return TtmlLyrics(
             type = timingMode,
             metadata = metadata,
-            lines = lines,
+            lines = processedLines,
         )
     }
 
@@ -135,6 +156,10 @@ object TtmlParser {
             return null
         }
 
+        // Capturar el agente (artista) de la línea
+        val agent = parser.getAttributeValue("http://www.w3.org/ns/ttml#metadata", "agent")
+        val alignment = alignmentFromAgent(agent)
+
         val timeMs = parseTime(beginAttr)
         val endMs = parseTime(endAttr)
         val durationMs = endMs - timeMs
@@ -149,94 +174,105 @@ object TtmlParser {
         while (depth > 0) {
             when (parser.next()) {
                 XmlPullParser.START_TAG -> {
-                    if (parser.name == "span") {
-                        val syllable = parseSpan(parser, insideParenthesis)
-                        if (syllable != null) {
-                            // Detectar apertura de paréntesis
-                            if (syllable.text.startsWith("(")) {
-                                insideParenthesis = true
-                            }
+                    when (parser.name) {
+                        "span" -> {
+                            // Verificar si este span es un wrapper de background (ttm:role="x-bg")
+                            val ttmRole = parser.getAttributeValue("http://www.w3.org/ns/ttml#metadata", "role")
+                            val isBgWrapper = ttmRole == "x-bg"
 
-                            // Actualizar isBackground si estamos dentro de paréntesis
-                            val updatedSyllable =
-                                if (insideParenthesis) {
-                                    syllable.copy(isBackground = true)
-                                } else {
-                                    syllable
-                                }
-
-                            // Eliminar paréntesis
-                            var cleanedText = updatedSyllable.text.replace("(", "").replace(")", "")
-
-                            // Si la sílaba anterior continúa palabra, evitar espacios iniciales aquí
-                            if (previousContinuesWord) {
-                                cleanedText = cleanedText.trimStart()
-                            }
-
-                            // Si hay múltiples palabras en el span, dividirlas
-                            val words =
-                                cleanedText
-                                    .split(
-                                        "[\\s\\u00A0\\-\\u2013\\u2014\\u2010]+".toRegex(),
-                                    ).filter { it.isNotEmpty() }
-
-                            if (words.size > 1) {
-                                // Múltiples palabras: distribuir tiempo proporcionalmente
-                                val timePerWord = updatedSyllable.durationMs / words.size
-                                words.forEachIndexed { idx, word ->
-                                    val wordStartTime = updatedSyllable.timeMs + (idx * timePerWord)
-                                    val wordContinuesWord = false
-
-                                    val wordSyllable =
-                                        updatedSyllable.copy(
-                                            text = word,
-                                            timeMs = wordStartTime,
-                                            durationMs = timePerWord,
-                                            continuesWord = wordContinuesWord,
-                                        )
-
-                                    syllabus.add(wordSyllable)
-                                    textBuilder.append(word)
-                                    if (idx < words.lastIndex) textBuilder.append(" ")
-                                }
-                                previousContinuesWord = false
-                            } else {
-                                // Una sola palabra: proceso normal
-                                // Detectar si continúa en la siguiente palabra (no termina con espacio)
-                                val continuesWord =
-                                    cleanedText.isNotEmpty() && !cleanedText.endsWith(" ") &&
-                                        !dashChars.contains(cleanedText.trimEnd().lastOrNull())
-
-                                // Si continúa la palabra, eliminar el espacio final
-                                val finalText =
-                                    if (continuesWord) {
-                                        cleanedText.trimEnd()
-                                    } else {
-                                        cleanedText
+                            // Parsear los spans internos con el flag de background
+                            parseSpanWithChildren(parser, isBgWrapper).forEach { syllable ->
+                                if (syllable != null) {
+                                    // Detectar apertura de paréntesis para líneas sin wrapper
+                                    if (syllable.text.startsWith("(")) {
+                                        insideParenthesis = true
                                     }
 
-                                if (finalText.isNotEmpty()) {
-                                    val cleanedSyllable =
-                                        updatedSyllable.copy(
-                                            text = finalText,
-                                            continuesWord = continuesWord,
-                                        )
+                                    // Marcar como background si:
+                                    // 1. El syllable ya tiene isBackground = true (de parseSpanWithChildren cuando es wrapper)
+                                    // 2. Estamos dentro de paréntesis (sin wrapper)
+                                    val updatedSyllable =
+                                        if (syllable.isBackground || insideParenthesis) {
+                                            syllable.copy(isBackground = true)
+                                        } else {
+                                            syllable
+                                        }
 
-                                    syllabus.add(cleanedSyllable)
-                                    textBuilder.append(finalText)
+                                    // Eliminar paréntesis
+                                    var cleanedText = updatedSyllable.text.replace("(", "").replace(")", "")
+
+                                    // Si la sílaba anterior continúa palabra, evitar espacios iniciales aquí
+                                    if (previousContinuesWord) {
+                                        cleanedText = cleanedText.trimStart()
+                                    }
+
+                                    // Si hay múltiples palabras en el span, dividirlas
+                                    val words =
+                                        cleanedText
+                                            .split(
+                                                "[\\s\\u00A0\\-\\u2013\\u2014\\u2010]+".toRegex(),
+                                            ).filter { it.isNotEmpty() }
+
+                                    if (words.size > 1) {
+                                        // Múltiples palabras: distribuir tiempo proporcionalmente
+                                        val timePerWord = updatedSyllable.durationMs / words.size
+                                        words.forEachIndexed { idx, word ->
+                                            val wordStartTime = updatedSyllable.timeMs + (idx * timePerWord)
+                                            val wordContinuesWord = false
+
+                                            val wordSyllable =
+                                                updatedSyllable.copy(
+                                                    text = word,
+                                                    timeMs = wordStartTime,
+                                                    durationMs = timePerWord,
+                                                    continuesWord = wordContinuesWord,
+                                                )
+
+                                            syllabus.add(wordSyllable)
+                                            textBuilder.append(word)
+                                            if (idx < words.lastIndex) textBuilder.append(" ")
+                                        }
+                                        previousContinuesWord = false
+                                    } else {
+                                        // Una sola palabra: proceso normal
+                                        // Detectar si continúa en la siguiente palabra (no termina con espacio)
+                                        val continuesWord =
+                                            cleanedText.isNotEmpty() && !cleanedText.endsWith(" ") &&
+                                                !dashChars.contains(cleanedText.trimEnd().lastOrNull())
+
+                                        // Si continúa la palabra, eliminar el espacio final
+                                        val finalText =
+                                            if (continuesWord) {
+                                                cleanedText.trimEnd()
+                                            } else {
+                                                cleanedText
+                                            }
+
+                                        if (finalText.isNotEmpty()) {
+                                            val cleanedSyllable =
+                                                updatedSyllable.copy(
+                                                    text = finalText,
+                                                    continuesWord = continuesWord,
+                                                )
+
+                                            syllabus.add(cleanedSyllable)
+                                            textBuilder.append(finalText)
+                                        }
+
+                                        previousContinuesWord = continuesWord
+                                    }
+
+                                    // Detectar cierre de paréntesis
+                                    if (syllable.text.endsWith(")")) {
+                                        insideParenthesis = false
+                                    }
                                 }
-
-                                previousContinuesWord = continuesWord
-                            }
-
-                            // Detectar cierre de paréntesis
-                            if (syllable.text.endsWith(")")) {
-                                insideParenthesis = false
                             }
                         }
-                        // parseSpan ya consumió su END_TAG
-                    } else {
-                        depth++
+
+                        else -> {
+                            depth++
+                        }
                     }
                 }
 
@@ -285,7 +321,59 @@ object TtmlParser {
             durationMs = durationMs,
             text = lineText,
             syllabus = syllabusWithSustain,
+            agent = agent,
+            alignment = alignment,
         )
+    }
+
+    /**
+     * Parsea un span y sus hijos.
+     * Si es un wrapper de background (ttm:role="x-bg"), procesa recursivamente los spans internos
+     * y los marca como background.
+     * Si no, usa el comportamiento normal de parseSpan.
+     *
+     * IMPORTANTE: El parser debe estar posicionado en el START_TAG del span cuando se llama.
+     */
+    private fun parseSpanWithChildren(
+        parser: XmlPullParser,
+        isBgWrapper: Boolean,
+    ): List<TtmlSyllable?> {
+        if (isBgWrapper) {
+            // Wrapper de background: consumir el START_TAG wrapper y procesar los spans internos
+            var depth = 1
+            val syllables = mutableListOf<TtmlSyllable?>()
+
+            while (depth > 0) {
+                when (parser.next()) {
+                    XmlPullParser.START_TAG -> {
+                        if (parser.name == "span") {
+                            // Los spans internos también pueden ser wrappers
+                            val innerTtmRole = parser.getAttributeValue("http://www.w3.org/ns/ttml#metadata", "role")
+                            val isInnerBgWrapper = innerTtmRole == "x-bg"
+                            syllables.addAll(parseSpanWithChildren(parser, isInnerBgWrapper))
+                        } else {
+                            depth++
+                        }
+                    }
+
+                    XmlPullParser.END_TAG -> {
+                        if (parser.name == "span") {
+                            depth--
+                        }
+                    }
+
+                    XmlPullParser.TEXT -> {
+                        // Ignorar texto directo dentro del wrapper
+                    }
+                }
+            }
+            // Marcar todos los syllables como background
+            return syllables.map { it?.copy(isBackground = true) }
+        } else {
+            // No es wrapper: parsear normalmente con parseSpan
+            // parseSpan espera estar en el START_TAG y consume hasta el END_TAG
+            return listOf(parseSpan(parser, false))
+        }
     }
 
     private fun parseSpan(

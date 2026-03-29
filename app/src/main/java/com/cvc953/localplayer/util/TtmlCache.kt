@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.util
 
 import android.content.Context
+import com.cvc953.localplayer.model.TtmlAlignment
 import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.model.TtmlMetadata
@@ -10,7 +11,7 @@ import org.json.JSONObject
 import java.io.File
 
 object TtmlCache {
-    private const val CACHE_SCHEMA_VERSION = 2
+    private const val CACHE_SCHEMA_VERSION = 4 // Incremented for agent/alignment support
 
     private fun cacheDir(context: Context): File {
         val dir = File(context.cacheDir, "ttml_cache")
@@ -59,14 +60,27 @@ object TtmlCache {
                     )
                 }
 
+                val agentStr = ln.optString("agent", "")
+                val agent = agentStr.ifEmpty { null }
+                val alignmentStr = ln.optString("alignment", "LEFT")
+                val alignment =
+                    try {
+                        TtmlAlignment.valueOf(alignmentStr)
+                    } catch (_: Exception) {
+                        TtmlAlignment.LEFT
+                    }
+
                 lines.add(
                     TtmlLine(
                         timeMs = ln.optLong("timeMs", 0L),
                         durationMs = ln.optLong("durationMs", 0L),
                         text = ln.optString("text", ""),
                         syllabus = syllabus,
-                        translation = ln.optString("translation", null),
-                        transliteration = ln.optString("transliteration", null),
+                        translation = if (ln.has("translation")) ln.optString("translation").ifEmpty { null } else null,
+                        transliteration = if (ln.has("transliteration")) ln.optString("transliteration").ifEmpty { null } else null,
+                        agent = agent,
+                        alignment = alignment,
+                        maxWidthFraction = ln.optDouble("maxWidthFraction", 1.0).toFloat(),
                     ),
                 )
             }
@@ -103,6 +117,11 @@ object TtmlCache {
                 lnObj.put("text", ln.text)
                 ln.translation?.let { lnObj.put("translation", it) }
                 ln.transliteration?.let { lnObj.put("transliteration", it) }
+                ln.agent?.let { lnObj.put("agent", it) }
+                lnObj.put("alignment", ln.alignment.name)
+                if (ln.maxWidthFraction != 1f) {
+                    lnObj.put("maxWidthFraction", ln.maxWidthFraction.toDouble())
+                }
 
                 val sylArr = JSONArray()
                 ln.syllabus.forEach { s ->

@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.model.TtmlAlignment
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -35,6 +36,7 @@ fun LyricLine(
     isSecondaryVoice: Boolean = false,
     activeColor: Color = Color.White,
     inactiveColor: Color = Color.Gray,
+    horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
 ) {
     LyricLine(
         text = text,
@@ -43,6 +45,7 @@ fun LyricLine(
         modifier = Modifier,
         activeColor = activeColor,
         inactiveColor = inactiveColor,
+        horizontalAlignment = horizontalAlignment,
     )
 }
 
@@ -54,6 +57,7 @@ fun LyricLine(
     modifier: Modifier = Modifier,
     activeColor: Color = Color.White,
     inactiveColor: Color = Color.Gray,
+    horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
 ) {
     // Match TTML behavior: secondary voice is only visible on the active line.
     if (isSecondaryVoice && !active) return
@@ -65,21 +69,31 @@ fun LyricLine(
         label = "fontSize",
     )
 
-    val textAlign = TextAlign.Start
+    val textAlign =
+        when (horizontalAlignment) {
+            TtmlAlignment.LEFT -> TextAlign.Left
+            TtmlAlignment.RIGHT -> TextAlign.Right
+        }
+
+    val alignment =
+        when (horizontalAlignment) {
+            TtmlAlignment.LEFT -> Alignment.TopStart
+            TtmlAlignment.RIGHT -> Alignment.TopEnd
+        }
 
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
-        contentAlignment = Alignment.TopStart,
+        contentAlignment = alignment,
     ) {
         Text(
             text = text.trimStart(),
             color = if (active) activeColor else inactiveColor,
             fontSize = fontSize.sp,
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Left,
+            textAlign = textAlign,
             lineHeight = if (isSecondaryVoice) (fontSize + 8).sp else (fontSize + 10).sp,
             maxLines = Int.MAX_VALUE,
             softWrap = true,

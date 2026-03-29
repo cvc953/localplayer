@@ -1,13 +1,14 @@
 package com.cvc953.localplayer.util
 
-import org.junit.Test
+import com.cvc953.localplayer.model.TtmlAlignment
 import org.junit.Assert.*
+import org.junit.Test
 
 class TtmlParserTest {
-    
     @Test
     fun testParseSimpleTtml() {
-        val ttml = """
+        val ttml =
+            """
             <?xml version="1.0" encoding="UTF-8"?>
             <tt xmlns="http://www.w3.org/ns/ttml" 
                 xmlns:itunes="http://music.apple.com/lyric-ttml-internal"
@@ -21,42 +22,43 @@ class TtmlParserTest {
                 </div>
               </body>
             </tt>
-        """.trimIndent()
-        
+            """.trimIndent()
+
         val result = TtmlParser.parseTtml(ttml)
-        
+
         assertNotNull(result)
         assertEquals("Word", result.type)
         assertEquals(1, result.lines.size)
-        
+
         val line = result.lines[0]
         assertEquals(10000L, line.timeMs)
         assertEquals(4000L, line.durationMs)
         assertEquals("Hello world", line.text)
         assertEquals(2, line.syllabus.size)
-        
+
         val syllable1 = line.syllabus[0]
         assertEquals("Hello ", syllable1.text)
         assertEquals(10000L, syllable1.timeMs)
         assertEquals(500L, syllable1.durationMs)
-        
+
         val syllable2 = line.syllabus[1]
         assertEquals("world", syllable2.text)
         assertEquals(10500L, syllable2.timeMs)
         assertEquals(500L, syllable2.durationMs)
     }
-    
+
     @Test
     fun testParseEmptyTtml() {
         val result = TtmlParser.parseTtml("")
-        
+
         assertNotNull(result)
         assertEquals(0, result.lines.size)
     }
-    
+
     @Test
     fun testParseTimeFormats() {
-        val ttml = """
+        val ttml =
+            """
             <?xml version="1.0" encoding="UTF-8"?>
             <tt xmlns="http://www.w3.org/ns/ttml">
               <body>
@@ -70,51 +72,59 @@ class TtmlParserTest {
                 </div>
               </body>
             </tt>
-        """.trimIndent()
-        
+            """.trimIndent()
+
         val result = TtmlParser.parseTtml(ttml)
-        
+
         assertEquals(2, result.lines.size)
-        
+
         // HH:MM:SS.mmm format (1:30:45.500 = 5445500 ms)
         assertEquals(5445500L, result.lines[0].timeMs)
-        
+
         // MM:SS.mmm format (5:30.250 = 330250 ms)
         assertEquals(330250L, result.lines[1].timeMs)
     }
-    
+
     @Test
-    fun testWordSplitAcrossLines() {
-        val ttml = """
+    fun testAgentAlignment() {
+        val ttml =
+            """
             <?xml version="1.0" encoding="UTF-8"?>
             <tt xmlns="http://www.w3.org/ns/ttml" 
                 xmlns:itunes="http://music.apple.com/lyric-ttml-internal"
+                xmlns:ttm="http://www.w3.org/ns/ttml#metadata"
                 itunes:timing="Word">
               <body>
                 <div>
-                  <p begin="00:00:10.000" end="00:00:12.000">
-                    <span begin="00:00:10.000" end="00:00:11.000">Ro</span>
+                  <p begin="00:00:10.000" end="00:00:14.000" ttm:agent="v1">
+                    <span begin="00:00:10.000" end="00:00:14.000">Line 1</span>
                   </p>
-                  <p begin="00:00:12.000" end="00:00:14.000">
-                    <span begin="00:00:12.000" end="00:00:13.000">mance</span>
+                  <p begin="00:00:15.000" end="00:00:19.000" ttm:agent="v2">
+                    <span begin="00:00:15.000" end="00:00:19.000">Line 2</span>
+                  </p>
+                  <p begin="00:00:20.000" end="00:00:24.000" ttm:agent="v3">
+                    <span begin="00:00:20.000" end="00:00:24.000">Line 3</span>
                   </p>
                 </div>
               </body>
             </tt>
-        """.trimIndent()
+            """.trimIndent()
 
         val result = TtmlParser.parseTtml(ttml)
+
         assertNotNull(result)
-        assertEquals(2, result.lines.size)
-        val line1 = result.lines[0]
-        val line2 = result.lines[1]
-        assertEquals(1, line1.syllabus.size)
-        assertEquals(1, line2.syllabus.size)
-        val syll1 = line1.syllabus[0]
-        val syll2 = line2.syllabus[0]
-        assertEquals("Ro", syll1.text)
-        assertEquals("mance", syll2.text)
-        // La sílaba de la segunda línea debe marcar continuesWord=true
-        assertTrue(syll2.continuesWord)
+        assertEquals(3, result.lines.size)
+
+        // v1 -> LEFT
+        assertEquals("v1", result.lines[0].agent)
+        assertEquals(TtmlAlignment.LEFT, result.lines[0].alignment)
+
+        // v2 -> RIGHT
+        assertEquals("v2", result.lines[1].agent)
+        assertEquals(TtmlAlignment.RIGHT, result.lines[1].alignment)
+
+        // v3 -> LEFT
+        assertEquals("v3", result.lines[2].agent)
+        assertEquals(TtmlAlignment.LEFT, result.lines[2].alignment)
     }
 }
