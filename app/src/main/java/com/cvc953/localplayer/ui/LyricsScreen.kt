@@ -126,8 +126,8 @@ fun LyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.7f),
-                                dominantColor.darken(0.2f),
+                                dominantColor.darken(0.6f),
+                                dominantColor.darken(0.1f),
                             ),
                         )
                     } else {
@@ -280,8 +280,8 @@ fun TtmlLyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.7f),
-                                dominantColor.darken(0.2f),
+                                dominantColor.darken(0.6f),
+                                dominantColor.darken(0.1f),
                             ),
                         )
                     } else {
