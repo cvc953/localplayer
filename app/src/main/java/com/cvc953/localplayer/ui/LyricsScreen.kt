@@ -1,7 +1,13 @@
 package com.cvc953.localplayer.ui
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import com.cvc953.localplayer.model.TtmlAlignment
@@ -31,6 +38,7 @@ import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import kotlin.math.abs
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -45,8 +53,6 @@ fun LyricsScreen(
     val ttml by lyricsViewModel.ttmlLyrics.collectAsState()
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val currentPosition by playbackViewModel.currentPosition.collectAsState()
-
-    // preferir TTML cuando este disponible
     val localTtml = ttml
     if (localTtml != null) {
         TtmlLyricsView(
@@ -88,9 +94,11 @@ fun LyricsView(
     onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
-
-    val forceLightForeground = useDynamicBackground && MaterialTheme.colorScheme.background.luminance() > 0.5f
-    val activeLyricColor = if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
+    val forceLightForeground =
+        useDynamicBackground &&
+            MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val activeLyricColor =
+        if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
     val inactiveLyricColor =
         if (forceLightForeground) {
             Color.White.copy(alpha = 0.62f)
@@ -100,18 +108,39 @@ fun LyricsView(
 
     val currentIndex =
         remember(lyrics, currentPosition) {
-            lyrics
-                .indexOfLast { it.timeMs <= currentPosition }
+            lyrics.indexOfLast { it.timeMs <= currentPosition }
         }
 
-    // Scroll automático centrado
     LaunchedEffect(currentIndex) {
-        if (currentIndex < 0) return@LaunchedEffect
         try {
-            listState.animateScrollToItem(
-                index = currentIndex,
-                scrollOffset = -listState.layoutInfo.viewportSize.height / 100,
+            val visibleItems = listState.layoutInfo.visibleItemsInfo
+            val isVisible = visibleItems.any { it.index == currentIndex }
+
+            // Solo salto instantáneo si el item está fuera del viewport
+            if (!isVisible) {
+                listState.scrollToItem(index = currentIndex)
+            }
+            val itemInfo =
+                listState.layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex }
+            val viewportHeight = listState.layoutInfo.viewportSize.height
+            val itemHeight = itemInfo?.size ?: 0
+            val targetOffset = -(viewportHeight / 100) + (itemHeight / 2)
+            val currenOffset =
+                listState.layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex }
+                    ?.offset ?: 0
+            val delta = currenOffset - targetOffset
+
+            listState.animateScrollBy(
+                value = delta.toFloat(),
+                animationSpec =
+                    spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
             )
+            // listState.animateScrollToItem(index = currentIndex, scrollOffset = offset)
         } catch (_: Exception) {
         }
     }
@@ -125,18 +154,10 @@ fun LyricsView(
                 .background(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
-                            listOf(
-                                dominantColor.darken(0.6f),
-                                dominantColor.darken(0.1f),
-                            ),
+                            listOf(dominantColor.darken(0.6f), dominantColor.darken(0.1f)),
                         )
                     } else {
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.Transparent,
-                                Color.Transparent,
-                            ),
-                        )
+                        Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
                     },
                 ),
     ) {
@@ -146,7 +167,6 @@ fun LyricsView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            // Mostrar animación de puntos si hay un gap antes de la primera línea
             if (lyrics.isNotEmpty()) {
                 val firstLineStart = lyrics.first().timeMs
                 if (firstLineStart > gapThreshold) {
@@ -173,10 +193,24 @@ fun LyricsView(
             }
 
             itemsIndexed(lyrics) { index, line ->
+                val distance = abs(index - currentIndex)
+                val itemAlpha by animateFloatAsState(
+                    targetValue =
+                        when (distance) {
+                            0 -> 1f
+                            1 -> 0.75f
+                            2 -> 0.5f
+                            else -> 0.28f
+                        },
+                    animationSpec = tween(800, easing = FastOutSlowInEasing),
+                    label = "itemAlpha_$index",
+                )
+
                 Box(
                     modifier =
                         Modifier
                             .fillMaxSize()
+                            .graphicsLayer { alpha = itemAlpha }
                             .clickable { onLineClick(line.timeMs) },
                 ) {
                     LyricLine(
@@ -188,17 +222,13 @@ fun LyricsView(
                     )
                 }
 
-                // Detectar gap grande entre esta linea y la siguiente
                 if (index < lyrics.size - 1) {
                     val currentLineStart = line.timeMs
                     val nextLineStart = lyrics[index + 1].timeMs
                     val gapDuration = nextLineStart - currentLineStart
-
-                    // Si hay un gap > gapThreshold, mostrar animación de puntos
                     if (gapDuration > gapThreshold) {
-                        // Mostrar la animacion solo si estamos dentro del gap
-                        val isGapActive = currentPosition >= currentLineStart && currentPosition < nextLineStart
-
+                        val isGapActive =
+                            currentPosition >= currentLineStart && currentPosition < nextLineStart
                         if (isGapActive) {
                             Box(
                                 modifier =
@@ -236,9 +266,11 @@ fun TtmlLyricsView(
     onLineClick: (Long) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
-
-    val forceLightForeground = useDynamicBackground && MaterialTheme.colorScheme.background.luminance() > 0.5f
-    val activeLyricColor = if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
+    val forceLightForeground =
+        useDynamicBackground &&
+            MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val activeLyricColor =
+        if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
     val inactiveLyricColor =
         if (forceLightForeground) {
             Color.White.copy(alpha = 0.62f)
@@ -246,28 +278,47 @@ fun TtmlLyricsView(
             LocalExtendedColors.current.textSecondary
         }
 
-    // Detectar si hay múltiples voces (diferentes agentes)
     val hasMultipleVoices =
         remember(lines) {
             lines.mapNotNull { it.agent }.distinct().size > 1
         }
-    // Porcentaje máximo de ancho: 100% si una voz, 66.6% (2/3) si múltiples voces
     val maxWidthFraction = if (hasMultipleVoices) 0.666f else 1f
 
     val currentIndex =
         remember(currentPosition) {
-            lines
-                .indexOfLast { it.timeMs <= currentPosition }
-                .coerceAtLeast(0)
+            lines.indexOfLast { it.timeMs <= currentPosition }.coerceAtLeast(0)
         }
 
-    // Scroll automático centrado
     LaunchedEffect(currentIndex) {
         try {
-            listState.animateScrollToItem(
-                index = currentIndex,
-                scrollOffset = -listState.layoutInfo.viewportSize.height / 100,
+            val visibleItems = listState.layoutInfo.visibleItemsInfo
+            val isVisible = visibleItems.any { it.index == currentIndex }
+
+            // Solo salto instantáneo si el item está fuera del viewport
+            if (!isVisible) {
+                listState.scrollToItem(index = currentIndex)
+            }
+            val itemInfo =
+                listState.layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex }
+            val viewportHeight = listState.layoutInfo.viewportSize.height
+            val itemHeight = itemInfo?.size ?: 0
+            val targetOffset = -(viewportHeight / 100) + (itemHeight / 2)
+            val currenOffset =
+                listState.layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex }
+                    ?.offset ?: 0
+            val delta = currenOffset - targetOffset
+
+            listState.animateScrollBy(
+                value = delta.toFloat(),
+                animationSpec =
+                    spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
             )
+            // listState.animateScrollToItem(index = currentIndex, scrollOffset = offset)
         } catch (_: Exception) {
         }
     }
@@ -279,18 +330,10 @@ fun TtmlLyricsView(
                 .background(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
-                            listOf(
-                                dominantColor.darken(0.6f),
-                                dominantColor.darken(0.1f),
-                            ),
+                            listOf(dominantColor.darken(0.6f), dominantColor.darken(0.1f)),
                         )
                     } else {
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.Transparent,
-                                Color.Transparent,
-                            ),
-                        )
+                        Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
                     },
                 ),
     ) {
@@ -328,48 +371,57 @@ fun TtmlLyricsView(
             }
 
             itemsIndexed(lines) { index, line ->
-                // Si la línea tiene sílabas, mostrar sincronización palabra por palabra
-                if (line.syllabus.isNotEmpty()) {
-                    WordByWordLine(
-                        syllables = line.syllabus,
-                        currentPosition = currentPosition,
-                        isActive = index == currentIndex,
-                        baseColor = inactiveLyricColor,
-                        activeColor = activeLyricColor,
-                        horizontalAlignment = line.alignment,
-                        maxWidthFraction = maxWidthFraction,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onLineClick(line.timeMs) },
-                    )
-                } else {
-                    // Fallback a línea simple
-                    LyricLine(
-                        text = line.text,
-                        active = index == currentIndex,
-                        activeColor = activeLyricColor,
-                        inactiveColor = inactiveLyricColor,
-                        horizontalAlignment = line.alignment,
-                        maxWidthFraction = maxWidthFraction,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onLineClick(line.timeMs) },
-                    )
+                val distance = abs(index - currentIndex)
+                val itemAlpha by animateFloatAsState(
+                    targetValue =
+                        when (distance) {
+                            0 -> 1f
+                            1 -> 0.75f
+                            2 -> 0.5f
+                            else -> 0.28f
+                        },
+                    animationSpec = tween(800, easing = FastOutSlowInEasing),
+                    label = "itemAlpha_$index",
+                )
+
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = itemAlpha }
+                            .clickable { onLineClick(line.timeMs) },
+                ) {
+                    if (line.syllabus.isNotEmpty()) {
+                        WordByWordLine(
+                            syllables = line.syllabus,
+                            currentPosition = currentPosition,
+                            isActive = index == currentIndex,
+                            baseColor = inactiveLyricColor,
+                            activeColor = activeLyricColor,
+                            horizontalAlignment = line.alignment,
+                            maxWidthFraction = maxWidthFraction,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        LyricLine(
+                            text = line.text,
+                            active = index == currentIndex,
+                            activeColor = activeLyricColor,
+                            inactiveColor = inactiveLyricColor,
+                            horizontalAlignment = line.alignment,
+                            maxWidthFraction = maxWidthFraction,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
 
-                // Detectar gap grande entre esta linea y la siguiente
                 if (index < lines.size - 1) {
                     val currentLineEnd = line.timeMs + line.durationMs
                     val nextLineStart = lines[index + 1].timeMs
                     val gapDuration = nextLineStart - currentLineEnd
-
-                    // Si hay un gap > 1500ms, mostrar animación de puntos
                     if (gapDuration > gapThreshold) {
-                        // Mostrar la animacion solo si estamos dentro del gap
-                        val isGapActive = currentPosition >= currentLineEnd && currentPosition < nextLineStart
-
+                        val isGapActive =
+                            currentPosition >= currentLineEnd && currentPosition < nextLineStart
                         if (isGapActive) {
                             Box(
                                 modifier =
