@@ -76,7 +76,7 @@ fun AboutScreen(onBack: () -> Unit) {
                     .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-        ) {
+        ) { 
             // App Name and Icon
             Text(
                 text = "Local Player",

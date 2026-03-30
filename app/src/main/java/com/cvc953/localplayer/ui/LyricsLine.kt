@@ -58,7 +58,7 @@ fun LyricLine(
     isSecondaryVoice: Boolean = false,
     modifier: Modifier = Modifier,
     activeColor: Color = Color.White,
-    inactiveColor: Color = Color.Gray,
+    inactiveColor: Color = Color.Transparent,
     horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
     maxWidthFraction: Float = 1f,
 ) {

@@ -46,7 +46,7 @@ fun LyricsScreen(
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val currentPosition by playbackViewModel.currentPosition.collectAsState()
 
-    // prefer TTML view when available
+    // preferir TTML cuando este disponible
     val localTtml = ttml
     if (localTtml != null) {
         TtmlLyricsView(
@@ -110,7 +110,7 @@ fun LyricsView(
         try {
             listState.animateScrollToItem(
                 index = currentIndex,
-                scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
+                scrollOffset = -listState.layoutInfo.viewportSize.height / 100,
             )
         } catch (_: Exception) {
         }
@@ -126,8 +126,8 @@ fun LyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.6f),
-                                dominantColor.darken(0.1f),
+                                dominantColor.darken(0.7f),
+                                dominantColor.darken(0.2f),
                             ),
                         )
                     } else {
@@ -266,7 +266,7 @@ fun TtmlLyricsView(
         try {
             listState.animateScrollToItem(
                 index = currentIndex,
-                scrollOffset = -listState.layoutInfo.viewportSize.height / 6,
+                scrollOffset = -listState.layoutInfo.viewportSize.height / 100,
             )
         } catch (_: Exception) {
         }
@@ -280,8 +280,8 @@ fun TtmlLyricsView(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
                             listOf(
-                                dominantColor.darken(0.6f),
-                                dominantColor.darken(0.1f),
+                                dominantColor.darken(0.7f),
+                                dominantColor.darken(0.2f),
                             ),
                         )
                     } else {

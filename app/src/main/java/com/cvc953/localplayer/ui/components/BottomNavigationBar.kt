@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.cvc953.localplayer.ui.navigation.BottomNavItem
 import com.cvc953.localplayer.ui.navigation.Screen
+import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun BottomNavigationBar(
@@ -72,7 +73,14 @@ fun BottomNavigationBar(
                     icon = {
                         Icon(item.icon, contentDescription = item.title)
                     },
-                    label = { Text(item.title) },
+                    label = {
+                        Text(
+                            text = item.title,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false,
+                        )
+                    },
                     selected = currentTab == item.route,
                     onClick = {
                         // Navegación principal

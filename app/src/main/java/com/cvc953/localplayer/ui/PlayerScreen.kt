@@ -173,6 +173,7 @@ fun PlayerScreen(
     var audioFormat by remember { mutableStateOf("") }
     var audioBitrate by remember { mutableStateOf("") }
     var audioSampleRate by remember { mutableStateOf("") }
+    val color = MaterialTheme.colorScheme.background
 
     LaunchedEffect(song.uri) {
         withContext(Dispatchers.IO) {
@@ -260,7 +261,7 @@ fun PlayerScreen(
 
     // Notificar al padre del color de fondo (topo del gradiente)
     LaunchedEffect(dominantColor, dynamicColorEnabled) {
-        val topColor = if (dynamicColorEnabled) dominantColor.darken(0.6f) else Color.Transparent
+        val topColor = if (dynamicColorEnabled) dominantColor.darken(0.7f) else color
         onBackgroundColorChanged(topColor)
     }
 
@@ -278,8 +279,8 @@ fun PlayerScreen(
         if (dynamicColorEnabled) {
             Brush.verticalGradient(
                 listOf(
-                    dominantColor.darken(0.6f),
-                    dominantColor.darken(0.1f),
+                    dominantColor.darken(0.7f),
+                    dominantColor.darken(0.2f),
                 ),
             )
         } else {
@@ -434,9 +435,7 @@ fun PlayerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                //
-				// Spacer(Modifier.weight(0.6f))
-
+                // Spacer(Modifier.weight(0.6f))
                 // Imagen del álbum responsiva
                 Image(
                     painter =
@@ -1596,7 +1595,7 @@ fun PlayerControls(
                             Icons.Rounded.PlayArrow
                         },
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = foregroundColor,
                     modifier = Modifier.size(buttonSize * 0.5f),
                 )
             }
