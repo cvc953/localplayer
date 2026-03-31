@@ -122,7 +122,7 @@ fun LyricsView(
             }
 
             val layoutInfo = listState.layoutInfo
-            val viewportHeight = layoutInfo.visibleItemsInfo.size
+            val viewportHeight = layoutInfo.viewportSize.height
             val itemInfo =
                 layoutInfo.visibleItemsInfo
                     .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
@@ -303,7 +303,7 @@ fun TtmlLyricsView(
             }
 
             val layoutInfo = listState.layoutInfo
-            val viewportHeight = layoutInfo.visibleItemsInfo.size
+            val viewportHeight = layoutInfo.viewportSize.height
             val itemInfo =
                 layoutInfo.visibleItemsInfo
                     .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
@@ -312,7 +312,7 @@ fun TtmlLyricsView(
             val itemTop = itemInfo.offset
             // Centro del item
             val itemCenter = itemTop + itemInfo.size
-            // Donde queremos que quede el centro del item (cuarto superior)
+            // Donde debe quedar el centro del item (tercio superior)
             val targetCenter = viewportHeight / 3
             // Delta real en pixels
             val delta = itemCenter - targetCenter
