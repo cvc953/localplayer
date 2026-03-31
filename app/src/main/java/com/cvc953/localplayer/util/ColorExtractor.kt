@@ -30,4 +30,4 @@ suspend fun Bitmap.getDominantColor(defaultColor: Color): Color =
  * Aplica una transparencia muy baja a un color para crear un efecto de blur
  * @param alphaPercent Porcentaje de opacidad (0.0 a 1.0), por defecto 0.1 (10%)
  */
-//fun Color.withAlpha(alphaPercent: Float = 0.1f): Color = this.copy(alpha = alphaPercent.coerceIn(0f, 1f))
+fun Color.withAlpha(alphaPercent: Float = 0.1f): Color = this.copy(alpha = alphaPercent.coerceIn(0f, 1f))

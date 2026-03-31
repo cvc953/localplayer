@@ -32,7 +32,7 @@ import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 @Suppress("ktlint:standard:function-naming")
 /*
  * Componente para mostrar una silaba individual con highlight animado
- * Inspirado en YouLyPlus para mostrar sincronizacion palabra por palabra
+ * Inspirado en Apple Music para mostrar sincronizacion palabra por palabra
  */
 @Composable
 fun SyllableLyric(

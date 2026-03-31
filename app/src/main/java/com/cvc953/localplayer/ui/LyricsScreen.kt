@@ -112,25 +112,29 @@ fun LyricsView(
         }
 
     LaunchedEffect(currentIndex) {
+        if (currentIndex < 0) return@LaunchedEffect
         try {
             val visibleItems = listState.layoutInfo.visibleItemsInfo
             val isVisible = visibleItems.any { it.index == currentIndex }
 
-            // Solo salto instantáneo si el item está fuera del viewport
             if (!isVisible) {
                 listState.scrollToItem(index = currentIndex)
             }
+
+            val layoutInfo = listState.layoutInfo
+            val viewportHeight = layoutInfo.visibleItemsInfo.size
             val itemInfo =
-                listState.layoutInfo.visibleItemsInfo
-                    .firstOrNull { it.index == currentIndex }
-            val viewportHeight = listState.layoutInfo.viewportSize.height
-            val itemHeight = itemInfo?.size ?: 0
-            val targetOffset = -(viewportHeight / 100) + (itemHeight / 2)
-            val currenOffset =
-                listState.layoutInfo.visibleItemsInfo
-                    .firstOrNull { it.index == currentIndex }
-                    ?.offset ?: 0
-            val delta = currenOffset - targetOffset
+                layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
+
+            // Posición actual del top del item relativa al viewport
+            val itemTop = itemInfo.offset
+            // Centro del item
+            val itemCenter = itemTop + itemInfo.size
+            // Donde queremos que quede el centro del item (cuarto superior)
+            val targetCenter = viewportHeight / 3
+            // Delta real en pixels
+            val delta = itemCenter - targetCenter
 
             listState.animateScrollBy(
                 value = delta.toFloat(),
@@ -140,7 +144,6 @@ fun LyricsView(
                         stiffness = Spring.StiffnessLow,
                     ),
             )
-            // listState.animateScrollToItem(index = currentIndex, scrollOffset = offset)
         } catch (_: Exception) {
         }
     }
@@ -290,25 +293,29 @@ fun TtmlLyricsView(
         }
 
     LaunchedEffect(currentIndex) {
+        if (currentIndex < 0) return@LaunchedEffect
         try {
             val visibleItems = listState.layoutInfo.visibleItemsInfo
             val isVisible = visibleItems.any { it.index == currentIndex }
 
-            // Solo salto instantáneo si el item está fuera del viewport
             if (!isVisible) {
                 listState.scrollToItem(index = currentIndex)
             }
+
+            val layoutInfo = listState.layoutInfo
+            val viewportHeight = layoutInfo.visibleItemsInfo.size
             val itemInfo =
-                listState.layoutInfo.visibleItemsInfo
-                    .firstOrNull { it.index == currentIndex }
-            val viewportHeight = listState.layoutInfo.viewportSize.height
-            val itemHeight = itemInfo?.size ?: 0
-            val targetOffset = -(viewportHeight / 100) + (itemHeight / 2)
-            val currenOffset =
-                listState.layoutInfo.visibleItemsInfo
-                    .firstOrNull { it.index == currentIndex }
-                    ?.offset ?: 0
-            val delta = currenOffset - targetOffset
+                layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
+
+            // Posición actual del top del item relativa al viewport
+            val itemTop = itemInfo.offset
+            // Centro del item
+            val itemCenter = itemTop + itemInfo.size
+            // Donde queremos que quede el centro del item (cuarto superior)
+            val targetCenter = viewportHeight / 3
+            // Delta real en pixels
+            val delta = itemCenter - targetCenter
 
             listState.animateScrollBy(
                 value = delta.toFloat(),
@@ -318,7 +325,6 @@ fun TtmlLyricsView(
                         stiffness = Spring.StiffnessLow,
                     ),
             )
-            // listState.animateScrollToItem(index = currentIndex, scrollOffset = offset)
         } catch (_: Exception) {
         }
     }
@@ -343,7 +349,7 @@ fun TtmlLyricsView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            val gapThreshold = 1500L
+            val gapThreshold = 7000L
 
             if (lines.isNotEmpty()) {
                 val firstLineStart = lines.first().timeMs
