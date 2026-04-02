@@ -1,0 +1,4 @@
+[*.{kt,kts}]
+max_lines_length = off
+kotlin_style = android
+indent_size = 4

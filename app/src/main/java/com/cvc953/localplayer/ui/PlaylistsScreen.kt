@@ -846,7 +846,7 @@ fun PlaylistsScreen(
                     newPlaylistName = ""
                     createError = null
                 },
-                containerColor = MaterialTheme.colorScheme.background,
+                containerColor = MaterialTheme.colorScheme.surface,
                 title = { Text("Nueva lista", color = MaterialTheme.colorScheme.onBackground) },
                 text = {
                     Column {
@@ -1013,8 +1013,6 @@ fun PlaylistDetailScreen(
                 emptyList()
             }
         }
-
-    // Eliminado soporte para eliminar canciones de la playlist
 
     // val context = LocalContext.current
 

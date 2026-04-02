@@ -23,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,9 +54,9 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
     val playerViewModel: PlayerViewModel = viewModel()
     val artistViewModel: ArtistViewModel = viewModel()
     val albumViewModel: AlbumViewModel = viewModel()
-    val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel()
-    val equalizerViewModel: com.cvc953.localplayer.viewmodel.EqualizerViewModel = viewModel()
-    val folderViewModel: com.cvc953.localplayer.viewmodel.FolderViewModel = viewModel()
+    val mainViewModel: MainViewModel = viewModel()
+    val equalizerViewModel: EqualizerViewModel = viewModel()
+    val folderViewModel: FolderViewModel = viewModel()
 
     StoragePermissionHandler(
         isFolderConfiguredInitially = appPrefs.hasMusicFolderUri(),
@@ -78,7 +80,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
         val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
         val showAbout by playerViewModel.isAboutVisible.collectAsState()
         val activity = context as? Activity
-        var lastBackPressTime by remember { mutableStateOf(0L) }
+        var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
         val sheetState =
             rememberStandardBottomSheetState(
@@ -103,7 +105,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
         val hideOffsetPx = with(density) { (bottomNavHeight + 16.dp).toPx() }
 
         var bottomNavOffset by remember { mutableStateOf(0.dp) }
-        var miniPlayerAlpha by remember { mutableStateOf(1f) }
+        var miniPlayerAlpha by remember { mutableFloatStateOf(1f) }
         var playerBackgroundColor by remember { mutableStateOf(Color.Transparent) }
 
         val miniPlayerBrush =
@@ -139,6 +141,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
                 sheetDragHandle = null,
                 sheetContainerColor = MaterialTheme.colorScheme.surface,
                 containerColor = MaterialTheme.colorScheme.background,
+                sheetShape = RectangleShape,
                 sheetContent = {
                     Column {
                         // MiniPlayer — se desvanece al expandir
@@ -146,7 +149,15 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
                             MiniPlayer(
                                 song = playerState.currentSong!!,
                                 isPlaying = playerState.isPlaying,
-                                onPlayPause = { playbackViewModel.togglePlayPause() },
+                                onPlayPause = {
+                                    if (sheetState.currentValue !=
+                                        SheetValue.Expanded
+                                    ) {
+                                        playbackViewModel.togglePlayPause()
+                                    } else {
+                                        null
+                                    }
+                                },
                                 onClick = {
                                     scope.launch {
                                         if (sheetState.currentValue == SheetValue.PartiallyExpanded) {
@@ -156,7 +167,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
                                         }
                                     }
                                 },
-                                onNext = { playbackViewModel.playNextSong() },
+                                onNext = { if (sheetState.currentValue != SheetValue.Expanded) playbackViewModel.playNextSong() else null },
                                 backgroundBrush = miniPlayerBrush,
                                 contentAlpha = miniPlayerAlpha,
                             )

@@ -62,10 +62,10 @@ fun LyricLine(
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun LyricLine(
+    modifier: Modifier = Modifier,
     text: String,
     active: Boolean,
     isSecondaryVoice: Boolean = false,
-    modifier: Modifier = Modifier,
     activeColor: Color = Color.White,
     inactiveColor: Color = Color.Transparent,
     horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,

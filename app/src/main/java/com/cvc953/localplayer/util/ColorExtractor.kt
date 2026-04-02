@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 suspend fun Bitmap.getDominantColor(defaultColor: Color): Color =
     withContext(Dispatchers.Default) {
         try {
-            val palette = Palette.from(this@getDominantColor).maximumColorCount(8).generate()
+            val palette = Palette.from(this@getDominantColor).maximumColorCount(12).generate()
             val vibrantColor = palette.vibrantSwatch
             val dominantColor = palette.dominantSwatch
             val mutedColor = palette.mutedSwatch

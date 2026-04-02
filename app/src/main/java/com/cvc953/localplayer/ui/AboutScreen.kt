@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
@@ -52,7 +54,7 @@ fun AboutScreen(onBack: () -> Unit) {
             ) {
                 IconButton(onClick = onBack) {
                     Icon(
-                        Icons.Default.ArrowBack,
+	                    Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Atrás",
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
@@ -76,7 +78,7 @@ fun AboutScreen(onBack: () -> Unit) {
                     .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top,
-        ) { 
+        ) {
             // App Name and Icon
             Text(
                 text = "Local Player",

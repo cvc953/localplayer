@@ -79,6 +79,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -350,8 +352,8 @@ fun ArtistsScreen(
                                         painter =
                                             artistArt?.let { BitmapPainter(it.asImageBitmap()) }
                                                 ?: painterResource(R.drawable.ic_default_album),
-                                        contentDescription = null,
-                                        modifier = Modifier.matchParentSize().clip(RoundedCornerShape(8.dp)),
+                                        contentDescription = "album cover",
+                                        modifier = Modifier.matchParentSize().clip(RoundedCornerShape(100.dp)),
                                         contentScale = ContentScale.Crop,
                                     )
                                     var menuExpanded by remember { mutableStateOf(false) }
@@ -508,8 +510,8 @@ fun ArtistsScreen(
                                                 it.asImageBitmap(),
                                             )
                                         } ?: painterResource(R.drawable.ic_default_album),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
+                                    contentDescription = "album cover",
+                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(100.dp)),
                                     contentScale = ContentScale.Crop,
                                 )
 

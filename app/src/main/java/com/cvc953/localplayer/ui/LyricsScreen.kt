@@ -11,7 +11,6 @@ import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -28,11 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
-import com.cvc953.localplayer.model.TtmlAlignment
 import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.LrcLine
@@ -122,7 +119,7 @@ fun LyricsView(
             }
 
             val layoutInfo = listState.layoutInfo
-            val viewportHeight = layoutInfo.viewportSize.height
+            val viewportHeight = layoutInfo.visibleItemsInfo.size
             val itemInfo =
                 layoutInfo.visibleItemsInfo
                     .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
@@ -130,8 +127,8 @@ fun LyricsView(
             // Posición actual del top del item relativa al viewport
             val itemTop = itemInfo.offset
             // Centro del item
-            val itemCenter = itemTop + itemInfo.size
-            // Donde queremos que quede el centro del item (cuarto superior)
+            val itemCenter = itemTop + itemInfo.size / 2
+            // Donde debe quedar el centro del item (tercio superior)
             val targetCenter = viewportHeight / 3
             // Delta real en pixels
             val delta = itemCenter - targetCenter
@@ -231,7 +228,7 @@ fun LyricsView(
                     val gapDuration = nextLineStart - currentLineStart
                     if (gapDuration > gapThreshold) {
                         val isGapActive =
-                            currentPosition >= currentLineStart && currentPosition < nextLineStart
+                            currentPosition in currentLineStart..<nextLineStart
                         if (isGapActive) {
                             Box(
                                 modifier =
@@ -303,7 +300,7 @@ fun TtmlLyricsView(
             }
 
             val layoutInfo = listState.layoutInfo
-            val viewportHeight = layoutInfo.viewportSize.height
+            val viewportHeight = layoutInfo.visibleItemsInfo.size
             val itemInfo =
                 layoutInfo.visibleItemsInfo
                     .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
@@ -311,7 +308,7 @@ fun TtmlLyricsView(
             // Posición actual del top del item relativa al viewport
             val itemTop = itemInfo.offset
             // Centro del item
-            val itemCenter = itemTop + itemInfo.size
+            val itemCenter = itemTop + itemInfo.size / 2
             // Donde debe quedar el centro del item (tercio superior)
             val targetCenter = viewportHeight / 3
             // Delta real en pixels
@@ -427,7 +424,7 @@ fun TtmlLyricsView(
                     val gapDuration = nextLineStart - currentLineEnd
                     if (gapDuration > gapThreshold) {
                         val isGapActive =
-                            currentPosition >= currentLineEnd && currentPosition < nextLineStart
+                            currentPosition in currentLineEnd..<nextLineStart
                         if (isGapActive) {
                             Box(
                                 modifier =

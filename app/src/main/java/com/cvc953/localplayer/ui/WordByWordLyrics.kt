@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -27,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.model.TtmlAlignment
 import com.cvc953.localplayer.model.TtmlSyllable
-import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
 @Suppress("ktlint:standard:function-naming")
 /*
@@ -57,7 +55,7 @@ fun SyllableLyric(
 
     val animatedProgress by animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = if (isLineActive) tween(durationMillis = 180, easing = LinearEasing) else snap(),
+        animationSpec = if (isLineActive) tween(durationMillis = 150, easing = LinearEasing) else snap(),
     )
 
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
@@ -156,18 +154,19 @@ private fun ProgressiveFillSyllableText(
     }
 }
 
-/**
+@Suppress("ktlint:standard:function-naming")
+/*
  * Componente para mostrar una linea completa con palabras sincronizadas
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WordByWordLine(
+    modifier: Modifier = Modifier,
     syllables: List<TtmlSyllable>,
     currentPosition: Long,
     isActive: Boolean,
     baseColor: Color = Color(0xFF707070),
     activeColor: Color = Color.White,
-    modifier: Modifier = Modifier,
     horizontalAlignment: TtmlAlignment = TtmlAlignment.LEFT,
     maxWidthFraction: Float = 1f, // 1 = 100%, 0.666f = 2/3
 ) {
@@ -243,7 +242,7 @@ fun WordByWordLine(
                         currentPosition = currentPosition,
                         isLineActive = isActive,
                         baseColor = baseColor,
-                        activeColor = activeColor,
+                        activeColor = activeColor.copy(alpha = 0.7f),
                     )
                 }
             }
@@ -251,7 +250,8 @@ fun WordByWordLine(
     }
 }
 
-/**
+@Suppress("ktlint:standard:function-naming")
+/*
  * Animacion de tres puntos como Apple Music para pausas/instrumentales
  */
 @Composable
@@ -267,17 +267,15 @@ fun LoadingDotsAnimation(
     val dotCount = 3
     val colorSteps =
         listOf(
-            Color(0xFF505050), // gris oscuro
-            Color(0xFF888888), // gris medio
-            Color(0xFFCCCCCC), // gris claro
+            Color(0xFF656565), // gris oscuro
+            Color(0xFF858585), // gris medio
+            Color(0xFFAAAAAA), // gris claro
+            Color(0xFFD0D0D0),
+            Color(0xFFF0F0F0),
             brightColor,
-            // LocalExtendedColors.current.textSecondarySoft,
-            // LocalExtendedColors.current.textSecondary,
-            // LocalExtendedColors.current.textSecondaryStrong,
-            // MaterialTheme.colorScheme.onBackground,
         )
-    val minSize = 14f
-    val maxSize = 22f
+    val minSize = 20f
+    val maxSize = 25f
     val appearDuration = durationMs / (dotCount + 1)
     val lastDotWhiteThreshold = 500L
 
@@ -308,18 +306,16 @@ fun LoadingDotsAnimation(
                 val dotSize = minSize + (maxSize - minSize) * dotProgress
 
                 // Animación fluida
-                val animatedSize by androidx.compose.animation.core.animateFloatAsState(
+                val animatedSize by animateFloatAsState(
                     targetValue = dotSize,
                     animationSpec =
-                        androidx.compose.animation.core
-                            .tween(durationMillis = 180),
+                        tween(durationMillis = 180),
                     label = "dotSize$i",
                 )
                 val animatedColor by androidx.compose.animation.animateColorAsState(
                     targetValue = dotColor,
                     animationSpec =
-                        androidx.compose.animation.core
-                            .tween(durationMillis = 180),
+                        tween(durationMillis = 180),
                     label = "dotColor$i",
                 )
                 Text(

@@ -361,9 +361,9 @@ fun SongsContent(
                             val dragOffsetX = remember { Animatable(0f) }
                             val itemScope = rememberCoroutineScope()
                             val density =
-                                androidx.compose.ui.platform.LocalDensity
+                                LocalDensity
                                     .current
-                            var rowWidthPx by remember { mutableStateOf(0) }
+                            var rowWidthPx by remember { mutableIntStateOf(0) }
                             val maxOffsetPx =
                                 if (rowWidthPx > 0) {
                                     rowWidthPx.toFloat()
@@ -507,7 +507,6 @@ fun SongsContent(
                                             // esta vista
                                             playbackViewModel.updateDisplayOrder(sortedSongs)
                                             playbackViewModel.play(song)
-                                            // Ensure player UI is shown
                                             // playerViewModel.showPlayerScreen(true)
                                             // Si es necesario, iniciar servicio desde playbackViewModel
                                         },
@@ -772,9 +771,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                     onArtistClick = { selectedArtistName = it },
                                 )
                             } else {
-                                if (selectedArtistName != null && selectedTab == BottomNavItem.Artists.route &&
-                                    selectedArtistSongsView
-                                ) {
+                                if (selectedTab == BottomNavItem.Artists.route && selectedArtistSongsView) {
                                     ArtistSongsScreen(
                                         artistViewModel = artistViewModel,
                                         artistName = artistName,
@@ -882,17 +879,6 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
         }
     } // end StoragePermissionHandler
 } // end MainMusicScreen
-
-/*@Suppress("ktlint:standard:function-naming")
-@Composable
-fun PlaylistDetailScreen(
-    playlistViewModel: PlaylistViewModel,
-    playlistName: String,
-    onBack: () -> Unit,
-    playbackViewModel: PlaybackViewModel,
-) {
-    TODO("Not yet implemented")
-}*/
 
 fun formatDuration(ms: Long): String {
     val seconds = (ms / 1000) % 60
