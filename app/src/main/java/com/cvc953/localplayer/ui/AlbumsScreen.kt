@@ -89,6 +89,7 @@ import androidx.core.graphics.component2
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
+import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
@@ -747,23 +748,25 @@ fun AlbumDetailScreen(
             items(albumSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
-                SongItem(
-                    song = song,
-                    isPlaying = isCurrent,
-                    onClick = {
-                        // Usar el orden del album como cola de reproduccion
-                        playbackViewModel.setShuffle(false)
-                        playbackViewModel.playAlbum(albumName, artistName, albumSongs, songs)
-                        playbackViewModel.updateDisplayOrder(albumSongs)
-                        playbackViewModel.play(song)
-                    },
-                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
-                    playlists = playlists,
-                    onAddToPlaylist = { playlistName, songId ->
-                        playlistViewModel.addSongToPlaylist(playlistName, songId)
-                    },
-                )
+                DraggableSwipeRow(onSwipeThreshold = { playbackViewModel.addToQueueNext(song) }) {
+                    SongItem(
+                        song = song,
+                        isPlaying = isCurrent,
+                        onClick = {
+                            // Usar el orden del album como cola de reproduccion
+                            playbackViewModel.setShuffle(false)
+                            playbackViewModel.playAlbum(albumName, artistName, albumSongs, songs)
+                            playbackViewModel.updateDisplayOrder(albumSongs)
+                            playbackViewModel.play(song)
+                        },
+                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                        playlists = playlists,
+                        onAddToPlaylist = { playlistName, songId ->
+                            playlistViewModel.addSongToPlaylist(playlistName, songId)
+                        },
+                    )
+                }
             }
         }
     }

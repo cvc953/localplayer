@@ -23,7 +23,8 @@ import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 
-/**
+@Suppress("ktlint:standard:function-naming")
+/*
  * Componente principal de navegación
  */
 @Composable
@@ -127,6 +128,7 @@ fun AppNavigation(
                 artistViewModel = artistViewModel,
                 artistName = artistName,
                 onBack = { navController.navigateBack() },
+                playbackViewModel = playbackViewModel,
             )
         }
 

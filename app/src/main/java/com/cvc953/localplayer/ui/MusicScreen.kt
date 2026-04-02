@@ -7,22 +7,15 @@ import android.app.Application
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.draggable
-import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,25 +26,30 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cvc953.localplayer.model.Album
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.services.MusicService
 import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
+import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.navigation.BottomNavItem
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.StoragePermissionHandler
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
+import com.cvc953.localplayer.viewmodel.EqualizerViewModel
+import com.cvc953.localplayer.viewmodel.FolderViewModel
+import com.cvc953.localplayer.viewmodel.MainViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
@@ -358,166 +356,35 @@ fun SongsContent(
                         items(sortedSongs) { song ->
                             val isCurrent =
                                 playerState.currentSong?.id == song.id
-                            val dragOffsetX = remember { Animatable(0f) }
-                            val itemScope = rememberCoroutineScope()
-                            val density =
-                                LocalDensity
-                                    .current
-                            var rowWidthPx by remember { mutableIntStateOf(0) }
-                            val maxOffsetPx =
-                                if (rowWidthPx > 0) {
-                                    rowWidthPx.toFloat()
-                                } else {
-                                    with(density) { 120.dp.toPx() }
-                                }
-                            val thresholdPx =
-                                if (rowWidthPx > 0) {
-                                    (rowWidthPx * 0.4f)
-                                } else {
-                                    with(density) { 72.dp.toPx() }
-                                }
 
-                            val dragState =
-                                rememberDraggableState { delta ->
-                                    itemScope.launch {
-                                        dragOffsetX.snapTo(
-                                            (dragOffsetX.value + delta).coerceIn(
-                                                0f,
-                                                maxOffsetPx,
-                                            ),
-                                        )
-                                    }
-                                }
-                            val progress =
-                                (dragOffsetX.value / maxOffsetPx).coerceIn(0f, 1f)
-
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .onSizeChanged {
-                                            rowWidthPx =
-                                                it.width
-                                        }.draggable(
-                                            state = dragState,
-                                            orientation =
-                                                Orientation
-                                                    .Horizontal,
-                                            onDragStopped = {
-                                                itemScope.launch {
-                                                    if (dragOffsetX.value > thresholdPx) {
-                                                        playbackViewModel.addToQueueNext(song)
-                                                        dragOffsetX.animateTo(
-                                                            maxOffsetPx,
-                                                            animationSpec = tween(300),
-                                                        )
-                                                        dragOffsetX.snapTo(0f)
-                                                    } else {
-                                                        dragOffsetX.animateTo(
-                                                            0f,
-                                                            animationSpec = tween(200),
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                        ),
+                            DraggableSwipeRow(
+                                onSwipeThreshold = {
+                                    playbackViewModel.addToQueueNext(song)
+                                },
                             ) {
-                                if (progress > 0f) {
-                                    Box(
-                                        modifier =
-                                            Modifier
-                                                .matchParentSize()
-                                                .padding(
-                                                    horizontal =
-                                                        8.dp,
-                                                    vertical =
-                                                        4.dp,
-                                                ),
-                                        contentAlignment =
-                                            Alignment
-                                                .CenterStart,
-                                    ) {
-                                        val iconWidth = with(density) { 24.dp.toPx() }
-                                        val spacerWidth = with(density) { 40.dp.toPx() }
-                                        val iconTriggerOffset = iconWidth + spacerWidth
-                                        val iconOffsetPx =
-                                            if (dragOffsetX.value > iconTriggerOffset) {
-                                                dragOffsetX.value - iconTriggerOffset
-                                            } else {
-                                                0f
-                                            }
-                                        val iconOffsetDp = with(density) { iconOffsetPx.toDp() }
-
-                                        Row(
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .heightIn(
-                                                        min =
-                                                            68.dp,
-                                                    ).background(
-                                                        MaterialTheme.colorScheme.primary,
-                                                    ).padding(
-                                                        horizontal =
-                                                            16.dp,
-                                                        vertical =
-                                                            12.dp,
-                                                    ),
-                                            verticalAlignment =
-                                                Alignment
-                                                    .CenterVertically,
-                                        ) {
-                                            Box(
-                                                modifier =
-                                                    Modifier
-                                                        .offset(x = iconOffsetDp),
-                                            ) {
-                                                Icon(
-                                                    imageVector =
-                                                        Icons.AutoMirrored.Filled.QueueMusic,
-                                                    contentDescription =
-                                                    null,
-                                                    tint =
-                                                        Color.White,
-                                                    modifier = Modifier.size(24.dp),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                val offsetDp =
-                                    with(density) { dragOffsetX.value.toDp() }
-                                Box(
-                                    modifier =
-                                        Modifier.offset(
-                                            x = offsetDp,
-                                        ),
-                                ) {
-                                    SongItem(
-                                        song = song,
-                                        isPlaying =
-                                            isCurrent &&
-                                                playerState
-                                                    .isPlaying,
-                                        onClick = {
-                                            // Usar el orden
-                                            // actual solo al
-                                            // reproducir desde
-                                            // esta vista
-                                            playbackViewModel.updateDisplayOrder(sortedSongs)
-                                            playbackViewModel.play(song)
-                                            // playerViewModel.showPlayerScreen(true)
-                                            // Si es necesario, iniciar servicio desde playbackViewModel
-                                        },
-                                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
-                                        playlists = playlists,
-                                        onAddToPlaylist = { playlistName, songId ->
-                                            playlistViewModel.addSongToPlaylist(playlistName, songId)
-                                        },
-                                    )
-                                }
+                                SongItem(
+                                    song = song,
+                                    isPlaying =
+                                        isCurrent &&
+                                            playerState
+                                                .isPlaying,
+                                    onClick = {
+                                        // Usar el orden
+                                        // actual solo al
+                                        // reproducir desde
+                                        // esta vista
+                                        playbackViewModel.updateDisplayOrder(sortedSongs)
+                                        playbackViewModel.play(song)
+                                        // playerViewModel.showPlayerScreen(true)
+                                        // Si es necesario, iniciar servicio desde playbackViewModel
+                                    },
+                                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                                    playlists = playlists,
+                                    onAddToPlaylist = { playlistName, songId ->
+                                        playlistViewModel.addSongToPlaylist(playlistName, songId)
+                                    },
+                                )
                             }
                         }
                     }
@@ -575,9 +442,9 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
     val playerViewModel: PlayerViewModel = viewModel()
     val artistViewModel: ArtistViewModel = viewModel()
     val albumViewModel: AlbumViewModel = viewModel()
-    val mainViewModel: com.cvc953.localplayer.viewmodel.MainViewModel = viewModel()
-    val equalizerViewModel: com.cvc953.localplayer.viewmodel.EqualizerViewModel = viewModel()
-    val folderViewModel: com.cvc953.localplayer.viewmodel.FolderViewModel = viewModel()
+    val mainViewModel: MainViewModel = viewModel()
+    val equalizerViewModel: EqualizerViewModel = viewModel()
+    val folderViewModel: FolderViewModel = viewModel()
 
     StoragePermissionHandler(
         isFolderConfiguredInitially = appPrefs.hasMusicFolderUri(),
@@ -612,12 +479,12 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 val intent =
                     Intent(
                         context,
-                        com.cvc953.localplayer.services.MusicService::class.java,
+                        MusicService::class.java,
                     ).apply {
-                        action = com.cvc953.localplayer.services.MusicService.ACTION_UPDATE_STATE
+                        action = MusicService.ACTION_UPDATE_STATE
                         putExtra("IS_PLAYING", playerState.isPlaying)
                     }
-                androidx.core.content.ContextCompat
+                ContextCompat
                     .startForegroundService(context, intent)
             } else {
                 hasSentPlaybackIntent = true
@@ -722,8 +589,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                         BottomNavItem.Albums.route -> {
                             // Usar SIEMPRE la misma instancia de AlbumViewModel
                             val albumViewModel: AlbumViewModel =
-                                androidx.lifecycle.viewmodel.compose
-                                    .viewModel()
+                                viewModel()
                             val albumKey = selectedAlbumName
                             if (albumKey == null) {
                                 AlbumsScreen(
@@ -740,8 +606,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                             albumViewModel.selectAlbum(found)
                                         } else {
                                             albumViewModel.selectAlbum(
-                                                com.cvc953.localplayer.model
-                                                    .Album(albumName, artistName, 0),
+                                                Album(albumName, artistName, 0),
                                             )
                                         }
                                         selectedAlbumName = "$albumName|$artistName"
@@ -776,6 +641,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                         artistViewModel = artistViewModel,
                                         artistName = artistName,
                                         onBack = { selectedArtistSongsView = false },
+                                        playbackViewModel = playbackViewModel,
                                     )
                                 } else {
                                     ArtistDetailScreen(
@@ -794,8 +660,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                                 albumViewModel.selectAlbum(found)
                                             } else {
                                                 albumViewModel.selectAlbum(
-                                                    com.cvc953.localplayer.model
-                                                        .Album(albumName, artistName, 0),
+                                                    Album(albumName, artistName, 0),
                                                 )
                                             }
                                             selectedAlbumName = "$albumName|$artistName"
@@ -851,8 +716,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                 albumViewModel.selectAlbum(found)
                             } else {
                                 albumViewModel.selectAlbum(
-                                    com.cvc953.localplayer.model
-                                        .Album(albumName, artistName, 0),
+                                    Album(albumName, artistName, 0),
                                 )
                             }
                             selectedTab = BottomNavItem.Albums.route

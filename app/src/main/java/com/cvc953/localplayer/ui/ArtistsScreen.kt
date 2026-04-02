@@ -59,6 +59,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -88,6 +89,7 @@ import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
+import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
@@ -134,7 +136,7 @@ fun ArtistsScreen(
     var viewAsGrid by rememberSaveable { mutableStateOf(artistViewModel.isGridViewPreferred()) }
     val context = LocalContext.current
     val activity = context as? Activity
-    var lastBackPressTime by remember { mutableStateOf(0L) }
+    var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
     BackHandler {
         val currentTime = System.currentTimeMillis()
@@ -684,22 +686,26 @@ fun ArtistDetailScreen(
             items(artistSongsSorted.take(maxItems)) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
-                SongItem(
-                    song = song,
-                    isPlaying = isCurrent,
-                    onClick = {
-                        playbackViewModel.setShuffle(false)
-                        playbackViewModel.playArtist(artistName, artistSongsSorted, allSongs)
-                        playbackViewModel.updateDisplayOrder(artistSongsSorted)
-                        playbackViewModel.play(song)
-                    },
-                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
-                    playlists = playlists,
-                    onAddToPlaylist = { playlistName, songId ->
-                        playlistViewModel.addSongToPlaylist(playlistName, songId)
-                    },
-                )
+                DraggableSwipeRow(onSwipeThreshold = {
+                    playbackViewModel.addToQueueNext(song)
+                }) {
+                    SongItem(
+                        song = song,
+                        isPlaying = isCurrent,
+                        onClick = {
+                            playbackViewModel.setShuffle(false)
+                            playbackViewModel.playArtist(artistName, artistSongsSorted, allSongs)
+                            playbackViewModel.updateDisplayOrder(artistSongsSorted)
+                            playbackViewModel.play(song)
+                        },
+                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                        playlists = playlists,
+                        onAddToPlaylist = { playlistName, songId ->
+                            playlistViewModel.addSongToPlaylist(playlistName, songId)
+                        },
+                    )
+                }
             }
             // LazyRow de álbumes del artista
             item {
@@ -899,6 +905,7 @@ fun ArtistHeader(
 @Composable
 fun ArtistSongsScreen(
     artistViewModel: ArtistViewModel,
+    playbackViewModel: PlaybackViewModel,
     artistName: String,
     onBack: () -> Unit,
 ) {
@@ -906,6 +913,7 @@ fun ArtistSongsScreen(
     val allSongs = remember { repo.loadSongs() }
     val artistSongs = allSongs.filter { song -> normalizeArtistName(song.artist).any { it.equals(artistName, ignoreCase = true) } }
     val context = LocalContext.current
+    val artistSongsSorted = remember(artistSongs) { artistSongs.sortedWith(compareBy({ it.album }, { it.discNumber }, { it.trackNumber })) }
 
     BackHandler { onBack() }
 
@@ -933,15 +941,24 @@ fun ArtistSongsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(artistSongs) { song ->
-                SongItem(
-                    song = song,
-                    isPlaying = false,
-                    onClick = { /* Aquí puedes agregar lógica de reproducción */ },
-                    onQueueNext = {},
-                    onQueueEnd = {},
-                    playlists = emptyList(),
-                    onAddToPlaylist = { _, _ -> },
-                )
+                DraggableSwipeRow(onSwipeThreshold = {
+                    playbackViewModel.addToQueueNext(song)
+                }) {
+                    SongItem(
+                        song = song,
+                        isPlaying = false,
+                        onClick = {
+                            playbackViewModel.setShuffle(false)
+                            playbackViewModel.playArtist(artistName, artistSongsSorted, allSongs)
+                            playbackViewModel.updateDisplayOrder(artistSongsSorted)
+                            playbackViewModel.play(song)
+                        },
+                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                        playlists = emptyList(),
+                        onAddToPlaylist = { _, _ -> },
+                    )
+                }
             }
         }
     }
