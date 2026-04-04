@@ -1,7 +1,10 @@
-package com.cvc953.localplayer.util
+package com.cvc953.localplayer
 
 import com.cvc953.localplayer.model.TtmlAlignment
-import org.junit.Assert.*
+import com.cvc953.localplayer.util.TtmlParser
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class TtmlParserTest {

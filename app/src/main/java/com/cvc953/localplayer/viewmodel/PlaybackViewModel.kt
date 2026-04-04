@@ -1,8 +1,11 @@
 package com.cvc953.localplayer.viewmodel
 
 import android.app.Application
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.cvc953.localplayer.Services.MusicService
 import com.cvc953.localplayer.controller.PlayerController
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.PlayerState
@@ -11,18 +14,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlin.collections.get
-import kotlin.compareTo
-import kotlin.text.compareTo
-import android.content.Intent
-import androidx.core.content.ContextCompat
-import com.cvc953.localplayer.services.MusicService
 
 class PlaybackViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
     private val playerController = PlayerController.getInstance(getApplication(), viewModelScope)
-    private val prefs = com.cvc953.localplayer.preferences.AppPrefs(getApplication())
+    private val prefs =
+        com.cvc953.localplayer.preferences
+            .AppPrefs(getApplication())
     val playerState: StateFlow<PlayerState> = playerController.state
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -52,11 +51,11 @@ class PlaybackViewModel(
     private var currentAlbumArtist: String? = null
     private var _nextAlbumName: String? = null
     private var _nextAlbumArtist: String? = null
-    
+
     // Track current artist being played
     private var currentArtistName: String? = null
     private var _nextArtistName: String? = null
-    
+
     // Pending queue prepared by playAlbum()/playArtist(), consumed by updateDisplayOrder().
     private var _pendingFullQueue: List<Song>? = null
 
@@ -66,19 +65,24 @@ class PlaybackViewModel(
     init {
         // Restore persisted playback state (queue, shuffle, repeat, last position)
         try {
-            val prefs = com.cvc953.localplayer.preferences.AppPrefs(getApplication())
-            val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+            val prefs =
+                com.cvc953.localplayer.preferences
+                    .AppPrefs(getApplication())
+            val repo =
+                com.cvc953.localplayer.model
+                    .SongRepository(getApplication())
             val allSongs = repo.loadSongs()
-            
+
             // Restore next album info
             _nextAlbumName = prefs.loadNextAlbumName()
             _nextAlbumArtist = prefs.loadNextAlbumArtist()
-            
+
             val queueUris = prefs.loadPlaybackQueue()
             if (queueUris.isNotEmpty()) {
-                val restored = queueUris.mapNotNull { uriStr ->
-                    allSongs.find { it.uri.toString() == uriStr }
-                }
+                val restored =
+                    queueUris.mapNotNull { uriStr ->
+                        allSongs.find { it.uri.toString() == uriStr }
+                    }
                 if (restored.isNotEmpty()) {
                     var queueToUse = restored
                     // set shuffle/repeat flags
@@ -86,10 +90,13 @@ class PlaybackViewModel(
                     _isShuffle.value = shuffleEnabled
                     prefs.loadRepeatMode()?.let { modeStr ->
                         try {
-                            _repeatMode.value = com.cvc953.localplayer.ui.RepeatMode.valueOf(modeStr)
+                            _repeatMode.value =
+                                com.cvc953.localplayer.ui.RepeatMode
+                                    .valueOf(modeStr)
                             _isRepeat.value = _repeatMode.value != com.cvc953.localplayer.ui.RepeatMode.NONE
                             playerController.setRepeatMode(_repeatMode.value)
-                        } catch (_: Exception) {}
+                        } catch (_: Exception) {
+                        }
                     }
 
                     val lastUri = prefs.loadLastSongUri()
@@ -112,26 +119,31 @@ class PlaybackViewModel(
                                 startIndex,
                                 startPaused = !wasPlaying,
                                 seekToPosition = if (pos > 0L) pos else null,
-                                resumeAfterSeek = wasPlaying
+                                resumeAfterSeek = wasPlaying,
                             )
                             _currentPosition.value = pos
                             // Lanzar MusicService para mostrar la notificación aunque esté en pausa
                             val song = queueToUse.getOrNull(startIndex)
                             if (song != null) {
-                                val intent = Intent(getApplication<Application>(), MusicService::class.java).apply {
-                                    action = MusicService.ACTION_UPDATE_STATE
-                                    putExtra("IS_PLAYING", wasPlaying)
-                                    putExtra("POSITION", pos)
-                                    putExtra("SONG_URI", song.uri.toString())
-                                    putExtra("TITLE", song.title)
-                                    putExtra("ARTIST", song.artist)
-                                }
+                                val intent =
+                                    Intent(getApplication<Application>(), MusicService::class.java).apply {
+                                        action = MusicService.ACTION_UPDATE_STATE
+                                        putExtra("IS_PLAYING", wasPlaying)
+                                        putExtra("POSITION", pos)
+                                        putExtra("SONG_URI", song.uri.toString())
+                                        putExtra("TITLE", song.title)
+                                        putExtra("ARTIST", song.artist)
+                                    }
                                 ContextCompat.startForegroundService(getApplication(), intent)
                             }
-                        } catch (_: Exception) {}
+                        } catch (_: Exception) {
+                        }
                     } else {
                         // no last song, keep controller queue in sync without starting playback
-                        try { playerController.queueEnd(queueToUse) } catch (_: Exception) {}
+                        try {
+                            playerController.queueEnd(queueToUse)
+                        } catch (_: Exception) {
+                        }
                     }
                 }
             }
@@ -156,7 +168,7 @@ class PlaybackViewModel(
             try {
                 // Sync repeat mode with PlayerController before playing
                 playerController.setRepeatMode(_repeatMode.value)
-                
+
                 // Si la canción no es la única en la cola, sincroniza la cola con la lista actual
                 val queue = _queue.value
                 val index = queue.indexOfFirst { it.id == song.id }
@@ -179,14 +191,16 @@ class PlaybackViewModel(
                     prefs.savePlaybackPosition(0L)
                     prefs.saveIsPlaying(true)
                     prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
                 try {
-                    val intent = Intent(getApplication<Application>(), MusicService::class.java).apply {
-                        putExtra("SONG_URI", song.uri.toString())
-                        putExtra("TITLE", song.title)
-                        putExtra("ARTIST", song.artist)
-                        putExtra("IS_PLAYING", true)
-                    }
+                    val intent =
+                        Intent(getApplication<Application>(), MusicService::class.java).apply {
+                            putExtra("SONG_URI", song.uri.toString())
+                            putExtra("TITLE", song.title)
+                            putExtra("ARTIST", song.artist)
+                            putExtra("IS_PLAYING", true)
+                        }
                     ContextCompat.startForegroundService(getApplication(), intent)
                 } catch (_: Exception) {
                 }
@@ -204,14 +218,16 @@ class PlaybackViewModel(
         try {
             prefs.savePlaybackPosition(_currentPosition.value)
             prefs.saveIsPlaying(false)
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
         // Update service
         try {
-            val intent = Intent(getApplication<Application>(), MusicService::class.java).apply {
-                action = MusicService.ACTION_UPDATE_STATE
-                putExtra("IS_PLAYING", false)
-                putExtra("POSITION", _currentPosition.value)
-            }
+            val intent =
+                Intent(getApplication<Application>(), MusicService::class.java).apply {
+                    action = MusicService.ACTION_UPDATE_STATE
+                    putExtra("IS_PLAYING", false)
+                    putExtra("POSITION", _currentPosition.value)
+                }
             ContextCompat.startForegroundService(getApplication(), intent)
         } catch (_: Exception) {
         }
@@ -223,19 +239,21 @@ class PlaybackViewModel(
         try {
             prefs.savePlaybackPosition(_currentPosition.value)
             prefs.saveIsPlaying(true)
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
         try {
-                val song = playerState.value.currentSong
-            val intent = Intent(getApplication<Application>(), MusicService::class.java).apply {
-                action = MusicService.ACTION_UPDATE_STATE
-                putExtra("IS_PLAYING", true)
-                putExtra("POSITION", _currentPosition.value)
-                if (song != null) {
-                    putExtra("SONG_URI", song.uri.toString())
-                    putExtra("TITLE", song.title)
-                    putExtra("ARTIST", song.artist)
+            val song = playerState.value.currentSong
+            val intent =
+                Intent(getApplication<Application>(), MusicService::class.java).apply {
+                    action = MusicService.ACTION_UPDATE_STATE
+                    putExtra("IS_PLAYING", true)
+                    putExtra("POSITION", _currentPosition.value)
+                    if (song != null) {
+                        putExtra("SONG_URI", song.uri.toString())
+                        putExtra("TITLE", song.title)
+                        putExtra("ARTIST", song.artist)
+                    }
                 }
-            }
             ContextCompat.startForegroundService(getApplication(), intent)
         } catch (_: Exception) {
         }
@@ -257,9 +275,10 @@ class PlaybackViewModel(
         }
 
         val sortedAlbums = uniqueAlbums.sortedBy { it.first.lowercase() }
-        val currentIndex = sortedAlbums.indexOfFirst { (name, artist) ->
-            name.equals(albumName, ignoreCase = true) && artist.equals(artistName, ignoreCase = true)
-        }
+        val currentIndex =
+            sortedAlbums.indexOfFirst { (name, artist) ->
+                name.equals(albumName, ignoreCase = true) && artist.equals(artistName, ignoreCase = true)
+            }
 
         if (currentIndex < 0) {
             return Pair(emptyList(), null)
@@ -314,7 +333,9 @@ class PlaybackViewModel(
             // Fallback path: load all songs asynchronously when caller only provides current album songs.
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+                    val repo =
+                        com.cvc953.localplayer.model
+                            .SongRepository(getApplication())
                     val allSongs = repo.loadSongs()
                     val (fullQueue, nextAlbum) = prepareAlbumQueueFromSongs(allSongs, albumName, artistName)
 
@@ -345,7 +366,7 @@ class PlaybackViewModel(
                 }
             }
         }
-        
+
         // Configure listener for when user skips to next at the end of album
         playerController.setOnNextAtEndListener {
             if (currentAlbumName == albumName && currentAlbumArtist == artistName) {
@@ -409,7 +430,9 @@ class PlaybackViewModel(
             // Fallback path: load all songs asynchronously when caller only provides current artist songs.
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+                    val repo =
+                        com.cvc953.localplayer.model
+                            .SongRepository(getApplication())
                     val allSongs = repo.loadSongs()
                     val sourceSongs = if (allSongs.isNotEmpty()) allSongs else songs
                     val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(sourceSongs, artistName)
@@ -429,18 +452,25 @@ class PlaybackViewModel(
         onAlbumEndedCallback = callback
     }
 
-    fun loadNextAlbumAutomatically(nextAlbumName: String, nextAlbumArtist: String) {
+    fun loadNextAlbumAutomatically(
+        nextAlbumName: String,
+        nextAlbumArtist: String,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val repo = com.cvc953.localplayer.model.SongRepository(getApplication())
+                val repo =
+                    com.cvc953.localplayer.model
+                        .SongRepository(getApplication())
                 val allSongs = repo.loadSongs()
-                
+
                 // Get all songs from the next album
-                val nextAlbumSongs = allSongs.filter { song ->
-                    song.album.trim().equals(nextAlbumName, ignoreCase = true) &&
-                        song.artist.trim().equals(nextAlbumArtist, ignoreCase = true)
-                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
-                
+                val nextAlbumSongs =
+                    allSongs
+                        .filter { song ->
+                            song.album.trim().equals(nextAlbumName, ignoreCase = true) &&
+                                song.artist.trim().equals(nextAlbumArtist, ignoreCase = true)
+                        }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+
                 if (nextAlbumSongs.isNotEmpty()) {
                     // Setup for the next album (this reconfigures listeners)
                     playAlbum(nextAlbumName, nextAlbumArtist, nextAlbumSongs, allSongs)
@@ -460,13 +490,15 @@ class PlaybackViewModel(
         try {
             prefs.savePlaybackPosition(0L)
             prefs.saveIsPlaying(false)
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
         try {
-            val intent = Intent(getApplication<Application>(), MusicService::class.java).apply {
-                action = MusicService.ACTION_UPDATE_STATE
-                putExtra("IS_PLAYING", false)
-                putExtra("POSITION", 0L)
-            }
+            val intent =
+                Intent(getApplication<Application>(), MusicService::class.java).apply {
+                    action = MusicService.ACTION_UPDATE_STATE
+                    putExtra("IS_PLAYING", false)
+                    putExtra("POSITION", 0L)
+                }
             ContextCompat.startForegroundService(getApplication(), intent)
         } catch (_: Exception) {
         }
@@ -475,7 +507,10 @@ class PlaybackViewModel(
     fun seekTo(position: Long) {
         playerController.seekTo(position)
         _currentPosition.value = position
-        try { prefs.savePlaybackPosition(position) } catch (_: Exception) {}
+        try {
+            prefs.savePlaybackPosition(position)
+        } catch (_: Exception) {
+        }
     }
 
     fun updatePosition() {
@@ -489,53 +524,85 @@ class PlaybackViewModel(
         val insertIndex = if (currentIndex >= 0) currentIndex + 1 else 0
         currentQueue.add(insertIndex, song)
         _queue.value = currentQueue
-        try { prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() }); playerController.replaceQueue(_queue.value, keepCurrentSong = true) } catch (_: Exception) {}
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+        } catch (
+            _: Exception,
+        ) {
+        }
     }
 
     fun addToQueueEnd(song: Song) {
         val currentQueue = _queue.value.toMutableList()
         currentQueue.add(song)
         _queue.value = currentQueue
-        try { prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() }); playerController.replaceQueue(_queue.value, keepCurrentSong = true) } catch (_: Exception) {}
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+        } catch (
+            _: Exception,
+        ) {
+        }
     }
 
     fun removeFromQueue(song: Song) {
         _queue.value = _queue.value.filterNot { it.id == song.id }
-        try { prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() }); playerController.replaceQueue(_queue.value, keepCurrentSong = true) } catch (_: Exception) {}
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+        } catch (
+            _: Exception,
+        ) {
+        }
     }
 
     fun clearQueue() {
         _queue.value = emptyList()
-        try { prefs.savePlaybackQueue(emptyList()); playerController.replaceQueue(emptyList(), keepCurrentSong = false) } catch (_: Exception) {}
+        try {
+            prefs.savePlaybackQueue(emptyList())
+            playerController.replaceQueue(emptyList(), keepCurrentSong = false)
+        } catch (
+            _: Exception,
+        ) {
+        }
     }
 
     fun updateDisplayOrder(songs: List<Song>) {
         // If playAlbum() prepared a full queue with all albums, use that instead
-        val queueToUse = if (_pendingFullQueue != null) {
-            android.util.Log.d("PlaybackViewModel", "updateDisplayOrder - Using full queue with ${_pendingFullQueue!!.size} songs (all albums)")
-            val fullQueue = _pendingFullQueue!!
-            _pendingFullQueue = null  // Clear after use
-            fullQueue
-        } else {
-            android.util.Log.d("PlaybackViewModel", "updateDisplayOrder - Using provided songs: ${songs.size} songs")
-            songs
-        }
-        
-        // If shuffle is enabled, shuffle the new queue while keeping current song at the front
-        val finalQueue = if (_isShuffle.value) {
-            val current = playerState.value.currentSong
-            val rest = queueToUse.filter { it != current }.shuffled()
-            if (current != null && queueToUse.contains(current)) {
-                listOf(current) + rest
+        val queueToUse =
+            if (_pendingFullQueue != null) {
+                android.util.Log.d(
+                    "PlaybackViewModel",
+                    "updateDisplayOrder - Using full queue with ${_pendingFullQueue!!.size} songs (all albums)",
+                )
+                val fullQueue = _pendingFullQueue!!
+                _pendingFullQueue = null // Clear after use
+                fullQueue
             } else {
-                rest
+                android.util.Log.d("PlaybackViewModel", "updateDisplayOrder - Using provided songs: ${songs.size} songs")
+                songs
             }
-        } else {
-            queueToUse
-        }
-        
+
+        // If shuffle is enabled, shuffle the new queue while keeping current song at the front
+        val finalQueue =
+            if (_isShuffle.value) {
+                val current = playerState.value.currentSong
+                val rest = queueToUse.filter { it != current }.shuffled()
+                if (current != null && queueToUse.contains(current)) {
+                    listOf(current) + rest
+                } else {
+                    rest
+                }
+            } else {
+                queueToUse
+            }
+
         _queue.value = finalQueue
-        try { prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() }) } catch (_: Exception) {}
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+        } catch (_: Exception) {
+        }
     }
 
     fun toggleShuffle() {
@@ -547,19 +614,26 @@ class PlaybackViewModel(
             val rest = _queue.value.filter { it != current }.shuffled()
             val newQueue = if (current != null && _queue.value.contains(current)) listOf(current) + rest else rest
             _queue.value = newQueue
-            try { playerController.replaceQueue(newQueue, keepCurrentSong = true) } catch (_: Exception) {}
+            try {
+                playerController.replaceQueue(newQueue, keepCurrentSong = true)
+            } catch (_: Exception) {
+            }
         } else {
             // disable shuffle: sort the queue alphabetically by title then artist
             val sorted = _queue.value.sortedWith(compareBy({ it.title.lowercase() }, { it.artist.lowercase() }))
             _queue.value = sorted
-            try { playerController.replaceQueue(sorted, keepCurrentSong = true) } catch (_: Exception) {}
+            try {
+                playerController.replaceQueue(sorted, keepCurrentSong = true)
+            } catch (_: Exception) {
+            }
             _originalQueueBeforeShuffle = null
         }
         try {
             prefs.saveShuffleEnabled(_isShuffle.value)
             // clear persisted explicit queue when user toggles shuffle to avoid restoring a stale order
             prefs.savePlaybackQueue(emptyList())
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+        }
     }
 
     fun setShuffle(enabled: Boolean) {
@@ -579,7 +653,10 @@ class PlaybackViewModel(
         _isRepeat.value = _repeatMode.value != RepeatMode.NONE
         android.util.Log.d("PlaybackViewModel", "toggleRepeat - new mode: ${_repeatMode.value}")
         playerController.setRepeatMode(_repeatMode.value)
-        try { prefs.saveRepeatMode(_repeatMode.value.name) } catch (_: Exception) {}
+        try {
+            prefs.saveRepeatMode(_repeatMode.value.name)
+        } catch (_: Exception) {
+        }
     }
 
     fun getUpcomingSongs(): List<Song> {
@@ -591,10 +668,12 @@ class PlaybackViewModel(
             _isShuffle.value -> {
                 all.filter { it != current }.shuffled()
             }
+
             _repeatMode.value == RepeatMode.ALL -> {
                 val idx = all.indexOf(current)
                 if (idx == -1) all else all.drop(idx + 1) + all.take(idx)
             }
+
             else -> {
                 val idx = all.indexOf(current)
                 if (idx == -1) emptyList() else all.drop(idx + 1)
@@ -604,15 +683,15 @@ class PlaybackViewModel(
 
     fun playNextSong() {
         android.util.Log.d("PlaybackViewModel", "playNextSong() - isShuffle: ${_isShuffle.value}")
-        
+
         val current = playerState.value.currentSong ?: return
         val queue = _queue.value
         if (queue.isEmpty()) return
-        
+
         // Find the current song's position in the queue
         val currentIndex = queue.indexOf(current)
         if (currentIndex == -1) return
-        
+
         // Get the next song index
         val nextIndex = currentIndex + 1
         if (nextIndex < queue.size) {
@@ -627,15 +706,15 @@ class PlaybackViewModel(
 
     fun playPreviousSong() {
         android.util.Log.d("PlaybackViewModel", "playPreviousSong() - isShuffle: ${_isShuffle.value}")
-        
+
         val current = playerState.value.currentSong ?: return
         val queue = _queue.value
         if (queue.isEmpty()) return
-        
+
         // For previous, go back in the queue (don't randomize even if shuffle is on)
         val currentIndex = queue.indexOf(current)
         if (currentIndex == -1) return
-        
+
         val prevIndex = currentIndex - 1
         if (prevIndex >= 0) {
             play(queue[prevIndex])

@@ -881,7 +881,7 @@ fun AlbumHeader(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Botones igual que PlaylistHeader
-        val buttonColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+        val buttonColor = MaterialTheme.colorScheme.primary
 
         Text(text = "${albumSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
         Spacer(modifier = Modifier.height(20.dp))

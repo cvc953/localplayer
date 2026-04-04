@@ -9,6 +9,8 @@ data class ExtendedColors(
     val textSecondaryStrong: Color,
     val texMeta: Color,
     val surfaceSheet: Color,
+    val dotsColors: List<Color>,
+    val brightColor: Color,
 )
 
 val LocalExtendedColors =

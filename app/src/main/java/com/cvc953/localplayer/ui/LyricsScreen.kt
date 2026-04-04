@@ -154,7 +154,7 @@ fun LyricsView(
                 .background(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
-                            listOf(dominantColor.darken(0.6f), dominantColor.darken(0.1f)),
+                            listOf(dominantColor.darken(0.5f), dominantColor.darken(0.1f)),
                         )
                     } else {
                         Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
@@ -326,6 +326,8 @@ fun TtmlLyricsView(
         }
     }
 
+    val gapThreshold = 7000L
+
     Box(
         modifier =
             modifier
@@ -333,7 +335,7 @@ fun TtmlLyricsView(
                 .background(
                     if (useDynamicBackground) {
                         Brush.verticalGradient(
-                            listOf(dominantColor.darken(0.6f), dominantColor.darken(0.1f)),
+                            listOf(dominantColor.darken(0.5f), dominantColor.darken(0.1f)),
                         )
                     } else {
                         Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
@@ -346,14 +348,12 @@ fun TtmlLyricsView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize(),
         ) {
-            val gapThreshold = 7000L
-
             if (lines.isNotEmpty()) {
                 val firstLineStart = lines.first().timeMs
                 if (firstLineStart > gapThreshold) {
-                    item {
-                        val isIntroGapActive = currentPosition in 0 until firstLineStart
-                        if (isIntroGapActive) {
+                    val isIntroGapActive = currentPosition in 0 until firstLineStart
+                    if (isIntroGapActive) {
+                        item {
                             Box(
                                 modifier =
                                     Modifier

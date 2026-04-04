@@ -62,6 +62,29 @@ val md_surfaceSheet_Light = Color(0xFFE8E8E8)
 // Outline
 val md_lightOutlineSoft = Color(0xFFBDBDBD)
 
+val dotsColorsDark =
+    listOf<Color>(
+        Color.White.copy(alpha = 0.3f),
+        Color.White.copy(alpha = 0.4f),
+        Color.White.copy(alpha = 0.5f),
+        Color.White.copy(alpha = 0.6f),
+        Color.White.copy(alpha = 0.7f),
+        Color.White.copy(alpha = 0.8f),
+        Color.White.copy(alpha = 0.9f),
+    )
+val dotsColorsLight =
+    listOf<Color>(
+        Color.Black.copy(alpha = 0.3f),
+        Color.Black.copy(alpha = 0.4f),
+        Color.Black.copy(alpha = 0.5f),
+        Color.Black.copy(alpha = 0.6f),
+        Color.Black.copy(alpha = 0.7f),
+        Color.Black.copy(alpha = 0.8f),
+        Color.Black.copy(alpha = 0.9f),
+    )
+val brightColorDark = Color.White
+val brightColorLight = Color.Black
+
 // ── Theme Color System ──────────────────────────────────────────────
 
 const val DEFAULT_PRIMARY_HEX = "#2196F3"

@@ -1,5 +1,6 @@
 package com.cvc953.localplayer.util
 
+import androidx.compose.ui.text.input.TransformedText
 import com.cvc953.localplayer.model.TtmlLine
 import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.model.TtmlMetadata
@@ -22,6 +23,7 @@ object TtmlParser {
     private val cache = mutableMapOf<Int, TtmlLyrics>()
 
     val dashChars = setOf('-', '\u2013', '\u2014', '\u2010')
+    val spaceChars = setOf(' ', '\u0020', '\u3000')
 
     fun parseTtml(content: String): TtmlLyrics {
         // cheap fingerprint: hashCode + length to reduce collision chance
@@ -76,8 +78,9 @@ object TtmlParser {
             if (prevLine.syllabus.isNotEmpty() && currLine.syllabus.isNotEmpty()) {
                 val lastPrev = prevLine.syllabus.last()
                 val firstCurr = currLine.syllabus.first()
+
                 // Si la última sílaba de la línea anterior y la primera de la actual no terminan ni empiezan con espacio, es una palabra partida
-                if ((!lastPrev.text.endsWith(" ") && !firstCurr.text.startsWith(" ")) &&
+                if (!spaceChars.contains(lastPrev.text.lastOrNull()) && spaceChars.contains(firstCurr.text.firstOrNull()) &&
                     !dashChars.contains(lastPrev.text.lastOrNull())
                 ) {
                     // Marcar la primera sílaba de la línea actual como continuación de palabra

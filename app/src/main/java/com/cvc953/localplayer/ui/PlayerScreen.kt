@@ -261,7 +261,7 @@ fun PlayerScreen(
 
     // Notificar al padre del color de fondo (topo del gradiente)
     LaunchedEffect(dominantColor, dynamicColorEnabled) {
-        val topColor = if (dynamicColorEnabled) dominantColor.darken(0.6f) else color
+        val topColor = if (dynamicColorEnabled) dominantColor.darken(0.5f) else color
         onBackgroundColorChanged(topColor)
     }
 
@@ -279,7 +279,7 @@ fun PlayerScreen(
         if (dynamicColorEnabled) {
             Brush.verticalGradient(
                 listOf(
-                    dominantColor.darken(0.6f),
+                    dominantColor.darken(0.5f),
                     dominantColor.darken(0.1f),
                 ),
             )

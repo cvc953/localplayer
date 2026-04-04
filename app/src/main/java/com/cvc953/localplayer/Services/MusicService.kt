@@ -1,16 +1,14 @@
-package com.cvc953.localplayer.services
+package com.cvc953.localplayer.Services
 
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.media.session.PlaybackState
 import android.net.Uri
 import android.os.Build
 import android.os.IBinder
@@ -18,14 +16,15 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.graphics.scale
+import com.cvc953.localplayer.MainActivity
+import com.cvc953.localplayer.R
+import com.cvc953.localplayer.controller.PlayerController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import androidx.core.app.NotificationCompat
-import com.cvc953.localplayer.R
-import com.cvc953.localplayer.viewmodel.MainViewModel
 
 class MusicService : Service() {
     companion object {
@@ -48,7 +47,7 @@ class MusicService : Service() {
     private lateinit var mediaSession: MediaSessionCompat
     private var serviceJob: Job? = null
     private lateinit var serviceScope: CoroutineScope
-    private lateinit var playerController: com.cvc953.localplayer.controller.PlayerController
+    private lateinit var playerController: PlayerController
 
     override fun onCreate() {
         super.onCreate()
@@ -58,44 +57,45 @@ class MusicService : Service() {
         initMediaSession()
 
         serviceScope = CoroutineScope(Dispatchers.Default + Job())
-        playerController = com.cvc953.localplayer.controller.PlayerController.getInstance(this, serviceScope)
+        playerController = PlayerController.getInstance(this, serviceScope)
 
         // Observe player state and update notification when it changes
-        serviceJob = serviceScope.launch {
-            var lastSongUri: String? = null
-            playerController.state.collect { st ->
-                val newSong = st.currentSong
-                val newSongUri = newSong?.uri?.toString()
-                if (newSongUri != null && newSongUri != lastSongUri) {
-                    // Cambió la canción, recarga carátula
-                    title = newSong.title.ifBlank { "Reproduciendo" }
-                    artist = newSong.artist
-                    isPlaying = st.isPlaying
-                    positionMs = st.position
-                    durationMs = st.duration
-                    lastSongUri = newSongUri
-                    currentSongUri = newSongUri
-                    albumArt = null
-                    loadAlbumArt(newSongUri)
-                } else if (newSong != null) {
-                    // Misma canción, solo actualiza estado
-                    title = newSong.title.ifBlank { "Reproduciendo" }
-                    artist = newSong.artist
-                    isPlaying = st.isPlaying
-                    positionMs = st.position
-                    durationMs = st.duration
-                    updateMediaSession()
-                    updateNotification()
-                } else {
-                    // No hay canción actual
-                    isPlaying = st.isPlaying
-                    positionMs = st.position
-                    durationMs = st.duration
-                    updateMediaSession()
-                    updateNotification()
+        serviceJob =
+            serviceScope.launch {
+                var lastSongUri: String? = null
+                playerController.state.collect { st ->
+                    val newSong = st.currentSong
+                    val newSongUri = newSong?.uri?.toString()
+                    if (newSongUri != null && newSongUri != lastSongUri) {
+                        // Cambió la canción, recarga carátula
+                        title = newSong.title.ifBlank { "Reproduciendo" }
+                        artist = newSong.artist
+                        isPlaying = st.isPlaying
+                        positionMs = st.position
+                        durationMs = st.duration
+                        lastSongUri = newSongUri
+                        currentSongUri = newSongUri
+                        albumArt = null
+                        loadAlbumArt(newSongUri)
+                    } else if (newSong != null) {
+                        // Misma canción, solo actualiza estado
+                        title = newSong.title.ifBlank { "Reproduciendo" }
+                        artist = newSong.artist
+                        isPlaying = st.isPlaying
+                        positionMs = st.position
+                        durationMs = st.duration
+                        updateMediaSession()
+                        updateNotification()
+                    } else {
+                        // No hay canción actual
+                        isPlaying = st.isPlaying
+                        positionMs = st.position
+                        durationMs = st.duration
+                        updateMediaSession()
+                        updateNotification()
+                    }
                 }
             }
-        }
 
         val notification = createNotification()
         try {
@@ -168,7 +168,6 @@ class MusicService : Service() {
                 return START_STICKY
             }
         }
-
 
         // Nueva canción, pero solo si es diferente o cambia el estado de reproducción
         val songTitle = intent?.getStringExtra("TITLE")
@@ -243,11 +242,12 @@ class MusicService : Service() {
 
         val artworkBitmap =
             try {
-                val candidate = if (albumArt != null && !albumArt!!.isRecycled && albumArt!!.width > 0) {
-                    albumArt
-                } else {
-                    BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
-                }
+                val candidate =
+                    if (albumArt != null && !albumArt!!.isRecycled && albumArt!!.width > 0) {
+                        albumArt
+                    } else {
+                        BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
+                    }
                 // Ensure we won't pass a recycled bitmap to the notification builder
                 if (candidate != null && candidate.isRecycled) {
                     BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
@@ -261,7 +261,7 @@ class MusicService : Service() {
 
         // Intent para abrir la app sin reiniciarla
         val contentIntent =
-            Intent(this, com.cvc953.localplayer.MainActivity::class.java).apply {
+            Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
         val contentPendingIntent =
@@ -307,7 +307,7 @@ class MusicService : Service() {
 
     private fun updateNotification() {
         try {
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(NOTIF_ID, createNotification())
             Log.e("MusicService", "✓ Notification updated")
         } catch (e: Exception) {
@@ -322,7 +322,7 @@ class MusicService : Service() {
             val channel = NotificationChannel(CHANNEL_ID, "Reproducción", NotificationManager.IMPORTANCE_LOW)
             channel.setShowBadge(false)
 
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
             Log.e("MusicService", "✓ Notification channel created")
         } catch (e: Exception) {
@@ -353,12 +353,15 @@ class MusicService : Service() {
                 if (art != null && art.isNotEmpty()) {
                     val bitmap = BitmapFactory.decodeByteArray(art, 0, art.size)
                     if (bitmap != null) {
-                        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 512, 512, true)
+                        val scaledBitmap = bitmap.scale(512, 512)
 
                         // Replace cached album art (do not recycle previous bitmap here)
                         albumArt = scaledBitmap
                         if (bitmap != scaledBitmap) {
-                            try { bitmap.recycle() } catch (_: Exception) {}
+                            try {
+                                bitmap.recycle()
+                            } catch (_: Exception) {
+                            }
                         }
 
                         Log.e("MusicService", "✓ Album art loaded and scaled")

@@ -9,7 +9,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import com.cvc953.localplayer.ui.theme.ExtendedColors
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.ui.theme.brightColorDark
+import com.cvc953.localplayer.ui.theme.brightColorLight
 import com.cvc953.localplayer.ui.theme.computeOnPrimary
+import com.cvc953.localplayer.ui.theme.dotsColorsDark
+import com.cvc953.localplayer.ui.theme.dotsColorsLight
 import com.cvc953.localplayer.ui.theme.md_background
 import com.cvc953.localplayer.ui.theme.md_lightBackground
 import com.cvc953.localplayer.ui.theme.md_lightOnBackground
@@ -77,6 +81,8 @@ fun LocalPlayerTheme(
                 textSecondaryStrong = md_textSecondaryStrong,
                 texMeta = md_textMeta,
                 surfaceSheet = md_surfaceSheet,
+                dotsColors = dotsColorsDark,
+                brightColor = brightColorDark,
             )
         } else {
             ExtendedColors(
@@ -85,6 +91,8 @@ fun LocalPlayerTheme(
                 textSecondaryStrong = md_lightTextSecondaryStrong,
                 texMeta = md_textMeta_Light,
                 surfaceSheet = md_surfaceSheet_Light,
+                dotsColors = dotsColorsLight,
+                brightColor = brightColorLight,
             )
         }
 

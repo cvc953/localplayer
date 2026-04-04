@@ -81,6 +81,7 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
@@ -1075,8 +1076,6 @@ fun PlaylistDetailScreen(
             }
         }
 
-        // ...eliminada la barra de acciones para eliminar canciones...
-
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
@@ -1095,31 +1094,33 @@ fun PlaylistDetailScreen(
             }
             items(playlistSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
-                SongItem(
-                    song = song,
-                    isPlaying = isCurrent,
-                    onClick = {
-                        playbackViewModel.updateDisplayOrder(playlistSongs)
-                        playbackViewModel.play(song)
-                    },
-                    onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                    onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
-                    playlists = playlists,
-                    onAddToPlaylist = { targetPlaylistName, songId ->
-                        playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
-                    },
-                    onRemoveFromPlaylist = {
-                        playlistViewModel.removeSongFromPlaylist(
-                            playlistName,
-                            song.id,
-                        )
-                    },
-                )
+                DraggableSwipeRow(onSwipeThreshold = {
+                    playbackViewModel.addToQueueNext(song)
+                }) {
+                    SongItem(
+                        song = song,
+                        isPlaying = isCurrent,
+                        onClick = {
+                            playbackViewModel.updateDisplayOrder(playlistSongs)
+                            playbackViewModel.play(song)
+                        },
+                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
+                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                        playlists = playlists,
+                        onAddToPlaylist = { targetPlaylistName, songId ->
+                            playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
+                        },
+                        onRemoveFromPlaylist = {
+                            playlistViewModel.removeSongFromPlaylist(
+                                playlistName,
+                                song.id,
+                            )
+                        },
+                    )
+                }
             }
         }
     }
-
-    // ...eliminado el diálogo de agregar canciones...
 }
 
 enum class PlaylistSortMode {
@@ -1162,7 +1163,7 @@ fun PlaylistHeader(
             color = MaterialTheme.extendedColors.textSecondary,
         )
         Spacer(modifier = Modifier.height(20.dp))
-        val buttonColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+        val buttonColor = MaterialTheme.colorScheme.primary
 
         Row(
             modifier = Modifier.fillMaxWidth(),
