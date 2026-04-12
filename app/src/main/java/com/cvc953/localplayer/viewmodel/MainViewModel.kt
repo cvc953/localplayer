@@ -359,7 +359,6 @@ class MainViewModel(
                             }
                         _songs.value = loaded.sortedBy { it.title }
                     }
-
                 } catch (e: Exception) {
                     android.util.Log.e("MainViewModel", "Error inicializando ViewModel", e)
                     _isScanning.value = false
@@ -716,5 +715,4 @@ class MainViewModel(
             apply()
         }
     }
-
 }
