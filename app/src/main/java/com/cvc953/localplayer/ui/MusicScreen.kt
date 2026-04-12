@@ -687,6 +687,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
 
             if (showPlayerScreen) {
                 Box(modifier = Modifier.fillMaxSize().zIndex(1f)) {
+                    val isPlaying = false
                     PlayerScreen(
                         mainViewModel = mainViewModel,
                         onCollapse = { playerViewModel.closePlayerScreen() },

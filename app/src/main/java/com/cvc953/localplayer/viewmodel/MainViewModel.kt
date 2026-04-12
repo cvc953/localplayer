@@ -360,8 +360,6 @@ class MainViewModel(
                         _songs.value = loaded.sortedBy { it.title }
                     }
 
-                    // Cargar última canción reproducida
-                    loadLastSong()
                 } catch (e: Exception) {
                     android.util.Log.e("MainViewModel", "Error inicializando ViewModel", e)
                     _isScanning.value = false
@@ -719,37 +717,4 @@ class MainViewModel(
         }
     }
 
-    private fun loadLastSong() {
-        try {
-            val lastUri = prefs.getString(LAST_SONG_URI, null) ?: return
-            val lastTitle = prefs.getString(LAST_SONG_TITLE, "Reproduciendo") ?: "Reproduciendo"
-            val lastArtist = prefs.getString(LAST_SONG_ARTIST, "") ?: ""
-            val lastIsPlaying = prefs.getBoolean(LAST_IS_PLAYING, false)
-
-            // Verificar que haya canciones cargadas
-            if (_songs.value.isEmpty()) {
-                android.util.Log.d(
-                    "MainViewModel",
-                    "No hay canciones cargadas, no se puede restaurar última canción",
-                )
-                return
-            }
-
-            // Buscar la canción en la lista
-            val song = _songs.value.find { it.uri.toString() == lastUri }
-
-            if (song != null) {
-                // Reproducir o preparar según estado previo
-                playSong(song, autoPlay = lastIsPlaying)
-                // NO iniciar el servicio aquí para evitar crash en arranque
-            } else {
-                android.util.Log.d(
-                    "MainViewModel",
-                    "Canción guardada ya no existe en la biblioteca",
-                )
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("MainViewModel", "Error al cargar última canción", e)
-        }
-    }
 }

@@ -98,7 +98,7 @@ fun LyricsView(
         if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
     val inactiveLyricColor =
         if (forceLightForeground) {
-            Color.White.copy(alpha = 0.62f)
+            Color.White.copy(alpha = 0.52f)
         } else {
             LocalExtendedColors.current.textSecondary
         }
@@ -273,7 +273,7 @@ fun TtmlLyricsView(
         if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
     val inactiveLyricColor =
         if (forceLightForeground) {
-            Color.White.copy(alpha = 0.62f)
+            Color.White.copy(alpha = 0.52f)
         } else {
             LocalExtendedColors.current.textSecondary
         }
@@ -282,7 +282,8 @@ fun TtmlLyricsView(
         remember(lines) {
             lines.mapNotNull { it.agent }.distinct().size > 1
         }
-    val maxWidthFraction = if (hasMultipleVoices) 0.666f else 1f
+    // Ancho maximo de las letras cuando hay multiples artistas
+    val maxWidthFraction = if (hasMultipleVoices) 0.7f else 1f
 
     val currentIndex =
         remember(currentPosition) {

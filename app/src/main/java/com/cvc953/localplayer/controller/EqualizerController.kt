@@ -4,24 +4,64 @@ import android.app.Application
 import android.media.audiofx.Equalizer
 import android.util.Log
 
-class EqualizerController(private val application: Application) {
+class EqualizerController(
+    private val application: Application,
+) {
     private var equalizer: Equalizer? = null
     private var audioSessionId: Int = 0
     private var savedEnabledState: Boolean = false
 
-    fun initializeWithAudioSession(sessionId: Int) {
+    fun initializeWithAudioSession(
+        sessionId: Int,
+        bandLevels: List<Int>? = null,
+        enabled: Boolean = false,
+    ) {
         try {
-            // Save the enabled state before reinitializing to prevent transient audio pops
-            savedEnabledState = equalizer?.enabled ?: false
-            
+            if (equalizer != null && audioSessionId == sessionId) {
+                equalizer?.apply {
+                    this.enabled = false
+                    if (bandLevels != null && bandLevels.size == numberOfBands.toInt()) {
+                        bandLevels.forEachIndexed { band, level ->
+                            try {
+                                setBandLevel(band.toShort(), level.toShort())
+                            } catch (_: Exception) {
+                            }
+                        }
+                    }
+                    this.enabled = enabled
+                }
+                savedEnabledState = enabled
+                Log.d("EqualizerController", "Equalizer reused for session $sessionId")
+                return
+            }
+
             // Release previous equalizer if exists
             equalizer?.release()
-            
+
             audioSessionId = sessionId
-            equalizer = Equalizer(0, sessionId).apply {
-                enabled = false
-            }
-            Log.d("EqualizerController", "Equalizer initialized with session $sessionId, bands=${equalizer?.numberOfBands}, restoring enabled=$savedEnabledState")
+            equalizer =
+                Equalizer(0, sessionId).apply {
+                    // equalizador desactivado mientras se configura
+                    this.enabled = false
+                    // aplicar bandas antes de activar
+                    if (bandLevels != null && bandLevels.size == numberOfBands.toInt()) {
+                        bandLevels.forEachIndexed { band, level ->
+                            try {
+                                setBandLevel(band.toShort(), level.toShort())
+                            } catch (_: Exception) {
+                            }
+                        }
+                    }
+                    // activar despues de aplicar bandas
+                    this.enabled = enabled
+                }
+            // Save the enabled state before reinitializing to prevent transient audio pops
+            // savedEnabledState = equalizer?.enabled ?: false
+            savedEnabledState = enabled
+            Log.d(
+                "EqualizerController",
+                "Equalizer initialized with session $sessionId, bands=${equalizer?.numberOfBands}, restoring enabled=$savedEnabledState",
+            )
         } catch (e: Exception) {
             Log.e("EqualizerController", "Error initializing equalizer", e)
         }
@@ -42,13 +82,14 @@ class EqualizerController(private val application: Application) {
         try {
             equalizer?.release()
             equalizer = null
+            audioSessionId = 0
         } catch (e: Exception) {
             Log.e("EqualizerController", "Error releasing equalizer", e)
         }
     }
 
     fun isEnabled(): Boolean = equalizer?.enabled ?: false
-    
+
     fun setEnabled(value: Boolean) {
         try {
             equalizer?.enabled = value
@@ -94,7 +135,10 @@ class EqualizerController(private val application: Application) {
         }
     }
 
-    fun setBandLevel(band: Int, level: Int) {
+    fun setBandLevel(
+        band: Int,
+        level: Int,
+    ) {
         try {
             equalizer?.setBandLevel(band.toShort(), level.toShort())
         } catch (e: Exception) {
@@ -133,14 +177,13 @@ class EqualizerController(private val application: Application) {
         }
     }
 
-    fun getCurrentPreset(): Short? {
-        return try {
+    fun getCurrentPreset(): Short? =
+        try {
             equalizer?.currentPreset
         } catch (e: Exception) {
             Log.e("EqualizerController", "Error getting current preset", e)
             null
         }
-    }
 
     fun getSelectedPreset(): String? {
         val eq = equalizer ?: return null

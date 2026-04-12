@@ -381,8 +381,8 @@ fun PlayerScreen(
             // Determinar tipo de pantalla (maneja portrait Y landscape)
             val isCompactLayout = aspectRatio >= 0.90f && aspectRatio < 1.15f // Cuadrada
             val isNormalLayout =
-                (aspectRatio >= 1.15f && aspectRatio <= 1.6f) ||
-                    (aspectRatio >= 0.50f && aspectRatio < 0.75f) // Normal landscape O portrait (TU 360x640=0.5625)
+                (aspectRatio in 1.15f..1.6f) ||
+                    (aspectRatio in 0.50f..<0.75f) // Normal landscape O portrait (TU 360x640=0.5625)
             val isLandscape = aspectRatio > 1.6f // Landscape ancho
             val isTallLayout = aspectRatio < 0.50f // Rectangular MUY alta (18:9 o más)
 
@@ -1483,8 +1483,8 @@ fun PlayerControls(
     val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
     val isCompactLayout = aspectRatio >= 0.90f && aspectRatio <= 1.15f
     val isNormalLayout =
-        (aspectRatio >= 1.15f && aspectRatio <= 1.6f) ||
-            (aspectRatio >= 0.50f && aspectRatio < 0.75f)
+        (aspectRatio in 1.15f..1.6f) ||
+            (aspectRatio in 0.50f..<0.75f)
     val isTallLayout = aspectRatio < 0.50f
 
     // Sincroniza el slider con el estado global solo si no se está arrastrando

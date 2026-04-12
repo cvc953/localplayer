@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.cvc953.localplayer.controller.EqualizerController
 import com.cvc953.localplayer.Services.MusicService
 import com.cvc953.localplayer.controller.PlayerController
 import com.cvc953.localplayer.model.Song
@@ -18,10 +19,14 @@ import kotlinx.coroutines.launch
 class PlaybackViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
+    private val effectSettleDelayMs = 120L
+
     private val playerController = PlayerController.getInstance(getApplication(), viewModelScope)
     private val prefs =
         com.cvc953.localplayer.preferences
             .AppPrefs(getApplication())
+    private val startupEqualizerController = EqualizerController(getApplication())
+    private var startupLastEqSessionId: Int = 0
     val playerState: StateFlow<PlayerState> = playerController.state
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -63,11 +68,10 @@ class PlaybackViewModel(
     private var onAlbumEndedCallback: ((String, String) -> Unit)? = null
 
     init {
+        registerStartupEqualizerHook()
+
         // Restore persisted playback state (queue, shuffle, repeat, last position)
         try {
-            val prefs =
-                com.cvc953.localplayer.preferences
-                    .AppPrefs(getApplication())
             val repo =
                 com.cvc953.localplayer.model
                     .SongRepository(getApplication())
@@ -113,14 +117,22 @@ class PlaybackViewModel(
                         try {
                             val wasPlaying = prefs.loadIsPlaying()
                             val pos = prefs.loadPlaybackPosition()
-                            // Inicializa el reproductor en pausa, hace seek y reanuda solo si corresponde
-                            playerController.playNow(
-                                queueToUse,
-                                startIndex,
-                                startPaused = !wasPlaying,
-                                seekToPosition = if (pos > 0L) pos else null,
-                                resumeAfterSeek = wasPlaying,
-                            )
+                            if (wasPlaying) {
+                                playerController.playNow(
+                                    queueToUse,
+                                    startIndex,
+                                    startPaused = false,
+                                    seekToPosition = if (pos > 0L) pos else null,
+                                    resumeAfterSeek = true,
+                                )
+                            } else {
+                                // En reinicio en pausa, restaurar estado sin preparar MediaPlayer.
+                                playerController.restoreQueueState(
+                                    queueToUse,
+                                    startIndex,
+                                    position = pos,
+                                )
+                            }
                             _currentPosition.value = pos
                             // Lanzar MusicService para mostrar la notificación aunque esté en pausa
                             val song = queueToUse.getOrNull(startIndex)
@@ -157,6 +169,35 @@ class PlaybackViewModel(
                     _currentPosition.value = playerController.getCurrentPosition()
                 }
                 kotlinx.coroutines.delay(200L)
+            }
+        }
+    }
+
+    private fun registerStartupEqualizerHook() {
+        playerController.setOnReadyToAttachEffectsListener { sessionId, startPlayback ->
+            viewModelScope.launch {
+                try {
+                    val savedLevels = prefs.getCustomBandLevels()
+                    val isEnabled = prefs.isEqualizerEnabled()
+                    val shouldReinitialize =
+                        sessionId != startupLastEqSessionId || startupEqualizerController.getBandCount() == 0
+
+                    if (shouldReinitialize) {
+                        startupEqualizerController.initializeWithAudioSession(
+                            sessionId = sessionId,
+                            bandLevels = savedLevels.ifEmpty { null },
+                            enabled = isEnabled,
+                        )
+                        startupLastEqSessionId = sessionId
+                    } else {
+                        startupEqualizerController.setEnabled(isEnabled)
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    // Dar tiempo minimo a AudioEffect para estabilizarse antes del primer frame audible.
+                    kotlinx.coroutines.delay(effectSettleDelayMs)
+                    startPlayback()
+                }
             }
         }
     }
@@ -416,8 +457,7 @@ class PlaybackViewModel(
         // Fast path: build full queue immediately when caller already has the full library.
         if (allSongsForQueue != null && allSongsForQueue.isNotEmpty()) {
             try {
-                val sourceSongs = if (allSongsForQueue.isNotEmpty()) allSongsForQueue else songs
-                val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(sourceSongs, artistName)
+                val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(allSongsForQueue, artistName)
                 if (fullQueue.isNotEmpty()) {
                     _pendingFullQueue = fullQueue
                     android.util.Log.d("PlaybackViewModel", "playArtist - Prepared immediate queue with ${fullQueue.size} songs")
@@ -434,7 +474,7 @@ class PlaybackViewModel(
                         com.cvc953.localplayer.model
                             .SongRepository(getApplication())
                     val allSongs = repo.loadSongs()
-                    val sourceSongs = if (allSongs.isNotEmpty()) allSongs else songs
+                    val sourceSongs = allSongs.ifEmpty { songs }
                     val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(sourceSongs, artistName)
                     if (fullQueue.isNotEmpty()) {
                         _pendingFullQueue = fullQueue
@@ -572,19 +612,13 @@ class PlaybackViewModel(
         // If playAlbum() prepared a full queue with all albums, use that instead
         val queueToUse =
             if (_pendingFullQueue != null) {
-                android.util.Log.d(
-                    "PlaybackViewModel",
-                    "updateDisplayOrder - Using full queue with ${_pendingFullQueue!!.size} songs (all albums)",
-                )
                 val fullQueue = _pendingFullQueue!!
                 _pendingFullQueue = null // Clear after use
                 fullQueue
             } else {
-                android.util.Log.d("PlaybackViewModel", "updateDisplayOrder - Using provided songs: ${songs.size} songs")
                 songs
             }
 
-        // If shuffle is enabled, shuffle the new queue while keeping current song at the front
         val finalQueue =
             if (_isShuffle.value) {
                 val current = playerState.value.currentSong
@@ -651,7 +685,7 @@ class PlaybackViewModel(
                 RepeatMode.ALL -> RepeatMode.NONE
             }
         _isRepeat.value = _repeatMode.value != RepeatMode.NONE
-        android.util.Log.d("PlaybackViewModel", "toggleRepeat - new mode: ${_repeatMode.value}")
+
         playerController.setRepeatMode(_repeatMode.value)
         try {
             prefs.saveRepeatMode(_repeatMode.value.name)
@@ -682,8 +716,6 @@ class PlaybackViewModel(
     }
 
     fun playNextSong() {
-        android.util.Log.d("PlaybackViewModel", "playNextSong() - isShuffle: ${_isShuffle.value}")
-
         val current = playerState.value.currentSong ?: return
         val queue = _queue.value
         if (queue.isEmpty()) return
@@ -705,8 +737,6 @@ class PlaybackViewModel(
     }
 
     fun playPreviousSong() {
-        android.util.Log.d("PlaybackViewModel", "playPreviousSong() - isShuffle: ${_isShuffle.value}")
-
         val current = playerState.value.currentSong ?: return
         val queue = _queue.value
         if (queue.isEmpty()) return
