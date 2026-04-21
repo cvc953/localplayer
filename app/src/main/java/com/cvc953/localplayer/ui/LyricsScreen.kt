@@ -96,12 +96,13 @@ fun LyricsView(
             MaterialTheme.colorScheme.background.luminance() > 0.5f
     val activeLyricColor =
         if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
-    val inactiveLyricColor =
+    /*val inactiveLyricColor =
         if (forceLightForeground) {
             Color.White.copy(alpha = 0.52f)
         } else {
             LocalExtendedColors.current.textSecondary
-        }
+        }*/
+    val inactiveLyricColor = Color.White.copy(alpha = 0.4f)
 
     val currentIndex =
         remember(lyrics, currentPosition) {
@@ -271,12 +272,13 @@ fun TtmlLyricsView(
             MaterialTheme.colorScheme.background.luminance() > 0.5f
     val activeLyricColor =
         if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
-    val inactiveLyricColor =
+    /*val inactiveLyricColor =
         if (forceLightForeground) {
             Color.White.copy(alpha = 0.52f)
         } else {
             LocalExtendedColors.current.textSecondary
-        }
+        }*/
+    val inactiveLyricColor = Color.White.copy(alpha = 0.4f)
 
     val hasMultipleVoices =
         remember(lines) {

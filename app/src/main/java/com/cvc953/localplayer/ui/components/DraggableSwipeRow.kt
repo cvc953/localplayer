@@ -97,13 +97,13 @@ fun DraggableSwipeRow(
                                 onSwipeThreshold()
                                 dragOffsetX.animateTo(
                                     maxOffsetPx,
-                                    animationSpec = tween(200),
+                                    animationSpec = tween(100),
                                 )
                                 dragOffsetX.snapTo(0f)
                             } else {
                                 dragOffsetX.animateTo(
                                     0f,
-                                    animationSpec = tween(200),
+                                    animationSpec = tween(100),
                                 )
                             }
                         }
