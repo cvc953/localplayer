@@ -14,6 +14,7 @@ import com.cvc953.localplayer.ui.RepeatMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 class PlaybackViewModel(
@@ -162,13 +163,11 @@ class PlaybackViewModel(
         } catch (e: Exception) {
         }
 
-        // Periodically update current position while playing
+        // Keep the shared lyrics position in sync with the controller state.
+        // This avoids a second 200ms polling loop that could add visible lag.
         viewModelScope.launch(Dispatchers.IO) {
-            while (true) {
-                if (playerController.isPlaying()) {
-                    _currentPosition.value = playerController.getCurrentPosition()
-                }
-                kotlinx.coroutines.delay(200L)
+            playerController.state.collect { state ->
+                _currentPosition.value = state.position
             }
         }
     }

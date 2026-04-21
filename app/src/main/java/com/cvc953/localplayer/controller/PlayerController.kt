@@ -312,7 +312,7 @@ class PlayerController(
                     } catch (_: Exception) {
                         break
                     }
-                    delay(200L)
+                    delay(60L)
                 }
             }
     }

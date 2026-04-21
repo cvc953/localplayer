@@ -1,6 +1,5 @@
 package com.cvc953.localplayer.ui
 
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -61,17 +60,12 @@ fun SyllableLyric(
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
     val targetProgress = if (isLineActive && currentPosition >= syllable.timeMs) clampedProgress else 0f
 
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = if (isLineActive) tween(durationMillis = 150, easing = LinearEasing) else snap(),
-    )
-
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
         ProgressiveFillSyllableText(
             text = syllable.text,
-            progress = animatedProgress,
+            progress = targetProgress,
             baseColor = baseColor,
             activeColor = activeColor,
             fontSizeSp = baseFontSize,
@@ -106,17 +100,12 @@ fun BackgroundSyllableLyric(
     // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
     val targetProgress = if (currentPosition >= syllable.timeMs) clampedProgress else 0f
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = if (isLineActive) tween(durationMillis = 180, easing = LinearEasing) else snap(),
-    )
-
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
         ProgressiveFillSyllableText(
             text = syllable.text,
-            progress = animatedProgress,
+            progress = targetProgress,
             baseColor = baseColor,
             activeColor = activeColor,
             fontSizeSp = baseFontSize,
