@@ -742,7 +742,7 @@ fun ArtistDetailScreen(
                         playlists = playlists,
                         onAddToPlaylist = { playlistName, songId ->
                             playlistViewModel.addSongToPlaylist(playlistName, songId)
-                            Toast.makeText(context, "Añadido a $playlistName", Toast.LENGTH_SHORT).show().
+                            Toast.makeText(context, "Añadido a $playlistName", Toast.LENGTH_SHORT).show()
                         },
                     )
                 }
