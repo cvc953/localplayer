@@ -398,7 +398,15 @@ fun ArtistsScreen(
                                                     menuExpanded = false
                                                     val currentQueue = playbackViewModel.queue.value
                                                     val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                                    toAdd.reversed().forEach {
+                                                        playbackViewModel.addToQueueNext(it)
+                                                        Toast
+                                                            .makeText(
+                                                                context,
+                                                                "Añadido ${toAdd.size} canciones a la cola",
+                                                                Toast.LENGTH_SHORT,
+                                                            ).show()
+                                                    }
                                                 },
                                             )
                                             DropdownMenuItem(
@@ -407,7 +415,15 @@ fun ArtistsScreen(
                                                     menuExpanded = false
                                                     val currentQueue = playbackViewModel.queue.value
                                                     val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                                    toAdd.forEach {
+                                                        playbackViewModel.addToQueueEnd(it)
+                                                        Toast
+                                                            .makeText(
+                                                                context,
+                                                                "Añadido ${toAdd.size} canciones al final de la cola",
+                                                                Toast.LENGTH_SHORT,
+                                                            ).show()
+                                                    }
                                                 },
                                             )
                                         }
@@ -575,7 +591,15 @@ fun ArtistsScreen(
                                                 menuExpanded = false
                                                 val currentQueue = playbackViewModel.queue.value
                                                 val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                                toAdd.reversed().forEach {
+                                                    playbackViewModel.addToQueueNext(it)
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            "Añadido ${toAdd.size} canciones a la cola",
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
+                                                }
                                             },
                                         )
                                         DropdownMenuItem(
@@ -584,7 +608,15 @@ fun ArtistsScreen(
                                                 menuExpanded = false
                                                 val currentQueue = playbackViewModel.queue.value
                                                 val toAdd = artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                                toAdd.forEach {
+                                                    playbackViewModel.addToQueueEnd(it)
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            "Añadido ${toAdd.size} canciones al final de la cola",
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
+                                                }
                                             },
                                         )
                                     }
@@ -688,6 +720,7 @@ fun ArtistDetailScreen(
 
                 DraggableSwipeRow(onSwipeThreshold = {
                     playbackViewModel.addToQueueNext(song)
+                    Toast.makeText(context, "Añadido a la cola", Toast.LENGTH_SHORT).show()
                 }) {
                     SongItem(
                         song = song,
@@ -698,11 +731,18 @@ fun ArtistDetailScreen(
                             playbackViewModel.updateDisplayOrder(artistSongsSorted)
                             playbackViewModel.play(song)
                         },
-                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                        onQueueNext = {
+                            playbackViewModel.addToQueueNext(song)
+                            Toast.makeText(context, "Añadido a la cola", Toast.LENGTH_SHORT).show()
+                        },
+                        onQueueEnd = {
+                            playbackViewModel.addToQueueEnd(song)
+                            Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                        },
                         playlists = playlists,
                         onAddToPlaylist = { playlistName, songId ->
                             playlistViewModel.addSongToPlaylist(playlistName, songId)
+                            Toast.makeText(context, "Añadido a $playlistName", Toast.LENGTH_SHORT).show().
                         },
                     )
                 }

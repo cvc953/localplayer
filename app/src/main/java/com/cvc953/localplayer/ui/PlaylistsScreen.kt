@@ -753,7 +753,9 @@ fun PlaylistsScreen(
                                             menuExpandedPlaylistId = null
                                             val currentQueue = playbackViewModel.queue.value
                                             val toAdd = playlistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                            toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                            toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it)
+Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                                        }
                                         },
                                     )
                                     DropdownMenuItem(
@@ -762,7 +764,9 @@ fun PlaylistsScreen(
                                             menuExpandedPlaylistId = null
                                             val currentQueue = playbackViewModel.queue.value
                                             val toAdd = playlistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                            toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                            toAdd.forEach { playbackViewModel.addToQueueEnd(it) 
+Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                                        }
                                         },
                                     )
                                     DropdownMenuItem(
@@ -1096,6 +1100,7 @@ fun PlaylistDetailScreen(
                 val isCurrent = playerState.currentSong?.id == song.id
                 DraggableSwipeRow(onSwipeThreshold = {
                     playbackViewModel.addToQueueNext(song)
+                    Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
                 }) {
                     SongItem(
                         song = song,
@@ -1104,17 +1109,25 @@ fun PlaylistDetailScreen(
                             playbackViewModel.updateDisplayOrder(playlistSongs)
                             playbackViewModel.play(song)
                         },
-                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                        onQueueNext = {
+                            playbackViewModel.addToQueueNext(song)
+                            Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                        },
+                        onQueueEnd = {
+                            playbackViewModel.addToQueueEnd(song)
+                            Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                        },
                         playlists = playlists,
                         onAddToPlaylist = { targetPlaylistName, songId ->
                             playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
+                            Toast.makeText(context, "Añadido a $targetPlaylistName", Toast.LENGTH_SHORT).show()
                         },
                         onRemoveFromPlaylist = {
                             playlistViewModel.removeSongFromPlaylist(
                                 playlistName,
                                 song.id,
                             )
+                            Toast.makeText(context, "Eliminado de la lista", Toast.LENGTH_SHORT).show()
                         },
                     )
                 }

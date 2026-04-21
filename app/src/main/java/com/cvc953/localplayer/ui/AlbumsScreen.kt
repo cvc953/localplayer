@@ -748,7 +748,10 @@ fun AlbumDetailScreen(
             items(albumSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
-                DraggableSwipeRow(onSwipeThreshold = { playbackViewModel.addToQueueNext(song) }) {
+                DraggableSwipeRow(onSwipeThreshold = {
+                    playbackViewModel.addToQueueNext(song)
+                    Toast.makeText(context, "Añadido a 'Reproducir siguiente'", Toast.LENGTH_SHORT).show()
+                }) {
                     SongItem(
                         song = song,
                         isPlaying = isCurrent,
@@ -759,11 +762,18 @@ fun AlbumDetailScreen(
                             playbackViewModel.updateDisplayOrder(albumSongs)
                             playbackViewModel.play(song)
                         },
-                        onQueueNext = { playbackViewModel.addToQueueNext(song) },
-                        onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
+                        onQueueNext = {
+                            playbackViewModel.addToQueueNext(song)
+                            Toast.makeText(context, "Añadido a 'Reproducir siguiente'", Toast.LENGTH_SHORT).show()
+                        },
+                        onQueueEnd = {
+                            playbackViewModel.addToQueueEnd(song)
+                            Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                        },
                         playlists = playlists,
                         onAddToPlaylist = { playlistName, songId ->
                             playlistViewModel.addSongToPlaylist(playlistName, songId)
+                            Toast.makeText(context, "Añadido a playlist '$playlistName'", Toast.LENGTH_SHORT).show()
                         },
                     )
                 }
