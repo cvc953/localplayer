@@ -42,10 +42,12 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -60,9 +62,6 @@ import com.cvc953.localplayer.Services.MusicService
 import com.cvc953.localplayer.model.Album
 import com.cvc953.localplayer.preferences.AppPrefs
 import com.cvc953.localplayer.ui.MiniPlayer
-import com.cvc953.localplayer.ui.PlayerScreen
-import com.cvc953.localplayer.ui.PlaylistsScreen
-import com.cvc953.localplayer.ui.SettingsScreen
 import com.cvc953.localplayer.ui.SongItem
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
 import com.cvc953.localplayer.ui.components.DraggableSwipeRow
@@ -81,7 +80,6 @@ import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.launch
-import kotlin.text.split
 
 @Suppress("ktlint:standard:function-naming")
 @Composable

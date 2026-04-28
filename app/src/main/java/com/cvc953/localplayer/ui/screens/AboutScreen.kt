@@ -1,4 +1,4 @@
-package com.cvc953.localplayer.ui.Screens
+package com.cvc953.localplayer.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
