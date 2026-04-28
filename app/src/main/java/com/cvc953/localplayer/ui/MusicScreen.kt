@@ -350,7 +350,7 @@ fun SongsContent(
                             DraggableSwipeRow(
                                 onSwipeThreshold = {
                                     playbackViewModel.addToQueueNext(song)
-                                    Toast.makeText(context, "Añadido a 'Repoducir siguiente'", Toast.LENGTH_SHORT,).show()
+                                    Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT,).show()
                                 },
                             ) {
                                 SongItem(
@@ -371,7 +371,7 @@ fun SongsContent(
                                     },
                                     onQueueNext = {
                                         playbackViewModel.addToQueueNext(song)
-                                        Toast.makeText(context, "Añadido a 'Repoducir siguiente'", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
                                     },
                                     onQueueEnd = {
                                         playbackViewModel.addToQueueEnd(song)

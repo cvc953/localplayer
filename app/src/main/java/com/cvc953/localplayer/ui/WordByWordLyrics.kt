@@ -269,35 +269,7 @@ fun WordByWordLine(
                     }
                 }
             }
-            flushWord()
-            /*var wordBuffer = mutableListOf<TtmlSyllable>()
-
-            @Composable
-            fun flushWord() {
-                if (wordBuffer.isNotEmpty()) {
-                    Row {
-                        wordBuffer.forEach { syllable ->
-                            SyllableLyric(
-                                syllable = syllable,
-                                currentPosition = currentPosition,
-                                isLineActive = isActive,
-                                baseColor = baseColor,
-                                activeColor = activeColor,
-                            )
-                        }
-                    }
-                    wordBuffer = mutableListOf()
-                }
-            }
-            mainSyllables.forEach { syllable ->
-                wordBuffer.add(syllable)
-                if (!syllable.continuesWord) {
-                    flushWord()
-                }
-            }
-            // Por si la última palabra no se ha vaciado
-            flushWord()*/
-        }
+            flushWord() 
 
         // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
         if (backgroundSyllables.isNotEmpty() && isActive) {
