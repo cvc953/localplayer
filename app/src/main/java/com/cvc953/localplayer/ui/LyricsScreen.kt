@@ -31,7 +31,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import com.cvc953.localplayer.model.TtmlLine
-import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel

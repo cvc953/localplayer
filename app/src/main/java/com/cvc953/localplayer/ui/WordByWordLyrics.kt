@@ -208,7 +208,8 @@ fun WordByWordLine(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                    transformOrigin = TransformOrigin(pivotFractionX = pivotX, pivotFractionY = 0.5f)
+                    transformOrigin =
+                        TransformOrigin(pivotFractionX = pivotX, pivotFractionY = 0.5f)
                 },
         verticalArrangement = Arrangement.Center,
         horizontalAlignment =
@@ -269,24 +270,25 @@ fun WordByWordLine(
                     }
                 }
             }
-            flushWord() 
+            flushWord()
 
-        // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
-        if (backgroundSyllables.isNotEmpty() && isActive) {
-            Spacer(modifier = Modifier.padding(top = 2.dp))
-            FlowRow(
-                horizontalArrangement = flowHorizontalArrangement,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth(maxWidthFraction),
-            ) {
-                backgroundSyllables.forEach { syllable ->
-                    BackgroundSyllableLyric(
-                        syllable = syllable,
-                        currentPosition = currentPosition,
-                        isLineActive = isActive,
-                        baseColor = baseColor,
-                        activeColor = activeColor.copy(alpha = 0.6f),
-                    )
+            // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
+            if (backgroundSyllables.isNotEmpty() && isActive) {
+                Spacer(modifier = Modifier.padding(top = 2.dp))
+                FlowRow(
+                    horizontalArrangement = flowHorizontalArrangement,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth(maxWidthFraction),
+                ) {
+                    backgroundSyllables.forEach { syllable ->
+                        BackgroundSyllableLyric(
+                            syllable = syllable,
+                            currentPosition = currentPosition,
+                            isLineActive = isActive,
+                            baseColor = baseColor,
+                            activeColor = activeColor.copy(alpha = 0.6f),
+                        )
+                    }
                 }
             }
         }
