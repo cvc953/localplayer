@@ -1,20 +1,50 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
-package com.cvc953.localplayer.ui
+package com.cvc953.localplayer.ui.screens
 
 import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,9 +59,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.Services.MusicService
 import com.cvc953.localplayer.model.Album
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.ui.MiniPlayer
+import com.cvc953.localplayer.ui.PlayerScreen
+import com.cvc953.localplayer.ui.PlaylistsScreen
+import com.cvc953.localplayer.ui.SettingsScreen
+import com.cvc953.localplayer.ui.SongItem
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
 import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
+import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.navigation.BottomNavItem
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.StoragePermissionHandler
@@ -45,6 +81,7 @@ import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.launch
+import kotlin.text.split
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -104,29 +141,37 @@ fun SongsContent(
 
     if (isScanning) {
         Column(
-            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+            modifier =
+                Modifier.Companion
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Companion.CenterHorizontally,
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.Companion.height(16.dp))
             Text("Escaneando canciones", color = MaterialTheme.colorScheme.onSurface)
         }
     } else {
-        Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            Column(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier =
+                Modifier.Companion
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+        ) {
+            Column(modifier = Modifier.Companion.fillMaxSize()) {
                 // Top Bar
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.Companion.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.Companion.CenterVertically,
                 ) {
                     Text(
                         text = "Canciones",
                         fontSize = 28.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Companion.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.Companion.weight(1f),
                     )
 
                     Box {
@@ -212,7 +257,7 @@ fun SongsContent(
                             onDismissRequest = { menuExpanded = false },
                             containerColor = MaterialTheme.colorScheme.surface,
                             modifier =
-                                Modifier.background(
+                                Modifier.Companion.background(
                                     MaterialTheme.extendedColors.surfaceSheet,
                                 ),
                         ) {
@@ -291,7 +336,7 @@ fun SongsContent(
                             )
                         },
                         modifier =
-                            Modifier
+                            Modifier.Companion
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
                         colors =
@@ -329,11 +374,11 @@ fun SongsContent(
                         },
                     )
                 }
-                Box(modifier = Modifier.fillMaxSize()) {
+                Box(modifier = Modifier.Companion.fillMaxSize()) {
                     // Lista de canciones
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.Companion.fillMaxSize(),
                         contentPadding =
                             PaddingValues(
                                 start = 16.dp,
@@ -350,7 +395,12 @@ fun SongsContent(
                             DraggableSwipeRow(
                                 onSwipeThreshold = {
                                     playbackViewModel.addToQueueNext(song)
-                                    Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT,).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Añadido como siguiente",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
                                 },
                             ) {
                                 SongItem(
@@ -371,16 +421,31 @@ fun SongsContent(
                                     },
                                     onQueueNext = {
                                         playbackViewModel.addToQueueNext(song)
-                                        Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "Añadido como siguiente",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
                                     },
                                     onQueueEnd = {
                                         playbackViewModel.addToQueueEnd(song)
-                                        Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "Añadido al final de la cola",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
                                     },
                                     playlists = playlists,
                                     onAddToPlaylist = { playlistName, songId ->
                                         playlistViewModel.addSongToPlaylist(playlistName, songId)
-                                        Toast.makeText(context, "Añadido a '$playlistName'", Toast.LENGTH_SHORT).show()
+                                        Toast
+                                            .makeText(
+                                                context,
+                                                "Añadido a '$playlistName'",
+                                                Toast.LENGTH_SHORT,
+                                            ).show()
                                     },
                                 )
                             }
@@ -421,7 +486,7 @@ fun SongsContent(
             }
 
             if (showAbout) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
+                Box(modifier = Modifier.Companion.fillMaxSize().zIndex(2f)) {
                     AboutScreen(onBack = { playerViewModel.showAbout(false) })
                 }
             }
@@ -479,7 +544,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                         context,
                         MusicService::class.java,
                     ).apply {
-                        action = MusicService.ACTION_UPDATE_STATE
+                        action = MusicService.Companion.ACTION_UPDATE_STATE
                         putExtra("IS_PLAYING", playerState.isPlaying)
                     }
                 ContextCompat
@@ -512,7 +577,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 BottomNavItem.Playlists,
             )
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.Companion.fillMaxSize()) {
             val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
 
             Scaffold(
@@ -520,7 +585,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 bottomBar = {
                     Column(
                         modifier =
-                            Modifier.pointerInput(showPlayerScreen || showSettings || showAbout) {
+                            Modifier.Companion.pointerInput(showPlayerScreen || showSettings || showAbout) {
                                 if (showPlayerScreen || showSettings || showAbout) {
                                     awaitPointerEventScope {
                                         while (true) {
@@ -537,7 +602,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                 onPlayPause = { playbackViewModel.togglePlayPause() },
                                 onClick = { playerViewModel.openPlayerScreen() },
                                 onNext = { playbackViewModel.playNextSong() },
-                                modifier = Modifier,
+                                modifier = Modifier.Companion,
                             )
                         }
                         NavigationBar(
@@ -553,9 +618,18 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                     selected = selectedTab == item.route,
                                     onClick = {
                                         selectedTab = item.route
-                                        if (item.route != BottomNavItem.Albums.route) selectedAlbumName = null
-                                        if (item.route != BottomNavItem.Artists.route) selectedArtistName = null
-                                        if (item.route != BottomNavItem.Playlists.route) selectedPlaylistName = null
+                                        if (item.route != BottomNavItem.Albums.route) {
+                                            selectedAlbumName =
+                                                null
+                                        }
+                                        if (item.route != BottomNavItem.Artists.route) {
+                                            selectedArtistName =
+                                                null
+                                        }
+                                        if (item.route != BottomNavItem.Playlists.route) {
+                                            selectedPlaylistName =
+                                                null
+                                        }
                                     },
                                     colors =
                                         NavigationBarItemDefaults.colors(
@@ -572,7 +646,11 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                 },
             ) { padding ->
                 Box(
-                    modifier = Modifier.fillMaxSize().padding(padding).background(MaterialTheme.colorScheme.onBackground),
+                    modifier =
+                        Modifier.Companion
+                            .fillMaxSize()
+                            .padding(padding)
+                            .background(MaterialTheme.colorScheme.onBackground),
                 ) {
                     when (selectedTab) {
                         BottomNavItem.Songs.route -> {
@@ -598,7 +676,10 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                         val found =
                                             albumViewModel.albums.value.find {
                                                 it.name.equals(albumName, ignoreCase = true) &&
-                                                    it.artist.equals(artistName, ignoreCase = true)
+                                                    it.artist.equals(
+                                                        artistName,
+                                                        ignoreCase = true,
+                                                    )
                                             }
                                         if (found != null) {
                                             albumViewModel.selectAlbum(found)
@@ -652,7 +733,10 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
                                             val found =
                                                 albumViewModel.albums.value.find {
                                                     it.name.equals(albumName, ignoreCase = true) &&
-                                                        it.artist.equals(artistName, ignoreCase = true)
+                                                        it.artist.equals(
+                                                            artistName,
+                                                            ignoreCase = true,
+                                                        )
                                                 }
                                             if (found != null) {
                                                 albumViewModel.selectAlbum(found)
@@ -694,7 +778,7 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
             } // end Box container
 
             if (showPlayerScreen) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(1f)) {
+                Box(modifier = Modifier.Companion.fillMaxSize().zIndex(1f)) {
                     val isPlaying = false
                     PlayerScreen(
                         mainViewModel = mainViewModel,
@@ -726,11 +810,14 @@ fun MainMusicScreen(onOpenPlayer: () -> Unit) {
             }
 
             if (showEqualizer) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(3f)) {
-                    EqualizerScreen(viewModel = equalizerViewModel, onClose = { equalizerViewModel.closeEqualizerScreen() })
+                Box(modifier = Modifier.Companion.fillMaxSize().zIndex(3f)) {
+                    EqualizerScreen(
+                        viewModel = equalizerViewModel,
+                        onClose = { equalizerViewModel.closeEqualizerScreen() },
+                    )
                 }
             } else if (showSettings) {
-                Box(modifier = Modifier.fillMaxSize().zIndex(2f)) {
+                Box(modifier = Modifier.Companion.fillMaxSize().zIndex(2f)) {
                     SettingsScreen(
                         viewModel = mainViewModel,
                         equalizerViewModel = equalizerViewModel,

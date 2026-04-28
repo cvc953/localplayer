@@ -1,6 +1,4 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
-package com.cvc953.localplayer.ui
+package com.cvc953.localplayer.ui.screens
 
 import android.app.Activity
 import android.graphics.Bitmap
@@ -11,24 +9,19 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -38,16 +31,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -60,46 +48,40 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.component1
-import androidx.core.graphics.component2
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.model.Album
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
-import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
+import com.cvc953.localplayer.ui.extendedColors
+import com.cvc953.localplayer.ui.normalizeArtistName
 import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
-import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
+import kotlin.collections.isNotEmpty
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -108,11 +90,8 @@ fun AlbumsScreen(
     playbackViewModel: PlaybackViewModel,
     onAlbumClick: (albumName: String, artistName: String) -> Unit,
 ) {
-    // Use the global SongViewModel to get the full songs list so album thumbnails
-    // are available for all albums, not only the currently selected one.
     val songViewModel: SongViewModel =
-        androidx.lifecycle.viewmodel.compose
-            .viewModel()
+        viewModel()
     val songs by songViewModel.songs.collectAsState()
     val albums by albumViewModel.albums.collectAsState()
     val isScanning by albumViewModel.isScanning
@@ -143,7 +122,7 @@ fun AlbumsScreen(
     val expandedAlbums =
         remember(albums) {
             val seen = mutableSetOf<AlbumKey>()
-            val result = mutableListOf<com.cvc953.localplayer.model.Album>()
+            val result = mutableListOf<Album>()
             for (album in albums) {
                 val artistNames = normalizeArtistName(album.artist)
                 val mainArtist = artistNames.firstOrNull()?.trim() ?: album.artist.trim()
@@ -162,7 +141,13 @@ fun AlbumsScreen(
     val filteredAlbums =
         remember(expandedAlbums, searchQuery) {
             val q = searchQuery.trim().lowercase()
-            if (q.isEmpty()) expandedAlbums else expandedAlbums.filter { it.name.lowercase().contains(q) }
+            if (q.isEmpty()) {
+                expandedAlbums
+            } else {
+                expandedAlbums.filter {
+                    it.name.lowercase().contains(q)
+                }
+            }
         }
 
     val sortedAlbums =
@@ -179,35 +164,41 @@ fun AlbumsScreen(
 
     if (isScanning) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.Companion.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Companion.CenterHorizontally,
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.Companion.height(16.dp))
             Text("Escaneando canciones", color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier.Companion.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
+        Column(modifier = Modifier.Companion.fillMaxSize()) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.Companion.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.Companion.CenterVertically,
             ) {
                 Text(
                     text = "Álbumes",
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Companion.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.Companion.weight(1f),
                 )
 
                 Box {
                     IconButton(onClick = { sortMenuExpanded = true }) {
-                        Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = MaterialTheme.colorScheme.onBackground)
+                        Icon(
+                            Icons.Default.Sort,
+                            contentDescription = "Ordenar",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
                     }
                     DropdownMenu(
                         expanded = sortMenuExpanded,
@@ -215,14 +206,24 @@ fun AlbumsScreen(
                         containerColor = MaterialTheme.extendedColors.surfaceSheet,
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Título A-Z", color = MaterialTheme.colorScheme.onSurface) },
+                            text = {
+                                Text(
+                                    "Título A-Z",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
                             onClick = {
                                 sortMode = AlbumSortMode.TITLE_ASC
                                 sortMenuExpanded = false
                             },
                         )
                         DropdownMenuItem(
-                            text = { Text("Título Z-A", color = MaterialTheme.colorScheme.onSurface) },
+                            text = {
+                                Text(
+                                    "Título Z-A",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
                             onClick = {
                                 sortMode = AlbumSortMode.TITLE_DESC
                                 sortMenuExpanded = false
@@ -236,7 +237,13 @@ fun AlbumsScreen(
                         showSearchBar = !showSearchBar
                         if (!showSearchBar) searchQuery = ""
                     },
-                ) { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = MaterialTheme.colorScheme.onBackground) }
+                ) {
+                    Icon(
+                        Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
                 IconButton(onClick = {
                     viewAsGrid = !viewAsGrid
                     albumViewModel.setGridViewPreferred(viewAsGrid)
@@ -254,8 +261,13 @@ fun AlbumsScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     singleLine = true,
-                    placeholder = { Text("Buscar por álbum", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    placeholder = {
+                        Text(
+                            "Buscar por álbum",
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
+                    modifier = Modifier.Companion.fillMaxWidth().padding(horizontal = 16.dp),
                     colors =
                         TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -271,10 +283,10 @@ fun AlbumsScreen(
                 )
             }
 
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.Companion.fillMaxSize()) {
                 if (viewAsGrid) {
                     LazyVerticalGrid(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.Companion.fillMaxSize(),
                         columns = GridCells.Adaptive(140.dp),
                         state = gridState,
                         contentPadding = PaddingValues(12.dp),
@@ -286,8 +298,18 @@ fun AlbumsScreen(
                             // Buscar la primera canción usando normalización para coincidencia real
                             val firstSong =
                                 songs.firstOrNull { song ->
-                                    normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
-                                        normalizeArtistName(song.artist).any { it.equals(album.artist.trim(), ignoreCase = true) }
+                                    normalizeAlbumName(song.album).any {
+                                        it.equals(
+                                            album.name.trim(),
+                                            ignoreCase = true,
+                                        )
+                                    } &&
+                                        normalizeArtistName(song.artist).any {
+                                            it.equals(
+                                                album.artist.trim(),
+                                                ignoreCase = true,
+                                            )
+                                        }
                                 }
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
@@ -303,30 +325,50 @@ fun AlbumsScreen(
                                         retriever.setDataSource(context, uri)
                                         val embedded = retriever.embeddedPicture
                                         if (embedded != null && embedded.isNotEmpty()) {
-                                            albumArt = BitmapFactory.decodeByteArray(embedded, 0, embedded.size)
-                                            Log.d("AlbumsScreen", "Embedded art found for uri=$uri size=${embedded.size}")
+                                            albumArt =
+                                                BitmapFactory.decodeByteArray(
+                                                    embedded,
+                                                    0,
+                                                    embedded.size,
+                                                )
+                                            Log.d(
+                                                "AlbumsScreen",
+                                                "Embedded art found for uri=$uri size=${embedded.size}",
+                                            )
                                         } else {
                                             Log.d("AlbumsScreen", "No embedded art for uri=$uri")
                                         }
                                         retriever.release()
 
                                         if (albumArt == null) {
-                                            Log.d("AlbumsScreen", "Trying contentResolver fallback for uri=$uri")
+                                            Log.d(
+                                                "AlbumsScreen",
+                                                "Trying contentResolver fallback for uri=$uri",
+                                            )
                                             try {
-                                                context.contentResolver.openInputStream(uri)?.use { stream ->
-                                                    albumArt = BitmapFactory.decodeStream(stream)
-                                                }
+                                                context.contentResolver
+                                                    .openInputStream(uri)
+                                                    ?.use { stream ->
+                                                        albumArt =
+                                                            BitmapFactory.decodeStream(stream)
+                                                    }
                                             } catch (e: Exception) {
-                                                Log.d("AlbumsScreen", "contentResolver fallback failed: ${e.message}")
+                                                Log.d(
+                                                    "AlbumsScreen",
+                                                    "contentResolver fallback failed: ${e.message}",
+                                                )
                                             }
                                         }
 
                                         if (albumArt == null) {
-                                            Log.d("AlbumsScreen", "Trying file fallback for filePath=${firstSong?.filePath}")
+                                            Log.d(
+                                                "AlbumsScreen",
+                                                "Trying file fallback for filePath=${firstSong?.filePath}",
+                                            )
                                             val path = firstSong?.filePath
                                             if (!path.isNullOrBlank()) {
                                                 try {
-                                                    val dir = java.io.File(path).parentFile
+                                                    val dir = File(path).parentFile
                                                     val candidates =
                                                         listOf(
                                                             "cover.jpg",
@@ -337,11 +379,15 @@ fun AlbumsScreen(
                                                             "folder.png",
                                                         )
                                                     for (name in candidates) {
-                                                        val f = java.io.File(dir, name)
+                                                        val f = File(dir, name)
                                                         if (f.exists() && f.length() > 0) {
-                                                            albumArt = BitmapFactory.decodeFile(f.absolutePath)
+                                                            albumArt =
+                                                                BitmapFactory.decodeFile(f.absolutePath)
                                                             if (albumArt != null) {
-                                                                Log.d("AlbumsScreen", "Found external cover file=${f.absolutePath}")
+                                                                Log.d(
+                                                                    "AlbumsScreen",
+                                                                    "Found external cover file=${f.absolutePath}",
+                                                                )
                                                                 break
                                                             }
                                                         }
@@ -351,30 +397,36 @@ fun AlbumsScreen(
                                             }
                                         }
                                     } catch (e: Exception) {
-                                        Log.d("AlbumsScreen", "Unexpected error loading art: ${e.message}")
+                                        Log.d(
+                                            "AlbumsScreen",
+                                            "Unexpected error loading art: ${e.message}",
+                                        )
                                     }
                                 }
                             }
 
                             Column(
                                 modifier =
-                                    Modifier
+                                    Modifier.Companion
                                         .fillMaxWidth()
                                         .clickable { onAlbumClick(album.name, album.artist) }
                                         .padding(6.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                                horizontalAlignment = Alignment.Companion.CenterHorizontally,
                             ) {
-                                Box(modifier = Modifier.size(120.dp)) {
+                                Box(modifier = Modifier.Companion.size(120.dp)) {
                                     Image(
                                         painter =
                                             albumArt?.let { BitmapPainter(it.asImageBitmap()) }
                                                 ?: painterResource(R.drawable.ic_default_album),
                                         contentDescription = null,
-                                        modifier = Modifier.matchParentSize().clip(RoundedCornerShape(8.dp)),
-                                        contentScale = ContentScale.Crop,
+                                        modifier =
+                                            Modifier.Companion
+                                                .matchParentSize()
+                                                .clip(RoundedCornerShape(8.dp)),
+                                        contentScale = ContentScale.Companion.Crop,
                                     )
                                     var menuExpanded by remember { mutableStateOf(false) }
-                                    Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                                    Box(modifier = Modifier.Companion.align(Alignment.Companion.TopEnd)) {
                                         IconButton(onClick = { menuExpanded = true }) {
                                             Icon(
                                                 Icons.Default.MoreVert,
@@ -386,7 +438,7 @@ fun AlbumsScreen(
                                             expanded = menuExpanded,
                                             onDismissRequest = { menuExpanded = false },
                                             containerColor = MaterialTheme.extendedColors.surfaceSheet,
-                                            modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
+                                            modifier = Modifier.Companion.background(MaterialTheme.extendedColors.surfaceSheet),
                                         ) {
                                             // Solo usar las canciones del álbum actual para el dropdown (más rápido)
                                             val albumSongs =
@@ -394,61 +446,114 @@ fun AlbumsScreen(
                                                     .filter { song ->
                                                         normalizeAlbumName(
                                                             song.album,
-                                                        ).any { it.equals(album.name.trim(), ignoreCase = true) } &&
+                                                        ).any {
+                                                            it.equals(
+                                                                album.name.trim(),
+                                                                ignoreCase = true,
+                                                            )
+                                                        } &&
                                                             normalizeArtistName(
                                                                 song.artist,
-                                                            ).any { it.equals(album.artist.trim(), ignoreCase = true) }
-                                                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                                            ).any {
+                                                                it.equals(
+                                                                    album.artist.trim(),
+                                                                    ignoreCase = true,
+                                                                )
+                                                            }
+                                                    }.sortedWith(
+                                                        compareBy<Song>(
+                                                            { it.discNumber },
+                                                            { it.trackNumber },
+                                                        ),
+                                                    )
                                             val firstSongOfAlbum = albumSongs.firstOrNull()
 
                                             DropdownMenuItem(
-                                                text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                                                text = {
+                                                    Text(
+                                                        "Reproducir ahora",
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                },
                                                 onClick = {
                                                     menuExpanded = false
                                                     if (albumSongs.isNotEmpty()) {
                                                         playbackViewModel.setShuffle(false)
-                                                        playbackViewModel.playAlbum(album.name, album.artist, albumSongs, songs)
-                                                        playbackViewModel.updateDisplayOrder(albumSongs)
+                                                        playbackViewModel.playAlbum(
+                                                            album.name,
+                                                            album.artist,
+                                                            albumSongs,
+                                                            songs,
+                                                        )
+                                                        playbackViewModel.updateDisplayOrder(
+                                                            albumSongs,
+                                                        )
                                                         playbackViewModel.play(albumSongs[0])
                                                     }
                                                 },
                                             )
                                             DropdownMenuItem(
-                                                text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                                                text = {
+                                                    Text(
+                                                        "Añadir como siguiente",
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                },
                                                 onClick = {
                                                     menuExpanded = false
                                                     val currentQueue = playbackViewModel.queue.value
-                                                    val toAdd = albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                                    val toAdd =
+                                                        albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                    toAdd.reversed().forEach {
+                                                        playbackViewModel.addToQueueNext(it)
+                                                    }
                                                 },
                                             )
                                             DropdownMenuItem(
-                                                text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                                                text = {
+                                                    Text(
+                                                        "Añadir al final",
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                },
                                                 onClick = {
                                                     menuExpanded = false
                                                     val currentQueue = playbackViewModel.queue.value
-                                                    val toAdd = albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                                    val toAdd =
+                                                        albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                    toAdd.forEach {
+                                                        playbackViewModel.addToQueueEnd(
+                                                            it,
+                                                        )
+                                                    }
                                                 },
                                             )
                                         }
                                     }
                                 }
-                                Spacer(Modifier.height(6.dp))
+                                Spacer(Modifier.Companion.height(6.dp))
                                 Text(
                                     text = album.name,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 14.sp,
                                     maxLines = 1,
-                                    textAlign = TextAlign.Center,
-                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Companion.Center,
+                                    overflow = TextOverflow.Companion.Ellipsis,
                                 )
                                 // Contar canciones igual que en AlbumDetailScreen (solo primer artista normalizado)
-                                val mainArtist = normalizeArtistName(album.artist).firstOrNull() ?: album.artist
+                                val mainArtist =
+                                    normalizeArtistName(album.artist).firstOrNull() ?: album.artist
                                 val songCount =
                                     songs.count { song ->
-                                        normalizeAlbumName(song.album).any { it.equals(album.name.trim(), ignoreCase = true) } &&
-                                            normalizeArtistName(song.artist).firstOrNull()?.equals(mainArtist, ignoreCase = true) == true
+                                        normalizeAlbumName(song.album).any {
+                                            it.equals(
+                                                album.name.trim(),
+                                                ignoreCase = true,
+                                            )
+                                        } &&
+                                            normalizeArtistName(song.artist)
+                                                .firstOrNull()
+                                                ?.equals(mainArtist, ignoreCase = true) == true
                                     }
                                 Text(
                                     text = "$songCount canciones",
@@ -460,7 +565,7 @@ fun AlbumsScreen(
                     }
                 } else {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.Companion.fillMaxSize(),
                         state = listState,
                         contentPadding =
                             PaddingValues(
@@ -476,7 +581,9 @@ fun AlbumsScreen(
                             val firstSong =
                                 songs.firstOrNull {
                                     it.album.trim().equals(album.name.trim(), ignoreCase = true) &&
-                                        it.artist.trim().equals(album.artist.trim(), ignoreCase = true)
+                                        it.artist
+                                            .trim()
+                                            .equals(album.artist.trim(), ignoreCase = true)
                                 }
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
@@ -488,16 +595,24 @@ fun AlbumsScreen(
                                         retriever.setDataSource(context, uri)
                                         val embedded = retriever.embeddedPicture
                                         if (embedded != null && embedded.isNotEmpty()) {
-                                            albumArt = BitmapFactory.decodeByteArray(embedded, 0, embedded.size)
+                                            albumArt =
+                                                BitmapFactory.decodeByteArray(
+                                                    embedded,
+                                                    0,
+                                                    embedded.size,
+                                                )
                                         }
                                         retriever.release()
 
                                         // Fallback: try content resolver stream (some providers expose album art this way)
                                         if (albumArt == null) {
                                             try {
-                                                context.contentResolver.openInputStream(uri)?.use { stream ->
-                                                    albumArt = BitmapFactory.decodeStream(stream)
-                                                }
+                                                context.contentResolver
+                                                    .openInputStream(uri)
+                                                    ?.use { stream ->
+                                                        albumArt =
+                                                            BitmapFactory.decodeStream(stream)
+                                                    }
                                             } catch (_: Exception) {
                                             }
                                         }
@@ -507,7 +622,7 @@ fun AlbumsScreen(
                                             val path = firstSong.filePath
                                             if (!path.isNullOrBlank()) {
                                                 try {
-                                                    val dir = java.io.File(path).parentFile
+                                                    val dir = File(path).parentFile
                                                     val candidates =
                                                         listOf(
                                                             "cover.jpg",
@@ -518,9 +633,10 @@ fun AlbumsScreen(
                                                             "folder.png",
                                                         )
                                                     for (name in candidates) {
-                                                        val f = java.io.File(dir, name)
+                                                        val f = File(dir, name)
                                                         if (f.exists() && f.length() > 0) {
-                                                            albumArt = BitmapFactory.decodeFile(f.absolutePath)
+                                                            albumArt =
+                                                                BitmapFactory.decodeFile(f.absolutePath)
                                                             if (albumArt != null) break
                                                         }
                                                     }
@@ -535,29 +651,39 @@ fun AlbumsScreen(
 
                             Row(
                                 modifier =
-                                    Modifier.fillMaxWidth().padding(8.dp).clickable {
+                                    Modifier.Companion.fillMaxWidth().padding(8.dp).clickable {
                                         onAlbumClick(album.name, album.artist)
                                     },
-                                verticalAlignment = Alignment.CenterVertically,
+                                verticalAlignment = Alignment.Companion.CenterVertically,
                             ) {
                                 Image(
                                     painter =
-                                        albumArt?.let { BitmapPainter(it.asImageBitmap()) }
+                                        albumArt?.let {
+                                            androidx.compose.ui.graphics.painter.BitmapPainter(
+                                                it.asImageBitmap(),
+                                            )
+                                        }
                                             ?: painterResource(R.drawable.ic_default_album),
                                     contentDescription = null,
-                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop,
+                                    modifier =
+                                        Modifier.Companion
+                                            .size(60.dp)
+                                            .clip(
+                                                androidx.compose.foundation.shape
+                                                    .RoundedCornerShape(8.dp),
+                                            ),
+                                    contentScale = ContentScale.Companion.Crop,
                                 )
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.Companion.width(12.dp))
 
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.Companion.weight(1f)) {
                                     Text(
                                         text = album.name,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 16.sp,
                                         maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+                                        overflow = TextOverflow.Companion.Ellipsis,
                                     )
                                     Text(
                                         text = "${album.songCount} canciones",
@@ -582,56 +708,113 @@ fun AlbumsScreen(
                                         expanded = menuExpanded,
                                         onDismissRequest = { menuExpanded = false },
                                         containerColor = MaterialTheme.extendedColors.surfaceSheet,
-                                        modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
+                                        modifier = Modifier.Companion.background(MaterialTheme.extendedColors.surfaceSheet),
                                     ) {
                                         DropdownMenuItem(
-                                            text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                                            text = {
+                                                Text(
+                                                    "Reproducir ahora",
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            },
                                             onClick = {
                                                 menuExpanded = false
                                                 // Obtener canciones del álbum
                                                 val albumSongs =
                                                     songs
                                                         .filter {
-                                                            it.album.trim().equals(album.name.trim(), ignoreCase = true) &&
-                                                                it.artist.trim().equals(album.artist.trim(), ignoreCase = true)
-                                                        }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                                            it.album.trim().equals(
+                                                                album.name.trim(),
+                                                                ignoreCase = true,
+                                                            ) &&
+                                                                it.artist.trim().equals(
+                                                                    album.artist.trim(),
+                                                                    ignoreCase = true,
+                                                                )
+                                                        }.sortedWith(
+                                                            compareBy<Song>(
+                                                                { it.discNumber },
+                                                                { it.trackNumber },
+                                                            ),
+                                                        )
                                                 if (albumSongs.isNotEmpty()) {
                                                     playbackViewModel.setShuffle(false)
-                                                    playbackViewModel.playAlbum(album.name, album.artist, albumSongs, songs)
+                                                    playbackViewModel.playAlbum(
+                                                        album.name,
+                                                        album.artist,
+                                                        albumSongs,
+                                                        songs,
+                                                    )
                                                     playbackViewModel.updateDisplayOrder(albumSongs)
                                                     playbackViewModel.play(albumSongs.first())
                                                 }
                                             },
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                                            text = {
+                                                Text(
+                                                    "Añadir como siguiente",
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            },
                                             onClick = {
                                                 menuExpanded = false
                                                 // Añadir todas las canciones del álbum como siguientes (sin duplicar)
                                                 val albumSongs =
                                                     songs
                                                         .filter {
-                                                            it.album.trim().equals(album.name.trim(), ignoreCase = true) &&
-                                                                it.artist.trim().equals(album.artist.trim(), ignoreCase = true)
-                                                        }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                                            it.album.trim().equals(
+                                                                album.name.trim(),
+                                                                ignoreCase = true,
+                                                            ) &&
+                                                                it.artist.trim().equals(
+                                                                    album.artist.trim(),
+                                                                    ignoreCase = true,
+                                                                )
+                                                        }.sortedWith(
+                                                            compareBy<Song>(
+                                                                { it.discNumber },
+                                                                { it.trackNumber },
+                                                            ),
+                                                        )
                                                 val currentQueue = playbackViewModel.queue.value
-                                                val toAdd = albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                toAdd.reversed().forEach { playbackViewModel.addToQueueNext(it) }
+                                                val toAdd =
+                                                    albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                toAdd
+                                                    .reversed()
+                                                    .forEach { playbackViewModel.addToQueueNext(it) }
                                             },
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                                            text = {
+                                                Text(
+                                                    "Añadir al final",
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            },
                                             onClick = {
                                                 menuExpanded = false
                                                 // Añadir todas las canciones del álbum al final (sin duplicar)
                                                 val albumSongs =
                                                     songs
                                                         .filter {
-                                                            it.album.trim().equals(album.name.trim(), ignoreCase = true) &&
-                                                                it.artist.trim().equals(album.artist.trim(), ignoreCase = true)
-                                                        }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                                            it.album.trim().equals(
+                                                                album.name.trim(),
+                                                                ignoreCase = true,
+                                                            ) &&
+                                                                it.artist.trim().equals(
+                                                                    album.artist.trim(),
+                                                                    ignoreCase = true,
+                                                                )
+                                                        }.sortedWith(
+                                                            compareBy<Song>(
+                                                                { it.discNumber },
+                                                                { it.trackNumber },
+                                                            ),
+                                                        )
                                                 val currentQueue = playbackViewModel.queue.value
-                                                val toAdd = albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                val toAdd =
+                                                    albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
                                                 toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
                                             },
                                         )
@@ -671,304 +854,9 @@ fun AlbumsScreen(
     }
 }
 
-@Suppress("ktlint:standard:function-naming")
-@Composable
-fun AlbumDetailScreen(
-    albumViewModel: AlbumViewModel,
-    playbackViewModel: PlaybackViewModel,
-    playlistViewModel: PlaylistViewModel,
-    albumName: String,
-    artistName: String,
-    onBack: () -> Unit,
-) {
-    val songs by albumViewModel.songs.collectAsState()
-    val playerState by playbackViewModel.playerState.collectAsState()
-    val playlists by playlistViewModel.playlists.collectAsState()
-
-    // Cargar canciones cuando el componente se compone
-    LaunchedEffect(albumName, artistName) {
-        albumViewModel.loadSongsForAlbumByName(albumName, artistName)
-    }
-
-    // Filtrar canciones del álbum donde el artista participa (en cualquier posición)
-    // Nota: Aunque loadSongsForAlbumByName ya filtra, mantenemos este filtro por si acaso o para ordenar
-    val albumSongs =
-        remember(songs, albumName, artistName) {
-            val normalizedRequestedArtists = normalizeArtistName(artistName).map { it.trim() }
-            songs
-                .filter { song ->
-                    val albumMatches = normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) }
-                    val artistMatches =
-                        normalizeArtistName(song.artist).any { artist ->
-                            normalizedRequestedArtists.any { requestedArtist ->
-                                artist.trim().equals(requestedArtist, ignoreCase = true)
-                            }
-                        }
-                    albumMatches && artistMatches
-                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
-        }
-    val context = LocalContext.current
-
-    BackHandler { onBack() }
-
-    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = MaterialTheme.colorScheme.onBackground)
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = albumName,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Left,
-                )
-                // Text(text = "${albumSongs.size} canciones", color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
-            }
-        }
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item { AlbumHeader(albumViewModel, albumName, artistName, playbackViewModel, Modifier.padding(16.dp)) }
-            items(albumSongs) { song ->
-                val isCurrent = playerState.currentSong?.id == song.id
-
-                DraggableSwipeRow(onSwipeThreshold = {
-                    playbackViewModel.addToQueueNext(song)
-                    Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
-                }) {
-                    SongItem(
-                        song = song,
-                        isPlaying = isCurrent,
-                        onClick = {
-                            // Usar el orden del album como cola de reproduccion
-                            playbackViewModel.setShuffle(false)
-                            playbackViewModel.playAlbum(albumName, artistName, albumSongs, songs)
-                            playbackViewModel.updateDisplayOrder(albumSongs)
-                            playbackViewModel.play(song)
-                        },
-                        onQueueNext = {
-                            playbackViewModel.addToQueueNext(song)
-                            Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
-                        },
-                        onQueueEnd = {
-                            playbackViewModel.addToQueueEnd(song)
-                            Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
-                        },
-                        playlists = playlists,
-                        onAddToPlaylist = { playlistName, songId ->
-                            playlistViewModel.addSongToPlaylist(playlistName, songId)
-                            Toast.makeText(context, "Añadido a playlist '$playlistName'", Toast.LENGTH_SHORT).show()
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
-
 private enum class AlbumSortMode {
     TITLE_ASC,
     TITLE_DESC,
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Composable
-fun AlbumHeader(
-    viewModel: AlbumViewModel,
-    albumName: String,
-    artistName: String,
-    playbackViewModel: PlaybackViewModel,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth().padding(8.dp),
-    ) {
-        val songs by viewModel.songs.collectAsState()
-        val albumSongs =
-            remember(songs, albumName, artistName) {
-                val normalizedRequestedArtists = normalizeArtistName(artistName).map { it.trim() }
-                songs
-                    .filter { song ->
-                        val albumMatches = normalizeAlbumName(song.album).any { it.equals(albumName.trim(), ignoreCase = true) }
-                        val artistMatches =
-                            normalizeArtistName(song.artist).any { artist ->
-                                normalizedRequestedArtists.any { requestedArtist ->
-                                    artist.trim().equals(requestedArtist, ignoreCase = true)
-                                }
-                            }
-                        albumMatches && artistMatches
-                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
-            }
-        var albumArt by remember { mutableStateOf<Bitmap?>(null) }
-        val firstSong = albumSongs.firstOrNull()
-        val context = LocalContext.current
-
-        LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-            withContext(Dispatchers.IO) {
-                try {
-                    val uri = firstSong?.uri ?: return@withContext
-                    val retriever = MediaMetadataRetriever()
-                    retriever.setDataSource(context, uri)
-                    val picture = retriever.embeddedPicture
-                    retriever.release()
-                    if (picture != null && picture.isNotEmpty()) {
-                        albumArt = BitmapFactory.decodeByteArray(picture, 0, picture.size)
-                    }
-
-                    if (albumArt == null) {
-                        try {
-                            context.contentResolver.openInputStream(uri)?.use { stream ->
-                                val bmp = BitmapFactory.decodeStream(stream)
-                                if (bmp != null) albumArt = bmp
-                            }
-                        } catch (_: Exception) {
-                        }
-                    }
-
-                    if (albumArt == null) {
-                        val path = firstSong.filePath
-                        if (!path.isNullOrBlank()) {
-                            try {
-                                val dir = java.io.File(path).parentFile
-                                val candidates = listOf("cover.jpg", "folder.jpg", "album.jpg", "front.jpg", "cover.png", "folder.png")
-                                for (name in candidates) {
-                                    val f = java.io.File(dir, name)
-                                    if (f.exists() && f.length() > 0) {
-                                        val bmp = BitmapFactory.decodeFile(f.absolutePath)
-                                        if (bmp != null) {
-                                            albumArt = bmp
-                                            break
-                                        }
-                                    }
-                                }
-                            } catch (_: Exception) {
-                            }
-                        }
-                    }
-                } catch (_: Exception) {
-                }
-            }
-        }
-        Image(
-            painter = albumArt?.asImageBitmap()?.let { BitmapPainter(it) } ?: painterResource(R.drawable.ic_default_album),
-            contentDescription = null,
-            modifier =
-                Modifier
-                    .fillMaxWidth(1f)
-                    .aspectRatio(1f)
-                    // .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = albumName,
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Botones igual que PlaylistHeader
-        val buttonColor = MaterialTheme.colorScheme.primary
-
-        Text(text = "${albumSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
-        Spacer(modifier = Modifier.height(20.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .height(60.dp),
-            ) {
-                Button(
-                    onClick = {
-                        if (albumSongs.isNotEmpty()) {
-                            playbackViewModel.setShuffle(false)
-                            playbackViewModel.playAlbum(albumName, artistName, albumSongs, songs)
-                            playbackViewModel.updateDisplayOrder(albumSongs)
-                            playbackViewModel.play(albumSongs.first())
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = "Reproducir ahora",
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(2.dp))
-                        Text("Reproducir", color = Color.White, fontSize = 14.sp)
-                    }
-                }
-            }
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .height(60.dp),
-            ) {
-                Button(
-                    onClick = {
-                        if (albumSongs.isNotEmpty()) {
-                            val shuffled = albumSongs.shuffled()
-                            playbackViewModel.setShuffle(true)
-                            playbackViewModel.playAlbum(albumName, artistName, shuffled, songs)
-                            playbackViewModel.updateDisplayOrder(shuffled)
-                            playbackViewModel.play(shuffled.first())
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Default.Shuffle, contentDescription = "Aleatorio", tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(2.dp))
-                        Text("Aleatorio", color = Color.White, fontSize = 14.sp)
-                    }
-                }
-            }
-            Spacer(Modifier.height(20.dp))
-        }
-    }
 }
 
 // Normaliza nombres de álbumes, separando por ',' y '/' (puedes ajustar si hay excepciones)

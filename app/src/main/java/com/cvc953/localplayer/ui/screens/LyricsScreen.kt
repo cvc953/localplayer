@@ -1,4 +1,4 @@
-package com.cvc953.localplayer.ui
+package com.cvc953.localplayer.ui.screens
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -21,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +30,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import com.cvc953.localplayer.model.TtmlLine
+import com.cvc953.localplayer.ui.LoadingDotsAnimation
+import com.cvc953.localplayer.ui.LyricLine
+import com.cvc953.localplayer.ui.WordByWordLine
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
@@ -41,8 +43,8 @@ import kotlin.math.abs
 fun LyricsScreen(
     lyricsViewModel: LyricsViewModel,
     playbackViewModel: PlaybackViewModel,
-    modifier: Modifier = Modifier,
-    dominantColor: Color = Color.Black,
+    modifier: Modifier = Modifier.Companion,
+    dominantColor: Color = Color.Companion.Black,
     useDynamicBackground: Boolean = true,
     onLineClick: (Long) -> Unit = {},
 ) {
@@ -84,8 +86,8 @@ fun LyricsScreen(
 fun LyricsView(
     lyrics: List<LrcLine>,
     currentPosition: Long,
-    modifier: Modifier = Modifier,
-    dominantColor: Color = Color.Black,
+    modifier: Modifier = Modifier.Companion,
+    dominantColor: Color = Color.Companion.Black,
     useDynamicBackground: Boolean = true,
     onLineClick: (Long) -> Unit = {},
 ) {
@@ -94,14 +96,14 @@ fun LyricsView(
         useDynamicBackground &&
             MaterialTheme.colorScheme.background.luminance() > 0.5f
     val activeLyricColor =
-        if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
+        if (forceLightForeground) Color.Companion.White else MaterialTheme.colorScheme.onBackground
     /*val inactiveLyricColor =
         if (forceLightForeground) {
             Color.White.copy(alpha = 0.52f)
         } else {
             LocalExtendedColors.current.textSecondary
         }*/
-    val inactiveLyricColor = Color.White.copy(alpha = 0.4f)
+    val inactiveLyricColor = Color.Companion.White.copy(alpha = 0.4f)
 
     val currentIndex =
         remember(lyrics, currentPosition) {
@@ -153,11 +155,16 @@ fun LyricsView(
                 .fillMaxSize()
                 .background(
                     if (useDynamicBackground) {
-                        Brush.verticalGradient(
+                        Brush.Companion.verticalGradient(
                             listOf(dominantColor.darken(0.5f), dominantColor.darken(0.1f)),
                         )
                     } else {
-                        Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                        Brush.Companion.verticalGradient(
+                            listOf(
+                                Color.Companion.Transparent,
+                                Color.Companion.Transparent,
+                            ),
+                        )
                     },
                 ),
     ) {
@@ -165,7 +172,7 @@ fun LyricsView(
             state = listState,
             contentPadding = PaddingValues(vertical = 120.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.Companion.fillMaxSize(),
         ) {
             if (lyrics.isNotEmpty()) {
                 val firstLineStart = lyrics.first().timeMs
@@ -175,10 +182,10 @@ fun LyricsView(
                         item {
                             Box(
                                 modifier =
-                                    Modifier
+                                    Modifier.Companion
                                         .fillMaxSize()
                                         .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center,
+                                contentAlignment = Alignment.Companion.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
@@ -208,7 +215,7 @@ fun LyricsView(
 
                 Box(
                     modifier =
-                        Modifier
+                        Modifier.Companion
                             .fillMaxSize()
                             .graphicsLayer { alpha = itemAlpha }
                             .clickable { onLineClick(line.timeMs) },
@@ -232,10 +239,10 @@ fun LyricsView(
                         if (isGapActive) {
                             Box(
                                 modifier =
-                                    Modifier
+                                    Modifier.Companion
                                         .fillMaxSize()
                                         .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center,
+                                contentAlignment = Alignment.Companion.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
@@ -260,8 +267,8 @@ fun LyricsView(
 fun TtmlLyricsView(
     lines: List<TtmlLine>,
     currentPosition: Long,
-    modifier: Modifier = Modifier,
-    dominantColor: Color = Color.Black,
+    modifier: Modifier = Modifier.Companion,
+    dominantColor: Color = Color.Companion.Black,
     useDynamicBackground: Boolean = true,
     onLineClick: (Long) -> Unit = {},
 ) {
@@ -270,14 +277,14 @@ fun TtmlLyricsView(
         useDynamicBackground &&
             MaterialTheme.colorScheme.background.luminance() > 0.5f
     val activeLyricColor =
-        if (forceLightForeground) Color.White else MaterialTheme.colorScheme.onBackground
+        if (forceLightForeground) Color.Companion.White else MaterialTheme.colorScheme.onBackground
     /*val inactiveLyricColor =
         if (forceLightForeground) {
             Color.White.copy(alpha = 0.52f)
         } else {
             LocalExtendedColors.current.textSecondary
         }*/
-    val inactiveLyricColor = Color.White.copy(alpha = 0.4f)
+    val inactiveLyricColor = Color.Companion.White.copy(alpha = 0.4f)
 
     val hasMultipleVoices =
         remember(lines) {
@@ -336,11 +343,16 @@ fun TtmlLyricsView(
                 .fillMaxSize()
                 .background(
                     if (useDynamicBackground) {
-                        Brush.verticalGradient(
+                        Brush.Companion.verticalGradient(
                             listOf(dominantColor.darken(0.5f), dominantColor.darken(0.1f)),
                         )
                     } else {
-                        Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                        Brush.Companion.verticalGradient(
+                            listOf(
+                                Color.Companion.Transparent,
+                                Color.Companion.Transparent,
+                            ),
+                        )
                     },
                 ),
     ) {
@@ -348,7 +360,7 @@ fun TtmlLyricsView(
             state = listState,
             contentPadding = PaddingValues(vertical = 120.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.Companion.fillMaxSize(),
         ) {
             if (lines.isNotEmpty()) {
                 val firstLineStart = lines.first().timeMs
@@ -358,10 +370,10 @@ fun TtmlLyricsView(
                         item {
                             Box(
                                 modifier =
-                                    Modifier
+                                    Modifier.Companion
                                         .fillMaxSize()
                                         .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center,
+                                contentAlignment = Alignment.Companion.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
@@ -391,7 +403,7 @@ fun TtmlLyricsView(
 
                 Box(
                     modifier =
-                        Modifier
+                        Modifier.Companion
                             .fillMaxSize()
                             .graphicsLayer { alpha = itemAlpha }
                             .clickable { onLineClick(line.timeMs) },
@@ -405,7 +417,7 @@ fun TtmlLyricsView(
                             activeColor = activeLyricColor,
                             horizontalAlignment = line.alignment,
                             maxWidthFraction = maxWidthFraction,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.Companion.fillMaxWidth(),
                         )
                     } else {
                         LyricLine(
@@ -415,7 +427,7 @@ fun TtmlLyricsView(
                             inactiveColor = inactiveLyricColor,
                             horizontalAlignment = line.alignment,
                             maxWidthFraction = maxWidthFraction,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.Companion.fillMaxWidth(),
                         )
                     }
                 }
@@ -430,10 +442,10 @@ fun TtmlLyricsView(
                         if (isGapActive) {
                             Box(
                                 modifier =
-                                    Modifier
+                                    Modifier.Companion
                                         .fillMaxSize()
                                         .padding(vertical = 20.dp),
-                                contentAlignment = Alignment.Center,
+                                contentAlignment = Alignment.Companion.Center,
                             ) {
                                 LoadingDotsAnimation(
                                     isVisible = true,
