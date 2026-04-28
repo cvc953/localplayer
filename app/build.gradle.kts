@@ -7,6 +7,12 @@ android {
     namespace = "com.cvc953.localplayer"
     compileSdk = 36
 
+    dependenciesInfo {
+        // Desactiva la inclusión de metadatos de dependencias en el APK
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "com.cvc953.localplayer"
         minSdk = 24
