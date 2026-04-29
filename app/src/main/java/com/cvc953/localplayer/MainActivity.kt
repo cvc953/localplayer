@@ -8,7 +8,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.cvc953.localplayer.ui.MainMusicScreenUpdated
+import com.cvc953.localplayer.ui.screens.MainMusicScreenUpdated
 import com.cvc953.localplayer.ui.theme.resolvePrimaryColor
 import com.cvc953.localplayer.viewmodel.MainViewModel
 

@@ -1,6 +1,4 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
-package com.cvc953.localplayer.ui
+package com.cvc953.localplayer.ui.screens
 
 import android.app.Activity
 import android.widget.Toast
@@ -17,10 +15,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -28,16 +34,27 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.components.BottomNavigationBar
-import com.cvc953.localplayer.ui.navigation.*
+import com.cvc953.localplayer.ui.navigation.AppNavigation
+import com.cvc953.localplayer.ui.navigation.Screen
+import com.cvc953.localplayer.ui.screens.PlayerScreen
+import com.cvc953.localplayer.ui.screens.SettingsScreen
 import com.cvc953.localplayer.util.StoragePermissionHandler
-import com.cvc953.localplayer.viewmodel.*
+import com.cvc953.localplayer.viewmodel.AlbumViewModel
+import com.cvc953.localplayer.viewmodel.ArtistViewModel
+import com.cvc953.localplayer.viewmodel.EqualizerViewModel
+import com.cvc953.localplayer.viewmodel.FolderViewModel
+import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.PlayerViewModel
+import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -106,13 +123,21 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
 
         var bottomNavOffset by remember { mutableStateOf(0.dp) }
         var miniPlayerAlpha by remember { mutableFloatStateOf(1f) }
-        var playerBackgroundColor by remember { mutableStateOf(Color.Transparent) }
+        var playerBackgroundColor by remember { mutableStateOf(Color.Companion.Transparent) }
 
         val miniPlayerBrush =
-            Brush.verticalGradient(
+            Brush.Companion.verticalGradient(
                 listOf(
-                    lerp(playerBackgroundColor, MaterialTheme.colorScheme.surfaceVariant, miniPlayerAlpha.coerceIn(0f, 1f)),
-                    lerp(playerBackgroundColor, MaterialTheme.colorScheme.surfaceVariant, miniPlayerAlpha.coerceIn(0f, 1f)),
+                    lerp(
+                        playerBackgroundColor,
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        miniPlayerAlpha.coerceIn(0f, 1f),
+                    ),
+                    lerp(
+                        playerBackgroundColor,
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        miniPlayerAlpha.coerceIn(0f, 1f),
+                    ),
                 ),
             )
 
@@ -133,7 +158,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
             }
         }
 
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.Companion.fillMaxSize()) {
             // === BOTTOM SHEET (debajo del BottomNavBar) ===
             BottomSheetScaffold(
                 scaffoldState = scaffoldState,
@@ -204,7 +229,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
                 // El BottomNavBar es componente independiente, no afecta el content
                 Box(
                     modifier =
-                        Modifier
+                        Modifier.Companion
                             .fillMaxSize()
                             .statusBarsPadding()
                             .padding(bottom = sheetPeekHeight),
@@ -226,8 +251,8 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
             BottomNavigationBar(
                 navController = navController,
                 modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
+                    Modifier.Companion
+                        .align(Alignment.Companion.BottomCenter)
                         .offset(y = bottomNavOffset)
                         .zIndex(5f),
             )
@@ -236,7 +261,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
             if (showEqualizer) {
                 Box(
                     modifier =
-                        Modifier
+                        Modifier.Companion
                             .fillMaxSize()
                             .zIndex(10f),
                 ) {
@@ -248,7 +273,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
             } else if (showSettings) {
                 Box(
                     modifier =
-                        Modifier
+                        Modifier.Companion
                             .fillMaxSize()
                             .zIndex(10f),
                 ) {
@@ -264,7 +289,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
             if (showAbout) {
                 Box(
                     modifier =
-                        Modifier
+                        Modifier.Companion
                             .fillMaxSize()
                             .zIndex(11f),
                 ) {

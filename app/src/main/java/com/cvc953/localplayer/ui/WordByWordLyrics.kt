@@ -1,6 +1,5 @@
 package com.cvc953.localplayer.ui
 
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -61,17 +60,12 @@ fun SyllableLyric(
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
     val targetProgress = if (isLineActive && currentPosition >= syllable.timeMs) clampedProgress else 0f
 
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = if (isLineActive) tween(durationMillis = 150, easing = LinearEasing) else snap(),
-    )
-
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
         ProgressiveFillSyllableText(
             text = syllable.text,
-            progress = animatedProgress,
+            progress = targetProgress,
             baseColor = baseColor,
             activeColor = activeColor,
             fontSizeSp = baseFontSize,
@@ -106,17 +100,12 @@ fun BackgroundSyllableLyric(
     // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
     val targetProgress = if (currentPosition >= syllable.timeMs) clampedProgress else 0f
-    val animatedProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = if (isLineActive) tween(durationMillis = 180, easing = LinearEasing) else snap(),
-    )
-
     val horizontalPadding = if (syllable.continuesWord) 0.dp else 3.dp
 
     Row(modifier = modifier.padding(end = horizontalPadding)) {
         ProgressiveFillSyllableText(
             text = syllable.text,
-            progress = animatedProgress,
+            progress = targetProgress,
             baseColor = baseColor,
             activeColor = activeColor,
             fontSizeSp = baseFontSize,
@@ -219,7 +208,8 @@ fun WordByWordLine(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                    transformOrigin = TransformOrigin(pivotFractionX = pivotX, pivotFractionY = 0.5f)
+                    transformOrigin =
+                        TransformOrigin(pivotFractionX = pivotX, pivotFractionY = 0.5f)
                 },
         verticalArrangement = Arrangement.Center,
         horizontalAlignment =
@@ -281,51 +271,24 @@ fun WordByWordLine(
                 }
             }
             flushWord()
-            /*var wordBuffer = mutableListOf<TtmlSyllable>()
 
-            @Composable
-            fun flushWord() {
-                if (wordBuffer.isNotEmpty()) {
-                    Row {
-                        wordBuffer.forEach { syllable ->
-                            SyllableLyric(
-                                syllable = syllable,
-                                currentPosition = currentPosition,
-                                isLineActive = isActive,
-                                baseColor = baseColor,
-                                activeColor = activeColor,
-                            )
-                        }
+            // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
+            if (backgroundSyllables.isNotEmpty() && isActive) {
+                Spacer(modifier = Modifier.padding(top = 2.dp))
+                FlowRow(
+                    horizontalArrangement = flowHorizontalArrangement,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth(maxWidthFraction),
+                ) {
+                    backgroundSyllables.forEach { syllable ->
+                        BackgroundSyllableLyric(
+                            syllable = syllable,
+                            currentPosition = currentPosition,
+                            isLineActive = isActive,
+                            baseColor = baseColor,
+                            activeColor = activeColor.copy(alpha = 0.6f),
+                        )
                     }
-                    wordBuffer = mutableListOf()
-                }
-            }
-            mainSyllables.forEach { syllable ->
-                wordBuffer.add(syllable)
-                if (!syllable.continuesWord) {
-                    flushWord()
-                }
-            }
-            // Por si la última palabra no se ha vaciado
-            flushWord()*/
-        }
-
-        // Línea de fondo (más pequeña, debajo) - solo visible cuando la línea está activa
-        if (backgroundSyllables.isNotEmpty() && isActive) {
-            Spacer(modifier = Modifier.padding(top = 2.dp))
-            FlowRow(
-                horizontalArrangement = flowHorizontalArrangement,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth(maxWidthFraction),
-            ) {
-                backgroundSyllables.forEach { syllable ->
-                    BackgroundSyllableLyric(
-                        syllable = syllable,
-                        currentPosition = currentPosition,
-                        isLineActive = isActive,
-                        baseColor = baseColor,
-                        activeColor = activeColor.copy(alpha = 0.6f),
-                    )
                 }
             }
         }

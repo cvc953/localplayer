@@ -78,7 +78,7 @@ fun LyricLine(
 
     val color by transition.animateColor(
         label = "color",
-        transitionSpec = { tween(durationMillis = 250, easing = FastOutSlowInEasing) },
+        // transitionSpec = { tween(durationMillis = 250, easing = FastOutSlowInEasing) },
     ) { isActive -> if (isActive) activeColor else inactiveColor }
 
     val targetFontSize = if (isSecondaryVoice) 20f else 30f

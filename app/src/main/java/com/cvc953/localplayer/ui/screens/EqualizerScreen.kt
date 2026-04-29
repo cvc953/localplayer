@@ -1,4 +1,4 @@
-package com.cvc953.localplayer.ui
+package com.cvc953.localplayer.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -78,11 +78,14 @@ fun EqualizerScreen(
 
     BackHandler(onBack = onClose)
 
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(
+        modifier = Modifier.Companion.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
         val scrollState = rememberScrollState()
         Column(
             modifier =
-                Modifier
+                Modifier.Companion
                     .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding()
@@ -90,13 +93,16 @@ fun EqualizerScreen(
                     .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(modifier = Modifier.weight(1f)) {
+            Row(
+                modifier = Modifier.Companion.fillMaxWidth(),
+                verticalAlignment = Alignment.Companion.CenterVertically,
+            ) {
+                Column(modifier = Modifier.Companion.weight(1f)) {
                     Text(
                         "Ecualizador",
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 30.sp,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Companion.Bold,
                     )
                     Text(
                         "Ajusta bandas, presets y respuesta de audio",
@@ -105,7 +111,11 @@ fun EqualizerScreen(
                     )
                 }
                 IconButton(onClick = onClose) {
-                    Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onBackground)
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Cerrar",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
                 }
             }
 
@@ -120,8 +130,11 @@ fun EqualizerScreen(
                         fontSize = 13.sp,
                     )
                 } else {
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier.Companion.fillMaxWidth(),
+                        verticalAlignment = Alignment.Companion.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.Companion.weight(1f)) {
                             Text("Preset activo", color = MaterialTheme.colorScheme.onSurface)
                             Text(
                                 text =
@@ -137,7 +150,7 @@ fun EqualizerScreen(
                         }
                         OutlinedButton(onClick = { expandedPresets = true }) {
                             Icon(Icons.Default.GraphicEq, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.Companion.width(8.dp))
                             Text("Cambiar")
                         }
                         DropdownMenu(
@@ -186,15 +199,15 @@ fun EqualizerScreen(
             ) {
                 if (bandCount > 0) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(300.dp),
+                        modifier = Modifier.Companion.fillMaxWidth().height(300.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = Alignment.Companion.CenterVertically,
                     ) {
                         for (i in 0 until bandCount) {
                             val freq = if (i < bandFreqs.size) bandFreqs[i] / 1000 else 0
                             val level = if (i < bandLevels.size) bandLevels[i] else 0
                             BandSliderCard(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.Companion.weight(1f),
                                 label = "${formatWithK(freq)}Hz",
                                 initialLevel = level,
                                 range = bandLevelRange,
@@ -203,13 +216,13 @@ fun EqualizerScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.Companion.height(10.dp))
                     FilledTonalButton(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.Companion.fillMaxWidth(),
                         onClick = { viewModel.resetBandLevels() },
                     ) {
                         Icon(Icons.Default.RestartAlt, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.Companion.width(8.dp))
                         Text("Resetear bandas")
                     }
                 } else {
@@ -231,16 +244,20 @@ private fun EqualizerSectionCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.Companion.fillMaxWidth(),
         colors = CardDefaults.elevatedCardColors(containerColor = LocalExtendedColors.current.surfaceSheet),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.Companion.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text(title, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+            Text(
+                title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Companion.SemiBold,
+            )
             Text(subtitle, color = LocalExtendedColors.current.textSecondary, fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.Companion.height(12.dp))
             content()
         }
     }
@@ -248,7 +265,7 @@ private fun EqualizerSectionCard(
 
 @Composable
 private fun BandSliderCard(
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.Companion,
     label: String,
     initialLevel: Int,
     range: Pair<Int, Int>,
@@ -265,12 +282,15 @@ private fun BandSliderCard(
         colors = CardDefaults.elevatedCardColors(containerColor = LocalExtendedColors.current.surfaceSheet),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.Companion.padding(horizontal = 8.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.Companion.CenterHorizontally,
         ) {
             Text(label, color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp)
-            Spacer(modifier = Modifier.height(8.dp))
-            Box(modifier = Modifier.height(208.dp), contentAlignment = Alignment.Center) {
+            Spacer(modifier = Modifier.Companion.height(8.dp))
+            Box(
+                modifier = Modifier.Companion.height(208.dp),
+                contentAlignment = Alignment.Companion.Center,
+            ) {
                 VerticalSlider(
                     value = sliderPos,
                     onValueChange = {
@@ -278,16 +298,20 @@ private fun BandSliderCard(
                         onLevelChange(it.toInt())
                     },
                     valueRange = range.first.toFloat()..range.second.toFloat(),
-                    modifier = Modifier.fillMaxHeight().width(60.dp),
+                    modifier = Modifier.Companion.fillMaxHeight().width(60.dp),
                     trackWidth = 2.dp,
                     thumbRadius = 9.dp,
                     activeColor = MaterialTheme.colorScheme.primary,
                     inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
-                    backgroundColor = Color.Transparent,
+                    backgroundColor = Color.Companion.Transparent,
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(formatWithK(sliderPos.toInt()), color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp)
+            Spacer(modifier = Modifier.Companion.height(8.dp))
+            Text(
+                formatWithK(sliderPos.toInt()),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 11.sp,
+            )
             Text("mB", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
         }
     }

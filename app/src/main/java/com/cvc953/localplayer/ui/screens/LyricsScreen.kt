@@ -1,26 +1,29 @@
-@file:Suppress("ktlint:standard:no-wildcard-imports")
-
-package com.cvc953.localplayer.ui
+package com.cvc953.localplayer.ui.screens
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -42,7 +45,6 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
@@ -106,8 +108,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.model.TtmlLine
+import com.cvc953.localplayer.ui.LoadingDotsAnimation
+import com.cvc953.localplayer.ui.LyricLine
 import com.cvc953.localplayer.ui.MiniPlayer
+import com.cvc953.localplayer.ui.RepeatMode
+import com.cvc953.localplayer.ui.WordByWordLine
+import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.util.getDominantColor
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
 import com.cvc953.localplayer.viewmodel.MainViewModel
@@ -118,6 +127,445 @@ import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+fun LyricsScreen(
+    lyricsViewModel: LyricsViewModel,
+    playbackViewModel: PlaybackViewModel,
+    modifier: Modifier = Modifier.Companion,
+    dominantColor: Color = Color.Companion.Black,
+    useDynamicBackground: Boolean = true,
+    onLineClick: (Long) -> Unit = {},
+) {
+    val ttml by lyricsViewModel.ttmlLyrics.collectAsState()
+    val lyrics by lyricsViewModel.lyrics.collectAsState()
+    val currentPosition by playbackViewModel.currentPosition.collectAsState()
+    val localTtml = ttml
+    if (localTtml != null) {
+        TtmlLyricsView(
+            lines = localTtml.lines,
+            currentPosition = currentPosition,
+            modifier = modifier,
+            dominantColor = dominantColor,
+            useDynamicBackground = useDynamicBackground,
+        ) { pos ->
+            try {
+                playbackViewModel.seekTo(pos)
+            } catch (_: Exception) {
+            }
+        }
+    } else {
+        LyricsView(
+            lyrics = lyrics,
+            currentPosition = currentPosition,
+            modifier = modifier,
+            dominantColor = dominantColor,
+            useDynamicBackground = useDynamicBackground,
+        ) { pos ->
+            try {
+                playbackViewModel.seekTo(pos)
+            } catch (_: Exception) {
+            }
+        }
+    }
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+fun LyricsView(
+    lyrics: List<LrcLine>,
+    currentPosition: Long,
+    modifier: Modifier = Modifier.Companion,
+    dominantColor: Color = Color.Companion.Black,
+    useDynamicBackground: Boolean = true,
+    onLineClick: (Long) -> Unit = {},
+) {
+    val listState = rememberLazyListState()
+    val forceLightForeground =
+        useDynamicBackground &&
+            MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val activeLyricColor =
+        if (forceLightForeground) Color.Companion.White else MaterialTheme.colorScheme.onBackground
+    /*val inactiveLyricColor =
+        if (forceLightForeground) {
+            Color.White.copy(alpha = 0.52f)
+        } else {
+            LocalExtendedColors.current.textSecondary
+        }*/
+    val inactiveLyricColor = Color.Companion.White.copy(alpha = 0.4f)
+
+    val currentIndex =
+        remember(lyrics, currentPosition) {
+            lyrics.indexOfLast { it.timeMs <= currentPosition }
+        }
+
+    LaunchedEffect(currentIndex) {
+        if (currentIndex < 0) return@LaunchedEffect
+        try {
+            val visibleItems = listState.layoutInfo.visibleItemsInfo
+            val isVisible = visibleItems.any { it.index == currentIndex }
+
+            if (!isVisible) {
+                listState.scrollToItem(index = currentIndex)
+            }
+
+            val layoutInfo = listState.layoutInfo
+            val viewportHeight = layoutInfo.visibleItemsInfo.size
+            val itemInfo =
+                layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
+
+            // Posición actual del top del item relativa al viewport
+            val itemTop = itemInfo.offset
+            // Centro del item
+            val itemCenter = itemTop + itemInfo.size / 2
+            // Donde debe quedar el centro del item (tercio superior)
+            val targetCenter = viewportHeight / 3
+            // Delta real en pixels
+            val delta = itemCenter - targetCenter
+
+            listState.animateScrollBy(
+                value = delta.toFloat(),
+                animationSpec =
+                    spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
+            )
+        } catch (_: Exception) {
+        }
+    }
+
+    val gapThreshold = 7000L
+
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(
+                    if (useDynamicBackground) {
+                        Brush.Companion.verticalGradient(
+                            listOf(dominantColor.darken(0.5f), dominantColor.darken(0.1f)),
+                        )
+                    } else {
+                        Brush.Companion.verticalGradient(
+                            listOf(
+                                Color.Companion.Transparent,
+                                Color.Companion.Transparent,
+                            ),
+                        )
+                    },
+                ),
+    ) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(vertical = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.Companion.fillMaxSize(),
+        ) {
+            if (lyrics.isNotEmpty()) {
+                val firstLineStart = lyrics.first().timeMs
+                if (firstLineStart > gapThreshold) {
+                    val isIntroGapActive = currentPosition in 0 until firstLineStart
+                    if (isIntroGapActive) {
+                        item {
+                            Box(
+                                modifier =
+                                    Modifier.Companion
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Companion.Center,
+                            ) {
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = firstLineStart,
+                                    elapsedMs = currentPosition,
+                                    brightColor = activeLyricColor,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            itemsIndexed(lyrics) { index, line ->
+                val distance = abs(index - currentIndex)
+                val itemAlpha by animateFloatAsState(
+                    targetValue =
+                        when (distance) {
+                            0 -> 1f
+                            1 -> 0.75f
+                            2 -> 0.5f
+                            else -> 0.28f
+                        },
+                    animationSpec = tween(800, easing = FastOutSlowInEasing),
+                    label = "itemAlpha_$index",
+                )
+
+                Box(
+                    modifier =
+                        Modifier.Companion
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = itemAlpha }
+                            .clickable { onLineClick(line.timeMs) },
+                ) {
+                    LyricLine(
+                        text = line.text,
+                        active = index == currentIndex,
+                        isSecondaryVoice = false,
+                        activeColor = activeLyricColor,
+                        inactiveColor = inactiveLyricColor,
+                    )
+                }
+
+                if (index < lyrics.size - 1) {
+                    val currentLineStart = line.timeMs
+                    val nextLineStart = lyrics[index + 1].timeMs
+                    val gapDuration = nextLineStart - currentLineStart
+                    if (gapDuration > gapThreshold) {
+                        val isGapActive =
+                            currentPosition in currentLineStart..<nextLineStart
+                        if (isGapActive) {
+                            Box(
+                                modifier =
+                                    Modifier.Companion
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Companion.Center,
+                            ) {
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = gapDuration,
+                                    elapsedMs = currentPosition - currentLineStart,
+                                    brightColor = activeLyricColor,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Vista de letras con sincronización palabra por palabra para TTML
+ */
+@Suppress("ktlint:standard:function-naming")
+@Composable
+fun TtmlLyricsView(
+    lines: List<TtmlLine>,
+    currentPosition: Long,
+    modifier: Modifier = Modifier.Companion,
+    dominantColor: Color = Color.Companion.Black,
+    useDynamicBackground: Boolean = true,
+    onLineClick: (Long) -> Unit = {},
+) {
+    val listState = rememberLazyListState()
+    val forceLightForeground =
+        useDynamicBackground &&
+            MaterialTheme.colorScheme.background.luminance() > 0.5f
+    val activeLyricColor =
+        if (forceLightForeground) Color.Companion.White else MaterialTheme.colorScheme.onBackground
+    /*val inactiveLyricColor =
+        if (forceLightForeground) {
+            Color.White.copy(alpha = 0.52f)
+        } else {
+            LocalExtendedColors.current.textSecondary
+        }*/
+    val inactiveLyricColor = Color.Companion.White.copy(alpha = 0.4f)
+
+    val hasMultipleVoices =
+        remember(lines) {
+            lines.mapNotNull { it.agent }.distinct().size > 1
+        }
+    // Ancho maximo de las letras cuando hay multiples artistas
+    val maxWidthFraction = if (hasMultipleVoices) 0.7f else 1f
+
+    val currentIndex =
+        remember(currentPosition) {
+            lines.indexOfLast { it.timeMs <= currentPosition }.coerceAtLeast(0)
+        }
+
+    LaunchedEffect(currentIndex) {
+        if (currentIndex < 0) return@LaunchedEffect
+        try {
+            val visibleItems = listState.layoutInfo.visibleItemsInfo
+            val isVisible = visibleItems.any { it.index == currentIndex }
+
+            if (!isVisible) {
+                listState.scrollToItem(index = currentIndex)
+            }
+
+            val layoutInfo = listState.layoutInfo
+            val viewportHeight = layoutInfo.visibleItemsInfo.size
+            val itemInfo =
+                layoutInfo.visibleItemsInfo
+                    .firstOrNull { it.index == currentIndex } ?: return@LaunchedEffect
+
+            // Posición actual del top del item relativa al viewport
+            val itemTop = itemInfo.offset
+            // Centro del item
+            val itemCenter = itemTop + itemInfo.size / 2
+            // Donde debe quedar el centro del item (tercio superior)
+            val targetCenter = viewportHeight / 3
+            // Delta real en pixels
+            val delta = itemCenter - targetCenter
+
+            listState.animateScrollBy(
+                value = delta.toFloat(),
+                animationSpec =
+                    spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
+            )
+        } catch (_: Exception) {
+        }
+    }
+
+    val gapThreshold = 7000L
+
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(
+                    if (useDynamicBackground) {
+                        Brush.Companion.verticalGradient(
+                            listOf(dominantColor.darken(0.5f), dominantColor.darken(0.1f)),
+                        )
+                    } else {
+                        Brush.Companion.verticalGradient(
+                            listOf(
+                                Color.Companion.Transparent,
+                                Color.Companion.Transparent,
+                            ),
+                        )
+                    },
+                ),
+    ) {
+        LazyColumn(
+            state = listState,
+            contentPadding = PaddingValues(vertical = 120.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.Companion.fillMaxSize(),
+        ) {
+            if (lines.isNotEmpty()) {
+                val firstLineStart = lines.first().timeMs
+                if (firstLineStart > gapThreshold) {
+                    val isIntroGapActive = currentPosition in 0 until firstLineStart
+                    if (isIntroGapActive) {
+                        item {
+                            Box(
+                                modifier =
+                                    Modifier.Companion
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Companion.Center,
+                            ) {
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = firstLineStart,
+                                    elapsedMs = currentPosition,
+                                    brightColor = activeLyricColor,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            itemsIndexed(lines) { index, line ->
+                val distance = abs(index - currentIndex)
+                val itemAlpha by animateFloatAsState(
+                    targetValue =
+                        when (distance) {
+                            0 -> 1f
+                            1 -> 0.75f
+                            2 -> 0.5f
+                            else -> 0.28f
+                        },
+                    animationSpec = tween(800, easing = FastOutSlowInEasing),
+                    label = "itemAlpha_$index",
+                )
+
+                Box(
+                    modifier =
+                        Modifier.Companion
+                            .fillMaxSize()
+                            .graphicsLayer { alpha = itemAlpha }
+                            .clickable { onLineClick(line.timeMs) },
+                ) {
+                    if (line.syllabus.isNotEmpty()) {
+                        WordByWordLine(
+                            syllables = line.syllabus,
+                            currentPosition = currentPosition,
+                            isActive = index == currentIndex,
+                            baseColor = inactiveLyricColor,
+                            activeColor = activeLyricColor,
+                            horizontalAlignment = line.alignment,
+                            maxWidthFraction = maxWidthFraction,
+                            modifier = Modifier.Companion.fillMaxWidth(),
+                        )
+                    } else {
+                        LyricLine(
+                            text = line.text,
+                            active = index == currentIndex,
+                            activeColor = activeLyricColor,
+                            inactiveColor = inactiveLyricColor,
+                            horizontalAlignment = line.alignment,
+                            maxWidthFraction = maxWidthFraction,
+                            modifier = Modifier.Companion.fillMaxWidth(),
+                        )
+                    }
+                }
+
+                if (index < lines.size - 1) {
+                    val currentLineEnd = line.timeMs + line.durationMs
+                    val nextLineStart = lines[index + 1].timeMs
+                    val gapDuration = nextLineStart - currentLineEnd
+                    if (gapDuration > gapThreshold) {
+                        val isGapActive =
+                            currentPosition in currentLineEnd..<nextLineStart
+                        if (isGapActive) {
+                            Box(
+                                modifier =
+                                    Modifier.Companion
+                                        .fillMaxSize()
+                                        .padding(vertical = 20.dp),
+                                contentAlignment = Alignment.Companion.Center,
+                            ) {
+                                LoadingDotsAnimation(
+                                    isVisible = true,
+                                    durationMs = gapDuration,
+                                    elapsedMs = currentPosition - currentLineEnd,
+                                    brightColor = activeLyricColor,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun Color.darken(factor: Float = 0.7f): Color =
+    this.copy(
+        red = this.red * factor,
+        green = this.green * factor,
+        blue = this.blue * factor,
+    )
+
+fun Color.luminance(factor: Float = 0.7f): Color =
+    this.copy(
+        red = this.red * factor,
+        green = this.green * factor,
+        blue = this.blue * factor,
+    )
 
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -182,7 +630,8 @@ fun PlayerScreen(
                 retriever.setDataSource(context, song.uri)
 
                 // Obtener mime type para el formato
-                val mimeType = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
+                val mimeType =
+                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
                 audioFormat =
                     when {
                         mimeType?.contains("flac", ignoreCase = true) == true -> "FLAC"
@@ -203,7 +652,8 @@ fun PlayerScreen(
                     }
 
                 // Obtener sample rate (Hz)
-                val sampleRate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
+                val sampleRate =
+                    retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
                 audioSampleRate =
                     if (sampleRate != null) {
                         val khz = sampleRate.toInt() / 1000.0
@@ -351,8 +801,8 @@ fun PlayerScreen(
                                 text =
                                     "No hay letras para esta canción",
                                 fontSize = 18.sp,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Companion.Medium,
+                                textAlign = TextAlign.Companion.Center,
                                 color = LocalExtendedColors.current.textSecondary,
                             )
                         }
@@ -431,7 +881,10 @@ fun PlayerScreen(
                 }
 
             Column(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = verticalPadding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = verticalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -449,10 +902,10 @@ fun PlayerScreen(
                             .fillMaxWidth(imageWidthPercent)
                             .aspectRatio(1f)
                             .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop,
+                    contentScale = ContentScale.Companion.Crop,
                 )
 
-                Spacer(Modifier.height(betweenSpacer))
+                Spacer(Modifier.Companion.height(betweenSpacer))
 
                 SongTitleSection(
                     title = song.title,
@@ -463,7 +916,8 @@ fun PlayerScreen(
                     secondaryContentColor = playerSecondaryColor,
                     onArtistClick = {
                         // Extraer artista principal cuando hay múltiples artistas
-                        val mainArtist = normalizeArtistName(song.artist).firstOrNull() ?: song.artist
+                        val mainArtist =
+                            normalizeArtistName(song.artist).firstOrNull() ?: song.artist
                         onNavigateToArtist(mainArtist)
                     },
                     onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
@@ -500,7 +954,9 @@ fun PlayerScreen(
                                     song.id,
                                 )
                                 isFavorite = false
-                                Toast.makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT).show()
+                                Toast
+                                    .makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT)
+                                    .show()
                             } else {
                                 // Agregar a favoritos
                                 val favorites = playlists.find { it.name == favoritesName }
@@ -509,7 +965,9 @@ fun PlayerScreen(
                                 }
                                 playlistViewModel.addSongToPlaylist(favoritesName, song.id)
                                 isFavorite = true
-                                Toast.makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT).show()
+                                Toast
+                                    .makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT)
+                                    .show()
                             }
                         },
                     ) {
@@ -525,7 +983,7 @@ fun PlayerScreen(
                         )
                     }
 
-                    Spacer(Modifier.width(16.dp))
+                    Spacer(Modifier.Companion.width(16.dp))
 
                     IconButton(onClick = { showQueue = true }) {
                         Icon(
@@ -563,7 +1021,12 @@ fun PlayerScreen(
                 AlertDialog(
                     onDismissRequest = { showAddToPlaylistDialog = false },
                     containerColor = MaterialTheme.colorScheme.surface,
-                    title = { Text("Agregar a Playlist", color = MaterialTheme.colorScheme.onBackground) },
+                    title = {
+                        Text(
+                            "Agregar a Playlist",
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    },
                     text = {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
@@ -637,7 +1100,10 @@ fun PlayerScreen(
                                         TextButton(onClick = {
                                             if (newPlaylistName.isNotBlank()) {
                                                 playlistViewModel.createPlaylist(newPlaylistName)
-                                                playlistViewModel.addSongToPlaylist(newPlaylistName, song.id)
+                                                playlistViewModel.addSongToPlaylist(
+                                                    newPlaylistName,
+                                                    song.id,
+                                                )
                                                 Toast
                                                     .makeText(
                                                         context,
@@ -677,7 +1143,7 @@ fun PlayerScreen(
 
                             LazyColumn(
                                 modifier =
-                                    Modifier.heightIn(
+                                    Modifier.Companion.heightIn(
                                         max = 200.dp,
                                     ),
                             ) {
@@ -688,8 +1154,16 @@ fun PlayerScreen(
                                                 .fillMaxWidth()
                                                 .padding(vertical = 6.dp)
                                                 .clickable {
-                                                    playlistViewModel.addSongToPlaylist(playlist.name, song.id)
-                                                    Toast.makeText(context, "Agregado a ${playlist.name}", Toast.LENGTH_SHORT).show()
+                                                    playlistViewModel.addSongToPlaylist(
+                                                        playlist.name,
+                                                        song.id,
+                                                    )
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            "Agregado a ${playlist.name}",
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
                                                     showAddToPlaylistDialog = false
                                                 },
                                         colors =
@@ -699,7 +1173,7 @@ fun PlayerScreen(
                                                         LocalExtendedColors.current.surfaceSheet,
                                                 ),
                                         shape =
-                                            RoundedCornerShape(
+                                            androidx.compose.foundation.shape.RoundedCornerShape(
                                                 8.dp,
                                             ),
                                     ) {
@@ -778,7 +1252,7 @@ fun PlayerScreen(
                             text = "Próximas canciones",
                             color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Companion.Bold,
                         )
 
                         Spacer(Modifier.height(12.dp))
@@ -846,7 +1320,8 @@ fun PlayerScreen(
 
                                                     val edgeThresholdPx = 72
                                                     val autoScrollStepPx = 24f
-                                                    val viewportStart = layoutInfo.viewportStartOffset
+                                                    val viewportStart =
+                                                        layoutInfo.viewportStartOffset
                                                     val viewportEnd = layoutInfo.viewportEndOffset
 
                                                     if (visibleY <= viewportStart + edgeThresholdPx) {
@@ -1037,14 +1512,14 @@ fun PlayerScreen(
                                                             .value,
                                                 ).shadow(
                                                     elevation,
-                                                    RoundedCornerShape(
+                                                    androidx.compose.foundation.shape.RoundedCornerShape(
                                                         12.dp,
                                                     ),
                                                     clip =
                                                     true,
                                                 ).background(
                                                     MaterialTheme.colorScheme.surface,
-                                                    RoundedCornerShape(
+                                                    androidx.compose.foundation.shape.RoundedCornerShape(
                                                         12.dp,
                                                     ),
                                                 ).border(
@@ -1061,7 +1536,7 @@ fun PlayerScreen(
                                                             MaterialTheme.colorScheme.outline
                                                         },
                                                     shape =
-                                                        RoundedCornerShape(
+                                                        androidx.compose.foundation.shape.RoundedCornerShape(
                                                             12.dp,
                                                         ),
                                                 ).padding(
@@ -1076,11 +1551,11 @@ fun PlayerScreen(
                                     ) {
                                         Box(
                                             modifier =
-                                                Modifier
+                                                Modifier.Companion
                                                     .size(
                                                         48.dp,
                                                     ).clip(
-                                                        RoundedCornerShape(
+                                                        androidx.compose.foundation.shape.RoundedCornerShape(
                                                             8.dp,
                                                         ),
                                                     ).background(
@@ -1092,7 +1567,7 @@ fun PlayerScreen(
                                             ) {
                                                 Image(
                                                     painter =
-                                                        BitmapPainter(
+                                                        androidx.compose.ui.graphics.painter.BitmapPainter(
                                                             albumArtBitmap!!
                                                                 .asImageBitmap(),
                                                         ),
@@ -1101,7 +1576,7 @@ fun PlayerScreen(
                                                     modifier =
                                                         Modifier.fillMaxSize(),
                                                     contentScale =
-                                                        ContentScale
+                                                        ContentScale.Companion
                                                             .Crop,
                                                 )
                                             } else {
@@ -1152,7 +1627,7 @@ fun PlayerScreen(
                                                 maxLines =
                                                 1,
                                                 overflow =
-                                                    TextOverflow
+                                                    TextOverflow.Companion
                                                         .Ellipsis,
                                             )
                                             Text(
@@ -1166,7 +1641,7 @@ fun PlayerScreen(
                                                 maxLines =
                                                 1,
                                                 overflow =
-                                                    TextOverflow
+                                                    TextOverflow.Companion
                                                         .Ellipsis,
                                             )
                                         }
@@ -1256,9 +1731,9 @@ fun SongTitleSection(
             text = title,
             color = primaryContentColor,
             fontSize = titleFontSize,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Companion.Bold,
             maxLines = 1,
-            overflow = TextOverflow.Visible,
+            overflow = TextOverflow.Companion.Visible,
             modifier = Modifier.fillMaxWidth().basicMarquee(),
         )
 
@@ -1291,7 +1766,7 @@ fun SongTitleSection(
                             text = "Opciones",
                             color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.Companion.Bold,
                         )
 
                         Spacer(Modifier.height(12.dp))
@@ -1316,7 +1791,7 @@ fun SongTitleSection(
                                     Modifier
                                         .size(56.dp)
                                         .clip(
-                                            RoundedCornerShape(
+                                            androidx.compose.foundation.shape.RoundedCornerShape(
                                                 8.dp,
                                             ),
                                         ).background(
@@ -1327,7 +1802,7 @@ fun SongTitleSection(
                                 if (albumArt != null) {
                                     Image(
                                         painter =
-                                            BitmapPainter(
+                                            androidx.compose.ui.graphics.painter.BitmapPainter(
                                                 albumArt.asImageBitmap(),
                                             ),
                                         contentDescription =
@@ -1335,7 +1810,7 @@ fun SongTitleSection(
                                         modifier =
                                             Modifier.fillMaxSize(),
                                         contentScale =
-                                            ContentScale
+                                            ContentScale.Companion
                                                 .Crop,
                                     )
                                 } else {
@@ -1395,7 +1870,7 @@ fun SongTitleSection(
                                     Modifier
                                         .size(56.dp)
                                         .clip(
-                                            RoundedCornerShape(
+                                            androidx.compose.foundation.shape.RoundedCornerShape(
                                                 8.dp,
                                             ),
                                         ).background(MaterialTheme.colorScheme.outline),
@@ -1404,7 +1879,7 @@ fun SongTitleSection(
                                 if (albumArt != null) {
                                     Image(
                                         painter =
-                                            BitmapPainter(
+                                            androidx.compose.ui.graphics.painter.BitmapPainter(
                                                 albumArt.asImageBitmap(),
                                             ),
                                         contentDescription =
@@ -1412,7 +1887,7 @@ fun SongTitleSection(
                                         modifier =
                                             Modifier.fillMaxSize(),
                                         contentScale =
-                                            ContentScale
+                                            ContentScale.Companion
                                                 .Crop,
                                     )
                                 } else {
@@ -1584,7 +2059,9 @@ fun PlayerControls(
                         .size(buttonSize)
                         .background(
                             MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(50),
+                            shape =
+                                androidx.compose.foundation.shape
+                                    .RoundedCornerShape(50),
                         ),
             ) {
                 Icon(
@@ -1646,7 +2123,11 @@ fun PlayerControls(
                         if (audioFormat.isNotEmpty()) append(audioFormat)
                         if (audioFormat.isNotEmpty() && audioBitrate.isNotEmpty()) append(" • ")
                         if (audioBitrate.isNotEmpty()) append(audioBitrate)
-                        if ((audioFormat.isNotEmpty() || audioBitrate.isNotEmpty()) && audioSampleRate.isNotEmpty()) append(" • ")
+                        if ((audioFormat.isNotEmpty() || audioBitrate.isNotEmpty()) && audioSampleRate.isNotEmpty()) {
+                            append(
+                                " • ",
+                            )
+                        }
                         if (audioSampleRate.isNotEmpty()) append(audioSampleRate)
                     },
                 color = metaColor,
@@ -1657,7 +2138,7 @@ fun PlayerControls(
                         isTallLayout -> 12.sp
                         else -> 11.sp
                     },
-                textAlign = TextAlign.Center,
+                textAlign = TextAlign.Companion.Center,
             )
         }
     }
