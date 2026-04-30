@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
-import com.cvc953.localplayer.ui.PlaylistAlbumArt
+import com.cvc953.localplayer.ui.components.PlaylistAlbumArt
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 
