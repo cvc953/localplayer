@@ -90,9 +90,14 @@ fun ArtistSongsScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(artistSongs) { song ->
-                DraggableSwipeRow(onSwipeThreshold = {
-                    playbackViewModel.addToQueueNext(song)
-                }) {
+                DraggableSwipeRow(
+                    onSwipeThreshold = {
+                        playbackViewModel.addToQueueNext(song)
+                    },
+                    onSwipeLeftThreshold = {
+                        playbackViewModel.addToQueueEnd(song)
+                    },
+                ) {
                     SongItem(
                         song = song,
                         isPlaying = false,

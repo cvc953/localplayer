@@ -48,8 +48,8 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.extendedColors
-import com.cvc953.localplayer.ui.normalizeAlbumName
-import com.cvc953.localplayer.ui.normalizeArtistName
+import com.cvc953.localplayer.ui.screens.normalizeAlbumName
+import com.cvc953.localplayer.ui.screens.normalizeArtistName
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.Dispatchers

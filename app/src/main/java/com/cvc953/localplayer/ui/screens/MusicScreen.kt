@@ -400,6 +400,15 @@ fun SongsContent(
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                 },
+                                onSwipeLeftThreshold = {
+                                    playbackViewModel.addToQueueEnd(song)
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            "Añadido al final de la cola",
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
+                                },
                             ) {
                                 SongItem(
                                     song = song,
