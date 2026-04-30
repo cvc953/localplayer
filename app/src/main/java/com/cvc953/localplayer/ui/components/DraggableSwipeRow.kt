@@ -38,9 +38,6 @@ import kotlinx.coroutines.launch
  * Cuando el usuario desliza el contenido más allá del umbral, se dispara el callback [onSwipeThreshold].
  * El componente mostrará un ícono y animará el contenido suavemente.
  *
- * @param modifier Modificador para el contenedor
- * @param onSwipeThreshold Callback que se dispara cuando el usuario desliza más allá del 40% del ancho
- * @param content El contenido que será envuelto con la funcionalidad de swipe
  */
 @Composable
 fun DraggableSwipeRow(
