@@ -507,6 +507,12 @@ fun AlbumsScreen(
                                                     toAdd.reversed().forEach {
                                                         playbackViewModel.addToQueueNext(it)
                                                     }
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            "Añadido ${toAdd.size} canciones como siguiente",
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
                                                 },
                                             )
                                             DropdownMenuItem(
@@ -526,6 +532,12 @@ fun AlbumsScreen(
                                                             it,
                                                         )
                                                     }
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            "Añadido ${toAdd.size} canciones al final de la cola",
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
                                                 },
                                             )
                                         }
@@ -783,6 +795,12 @@ fun AlbumsScreen(
                                                 toAdd
                                                     .reversed()
                                                     .forEach { playbackViewModel.addToQueueNext(it) }
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Añadido ${toAdd.size} canciones como siguiente",
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
                                             },
                                         )
                                         DropdownMenuItem(
@@ -816,6 +834,12 @@ fun AlbumsScreen(
                                                 val toAdd =
                                                     albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
                                                 toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Añadido ${toAdd.size} canciones al final de la cola",
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
                                             },
                                         )
                                     }
