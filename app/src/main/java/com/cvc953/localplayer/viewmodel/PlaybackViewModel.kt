@@ -755,14 +755,30 @@ class PlaybackViewModel(
         val currentIndex = queue.indexOf(current)
         if (currentIndex == -1) return
 
-        // Get the next song index
-        val nextIndex = currentIndex + 1
+        // Get the next song and SKIP duplicates (songs with same ID as current)
+        var nextIndex = currentIndex + 1
+        val currentId = current.id
+        
+        // Loop to find next different song
+        while (nextIndex < queue.size && queue[nextIndex].id == currentId) {
+            nextIndex++
+        }
+        
         if (nextIndex < queue.size) {
-            // Play the next song in the queue (respects shuffle if queue was already shuffled)
+            // Play the next different song in the queue
             play(queue[nextIndex])
         } else if (_repeatMode.value == RepeatMode.ALL) {
-            // Loop back to the beginning
-            play(queue[0])
+            // If we hit end, loop back to beginning AND skip duplicates from start
+            var newStart = 0
+            while (newStart < queue.size && queue[newStart].id == currentId) {
+                newStart++
+            }
+            if (newStart < queue.size) {
+                play(queue[newStart])
+            } else if (queue.isNotEmpty()) {
+                // If all songs have same ID, just play first
+                play(queue[0])
+            }
         }
         // If RepeatMode.NONE and we're at the end, don't play anything
     }
