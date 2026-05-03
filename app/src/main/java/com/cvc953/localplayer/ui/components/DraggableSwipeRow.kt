@@ -8,6 +8,7 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -33,19 +35,18 @@ import kotlinx.coroutines.launch
 
 @Suppress("ktlint:standard:function-naming")
 /*
- * Componente reutilizable que proporciona funcionalidad de deslizar a la izquierda.
+ * Componente reutilizable que proporciona funcionalidad de deslizar horizontalmente.
  *
- * Cuando el usuario desliza el contenido más allá del umbral, se dispara el callback [onSwipeThreshold].
+ * Cuando el usuario desliza el contenido más allá del umbral hacia la derecha, se dispara el callback [onSwipeThreshold].
+ * Cuando el usuario desliza el contenido más allá del umbral hacia la izquierda, se dispara el callback [onSwipeLeftThreshold].
  * El componente mostrará un ícono y animará el contenido suavemente.
  *
- * @param modifier Modificador para el contenedor
- * @param onSwipeThreshold Callback que se dispara cuando el usuario desliza más allá del 40% del ancho
- * @param content El contenido que será envuelto con la funcionalidad de swipe
  */
 @Composable
 fun DraggableSwipeRow(
     onSwipeThreshold: () -> Unit,
     modifier: Modifier = Modifier,
+    onSwipeLeftThreshold: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val dragOffsetX = remember { Animatable(0f) }
@@ -72,7 +73,7 @@ fun DraggableSwipeRow(
             itemScope.launch {
                 dragOffsetX.snapTo(
                     (dragOffsetX.value + delta).coerceIn(
-                        0f,
+                        -maxOffsetPx,
                         maxOffsetPx,
                     ),
                 )
@@ -80,7 +81,7 @@ fun DraggableSwipeRow(
         }
 
     val progress =
-        (dragOffsetX.value / maxOffsetPx).coerceIn(0f, 1f)
+        (dragOffsetX.value / maxOffsetPx).coerceIn(-1f, 1f)
 
     Box(
         modifier =
@@ -93,6 +94,7 @@ fun DraggableSwipeRow(
                     orientation = Orientation.Horizontal,
                     onDragStopped = {
                         itemScope.launch {
+                            // Drag hacia la derecha
                             if (dragOffsetX.value > thresholdPx) {
                                 onSwipeThreshold()
                                 dragOffsetX.animateTo(
@@ -100,7 +102,18 @@ fun DraggableSwipeRow(
                                     animationSpec = tween(100),
                                 )
                                 dragOffsetX.snapTo(0f)
-                            } else {
+                            }
+                            // Drag hacia la izquierda
+                            else if (dragOffsetX.value < -thresholdPx && onSwipeLeftThreshold != null) {
+                                onSwipeLeftThreshold()
+                                dragOffsetX.animateTo(
+                                    -maxOffsetPx,
+                                    animationSpec = tween(100),
+                                )
+                                dragOffsetX.snapTo(0f)
+                            }
+                            // Vuelve a la posición inicial
+                            else {
                                 dragOffsetX.animateTo(
                                     0f,
                                     animationSpec = tween(100),
@@ -111,7 +124,8 @@ fun DraggableSwipeRow(
                 ),
     ) {
         // Fondo con ícono que se muestra cuando el usuario arrastra
-        if (progress > 0f) {
+        if (progress != 0f) {
+            val isRightDrag = dragOffsetX.value > 0
             Box(
                 modifier =
                     Modifier
@@ -120,14 +134,14 @@ fun DraggableSwipeRow(
                             horizontal = 8.dp,
                             vertical = 4.dp,
                         ),
-                contentAlignment = Alignment.CenterStart,
+                contentAlignment = if (isRightDrag) Alignment.CenterStart else Alignment.CenterEnd,
             ) {
                 val iconWidth = with(density) { 24.dp.toPx() }
                 val spacerWidth = with(density) { 40.dp.toPx() }
                 val iconTriggerOffset = iconWidth + spacerWidth
                 val iconOffsetPx =
-                    if (dragOffsetX.value > iconTriggerOffset) {
-                        dragOffsetX.value - iconTriggerOffset
+                    if (kotlin.math.abs(dragOffsetX.value) > iconTriggerOffset) {
+                        kotlin.math.abs(dragOffsetX.value) - iconTriggerOffset
                     } else {
                         0f
                     }
@@ -139,20 +153,21 @@ fun DraggableSwipeRow(
                             .fillMaxWidth()
                             .heightIn(min = 68.dp)
                             .background(
-                                MaterialTheme.colorScheme.primary,
+                                if (isRightDrag) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.tertiary,
                             ).padding(
                                 horizontal = 16.dp,
                                 vertical = 12.dp,
                             ),
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = if (isRightDrag) Arrangement.Start else Arrangement.End,
                 ) {
                     Box(
                         modifier =
                             Modifier
-                                .offset(x = iconOffsetDp),
+                                .offset(x = if (isRightDrag) iconOffsetDp else -iconOffsetDp),
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.QueueMusic,
+                            imageVector = if (isRightDrag) Icons.AutoMirrored.Filled.QueueMusic else Icons.Filled.PlaylistAdd,
                             contentDescription = null,
                             tint = Color.White,
                             modifier = Modifier.size(24.dp),
