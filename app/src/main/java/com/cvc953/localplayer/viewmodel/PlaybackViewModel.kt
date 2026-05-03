@@ -585,6 +585,40 @@ class PlaybackViewModel(
         }
     }
 
+    fun addToQueueNextAll(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        val currentQueue = _queue.value.toMutableList()
+        val currentIndex = playerState.value.currentSong?.let { currentQueue.indexOf(it) } ?: -1
+        val insertIndex = if (currentIndex >= 0) currentIndex + 1 else 0
+        songs.reversed().forEach { song ->
+            if (currentQueue.none { it.id == song.id }) {
+                currentQueue.add(insertIndex, song)
+            }
+        }
+        _queue.value = currentQueue
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+        } catch (_: Exception) {
+        }
+    }
+
+    fun addToQueueEndAll(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        val currentQueue = _queue.value.toMutableList()
+        songs.forEach { song ->
+            if (currentQueue.none { it.id == song.id }) {
+                currentQueue.add(song)
+            }
+        }
+        _queue.value = currentQueue
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+        } catch (_: Exception) {
+        }
+    }
+
     fun removeFromQueue(song: Song) {
         _queue.value = _queue.value.filterNot { it.id == song.id }
         try {

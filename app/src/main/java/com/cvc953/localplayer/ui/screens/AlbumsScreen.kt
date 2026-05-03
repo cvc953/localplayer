@@ -504,9 +504,7 @@ fun AlbumsScreen(
                                                     val currentQueue = playbackViewModel.queue.value
                                                     val toAdd =
                                                         albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.reversed().forEach {
-                                                        playbackViewModel.addToQueueNext(it)
-                                                    }
+                                                    playbackViewModel.addToQueueNextAll(toAdd)
                                                     Toast
                                                         .makeText(
                                                             context,
@@ -527,11 +525,7 @@ fun AlbumsScreen(
                                                     val currentQueue = playbackViewModel.queue.value
                                                     val toAdd =
                                                         albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.forEach {
-                                                        playbackViewModel.addToQueueEnd(
-                                                            it,
-                                                        )
-                                                    }
+                                                    playbackViewModel.addToQueueEndAll(toAdd)
                                                     Toast
                                                         .makeText(
                                                             context,
