@@ -59,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.ui.screens.formatDuration
 import com.cvc953.localplayer.ui.theme.ExtendedColors
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel

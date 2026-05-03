@@ -138,10 +138,16 @@ fun AlbumDetailScreen(
             items(albumSongs) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
 
-                DraggableSwipeRow(onSwipeThreshold = {
-                    playbackViewModel.addToQueueNext(song)
-                    Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
-                }) {
+                DraggableSwipeRow(
+                    onSwipeThreshold = {
+                        playbackViewModel.addToQueueNext(song)
+                        Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                    },
+                    onSwipeLeftThreshold = {
+                        playbackViewModel.addToQueueEnd(song)
+                        Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                    },
+                ) {
                     SongItem(
                         song = song,
                         isPlaying = isCurrent,

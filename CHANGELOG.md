@@ -11,6 +11,32 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Widgets para la pantalla de inicio
 - Temas personalizables
 
+## [1.0.7] - 2026-05-03
+
+### Añadido
+- 🇪🇸🇺🇸 Localización completa en inglés y español con metadatos e imágenes
+- 📲 Iconos de app actualizados para inglés y español
+- 🍞 Notificaciones toast para acciones de cola en Albums, Artists, Playlists y MusicScreen
+- 👆 Accion swipe-left en DraggableSwipeRow para agregar canciones al final de la cola
+- 📂 Pantallas MusicScreen, PlaylistsScreen, PlaylistDetailScreen y SettingsScreen mejoradas
+- 📋 Fastlane movido a la raíz para compatibilidad con mantenedores de F-Droid
+
+### Cambiado
+- ⚙️ Refactorización de MusicScreen y PlaylistsScreen con funcionalidades avanzadas
+- 🎨 UI de pantallas mejorada con características adicionales
+
+### Corregido
+- 🐛 Inclusión de metadatos de dependencias deshabilitada en APK y bundle
+- 🐛 Mensajes toast actualizados para consistencia en agregar canciones a la cola
+- 🐛 Optimización de actualizaciones de progreso y sincronización de posición de letras
+- 🐛 Ajuste de duración de animaciones para gestos de arrastre
+- 🐛 Opacidad de color de letras inactivas corregida
+- 🐛 Visualización de toast message en ArtistDetailScreen corregida
+- 🐛 Bug que causaba collapse de letras japonesas entre sí
+
+### Técnico
+- 🏗️ ViewModels dedicados para funcionalidades de Pantallas mejoradas
+
 ## [1.0.5] - 2026-03-25
 
 ### Añadido
@@ -117,7 +143,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `Corregido` para correcciones de bugs
 - `Seguridad` para vulnerabilidades corregidas
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.5...HEAD
-[1.0.5]: https://github.com/cvc953/localplayer/compare/v1.0.4...v1.0.5
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.7...HEAD
+[1.0.7]: https://github.com/cvc953/localplayer/compare/v1.0.5...v1.0.7
 [1.0.4]: https://github.com/cvc953/localplayer/compare/v1.0.0...v1.0.4
 [1.0.0]: https://github.com/cvc953/localplayer/releases/tag/v1.0.0

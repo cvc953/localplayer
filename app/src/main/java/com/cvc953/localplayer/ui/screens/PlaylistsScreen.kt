@@ -155,32 +155,32 @@ fun PlaylistsScreen(
 
     if (isScanning) {
         Column(
-            modifier = Modifier.Companion.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Companion.CenterHorizontally,
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.Companion.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             Text("Escaneando canciones", color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
 
     Box(
-        modifier = Modifier.Companion.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        Column(modifier = Modifier.Companion.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                modifier = Modifier.Companion.fillMaxWidth().padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.Companion.CenterVertically,
             ) {
                 Text(
                     text = "Listas",
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Companion.Bold,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
-                    modifier = Modifier.Companion.weight(1f),
+                    modifier = Modifier.weight(1f),
                 )
 
                 Box {
@@ -479,13 +479,13 @@ fun PlaylistsScreen(
 
             Row(
                 modifier =
-                    Modifier.Companion
+                    Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.Companion.CenterVertically,
             ) {
-                Spacer(Modifier.Companion.width(8.dp))
+                Spacer(Modifier.width(8.dp))
 
                 Column(horizontalAlignment = Alignment.Companion.CenterHorizontally) {
                     IconButton(onClick = { treeLauncher.launch(null) }) {
@@ -502,7 +502,7 @@ fun PlaylistsScreen(
                     )
                 }
 
-                Spacer(Modifier.Companion.width(24.dp))
+                Spacer(Modifier.width(24.dp))
 
                 Column(horizontalAlignment = Alignment.Companion.CenterHorizontally) {
                     IconButton(onClick = { showCreateDialog = true }) {
@@ -522,15 +522,15 @@ fun PlaylistsScreen(
 
             if (sortedPlaylists.isEmpty()) {
                 Column(
-                    modifier = Modifier.Companion.fillMaxSize().padding(16.dp),
-                    horizontalAlignment = Alignment.Companion.CenterHorizontally,
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         text = "No hay listas por ahora",
                         color = MaterialTheme.colorScheme.onBackground,
                     )
-                    Spacer(modifier = Modifier.Companion.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = { showCreateDialog = true },
                         colors =
@@ -541,7 +541,7 @@ fun PlaylistsScreen(
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.Companion.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     contentPadding =
                         PaddingValues(
                             start = 16.dp,
@@ -553,21 +553,21 @@ fun PlaylistsScreen(
                 ) {
                     items(sortedPlaylists) { playlist ->
                         Row(
-                            modifier = Modifier.Companion.fillMaxWidth().padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.Companion.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             PlaylistAlbumArt(
                                 playlistSongIds = playlist.songIds,
                                 songs = songs,
                                 context = LocalContext.current,
                                 modifier =
-                                    Modifier.Companion
+                                    Modifier
                                         .size(60.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .clickable { onPlaylistClick(playlist.name) },
                             )
 
-                            Spacer(modifier = Modifier.Companion.width(12.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
                             Column(
                                 modifier =

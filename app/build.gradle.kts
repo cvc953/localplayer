@@ -17,8 +17,8 @@ android {
         applicationId = "com.cvc953.localplayer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "1.0.6"
+        versionCode = 7
+        versionName = "1.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
