@@ -502,8 +502,8 @@ fun AlbumsScreen(
                                                 onClick = {
                                                     menuExpanded = false
                                                     val currentQueue = playbackViewModel.queue.value
-                                                    val toAdd =
-                                                        albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                    // NO filter duplicates when adding full album - user expects ALL songs added
+                                                    val toAdd = albumSongs
                                                     playbackViewModel.addToQueueNextAll(toAdd)
                                                     Toast
                                                         .makeText(
@@ -523,8 +523,8 @@ fun AlbumsScreen(
                                                 onClick = {
                                                     menuExpanded = false
                                                     val currentQueue = playbackViewModel.queue.value
-                                                    val toAdd =
-                                                        albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
+                                                    // NO filter duplicates when adding full album
+                                                    val toAdd = albumSongs
                                                     playbackViewModel.addToQueueEndAll(toAdd)
                                                     Toast
                                                         .makeText(

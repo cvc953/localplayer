@@ -590,10 +590,9 @@ class PlaybackViewModel(
         val currentQueue = _queue.value.toMutableList()
         val currentIndex = playerState.value.currentSong?.let { currentQueue.indexOf(it) } ?: -1
         val insertIndex = if (currentIndex >= 0) currentIndex + 1 else 0
+        // Add ALL songs without filtering duplicates
         songs.reversed().forEach { song ->
-            if (currentQueue.none { it.id == song.id }) {
-                currentQueue.add(insertIndex, song)
-            }
+            currentQueue.add(insertIndex, song)
         }
         _queue.value = currentQueue
         try {
@@ -606,10 +605,9 @@ class PlaybackViewModel(
     fun addToQueueEndAll(songs: List<Song>) {
         if (songs.isEmpty()) return
         val currentQueue = _queue.value.toMutableList()
+        // Add ALL songs without filtering duplicates
         songs.forEach { song ->
-            if (currentQueue.none { it.id == song.id }) {
-                currentQueue.add(song)
-            }
+            currentQueue.add(song)
         }
         _queue.value = currentQueue
         try {
