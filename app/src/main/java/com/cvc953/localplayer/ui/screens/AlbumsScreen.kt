@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -176,20 +177,20 @@ fun AlbumsScreen(
     }
 
     Box(
-        modifier = Modifier.Companion.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        Column(modifier = Modifier.Companion.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                modifier = Modifier.Companion.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.Companion.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "Álbumes",
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Companion.Bold,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
-                    modifier = Modifier.Companion.weight(1f),
+                    modifier = Modifier.weight(1f),
                 )
 
                 Box {
@@ -283,10 +284,10 @@ fun AlbumsScreen(
                 )
             }
 
-            Box(modifier = Modifier.Companion.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 if (viewAsGrid) {
                     LazyVerticalGrid(
-                        modifier = Modifier.Companion.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         columns = GridCells.Adaptive(140.dp),
                         state = gridState,
                         contentPadding = PaddingValues(12.dp),
