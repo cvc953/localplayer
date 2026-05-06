@@ -11,6 +11,7 @@
     <string name="sort_title_desc">Title Z-A</string>
     <string name="toast_added_next_count">Added %1$d songs as next</string>
     <string name="toast_added_queue_end_count">Added %1$d songs to queue end</string>
+    <string name="action_go_back">Back</string>
     <string name="action_toggle_view">Toggle view</string>
     <string name="search_albums_placeholder">Search by album</string>
     <string name="action_play_now">Play now</string>

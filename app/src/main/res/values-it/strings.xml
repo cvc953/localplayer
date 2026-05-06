@@ -11,6 +11,7 @@
     <string name="sort_title_desc">Titolo Z-A</string>
     <string name="toast_added_next_count">Aggiunto %1$d canzoni come successivo</string>
     <string name="toast_added_queue_end_count">Aggiunto %1$d canzoni alla fine</string>
+    <string name="action_go_back">Indietro</string>
     <string name="action_toggle_view">Cambia vista</string>
     <string name="search_albums_placeholder">Cerca per album</string>
     <string name="action_play_now">Riproduci ora</string>
