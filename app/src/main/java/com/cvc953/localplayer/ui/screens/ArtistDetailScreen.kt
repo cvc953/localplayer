@@ -273,7 +273,7 @@ fun ArtistDetailScreen(
                                         overflow = TextOverflow.Companion.Ellipsis,
                                     )
                                     Text(
-                                        text = "${albumSongs.size} canciones",
+                                        text = stringResource(R.string.songs_count, albumSongs.size),
                                         color = md_textSecondary,
                                         fontSize = 12.sp,
                                     )
