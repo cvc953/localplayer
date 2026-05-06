@@ -181,7 +181,7 @@ fun ArtistDetailScreen(
                             Toast
                                 .makeText(
                                     context,
-                                    "Añadido al final de la cola",
+                                    context.getString(R.string.toast_added_queue_end_count, 1),
                                     Toast.LENGTH_SHORT,
                                 ).show()
                         },
@@ -207,7 +207,7 @@ fun ArtistDetailScreen(
                 if (albums.isNotEmpty()) {
                     Column(modifier = Modifier.Companion.fillMaxWidth()) {
                         Text(
-                            text = "Álbumes",
+                            text = stringResource(R.string.albums_title),
                             fontWeight = FontWeight.Companion.Bold,
                             fontSize = 20.sp,
                             color = MaterialTheme.colorScheme.onBackground,

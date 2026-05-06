@@ -12,6 +12,7 @@
     <string name="toast_added_next_count">Añadido %1$d canciones como siguiente</string>
     <string name="toast_added_queue_end_count">Añadido %1$d canciones al final</string>
     <string name="action_go_back">Volver</string>
+    <string name="unknown">Desconocido</string>
     <string name="toast_added_to_playlist">Añadido a %1$s</string>
     <string name="action_toggle_view">Cambiar vista</string>
     <string name="search_albums_placeholder">Buscar por álbum</string>
