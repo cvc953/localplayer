@@ -486,7 +486,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones como siguiente",
+                                                            context.getString(R.string.toast_added_next_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -507,7 +507,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones al final de la cola",
+                                                            context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -535,7 +535,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                         }
                                     }
                                 Text(
-                                    text = "$songCount canciones",
+                                    text = stringResource(R.string.songs_count, songCount),
                                     color = MaterialTheme.extendedColors.textSecondary,
                                     fontSize = 12.sp,
                                 )
@@ -657,7 +657,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                         overflow = TextOverflow.Companion.Ellipsis,
                                     )
                                     Text(
-                                        text = "${artist.songCount} canciones",
+                                        text = stringResource(R.string.songs_count, artist.songCount),
                                         color = md_textSecondary,
                                         fontSize = 12.sp,
                                         maxLines = 1,
@@ -739,7 +739,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones como siguiente",
+                                                        context.getString(R.string.toast_added_next_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },
@@ -760,7 +760,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones al final de la cola",
+                                                        context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },
