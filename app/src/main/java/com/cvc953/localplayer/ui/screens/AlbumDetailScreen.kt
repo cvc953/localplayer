@@ -40,6 +40,7 @@ import com.cvc953.localplayer.ui.headers.AlbumHeader
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import com.cvc953.localplayer.R
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -166,12 +167,12 @@ fun AlbumDetailScreen(
                         },
                         onQueueEnd = {
                             playbackViewModel.addToQueueEnd(song)
-                            Toast
-                                .makeText(
-                                    context,
-                                    "Añadido al final de la cola",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            context.getString(R.string.toast_added_queue_end),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
                         },
                         playlists = playlists,
                         onAddToPlaylist = { playlistName, songId ->
