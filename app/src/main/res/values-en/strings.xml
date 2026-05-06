@@ -1,0 +1,83 @@
+<resources>
+    <string name="app_name">localplayer</string>
+
+    <string name="action_sort">Sort</string>
+    <string name="sort_title_asc">Title A-Z</string>
+    <string name="sort_title_desc">Title Z-A</string>
+    <string name="action_search">Search</string>
+    <string name="search_playlists_placeholder">Search by list</string>
+    <string name="action_import">Import</string>
+    <string name="action_import_lowercase">import</string>
+    <string name="action_create_playlist">Create list</string>
+    <string name="action_create_lowercase">create</string>
+    <string name="playlists_empty_state">No playlists yet</string>
+    <string name="songs_count">%1$d songs</string>
+    <string name="action_more_options">Options</string>
+    <string name="action_play_now">Play now</string>
+    <string name="action_add_next">Add as next</string>
+    <string name="toast_added_next_count">Added %1$d songs as next</string>
+    <string name="action_add_to_queue_end">Add to end</string>
+    <string name="toast_added_queue_end_count">Added %1$d songs to queue end</string>
+    <string name="action_export">Export</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_delete">Delete</string>
+    <string name="dialog_delete_playlist_title">Delete playlist</string>
+    <string name="dialog_delete_playlist_message">Playlist \"%1$s\" will be deleted.</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="dialog_create_playlist_title">New playlist</string>
+    <string name="playlist_name_placeholder">Playlist name</string>
+    <string name="error_playlist_name_invalid">Invalid or duplicate name</string>
+    <string name="action_create">Create</string>
+    <string name="dialog_rename_playlist_title">Rename playlist</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_subtitle">Customize app and your library</string>
+    <string name="action_close">Close</string>
+    <string name="settings_section_appearance_title">Appearance and behavior</string>
+    <string name="settings_section_appearance_subtitle">Global display and scan options</string>
+    <string name="settings_theme_label">Theme</string>
+    <string name="settings_theme_description">Select app theme</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="settings_accent_color_label">Accent color</string>
+    <string name="settings_accent_color_description">Select app accent color</string>
+    <string name="settings_dynamic_color_label">Dynamic color</string>
+    <string name="settings_dynamic_color_description">Use album art color in player</string>
+
+    <string name="settings_section_language_title">Language</string>
+    <string name="settings_section_language_subtitle">Select app language</string>
+    <string name="settings_language_label">Language</string>
+    <string name="settings_language_description">Choose system default or specific language</string>
+    <string name="language_system_label">System</string>
+    <string name="language_spanish">Spanish</string>
+    <string name="language_english">English</string>
+    <string name="language_italian">Italian</string>
+
+    <string name="settings_section_audio_title">Audio</string>
+    <string name="settings_section_audio_subtitle">Equalizer control and sound processing</string>
+    <string name="settings_equalizer_enable_label">Enable equalizer</string>
+    <string name="settings_equalizer_enable_description">Use native system equalizer</string>
+    <string name="action_open_equalizer">Open advanced equalizer</string>
+
+    <string name="settings_section_library_title">Library</string>
+    <string name="settings_section_library_subtitle">Manage folders included in music</string>
+    <string name="settings_auto_scan_label">Auto scan</string>
+    <string name="settings_auto_scan_description">Detect changes and scan automatically</string>
+    <string name="action_add_folder">Add folder</string>
+    <string name="settings_folders_configured_title">Configured folders</string>
+    <string name="settings_folders_empty">No folders configured</string>
+    <string name="dialog_delete_folder_title">Delete folder</string>
+    <string name="dialog_delete_folder_message">Delete folder \"%1$s\"?\n\n%2$d songs from this folder will no longer show in the app.</string>
+
+    <string name="toast_folder_deleted">Folder deleted</string>
+    <string name="toast_folder_added">Folder added</string>
+    <string name="toast_press_back_again">Press back again to exit</string>
+    <string name="scanning_songs">Scanning songs</string>
+    <string name="playlists_title">Playlists</string>
+    <string name="toast_export_create_failed">Could not create file in folder</string>
+    <string name="toast_playlists_exported">Playlists exported</string>
+    <string name="toast_export_playlists_error">Error exporting playlists: %1$s</string>
+    <string name="toast_playlists_imported_count">Imported %1$d playlists</string>
+    <string name="toast_no_json_found">No .json files found in folder</string>
+</resources>
