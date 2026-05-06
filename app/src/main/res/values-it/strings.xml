@@ -12,6 +12,7 @@
     <string name="toast_added_next_count">Aggiunto %1$d canzoni come successivo</string>
     <string name="toast_added_queue_end_count">Aggiunto %1$d canzoni alla fine</string>
     <string name="action_go_back">Indietro</string>
+    <string name="toast_added_to_playlist">Aggiunto a %1$s</string>
     <string name="action_toggle_view">Cambia vista</string>
     <string name="search_albums_placeholder">Cerca per album</string>
     <string name="action_play_now">Riproduci ora</string>
@@ -95,9 +96,6 @@
     <string name="action_clear_search">Pulisci</string>
     <string name="toast_added_next">Aggiunto come successivo</string>
     <string name="toast_added_queue_end">Aggiunto alla fine della coda</string>
-    <string name="toast_added_to_playlist">Aggiunto a \'%1$s\'</string>
-
-    
     <string name="about_description">Lettore musicale locale leggero e moderno</string>
     <string name="about_features">Caratteristiche</string>
     <string name="about_feature_local_playback">Riproduzione locale</string>

@@ -12,6 +12,7 @@
     <string name="toast_added_next_count">Added %1$d songs as next</string>
     <string name="toast_added_queue_end_count">Added %1$d songs to queue end</string>
     <string name="action_go_back">Back</string>
+    <string name="toast_added_to_playlist">Added to %1$s</string>
     <string name="action_toggle_view">Toggle view</string>
     <string name="search_albums_placeholder">Search by album</string>
     <string name="action_play_now">Play now</string>
@@ -95,9 +96,6 @@
     <string name="action_clear_search">Clear</string>
     <string name="toast_added_next">Added as next</string>
     <string name="toast_added_queue_end">Added to queue end</string>
-    <string name="toast_added_to_playlist">Added to \'%1$s\'</string>
-
-    
     <string name="about_description">Lightweight and modern local music player</string>
     <string name="about_features">Features</string>
     <string name="about_feature_local_playback">Local playback</string>

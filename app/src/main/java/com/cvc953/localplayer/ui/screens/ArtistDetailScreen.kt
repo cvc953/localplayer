@@ -44,13 +44,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.cvc953.localplayer.R
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.ui.SongItem
 import com.cvc953.localplayer.ui.components.DraggableSwipeRow
@@ -112,7 +113,7 @@ fun ArtistDetailScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.Default.ArrowBack,
-                    contentDescription = "Volver",
+                    contentDescription = stringResource(R.string.action_go_back),
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
@@ -153,11 +154,11 @@ fun ArtistDetailScreen(
                 DraggableSwipeRow(
                     onSwipeThreshold = {
                         playbackViewModel.addToQueueNext(song)
-                        Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_added_next_count, 1), Toast.LENGTH_SHORT).show()
                     },
                     onSwipeLeftThreshold = {
                         playbackViewModel.addToQueueEnd(song)
-                        Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_added_queue_end_count, 1), Toast.LENGTH_SHORT).show()
                     },
                 ) {
                     SongItem(
@@ -172,7 +173,7 @@ fun ArtistDetailScreen(
                         onQueueNext = {
                             playbackViewModel.addToQueueNext(song)
                             Toast
-                                .makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT)
+                                .makeText(context, context.getString(R.string.toast_added_next_count, 1), Toast.LENGTH_SHORT)
                                 .show()
                         },
                         onQueueEnd = {
@@ -188,7 +189,7 @@ fun ArtistDetailScreen(
                         onAddToPlaylist = { playlistName, songId ->
                             playlistViewModel.addSongToPlaylist(playlistName, songId)
                             Toast
-                                .makeText(context, "Añadido a $playlistName", Toast.LENGTH_SHORT)
+                                .makeText(context, context.getString(R.string.toast_added_to_playlist, playlistName), Toast.LENGTH_SHORT)
                                 .show()
                         },
                     )
