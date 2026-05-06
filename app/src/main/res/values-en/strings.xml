@@ -1,22 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">localplayer</string>
 
+    <string name="albums_title">Albums</string>
+    <string name="scanning_songs">Scanning songs</string>
     <string name="action_sort">Sort</string>
+    <string name="action_search">Search</string>
+    <string name="action_more_options">More options</string>
+    <string name="action_toggle_view">Toggle view</string>
+    <string name="search_albums_placeholder">Search by album</string>
+    <string name="action_play_now">Play now</string>
+    <string name="action_add_next">Add as next</string>
+    <string name="action_add_to_queue_end">Add to end</string>
+    <string name="toast_press_back_again">Press back again to exit</string>
+    <string name="songs_count">%1$d songs</string>
+
     <string name="sort_title_asc">Title A-Z</string>
     <string name="sort_title_desc">Title Z-A</string>
-    <string name="action_search">Search</string>
     <string name="search_playlists_placeholder">Search by list</string>
     <string name="action_import">Import</string>
     <string name="action_import_lowercase">import</string>
     <string name="action_create_playlist">Create list</string>
     <string name="action_create_lowercase">create</string>
     <string name="playlists_empty_state">No playlists yet</string>
-    <string name="songs_count">%1$d songs</string>
-    <string name="action_more_options">Options</string>
-    <string name="action_play_now">Play now</string>
-    <string name="action_add_next">Add as next</string>
     <string name="toast_added_next_count">Added %1$d songs as next</string>
-    <string name="action_add_to_queue_end">Add to end</string>
     <string name="toast_added_queue_end_count">Added %1$d songs to queue end</string>
     <string name="action_export">Export</string>
     <string name="action_rename">Rename</string>
@@ -72,8 +79,6 @@
 
     <string name="toast_folder_deleted">Folder deleted</string>
     <string name="toast_folder_added">Folder added</string>
-    <string name="toast_press_back_again">Press back again to exit</string>
-    <string name="scanning_songs">Scanning songs</string>
     <string name="playlists_title">Playlists</string>
     <string name="toast_export_create_failed">Could not create file in folder</string>
     <string name="toast_playlists_exported">Playlists exported</string>
@@ -91,7 +96,7 @@
     <string name="toast_added_queue_end">Added to queue end</string>
     <string name="toast_added_to_playlist">Added to \'%1$s\'</string>
 
-    <!-- About Screen -->
+    
     <string name="about_description">Lightweight and modern local music player</string>
     <string name="about_features">Features</string>
     <string name="about_feature_local_playback">Local playback</string>
@@ -120,7 +125,7 @@
     <string name="about_footer">© 2026 Local Player. All rights reserved.</string>
     <string name="nav_back">Back</string>
 
-    <!-- LyricsScreen strings -->
+    
     <string name="lyrics_not_available">No lyrics available for this song</string>
     <string name="favorites">Favorites</string>
     <string name="removed_from_favorites">Removed from Favorites</string>
