@@ -32,6 +32,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.res.stringResource
+import com.cvc953.localplayer.R
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
@@ -69,7 +71,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Artist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
@@ -129,7 +130,7 @@ fun ArtistsScreen(
             activity?.finish()
         } else {
             lastBackPressTime = currentTime
-            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_press_back_again), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -166,7 +167,7 @@ fun ArtistsScreen(
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.Companion.height(16.dp))
-            Text("Escaneando canciones", color = MaterialTheme.colorScheme.onBackground)
+            Text(stringResource(R.string.scanning_songs), color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
@@ -180,7 +181,7 @@ fun ArtistsScreen(
                 verticalAlignment = Alignment.Companion.CenterVertically,
             ) {
                 Text(
-                    text = "Artistas",
+                    text = stringResource(R.string.artists_title),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Companion.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -192,7 +193,7 @@ fun ArtistsScreen(
                     IconButton(onClick = { sortMenuExpanded = true }) {
                         Icon(
                             Icons.Default.Sort,
-                            contentDescription = "Ordenar",
+                            contentDescription = stringResource(R.string.action_sort),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
@@ -204,7 +205,7 @@ fun ArtistsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título A-Z",
+                                    stringResource(R.string.sort_title_asc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -216,7 +217,7 @@ fun ArtistsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título Z-A",
+                                    stringResource(R.string.sort_title_desc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -236,7 +237,7 @@ fun ArtistsScreen(
                 ) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "Buscar",
+                        contentDescription = stringResource(R.string.action_search),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -246,7 +247,7 @@ fun ArtistsScreen(
                 }) {
                     Icon(
                         imageVector = if (viewAsGrid) Icons.Default.ViewList else Icons.Default.ViewModule,
-                        contentDescription = "Cambiar vista",
+                        contentDescription = stringResource(R.string.action_toggle_view),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -408,7 +409,7 @@ fun ArtistsScreen(
                                         painter =
                                             artistArt?.let { BitmapPainter(it.asImageBitmap()) }
                                                 ?: painterResource(R.drawable.ic_default_album),
-                                        contentDescription = "album cover",
+contentDescription = stringResource(R.string.album_cover),
                                         modifier =
                                             Modifier.Companion
                                                 .matchParentSize()
@@ -420,7 +421,7 @@ fun ArtistsScreen(
                                         IconButton(onClick = { menuExpanded = true }) {
                                             Icon(
                                                 Icons.Default.MoreVert,
-                                                contentDescription = "Más opciones",
+contentDescription = stringResource(R.string.action_more_options),
                                                 tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
@@ -636,7 +637,7 @@ fun ArtistsScreen(
                                                 it.asImageBitmap(),
                                             )
                                         } ?: painterResource(R.drawable.ic_default_album),
-                                    contentDescription = "album cover",
+                                    contentDescription = stringResource(R.string.album_cover),
                                     modifier =
                                         Modifier.Companion.size(60.dp).clip(
                                             androidx.compose.foundation.shape
@@ -669,7 +670,7 @@ fun ArtistsScreen(
                                     IconButton(onClick = { menuExpanded = true }) {
                                         Icon(
                                             Icons.Default.MoreVert,
-                                            contentDescription = "Más opciones",
+                                            contentDescription = stringResource(R.string.action_more_options),
                                             tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }

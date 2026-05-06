@@ -13,6 +13,8 @@
     <string name="toast_added_queue_end_count">Added %1$d songs to queue end</string>
     <string name="action_go_back">Back</string>
     <string name="unknown">Unknown</string>
+    <string name="artists_title">Artists</string>
+    <string name="album_cover">album cover</string>
     <string name="toast_added_to_playlist">Added to %1$s</string>
     <string name="action_toggle_view">Toggle view</string>
     <string name="search_albums_placeholder">Search by album</string>

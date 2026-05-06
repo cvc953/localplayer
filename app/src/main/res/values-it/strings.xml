@@ -1,27 +1,28 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">localplayer</string>
-
     <string name="albums_title">Album</string>
+    <string name="artists_title">Artisti</string>
     <string name="scanning_songs">Scansione in corso</string>
     <string name="action_sort">Ordina</string>
     <string name="action_search">Cerca</string>
     <string name="action_more_options">Altre opzioni</string>
+    <string name="action_toggle_view">Cambia vista</string>
     <string name="sort_title_asc">Titolo A-Z</string>
     <string name="sort_title_desc">Titolo Z-A</string>
     <string name="toast_added_next_count">Aggiunto %1$d canzoni come successivo</string>
     <string name="toast_added_queue_end_count">Aggiunto %1$d canzoni alla fine</string>
     <string name="action_go_back">Indietro</string>
     <string name="unknown">Sconosciuto</string>
+    <string name="album_cover">copertina dell\'album</string>
     <string name="toast_added_to_playlist">Aggiunto a %1$s</string>
-    <string name="action_toggle_view">Cambia vista</string>
     <string name="search_albums_placeholder">Cerca per album</string>
     <string name="action_play_now">Riproduci ora</string>
     <string name="action_add_next">Aggiungi come successivo</string>
     <string name="action_add_to_queue_end">Aggiungi alla fine</string>
     <string name="toast_press_back_again">Premi di nuovo per uscire</string>
     <string name="songs_count">%1$d canzoni</string>
-
+    <string name="playlists_title">Liste</string>
     <string name="search_playlists_placeholder">Cerca per lista</string>
     <string name="action_import">Importa</string>
     <string name="action_import_lowercase">importa</string>
@@ -39,7 +40,6 @@
     <string name="error_playlist_name_invalid">Nome non valido o duplicato</string>
     <string name="action_create">Crea</string>
     <string name="dialog_rename_playlist_title">Rinomina lista</string>
-
     <string name="settings_title">Impostazioni</string>
     <string name="settings_subtitle">Personalizza l\'app e la tua libreria</string>
     <string name="action_close">Chiudi</string>
@@ -54,7 +54,6 @@
     <string name="settings_accent_color_description">Seleziona il colore di accento dell\'app</string>
     <string name="settings_dynamic_color_label">Colore dinamico</string>
     <string name="settings_dynamic_color_description">Usa il colore della copertina nel lettore</string>
-
     <string name="settings_section_language_title">Lingua</string>
     <string name="settings_section_language_subtitle">Seleziona la lingua dell\'applicazione</string>
     <string name="settings_language_label">Lingua</string>
@@ -63,13 +62,11 @@
     <string name="language_spanish">Spagnolo</string>
     <string name="language_english">Inglese</string>
     <string name="language_italian">Italiano</string>
-
     <string name="settings_section_audio_title">Audio</string>
     <string name="settings_section_audio_subtitle">Controllo dell\'equalizzatore ed elaborazione audio</string>
     <string name="settings_equalizer_enable_label">Abilita equalizzatore</string>
     <string name="settings_equalizer_enable_description">Usa l\'equalizzatore nativo del sistema</string>
     <string name="action_open_equalizer">Apri equalizzatore avanzato</string>
-
     <string name="settings_section_library_title">Libreria</string>
     <string name="settings_section_library_subtitle">Gestisci le cartelle incluse nella musica</string>
     <string name="settings_auto_scan_label">Scansione automatica</string>
@@ -79,62 +76,11 @@
     <string name="settings_folders_empty">Nessuna cartella configurata</string>
     <string name="dialog_delete_folder_title">Elimina cartella</string>
     <string name="dialog_delete_folder_message">Eliminare la cartella \"%1$s\"?\n\n%2$d brani di questa cartella non verranno più mostrati nell\'app.</string>
-
     <string name="toast_folder_deleted">Cartella eliminata</string>
     <string name="toast_folder_added">Cartella aggiunta</string>
-    <string name="playlists_title">Liste</string>
     <string name="toast_export_create_failed">Impossibile creare file nella cartella</string>
     <string name="toast_playlists_exported">Playlist esportate</string>
     <string name="toast_export_playlists_error">Errore esportando playlist: %1$s</string>
     <string name="toast_playlists_imported_count">Importate %1$d playlist</string>
     <string name="toast_no_json_found">Nessun file .json trovato nella cartella</string>
-
-    <string name="songs_title">Canzoni</string>
-    <string name="sort_artist_asc">Artista A-Z</string>
-    <string name="action_refresh_library">Aggiorna libreria</string>
-    <string name="action_about">Informazioni</string>
-    <string name="search_songs_placeholder">Cerca per titolo o artista</string>
-    <string name="action_clear_search">Pulisci</string>
-    <string name="toast_added_next">Aggiunto come successivo</string>
-    <string name="toast_added_queue_end">Aggiunto alla fine della coda</string>
-    <string name="about_description">Lettore musicale locale leggero e moderno</string>
-    <string name="about_features">Caratteristiche</string>
-    <string name="about_feature_local_playback">Riproduzione locale</string>
-    <string name="about_feature_local_playback_desc">Accedi alla tua musica senza internet</string>
-    <string name="about_feature_lyrics">Supporto per i testi</string>
-    <string name="about_feature_lyrics_desc">Visualizza i testi durante la riproduzione</string>
-    <string name="about_feature_queue">Coda di riproduzione</string>
-    <string name="about_feature_queue_desc">Organizza le tue prossime canzoni</string>
-    <string name="about_feature_search">Ricerca</string>
-    <string name="about_feature_search_desc">Trova rapidamente le tue canzoni</string>
-    <string name="about_feature_repeat_modes">Modalità di ripetizione</string>
-    <string name="about_feature_repeat_modes_desc">Shuffle, ripeti uno o ripeti tutto</string>
-    <string name="about_feature_audio_info">Informazioni audio</string>
-    <string name="about_feature_audio_info_desc">Visualizza formato e bitrate</string>
-    <string name="about_developer">Sviluppatore</string>
-    <string name="about_developer_name">Cristian Villalobos C.</string>
-    <string name="about_technologies">Tecnologie</string>
-    <string name="about_tech_kotlin_desc">Linguaggio di programmazione</string>
-    <string name="about_tech_compose_desc">Framework UI</string>
-    <string name="about_tech_material_desc">Design</string>
-    <string name="about_tech_media_desc">Riproduzione audio</string>
-    <string name="about_privacy_policy">Politica sulla privacy</string>
-    <string name="about_privacy_text_1">Local Player non raccoglie, memorizza o condivide dati personali dell\'utente.</string>
-    <string name="about_privacy_text_2">L\'app funziona localmente sul tuo dispositivo e accede solo ai file audio e alle cartelle che selezioni.</string>
-    <string name="about_privacy_text_3">Non vengono inviate informazioni a server esterni.</string>
-    <string name="about_footer">© 2026 Local Player. Tutti i diritti riservati.</string>
-    <string name="nav_back">Indietro</string>
-
-    
-    <string name="lyrics_not_available">Nessun testo disponibile per questo brano</string>
-    <string name="favorites">Preferiti</string>
-    <string name="removed_from_favorites">Rimosso dai Preferiti</string>
-    <string name="added_to_favorites">Aggiunto ai Preferiti</string>
-    <string name="view_queue">Visualizza coda</string>
-    <string name="add_to_playlist">Aggiungi a playlist</string>
-    <string name="show_lyrics">Mostra testi</string>
-    <string name="add_to_playlist_title">Aggiungi a Playlist</string>
-    <string name="create_playlist_button">Crea playlist</string>
-    <string name="playlist_created_and_added">Creato e aggiunto a %s</string>
-    <string name="song_added_to_playlist">Aggiunto a %s</string>
 </resources>
