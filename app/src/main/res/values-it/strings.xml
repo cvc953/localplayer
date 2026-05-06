@@ -83,4 +83,4 @@
     <string name="toast_export_playlists_error">Errore esportando playlist: %1$s</string>
     <string name="toast_playlists_imported_count">Importate %1$d playlist</string>
     <string name="toast_no_json_found">Nessun file .json trovato nella cartella</string>
-</resources>
+<string name="search_artists_placeholder">Cerca per artista</string></resources>

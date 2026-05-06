@@ -15,6 +15,7 @@
     <string name="unknown">Unknown</string>
     <string name="artists_title">Artists</string>
     <string name="album_cover">album cover</string>
+    <string name="search_artists_placeholder">Search by artist</string>
     <string name="toast_added_to_playlist">Added to %1$s</string>
     <string name="action_toggle_view">Toggle view</string>
     <string name="search_albums_placeholder">Search by album</string>

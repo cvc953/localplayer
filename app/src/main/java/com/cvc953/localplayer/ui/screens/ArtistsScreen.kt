@@ -260,7 +260,7 @@ fun ArtistsScreen(
                     singleLine = true,
                     placeholder = {
                         Text(
-                            "Buscar por artista",
+                            stringResource(R.string.search_artists_placeholder),
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
@@ -450,7 +450,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Reproducir ahora",
+                                                        stringResource(R.string.action_play_now),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
@@ -473,7 +473,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Añadir como siguiente",
+                                                        stringResource(R.string.action_add_next),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
@@ -494,7 +494,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Añadir al final",
+                                                        stringResource(R.string.action_add_to_queue_end),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
@@ -705,7 +705,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Reproducir ahora",
+                                                    stringResource(R.string.action_play_now),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
@@ -726,7 +726,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Añadir como siguiente",
+                                                    stringResource(R.string.action_add_next),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
@@ -747,7 +747,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Añadir al final",
+                                                    stringResource(R.string.action_add_to_queue_end),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
