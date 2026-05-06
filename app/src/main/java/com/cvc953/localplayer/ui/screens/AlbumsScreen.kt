@@ -209,7 +209,7 @@ fun AlbumsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título A-Z",
+                                    stringResource(R.string.sort_title_asc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -221,7 +221,7 @@ fun AlbumsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título Z-A",
+                                    stringResource(R.string.sort_title_desc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -509,7 +509,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones como siguiente",
+                                                            context.getString(R.string.toast_added_next_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -530,7 +530,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones al final de la cola",
+                                                            context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -793,7 +793,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones como siguiente",
+                                                        context.getString(R.string.toast_added_next_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },
@@ -832,7 +832,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones al final de la cola",
+                                                        context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },

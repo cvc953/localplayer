@@ -7,6 +7,10 @@
     <string name="action_sort">Ordenar</string>
     <string name="action_search">Buscar</string>
     <string name="action_more_options">Más opciones</string>
+    <string name="sort_title_asc">Título A-Z</string>
+    <string name="sort_title_desc">Título Z-A</string>
+    <string name="toast_added_next_count">Añadido %1$d canciones como siguiente</string>
+    <string name="toast_added_queue_end_count">Añadido %1$d canciones al final</string>
     <string name="action_toggle_view">Cambiar vista</string>
     <string name="search_albums_placeholder">Buscar por álbum</string>
     <string name="action_play_now">Reproducir ahora</string>
@@ -15,16 +19,12 @@
     <string name="toast_press_back_again">Presiona de nuevo para salir</string>
     <string name="songs_count">%1$d canciones</string>
 
-    <string name="sort_title_asc">Título A-Z</string>
-    <string name="sort_title_desc">Título Z-A</string>
     <string name="search_playlists_placeholder">Buscar por lista</string>
     <string name="action_import">Importar</string>
     <string name="action_import_lowercase">importar</string>
     <string name="action_create_playlist">Crear lista</string>
     <string name="action_create_lowercase">crear</string>
     <string name="playlists_empty_state">No hay listas todavía</string>
-    <string name="toast_added_next_count">Añadido %1$d canciones como siguiente</string>
-    <string name="toast_added_queue_end_count">Añadido %1$d canciones al final de la cola</string>
     <string name="action_export">Exportar</string>
     <string name="action_rename">Renombrar</string>
     <string name="action_delete">Eliminar</string>

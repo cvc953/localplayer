@@ -7,6 +7,10 @@
     <string name="action_sort">Sort</string>
     <string name="action_search">Search</string>
     <string name="action_more_options">More options</string>
+    <string name="sort_title_asc">Title A-Z</string>
+    <string name="sort_title_desc">Title Z-A</string>
+    <string name="toast_added_next_count">Added %1$d songs as next</string>
+    <string name="toast_added_queue_end_count">Added %1$d songs to queue end</string>
     <string name="action_toggle_view">Toggle view</string>
     <string name="search_albums_placeholder">Search by album</string>
     <string name="action_play_now">Play now</string>
@@ -15,16 +19,12 @@
     <string name="toast_press_back_again">Press back again to exit</string>
     <string name="songs_count">%1$d songs</string>
 
-    <string name="sort_title_asc">Title A-Z</string>
-    <string name="sort_title_desc">Title Z-A</string>
     <string name="search_playlists_placeholder">Search by list</string>
     <string name="action_import">Import</string>
     <string name="action_import_lowercase">import</string>
     <string name="action_create_playlist">Create list</string>
     <string name="action_create_lowercase">create</string>
     <string name="playlists_empty_state">No playlists yet</string>
-    <string name="toast_added_next_count">Added %1$d songs as next</string>
-    <string name="toast_added_queue_end_count">Added %1$d songs to queue end</string>
     <string name="action_export">Export</string>
     <string name="action_rename">Rename</string>
     <string name="action_delete">Delete</string>

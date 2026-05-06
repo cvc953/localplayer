@@ -7,6 +7,10 @@
     <string name="action_sort">Ordina</string>
     <string name="action_search">Cerca</string>
     <string name="action_more_options">Altre opzioni</string>
+    <string name="sort_title_asc">Titolo A-Z</string>
+    <string name="sort_title_desc">Titolo Z-A</string>
+    <string name="toast_added_next_count">Aggiunto %1$d canzoni come successivo</string>
+    <string name="toast_added_queue_end_count">Aggiunto %1$d canzoni alla fine</string>
     <string name="action_toggle_view">Cambia vista</string>
     <string name="search_albums_placeholder">Cerca per album</string>
     <string name="action_play_now">Riproduci ora</string>
@@ -15,16 +19,12 @@
     <string name="toast_press_back_again">Premi di nuovo per uscire</string>
     <string name="songs_count">%1$d canzoni</string>
 
-    <string name="sort_title_asc">Titolo A-Z</string>
-    <string name="sort_title_desc">Titolo Z-A</string>
     <string name="search_playlists_placeholder">Cerca per lista</string>
     <string name="action_import">Importa</string>
     <string name="action_import_lowercase">importa</string>
     <string name="action_create_playlist">Crea lista</string>
     <string name="action_create_lowercase">crea</string>
     <string name="playlists_empty_state">Nessuna lista al momento</string>
-    <string name="toast_added_next_count">Aggiunti %1$d brani come successivi</string>
-    <string name="toast_added_queue_end_count">Aggiunti %1$d brani alla fine della coda</string>
     <string name="action_export">Esporta</string>
     <string name="action_rename">Rinomina</string>
     <string name="action_delete">Elimina</string>
