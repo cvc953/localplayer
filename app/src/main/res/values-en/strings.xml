@@ -80,4 +80,56 @@
     <string name="toast_export_playlists_error">Error exporting playlists: %1$s</string>
     <string name="toast_playlists_imported_count">Imported %1$d playlists</string>
     <string name="toast_no_json_found">No .json files found in folder</string>
+
+    <string name="songs_title">Songs</string>
+    <string name="sort_artist_asc">Artist A-Z</string>
+    <string name="action_refresh_library">Refresh library</string>
+    <string name="action_about">About</string>
+    <string name="search_songs_placeholder">Search by title or artist</string>
+    <string name="action_clear_search">Clear</string>
+    <string name="toast_added_next">Added as next</string>
+    <string name="toast_added_queue_end">Added to queue end</string>
+    <string name="toast_added_to_playlist">Added to \'%1$s\'</string>
+
+    <!-- About Screen -->
+    <string name="about_description">Lightweight and modern local music player</string>
+    <string name="about_features">Features</string>
+    <string name="about_feature_local_playback">Local playback</string>
+    <string name="about_feature_local_playback_desc">Access your music without internet</string>
+    <string name="about_feature_lyrics">Lyrics support</string>
+    <string name="about_feature_lyrics_desc">View lyrics while playing</string>
+    <string name="about_feature_queue">Play queue</string>
+    <string name="about_feature_queue_desc">Organize your upcoming songs</string>
+    <string name="about_feature_search">Search</string>
+    <string name="about_feature_search_desc">Find your songs quickly</string>
+    <string name="about_feature_repeat_modes">Repeat modes</string>
+    <string name="about_feature_repeat_modes_desc">Shuffle, repeat one or repeat all</string>
+    <string name="about_feature_audio_info">Audio info</string>
+    <string name="about_feature_audio_info_desc">View format and bitrate</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_developer_name">Cristian Villalobos C.</string>
+    <string name="about_technologies">Technologies</string>
+    <string name="about_tech_kotlin_desc">Programming language</string>
+    <string name="about_tech_compose_desc">UI Framework</string>
+    <string name="about_tech_material_desc">Design</string>
+    <string name="about_tech_media_desc">Audio playback</string>
+    <string name="about_privacy_policy">Privacy Policy</string>
+    <string name="about_privacy_text_1">Local Player does not collect, store or share user personal data.</string>
+    <string name="about_privacy_text_2">The app works locally on your device and only accesses audio files and folders you select.</string>
+    <string name="about_privacy_text_3">No information is sent to external servers.</string>
+    <string name="about_footer">© 2026 Local Player. All rights reserved.</string>
+    <string name="nav_back">Back</string>
+
+    <!-- LyricsScreen strings -->
+    <string name="lyrics_not_available">No lyrics available for this song</string>
+    <string name="favorites">Favorites</string>
+    <string name="removed_from_favorites">Removed from Favorites</string>
+    <string name="added_to_favorites">Added to Favorites</string>
+    <string name="view_queue">View queue</string>
+    <string name="add_to_playlist">Add to playlist</string>
+    <string name="show_lyrics">Show lyrics</string>
+    <string name="add_to_playlist_title">Add to Playlist</string>
+    <string name="create_playlist_button">Create playlist</string>
+    <string name="playlist_created_and_added">Created and added to %s</string>
+    <string name="song_added_to_playlist">Added to %s</string>
 </resources>

@@ -25,10 +25,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
 @Suppress("ktlint:standard:function-naming")
@@ -63,12 +65,12 @@ fun AboutScreen(onBack: () -> Unit) {
                 IconButton(onClick = onBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Atrás",
+                        contentDescription = stringResource(R.string.nav_back),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
                 Text(
-                    "Acerca de",
+                    stringResource(R.string.action_about),
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
@@ -89,7 +91,7 @@ fun AboutScreen(onBack: () -> Unit) {
         ) {
             // App Name and Icon
             Text(
-                text = "Local Player",
+                text = stringResource(R.string.app_name),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -109,7 +111,7 @@ fun AboutScreen(onBack: () -> Unit) {
 
             // Description
             Text(
-                text = "Reproductor de música local ligero y moderno",
+                text = stringResource(R.string.about_description),
                 fontSize = 16.sp,
                 // color = Color(0xFFCCCCCC),
                 color = LocalExtendedColors.current.textSecondary,
@@ -129,40 +131,40 @@ fun AboutScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
-                    text = "Características",
+                    text = stringResource(R.string.about_features),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 FeatureItem(
-                    title = "Reproducción local",
-                    description = "Accede a tu música sin internet",
+                    title = stringResource(R.string.about_feature_local_playback),
+                    description = stringResource(R.string.about_feature_local_playback_desc),
                 )
 
                 FeatureItem(
-                    title = "Soporte para letras",
-                    description = "Visualiza las letras mientras reproduces",
+                    title = stringResource(R.string.about_feature_lyrics),
+                    description = stringResource(R.string.about_feature_lyrics_desc),
                 )
 
                 FeatureItem(
-                    title = "Cola de reproducción",
-                    description = "Organiza tus próximas canciones",
+                    title = stringResource(R.string.about_feature_queue),
+                    description = stringResource(R.string.about_feature_queue_desc),
                 )
 
                 FeatureItem(
-                    title = "Búsqueda",
-                    description = "Encuentra tus canciones rápidamente",
+                    title = stringResource(R.string.about_feature_search),
+                    description = stringResource(R.string.about_feature_search_desc),
                 )
 
                 FeatureItem(
-                    title = "Modos de repetición",
-                    description = "Shuffle, repetir uno o repetir todo",
+                    title = stringResource(R.string.about_feature_repeat_modes),
+                    description = stringResource(R.string.about_feature_repeat_modes_desc),
                 )
 
                 FeatureItem(
-                    title = "Información de audio",
-                    description = "Visualiza el formato y bitrate",
+                    title = stringResource(R.string.about_feature_audio_info),
+                    description = stringResource(R.string.about_feature_audio_info_desc),
                 )
             }
 
@@ -177,7 +179,7 @@ fun AboutScreen(onBack: () -> Unit) {
                         .padding(16.dp),
             ) {
                 Text(
-                    text = "Desarrollador",
+                    text = stringResource(R.string.about_developer),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -186,7 +188,7 @@ fun AboutScreen(onBack: () -> Unit) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Cristian Villalobos C.",
+                    text = stringResource(R.string.about_developer_name),
                     fontSize = 14.sp,
                     // color = Color(0xFFCCCCCC),
                     color = LocalExtendedColors.current.textSecondary,
@@ -204,7 +206,7 @@ fun AboutScreen(onBack: () -> Unit) {
                         .padding(16.dp),
             ) {
                 Text(
-                    text = "Tecnologías",
+                    text = stringResource(R.string.about_technologies),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -212,10 +214,10 @@ fun AboutScreen(onBack: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                TechItem(name = "Kotlin", description = "Lenguaje de programación")
-                TechItem(name = "Jetpack Compose", description = "Framework de UI")
-                TechItem(name = "Material Design 3", description = "Diseño")
-                TechItem(name = "Android MediaPlayer", description = "Reproducción de audio")
+                TechItem(name = "Kotlin", description = stringResource(R.string.about_tech_kotlin_desc))
+                TechItem(name = "Jetpack Compose", description = stringResource(R.string.about_tech_compose_desc))
+                TechItem(name = "Material Design 3", description = stringResource(R.string.about_tech_material_desc))
+                TechItem(name = "Android MediaPlayer", description = stringResource(R.string.about_tech_media_desc))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -230,28 +232,28 @@ fun AboutScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    text = "Política de privacidad",
+                    text = stringResource(R.string.about_privacy_policy),
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
 
                 Text(
-                    text = "Local Player no recopila, almacena ni comparte datos personales del usuario.",
+                    text = stringResource(R.string.about_privacy_text_1),
                     fontSize = 13.sp,
                     color = LocalExtendedColors.current.textSecondary,
                     lineHeight = 20.sp,
                 )
 
                 Text(
-                    text = "La app funciona de forma local en tu dispositivo y solo accede a archivos de audio y carpetas que tú selecciones.",
+                    text = stringResource(R.string.about_privacy_text_2),
                     fontSize = 13.sp,
                     color = LocalExtendedColors.current.textSecondarySoft,
                     lineHeight = 20.sp,
                 )
 
                 Text(
-                    text = "No se envía información a servidores externos.",
+                    text = stringResource(R.string.about_privacy_text_3),
                     fontSize = 13.sp,
                     color = LocalExtendedColors.current.textSecondarySoft,
                     lineHeight = 20.sp,
@@ -262,7 +264,7 @@ fun AboutScreen(onBack: () -> Unit) {
 
             // Footer
             Text(
-                text = "© 2026 Local Player. Todos los derechos reservados.",
+                text = stringResource(R.string.about_footer),
                 fontSize = 12.sp,
                 color = LocalExtendedColors.current.textSecondary,
                 textAlign = TextAlign.Center,

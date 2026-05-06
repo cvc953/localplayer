@@ -39,6 +39,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.components.BottomNavigationBar
 import com.cvc953.localplayer.ui.navigation.AppNavigation
@@ -307,7 +308,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
                 Toast
                     .makeText(
                         context,
-                        "Presiona de nuevo para salir",
+                        context.getString(R.string.toast_press_back_again),
                         Toast.LENGTH_SHORT,
                     ).show()
             }
