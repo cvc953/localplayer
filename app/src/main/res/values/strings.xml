@@ -25,6 +25,9 @@
     <string name="toast_press_back_again">Presiona de nuevo para salir</string>
     <string name="songs_count">%1$d canciones</string>
 
+
+    <string name="equalizer_title">Equalizador</string>
+    <string name="equalizer_subtitle">Ajusta bandas, presets y la respuesta de audio</string>
     <string name="search_playlists_placeholder">Buscar por lista</string>
     <string name="action_import">Importar</string>
     <string name="action_import_lowercase">importar</string>
@@ -66,6 +69,7 @@
     <string name="language_spanish">Español</string>
     <string name="language_english">Inglés</string>
     <string name="language_italian">Italiano</string>
+
 
     <string name="settings_section_audio_title">Audio</string>
     <string name="settings_section_audio_subtitle">Control del ecualizador y procesamiento de sonido</string>
@@ -140,4 +144,17 @@
     <string name="create_playlist_button">Crear playlist</string>
     <string name="playlist_created_and_added">Creado y agregado a %s</string>
     <string name="song_added_to_playlist">Agregado a %s</string>
+    <string name="preset_activo">Preset activo</string>
+    <string name="cambiar">Cambiar</string>
+    <string name="eliminar_preset">Eliminar preset</string>
+    <string name="resetear_bandas">Resetear bandas</string>
+    <string name="mb">mB</string>
+    <string name="no_presets_available">No hay presets disponibles en esta sesión.</string>
+    <string name="no_equalizer_available">No hay ecualizador disponible para la sesión actual.</string>
+    <string name="user_suffix"> (Usuario)</string>
+    <string name="equalizer_section_presets_title">Presets</string>
+    <string name="equalizer_section_presets_subtitle">Elige perfiles del sistema o creados por ti</string>
+    <string name="equalizer_section_bands_title">Bandas</string>
+    <string name="equalizer_section_bands_subtitle">Desliza para ajustar cada frecuencia</string>
+    <string name="select_option">Seleccionar</string>
 </resources>

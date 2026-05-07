@@ -24,6 +24,22 @@
     <string name="action_add_to_queue_end">Add to end</string>
     <string name="toast_press_back_again">Press back again to exit</string>
     <string name="songs_count">%1$d songs</string>
+    
+    <string name="preset_activo">Active preset</string>
+    <string name="cambiar">Change</string>
+    <string name="eliminar_preset">Delete preset</string>
+    <string name="resetear_bandas">Reset bands</string>
+    <string name="equalizer_title">Equalizer</string>
+    <string name="equalizer_subtitle">Adjust bands, presets and audio response</string>
+    <string name="mb">dB</string>
+    <string name="no_presets_available">No presets available in this session.</string>
+    <string name="no_equalizer_available">No equalizer available for the current session.</string>
+    <string name="user_suffix"> (User)</string>
+    <string name="equalizer_section_presets_title">Presets</string>
+    <string name="equalizer_section_presets_subtitle">Choose system or custom presets</string>
+    <string name="equalizer_section_bands_title">Bands</string>
+    <string name="equalizer_section_bands_subtitle">Slide to adjust each frequency</string>
+    <string name="select_option">Select</string>
 
     <string name="search_playlists_placeholder">Search by list</string>
     <string name="action_import">Import</string>
