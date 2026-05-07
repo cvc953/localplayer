@@ -80,6 +80,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val folderEntries by folderViewModel.folderEntries.collectAsState()
     val theme by viewModel.themeMode.collectAsState()
+    val language by viewModel.language.collectAsState()
     val autoScan by viewModel.autoScanEnabled.collectAsState()
     val dynamicColor by viewModel.dynamicColorEnabled.collectAsState()
     val primaryColorHex by viewModel.primaryColorHex.collectAsState()
@@ -91,7 +92,15 @@ fun SettingsScreen(
             "claro" to stringResource(id = R.string.theme_light),
             "oscuro" to stringResource(id = R.string.theme_dark),
         )
+    val languageOptions =
+        listOf(
+            "sistema" to stringResource(id = R.string.language_system_label),
+            "es" to stringResource(id = R.string.language_spanish),
+            "en" to stringResource(id = R.string.language_english),
+            "it" to stringResource(id = R.string.language_italian),
+        )
     var themeExpanded by remember { mutableStateOf(false) }
+    var languageExpanded by remember { mutableStateOf(false) }
     var folderToDelete by remember { mutableStateOf<FolderEntry?>(null) }
 
     val launcher =
@@ -300,6 +309,59 @@ fun SettingsScreen(
                         modifier = Modifier.padding(vertical = 12.dp),
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
+                }
+            }
+
+            item {
+                SettingsSectionCard(
+                    title = stringResource(id = R.string.settings_section_language_title),
+                    subtitle = stringResource(id = R.string.settings_section_language_subtitle),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(id = R.string.settings_language_label), color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                stringResource(id = R.string.settings_language_description),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Box {
+                            OutlinedButton(onClick = { languageExpanded = true }) {
+                                Text(
+                                    languageOptions.find { it.first == language }?.second?.replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase() else it.toString()
+                                    } ?: language,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = languageExpanded,
+                                onDismissRequest = { languageExpanded = false },
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ) {
+                                languageOptions.forEach { (optionKey, optionName) ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                optionName.replaceFirstChar {
+                                                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                                                },
+                                            )
+                                        },
+                                        onClick = {
+                                            viewModel.setLanguage(optionKey)
+                                            languageExpanded = false
+                                            // Recreate activity to apply language change
+                                            (context as? android.app.Activity)?.recreate()
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

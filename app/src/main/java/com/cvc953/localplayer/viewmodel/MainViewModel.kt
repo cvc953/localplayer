@@ -129,6 +129,9 @@ class MainViewModel(
     private val _themeMode = MutableStateFlow(appPrefs.getThemeMode())
     val themeMode: StateFlow<String> = _themeMode
 
+    private val _language = MutableStateFlow(appPrefs.getLanguage())
+    val language: StateFlow<String> = _language
+
     private val _dynamicColorEnabled = MutableStateFlow(appPrefs.isDynamicColorEnabled())
     val dynamicColorEnabled: StateFlow<Boolean> = _dynamicColorEnabled
 
@@ -392,6 +395,11 @@ class MainViewModel(
     fun setThemeMode(mode: String) {
         appPrefs.setThemeMode(mode)
         _themeMode.value = mode
+    }
+
+    fun setLanguage(language: String) {
+        appPrefs.setLanguage(language)
+        _language.value = language
     }
 
     fun toggleDynamicColor(enabled: Boolean) {

@@ -239,4 +239,12 @@ class AppPrefs(
     fun loadNextAlbumName(): String? = prefs.getString("next_album_name", null)
 
     fun loadNextAlbumArtist(): String? = prefs.getString("next_album_artist", null)
+
+    // Language preference: "sistema", "es", "en", "it"
+    fun getLanguage(): String = prefs.getString("app_language", "sistema") ?: "sistema"
+
+    fun setLanguage(language: String) {
+        if (language != "sistema" && language != "es" && language != "en" && language != "it") return
+        prefs.edit().putString("app_language", language).apply()
+    }
 }
