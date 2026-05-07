@@ -202,21 +202,24 @@ fun SettingsScreen(
                                         },
                                         onClick = {
                                             android.util.Log.d("SettingsScreen", "Language selected: $optionKey")
-                                            
+
                                             // Update preference
                                             viewModel.setLanguage(optionKey)
                                             languageExpanded = false
-                                            
+
                                             // Apply locale to resources
-                                            val appPrefs = com.cvc953.localplayer.preferences.AppPrefs(context)
+                                            val appPrefs =
+                                                com.cvc953.localplayer.preferences
+                                                    .AppPrefs(context)
                                             val languageCode = appPrefs.getLanguage()
                                             if (languageCode != "sistema") {
-                                                val locale = when (languageCode) {
-                                                    "es" -> java.util.Locale("es")
-                                                    "en" -> java.util.Locale("en")
-                                                    "it" -> java.util.Locale("it")
-                                                    else -> java.util.Locale.getDefault()
-                                                }
+                                                val locale =
+                                                    when (languageCode) {
+                                                        "es" -> java.util.Locale("es")
+                                                        "en" -> java.util.Locale("en")
+                                                        "it" -> java.util.Locale("it")
+                                                        else -> java.util.Locale.getDefault()
+                                                    }
                                                 val config = android.content.res.Configuration(context.resources.configuration)
                                                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                                                     config.setLocale(locale)

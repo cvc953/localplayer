@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
             val viewModel: MainViewModel by viewModels()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
             val languageChangeVersion by viewModel.languageChangeVersion.collectAsStateWithLifecycle()
-            
+
             // Trigger recomposition when language changes
             val darkTheme =
                 when (themeMode.lowercase()) {
@@ -58,12 +58,13 @@ class MainActivity : ComponentActivity() {
         android.util.Log.d("MainActivity", "applyLanguagePreference: languageCode = $languageCode")
 
         if (languageCode != "sistema") {
-            val locale = when (languageCode) {
-                "es" -> Locale("es")
-                "en" -> Locale("en")
-                "it" -> Locale("it")
-                else -> Locale.getDefault()
-            }
+            val locale =
+                when (languageCode) {
+                    "es" -> Locale("es")
+                    "en" -> Locale("en")
+                    "it" -> Locale("it")
+                    else -> Locale.getDefault()
+                }
             android.util.Log.d("MainActivity", "Applying locale: $locale")
 
             // Apply locale to this activity's resources
