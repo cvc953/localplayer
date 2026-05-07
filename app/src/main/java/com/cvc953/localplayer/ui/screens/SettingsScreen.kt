@@ -61,6 +61,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.MainActivity
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.ui.theme.predefinedThemeColors
@@ -162,6 +163,80 @@ fun SettingsScreen(
 
             item {
                 SettingsSectionCard(
+                    title = stringResource(id = R.string.settings_section_language_title),
+                    subtitle = stringResource(id = R.string.settings_section_language_subtitle),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(id = R.string.settings_language_label), color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                stringResource(id = R.string.settings_language_description),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Box {
+                            OutlinedButton(onClick = { languageExpanded = true }) {
+                                Text(
+                                    languageOptions.find { it.first == language }?.second?.replaceFirstChar {
+                                        if (it.isLowerCase()) it.titlecase() else it.toString()
+                                    } ?: language,
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = languageExpanded,
+                                onDismissRequest = { languageExpanded = false },
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ) {
+                                languageOptions.forEach { (optionKey, optionName) ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                optionName.replaceFirstChar {
+                                                    if (it.isLowerCase()) it.titlecase() else it.toString()
+                                                },
+                                            )
+                                        },
+                                        onClick = {
+                                            android.util.Log.d("SettingsScreen", "Language selected: $optionKey")
+                                            
+                                            // Update preference
+                                            viewModel.setLanguage(optionKey)
+                                            languageExpanded = false
+                                            
+                                            // Apply locale to resources
+                                            val appPrefs = com.cvc953.localplayer.preferences.AppPrefs(context)
+                                            val languageCode = appPrefs.getLanguage()
+                                            if (languageCode != "sistema") {
+                                                val locale = when (languageCode) {
+                                                    "es" -> java.util.Locale("es")
+                                                    "en" -> java.util.Locale("en")
+                                                    "it" -> java.util.Locale("it")
+                                                    else -> java.util.Locale.getDefault()
+                                                }
+                                                val config = android.content.res.Configuration(context.resources.configuration)
+                                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                                    config.setLocale(locale)
+                                                } else {
+                                                    @Suppress("DEPRECATION")
+                                                    config.locale = locale
+                                                }
+                                                context.resources.updateConfiguration(config, context.resources.displayMetrics)
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            item {
+                SettingsSectionCard(
                     title = stringResource(id = R.string.settings_section_appearance_title),
                     subtitle = stringResource(id = R.string.settings_section_appearance_subtitle),
                 ) {
@@ -208,6 +283,10 @@ fun SettingsScreen(
                             }
                         }
                     }
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -303,64 +382,6 @@ fun SettingsScreen(
                                         ),
                                 ),
                         )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-                }
-            }
-
-            item {
-                SettingsSectionCard(
-                    title = stringResource(id = R.string.settings_section_language_title),
-                    subtitle = stringResource(id = R.string.settings_section_language_subtitle),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(id = R.string.settings_language_label), color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                stringResource(id = R.string.settings_language_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
-                        Box {
-                            OutlinedButton(onClick = { languageExpanded = true }) {
-                                Text(
-                                    languageOptions.find { it.first == language }?.second?.replaceFirstChar {
-                                        if (it.isLowerCase()) it.titlecase() else it.toString()
-                                    } ?: language,
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = languageExpanded,
-                                onDismissRequest = { languageExpanded = false },
-                                containerColor = MaterialTheme.colorScheme.surface,
-                            ) {
-                                languageOptions.forEach { (optionKey, optionName) ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                optionName.replaceFirstChar {
-                                                    if (it.isLowerCase()) it.titlecase() else it.toString()
-                                                },
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.setLanguage(optionKey)
-                                            languageExpanded = false
-                                            // Recreate activity to apply language change
-                                            (context as? android.app.Activity)?.recreate()
-                                        },
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
             }

@@ -132,6 +132,9 @@ class MainViewModel(
     private val _language = MutableStateFlow(appPrefs.getLanguage())
     val language: StateFlow<String> = _language
 
+    private val _languageChangeVersion = MutableStateFlow(0)
+    val languageChangeVersion: StateFlow<Int> = _languageChangeVersion
+
     private val _dynamicColorEnabled = MutableStateFlow(appPrefs.isDynamicColorEnabled())
     val dynamicColorEnabled: StateFlow<Boolean> = _dynamicColorEnabled
 
@@ -398,8 +401,11 @@ class MainViewModel(
     }
 
     fun setLanguage(language: String) {
+        android.util.Log.d("MainViewModel", "setLanguage called with: $language")
         appPrefs.setLanguage(language)
         _language.value = language
+        _languageChangeVersion.value += 1
+        android.util.Log.d("MainViewModel", "Language state updated to: $language, version: ${_languageChangeVersion.value}")
     }
 
     fun toggleDynamicColor(enabled: Boolean) {

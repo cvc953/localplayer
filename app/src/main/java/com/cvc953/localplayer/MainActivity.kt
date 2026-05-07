@@ -1,15 +1,14 @@
 package com.cvc953.localplayer
 
 import LocalPlayerTheme
-import android.content.Context
+import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
-import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cvc953.localplayer.preferences.AppPrefs
 import com.cvc953.localplayer.ui.screens.MainMusicScreenUpdated
@@ -18,29 +17,18 @@ import com.cvc953.localplayer.viewmodel.MainViewModel
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
-    override fun attachBaseContext(newBase: Context?) {
-        // Apply language preference early in the context hierarchy
-        if (newBase != null) {
-            val appPrefs = AppPrefs(newBase)
-            val languageCode = appPrefs.getLanguage()
-            val localeList =
-                when (languageCode) {
-                    "es" -> LocaleListCompat.create(Locale("es"))
-                    "en" -> LocaleListCompat.create(Locale("en"))
-                    "it" -> LocaleListCompat.create(Locale("it"))
-                    else -> LocaleListCompat.getEmptyLocaleList() // system default
-                }
-            AppCompatDelegate.setApplicationLocales(localeList)
-        }
-        super.attachBaseContext(newBase)
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Apply language preference by updating resources configuration
+        applyLanguagePreference()
 
         setContent {
             val viewModel: MainViewModel by viewModels()
             val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+            val languageChangeVersion by viewModel.languageChangeVersion.collectAsStateWithLifecycle()
+            
+            // Trigger recomposition when language changes
             val darkTheme =
                 when (themeMode.lowercase()) {
                     "oscuro", "dark" -> true
@@ -61,6 +49,33 @@ class MainActivity : ComponentActivity() {
                 }
                 MainMusicScreenUpdated { }
             }
+        }
+    }
+
+    private fun applyLanguagePreference() {
+        val appPrefs = AppPrefs(this)
+        val languageCode = appPrefs.getLanguage()
+        android.util.Log.d("MainActivity", "applyLanguagePreference: languageCode = $languageCode")
+
+        if (languageCode != "sistema") {
+            val locale = when (languageCode) {
+                "es" -> Locale("es")
+                "en" -> Locale("en")
+                "it" -> Locale("it")
+                else -> Locale.getDefault()
+            }
+            android.util.Log.d("MainActivity", "Applying locale: $locale")
+
+            // Apply locale to this activity's resources
+            val config = Configuration(resources.configuration)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                config.setLocale(locale)
+            } else {
+                @Suppress("DEPRECATION")
+                config.locale = locale
+            }
+            resources.updateConfiguration(config, resources.displayMetrics)
+            android.util.Log.d("MainActivity", "Locale applied to resources")
         }
     }
 }
