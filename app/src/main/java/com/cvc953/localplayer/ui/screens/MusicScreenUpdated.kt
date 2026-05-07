@@ -34,12 +34,13 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import com.cvc953.localplayer.preferences.AppPrefs
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.preferences.AppPrefs
 import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.components.BottomNavigationBar
 import com.cvc953.localplayer.ui.navigation.AppNavigation
@@ -124,7 +125,8 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
 
         var bottomNavOffset by remember { mutableStateOf(0.dp) }
         var miniPlayerAlpha by remember { mutableFloatStateOf(1f) }
-        var playerBackgroundColor by remember { mutableStateOf(Color.Companion.Transparent) }
+        var playerBackgroundColor by remember { mutableStateOf(Color.Transparent) }
+        val toastPressBackAgain = stringResource(R.string.toast_press_back_again)
 
         val miniPlayerBrush =
             Brush.Companion.verticalGradient(
@@ -308,7 +310,7 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
                 Toast
                     .makeText(
                         context,
-                        context.getString(R.string.toast_press_back_again),
+                        toastPressBackAgain,
                         Toast.LENGTH_SHORT,
                     ).show()
             }

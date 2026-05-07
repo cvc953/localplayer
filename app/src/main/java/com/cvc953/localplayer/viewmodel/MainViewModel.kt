@@ -34,38 +34,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/*class MainViewModel(
-    application: Application,
-) : AndroidViewModel(application) {
-import com.cvc953.localplayer.model.Playlist
-import com.cvc953.localplayer.model.Song
-import com.cvc953.localplayer.model.SongRepository
-import com.cvc953.localplayer.model.TtmlLyrics
-import com.cvc953.localplayer.preferences.AppPrefs
-import com.cvc953.localplayer.services.MusicService
-import com.cvc953.localplayer.ui.PlayerState
-import com.cvc953.localplayer.ui.RepeatMode
-import com.cvc953.localplayer.util.LrcLine
-import com.cvc953.localplayer.util.TtmlParser
-import com.cvc953.localplayer.util.parseLrc
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.File
-
-data class LyricLine(
-    val timeMs: Long,
-    val text: String,
-)*/
-
 class MainViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
@@ -286,12 +254,6 @@ class MainViewModel(
                 _isScanning.value = false
             }
         }
-    }
-
-    fun addToQueueNext(song: Song) {
-        val list = _queue.value.toMutableList()
-        list.add(0, song)
-        _queue.value = list
     }
 
     fun addToQueueEnd(song: Song) {

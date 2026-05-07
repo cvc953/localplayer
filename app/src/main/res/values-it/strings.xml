@@ -14,7 +14,7 @@
     <string name="action_go_back">Indietro</string>
     <string name="unknown">Sconosciuto</string>
     <string name="artists_title">Artisti</string>
-    <string name="album_cover">copertina dell'album</string>
+    <string name="album_cover">copertina dell\'album</string>
     <string name="search_artists_placeholder">Cerca per artista</string>
     <string name="toast_added_to_playlist">Aggiunto a %1$s</string>
     <string name="action_toggle_view">Cambia vista</string>
@@ -47,22 +47,22 @@
     <string name="dialog_rename_playlist_title">Rinomina playlist</string>
 
     <string name="settings_title">Impostazioni</string>
-    <string name="settings_subtitle">Personalizza l'app e la tua libreria</string>
+    <string name="settings_subtitle">Personalizza l\'app e la tua libreria</string>
     <string name="action_close">Chiudi</string>
     <string name="settings_section_appearance_title">Aspetto e comportamento</string>
     <string name="settings_section_appearance_subtitle">Opzioni globali di visualizzazione e scansione</string>
     <string name="settings_theme_label">Tema</string>
-    <string name="settings_theme_description">Seleziona il tema dell'app</string>
+    <string name="settings_theme_description">Seleziona il tema dell\'app</string>
     <string name="theme_light">Chiaro</string>
-    <string name="theme_dark">Scuro</string>
+    <string name="theme_dark">Oscuro</string>
     <string name="theme_system">Sistema</string>
     <string name="settings_accent_color_label">Colore accento</string>
-    <string name="settings_accent_color_description">Seleziona il colore accento dell'app</string>
+    <string name="settings_accent_color_description">Seleziona il colore accento dell\'app</string>
     <string name="settings_dynamic_color_label">Colore dinamico</string>
     <string name="settings_dynamic_color_description">Usa il colore della copertina nel player</string>
 
     <string name="settings_section_language_title">Lingua</string>
-    <string name="settings_section_language_subtitle">Seleziona la lingua dell'app</string>
+    <string name="settings_section_language_subtitle">Seleziona la lingua dell\'app</string>
     <string name="settings_language_label">Lingua</string>
     <string name="settings_language_description">Scegli la lingua del sistema o specifica</string>
     <string name="language_system_label">Sistema</string>
@@ -74,7 +74,7 @@
     <string name="settings_section_audio_title">Audio</string>
     <string name="settings_section_audio_subtitle">Controllo equalizzatore e elaborazione suono</string>
     <string name="settings_equalizer_enable_label">Attiva equalizzatore</string>
-    <string name="settings_equalizer_enable_description">Usa l'equalizzatore nativo del sistema</string>
+    <string name="settings_equalizer_enable_description">Usa l\'equalizzatore nativo del sistema</string>
     <string name="action_open_equalizer">Apri equalizzatore avanzato</string>
 
     <string name="settings_section_library_title">Libreria</string>
@@ -85,14 +85,14 @@
     <string name="settings_folders_configured_title">Cartelle configurate</string>
     <string name="settings_folders_empty">Nessuna cartella configurata</string>
     <string name="dialog_delete_folder_title">Elimina cartella</string>
-    <string name="dialog_delete_folder_message">Eliminare la cartella \"%1$s\"?\n\nI %2$d brani in questa cartella non saranno più mostrati nell'app.</string>
+    <string name="dialog_delete_folder_message">Eliminare la cartella \"%1$s\"?\n\nI %2$d brani in questa cartella non saranno più mostrati nell\'app.</string>
 
     <string name="toast_folder_deleted">Cartella eliminata</string>
     <string name="toast_folder_added">Cartella aggiunta</string>
     <string name="playlists_title">Playlist</string>
     <string name="toast_export_create_failed">Impossibile creare il file nella cartella</string>
     <string name="toast_playlists_exported">Playlist esportate</string>
-    <string name="toast_export_playlists_error">Errore durante l'esportazione delle playlist: %1$s</string>
+    <string name="toast_export_playlists_error">Errore durante l\'esportazione delle playlist: %1$s</string>
     <string name="toast_playlists_imported_count">Importate %1$d playlist</string>
     <string name="toast_no_json_found">Nessun file .json trovato nella cartella</string>
 
@@ -126,13 +126,13 @@
     <string name="about_tech_material_desc">Design</string>
     <string name="about_tech_media_desc">Riproduzione audio</string>
     <string name="about_privacy_policy">Informativa sulla privacy</string>
-    <string name="about_privacy_text_1">Local Player non raccoglie, memorizza né condivide dati personali dell'utente.</string>
-    <string name="about_privacy_text_2">L'app funziona localmente sul tuo dispositivo e accede solo ai file audio e alle cartelle selezionate.</string>
+    <string name="about_privacy_text_1">Local Player non raccoglie, memorizza né condivide dati personali dell\'utente.</string>
+    <string name="about_privacy_text_2">L\'app funziona localmente sul tuo dispositivo e accede solo ai file audio e alle cartelle selezionate.</string>
     <string name="about_privacy_text_3">Nessuna informazione viene inviata a server esterni.</string>
     <string name="about_footer">© 2026 Local Player. Tutti i diritti riservati.</string>
     <string name="nav_back">Indietro</string>
 
-    
+
     <string name="lyrics_not_available">Nessun testo disponibile per questo brano</string>
     <string name="favorites">Preferiti</string>
     <string name="removed_from_favorites">Rimosso dai Preferiti</string>
@@ -153,8 +153,14 @@
     <string name="no_equalizer_available">Nessun equalizzatore disponibile per la sessione corrente.</string>
     <string name="user_suffix"> (Utente)</string>
     <string name="equalizer_section_presets_title">Preset</string>
-    <string name="equalizer_section_presets_subtitle">Scegli i profili di sistema o creati da te</string>
     <string name="equalizer_section_bands_title">Bande</string>
     <string name="equalizer_section_bands_subtitle">Trascina per regolare ogni frequenza</string>
     <string name="select_option">Seleziona</string>
+    <string name="sort_by_playlist">Per playlist</string>
+    <string name="toast_removed_from_playlist">Rimosso dalla playlist</string>
+    <string name="action_play">Riproduci</string>
+    <string name="action_shuffle">Casuale</string>
+    <string name="action_add_to_favorites">Aggiungi ai preferiti</string>
+    <string name="action_remove_from_favorites">Rimuovi dai preferiti</string>
+    <string name="action_remove_from_playlist">Rimuovi dalla lista</string>
 </resources>

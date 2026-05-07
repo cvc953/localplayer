@@ -157,4 +157,11 @@
     <string name="equalizer_section_bands_title">Bandas</string>
     <string name="equalizer_section_bands_subtitle">Desliza para ajustar cada frecuencia</string>
     <string name="select_option">Seleccionar</string>
+    <string name="sort_by_playlist">Por lista</string>
+    <string name="toast_removed_from_playlist">Eliminado de la lista</string>
+    <string name="action_play">Reproducir</string>
+    <string name="action_shuffle">Aleatorio</string>
+    <string name="action_add_to_favorites">Añadir a favoritos</string>
+    <string name="action_remove_from_favorites">Eliminar de favoritos</string>
+    <string name="action_remove_from_playlist">Quitar de la lista</string>
 </resources>
