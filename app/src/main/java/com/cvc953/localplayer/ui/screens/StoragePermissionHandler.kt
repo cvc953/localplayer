@@ -1,9 +1,10 @@
-package com.cvc953.localplayer.util
+package com.cvc953.localplayer.ui.screens
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -39,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,7 +54,7 @@ fun StoragePermissionHandler(
     onSetupCompleted: () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
     val permission =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -93,7 +95,7 @@ fun StoragePermissionHandler(
                     hasFolderConfigured.value = true
                     Toast.makeText(context, "Carpeta seleccionada", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
-                    android.util.Log.w("StoragePermissionHandler", "No se pudo guardar permiso persistente", e)
+                    Log.w("StoragePermissionHandler", "No se pudo guardar permiso persistente", e)
                     Toast.makeText(context, "No se pudo guardar acceso a la carpeta", Toast.LENGTH_SHORT).show()
                 }
             }

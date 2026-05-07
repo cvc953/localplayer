@@ -32,8 +32,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.ui.res.stringResource
-import com.cvc953.localplayer.R
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
@@ -65,12 +63,14 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Artist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
@@ -123,6 +123,7 @@ fun ArtistsScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
+    val toastPressBackAgain = stringResource(R.string.toast_press_back_again)
 
     BackHandler {
         val currentTime = System.currentTimeMillis()
@@ -130,7 +131,7 @@ fun ArtistsScreen(
             activity?.finish()
         } else {
             lastBackPressTime = currentTime
-            Toast.makeText(context, context.getString(R.string.toast_press_back_again), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, toastPressBackAgain, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -264,7 +265,7 @@ fun ArtistsScreen(
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
-                    modifier = Modifier.Companion.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors =
                         TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -409,7 +410,7 @@ fun ArtistsScreen(
                                         painter =
                                             artistArt?.let { BitmapPainter(it.asImageBitmap()) }
                                                 ?: painterResource(R.drawable.ic_default_album),
-contentDescription = stringResource(R.string.album_cover),
+                                        contentDescription = stringResource(R.string.album_cover),
                                         modifier =
                                             Modifier.Companion
                                                 .matchParentSize()
@@ -421,7 +422,7 @@ contentDescription = stringResource(R.string.album_cover),
                                         IconButton(onClick = { menuExpanded = true }) {
                                             Icon(
                                                 Icons.Default.MoreVert,
-contentDescription = stringResource(R.string.action_more_options),
+                                                contentDescription = stringResource(R.string.action_more_options),
                                                 tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
@@ -479,7 +480,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                 },
                                                 onClick = {
                                                     menuExpanded = false
-                                                
+
                                                     // NO filter duplicates when adding full artist
                                                     val toAdd = artistSongs
                                                     playbackViewModel.addToQueueNextAll(toAdd)
@@ -500,7 +501,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                                 },
                                                 onClick = {
                                                     menuExpanded = false
-                                                
+
                                                     // NO filter duplicates when adding full artist
                                                     val toAdd = artistSongs
                                                     playbackViewModel.addToQueueEndAll(toAdd)
@@ -732,7 +733,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                             },
                                             onClick = {
                                                 menuExpanded = false
-                                            
+
                                                 // NO filter duplicates when adding full artist
                                                 val toAdd = artistSongs
                                                 playbackViewModel.addToQueueNextAll(toAdd)
@@ -753,7 +754,7 @@ contentDescription = stringResource(R.string.action_more_options),
                                             },
                                             onClick = {
                                                 menuExpanded = false
-                                            
+
                                                 // NO filter duplicates when adding full artist
                                                 val toAdd = artistSongs
                                                 playbackViewModel.addToQueueEndAll(toAdd)

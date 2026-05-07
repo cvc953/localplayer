@@ -127,7 +127,7 @@
     <string name="about_tech_media_desc">Riproduzione audio</string>
     <string name="about_privacy_policy">Informativa sulla privacy</string>
     <string name="about_privacy_text_1">Local Player non raccoglie, memorizza né condivide dati personali dell\'utente.</string>
-    <string name="about_privacy_text_2">L\'app funziona localmente sul tuo dispositivo e accede solo ai file audio e alle cartelle selezionate.</string>
+    <string name="about_privacy_text_2">L\'app funciona localmente sul tuo dispositivo e accede solo ai file audio e alle cartelle selezionate.</string>
     <string name="about_privacy_text_3">Nessuna informazione viene inviata a server esterni.</string>
     <string name="about_footer">© 2026 Local Player. Tutti i diritti riservati.</string>
     <string name="nav_back">Indietro</string>
@@ -153,6 +153,7 @@
     <string name="no_equalizer_available">Nessun equalizzatore disponibile per la sessione corrente.</string>
     <string name="user_suffix"> (Utente)</string>
     <string name="equalizer_section_presets_title">Preset</string>
+    <string name="equalizer_section_presets_subtitle">Scegli i preset del sistema o creati da te</string>
     <string name="equalizer_section_bands_title">Bande</string>
     <string name="equalizer_section_bands_subtitle">Trascina per regolare ogni frequenza</string>
     <string name="select_option">Seleziona</string>
@@ -163,4 +164,5 @@
     <string name="action_add_to_favorites">Aggiungi ai preferiti</string>
     <string name="action_remove_from_favorites">Rimuovi dai preferiti</string>
     <string name="action_remove_from_playlist">Rimuovi dalla lista</string>
+    <string name="action_view_all">Vedi tutte</string>
 </resources>

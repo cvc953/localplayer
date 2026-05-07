@@ -9,61 +9,44 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -85,13 +68,6 @@ import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.preferences.AppPrefs
 import com.cvc953.localplayer.ui.components.PlaylistAlbumArt
 import com.cvc953.localplayer.ui.extendedColors
-import com.cvc953.localplayer.ui.theme.LocalExtendedColors
-import com.cvc953.localplayer.ui.theme.md_textSecondary
-import com.cvc953.localplayer.ui.theme.predefinedThemeColors
-import com.cvc953.localplayer.viewmodel.EqualizerViewModel
-import com.cvc953.localplayer.viewmodel.FolderEntry
-import com.cvc953.localplayer.viewmodel.FolderViewModel
-import com.cvc953.localplayer.viewmodel.MainViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.launch
@@ -126,13 +102,17 @@ fun PlaylistsScreen(
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
 
+    // Strings localizados
+    val pressBackAgainMsg = stringResource(R.string.toast_press_back_again)
+    val exportErrorPrefix = stringResource(R.string.toast_export_playlists_error)
+
     BackHandler {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastBackPressTime < 1500) {
             activity?.finish()
         } else {
             lastBackPressTime = currentTime
-            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, pressBackAgainMsg, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -174,7 +154,7 @@ fun PlaylistsScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.Companion.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = stringResource(id = R.string.playlists_title),
@@ -250,7 +230,7 @@ fun PlaylistsScreen(
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
-                    modifier = Modifier.Companion.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors =
                         TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -274,7 +254,6 @@ fun PlaylistsScreen(
                             try {
                                 val resolver = context.contentResolver
 
-                                // Try to persist permissions so write works reliably
                                 try {
                                     resolver.takePersistableUriPermission(
                                         uri,
@@ -290,8 +269,6 @@ fun PlaylistsScreen(
                                 val filename =
                                     "localplayer_playlists_${System.currentTimeMillis()}.json"
 
-                                // Some providers reject the raw tree URI for createDocument. Try the tree URI first,
-                                // then fall back to using the tree's document URI.
                                 var docUri =
                                     try {
                                         DocumentsContract.createDocument(
@@ -340,7 +317,6 @@ fun PlaylistsScreen(
                                     resolver.openOutputStream(docUri)?.use { os ->
                                         val text =
                                             playlistToExport?.let { p ->
-                                                // serialize single playlist
                                                 val array = JSONArray()
                                                 val idsArray = JSONArray()
                                                 p.songIds.forEach { idsArray.put(it) }
@@ -371,7 +347,7 @@ fun PlaylistsScreen(
                                     Toast
                                         .makeText(
                                             context,
-                                            "Error exportando playlists: $exportError",
+                                            context.getString(R.string.toast_export_playlists_error, exportError),
                                             Toast.LENGTH_LONG,
                                         ).show()
                                 }
@@ -493,7 +469,7 @@ fun PlaylistsScreen(
                     IconButton(onClick = { treeLauncher.launch(null) }) {
                         Icon(
                             Icons.Default.Download,
-                            contentDescription = "Importar",
+                            contentDescription = stringResource(R.string.action_import),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
@@ -506,11 +482,11 @@ fun PlaylistsScreen(
 
                 Spacer(Modifier.width(24.dp))
 
-                Column(horizontalAlignment = Alignment.Companion.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = { showCreateDialog = true }) {
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = "Crear lista",
+                            contentDescription = stringResource(R.string.action_create_playlist),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
@@ -539,7 +515,7 @@ fun PlaylistsScreen(
                             ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                             ),
-                    ) { Text("Crear lista") }
+                    ) { Text(stringResource(R.string.action_create_playlist)) }
                 }
             } else {
                 LazyColumn(
@@ -573,7 +549,7 @@ fun PlaylistsScreen(
 
                             Column(
                                 modifier =
-                                    Modifier.Companion.weight(1f).clickable {
+                                    Modifier.weight(1f).clickable {
                                         onPlaylistClick(playlist.name)
                                     },
                             ) {
@@ -583,8 +559,8 @@ fun PlaylistsScreen(
                                     fontSize = 16.sp,
                                 )
                                 Text(
-                                    text = "${playlist.songIds.size} canciones",
-                                    color = md_textSecondary,
+                                    text = stringResource(R.string.songs_count, playlist.songIds.size),
+                                    color = MaterialTheme.extendedColors.textSecondary,
                                     fontSize = 12.sp,
                                 )
                             }
@@ -616,10 +592,7 @@ fun PlaylistsScreen(
                                     onDismissRequest = { menuExpandedPlaylistId = null },
                                     containerColor = MaterialTheme.extendedColors.surfaceSheet,
                                 ) {
-                                    val appPrefs =
-                                        remember {
-                                            AppPrefs(context)
-                                        }
+                                    val appPrefs = remember { AppPrefs(context) }
                                     val order = appPrefs.getPlaylistOrder(playlist.name)
                                     val playlistSongs =
                                         remember(songs, playlist, order) {
@@ -656,8 +629,6 @@ fun PlaylistsScreen(
                                         },
                                         onClick = {
                                             menuExpandedPlaylistId = null
-
-                                            // NO filter duplicates when adding full playlist
                                             val toAdd = playlistSongs
                                             playbackViewModel.addToQueueNextAll(toAdd)
                                             Toast
@@ -677,8 +648,6 @@ fun PlaylistsScreen(
                                         },
                                         onClick = {
                                             menuExpandedPlaylistId = null
-
-                                            // NO filter duplicates when adding full playlist
                                             val toAdd = playlistSongs
                                             playbackViewModel.addToQueueEndAll(toAdd)
                                             Toast
@@ -749,8 +718,8 @@ fun PlaylistsScreen(
                 },
                 text = {
                     Text(
-                        text = "Se eliminara la lista \"${target?.name}\".",
-                        color = md_textSecondary,
+                        text = stringResource(R.string.dialog_delete_playlist_message, target?.name ?: ""),
+                        color = MaterialTheme.extendedColors.textSecondary,
                     )
                 },
                 confirmButton = {
@@ -802,7 +771,7 @@ fun PlaylistsScreen(
                                 ),
                         )
                         if (createError != null) {
-                            Spacer(modifier = Modifier.Companion.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(text = createError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
                         }
                     }
@@ -861,12 +830,12 @@ fun PlaylistsScreen(
                                     focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                                     unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
                                     cursorColor = MaterialTheme.colorScheme.primary,
-                                    focusedTextColor = Color.Companion.White,
-                                    unfocusedTextColor = Color.Companion.White,
+                                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                 ),
                         )
                         if (renameError != null) {
-                            Spacer(modifier = Modifier.Companion.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(text = renameError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
                         }
                     }
@@ -898,7 +867,7 @@ fun PlaylistsScreen(
                             renameError = null
                             playlistToRename = null
                         },
-                    ) { Text(stringResource(id = R.string.action_cancel), color = Color.Companion.White) }
+                    ) { Text(stringResource(id = R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground) }
                 },
             )
         }

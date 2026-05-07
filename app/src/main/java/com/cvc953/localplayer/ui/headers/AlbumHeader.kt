@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -161,7 +162,11 @@ fun AlbumHeader(
         // Botones igual que PlaylistHeader
         val buttonColor = MaterialTheme.colorScheme.primary
 
-        Text(text = "${albumSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
+        Text(
+            text = stringResource(R.string.songs_count, albumSongs.size),
+            fontSize = 16.sp,
+            color = MaterialTheme.extendedColors.textSecondary,
+        )
         Spacer(modifier = Modifier.height(20.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -194,12 +199,12 @@ fun AlbumHeader(
                     ) {
                         Icon(
                             Icons.Default.PlayArrow,
-                            contentDescription = "Reproducir ahora",
+                            contentDescription = stringResource(R.string.action_play_now),
                             tint = Color.White,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(Modifier.width(2.dp))
-                        Text("Reproducir", color = Color.White, fontSize = 14.sp)
+                        Text(stringResource(R.string.action_play), color = Color.White, fontSize = 14.sp)
                     }
                 }
             }
@@ -228,9 +233,9 @@ fun AlbumHeader(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Default.Shuffle, contentDescription = "Aleatorio", tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Shuffle, contentDescription = stringResource(R.string.action_shuffle), tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(2.dp))
-                        Text("Aleatorio", color = Color.White, fontSize = 14.sp)
+                        Text(stringResource(R.string.action_shuffle), color = Color.White, fontSize = 14.sp)
                     }
                 }
             }
