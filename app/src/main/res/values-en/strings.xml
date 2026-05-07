@@ -164,4 +164,24 @@
     <string name="action_remove_from_favorites">Remove from favorites</string>
     <string name="action_remove_from_playlist">Remove from playlist</string>
     <string name="action_view_all">View all</string>
+
+    <!-- Storage Permission Handler -->
+    <string name="storage_setup_title">Set up library</string>
+    <string name="storage_setup_subtitle">A quick step to access your local music</string>
+    <string name="storage_permission_section_title">1. Storage permission</string>
+    <string name="storage_permission_section_subtitle">Required to read your audio files</string>
+    <string name="storage_permission_granted">Permission granted</string>
+    <string name="storage_permission_pending">Permission pending</string>
+    <string name="storage_permission_active">Permission active</string>
+    <string name="storage_permission_grant">Grant permission</string>
+    <string name="storage_folder_section_title">2. Music folder</string>
+    <string name="storage_folder_section_subtitle">Select where you store your songs</string>
+    <string name="storage_folder_configured">Folder configured</string>
+    <string name="storage_folder_pending">Folder pending</string>
+    <string name="storage_folder_choose">Choose folder</string>
+    <string name="storage_folder_permission_required">You must first grant storage permission.</string>
+    <string name="storage_toast_permission_denied">Access to music is required</string>
+    <string name="storage_toast_folder_selected">Folder selected</string>
+    <string name="storage_toast_permission_error">Could not save folder access</string>
+    <string name="storage_log_permission_error">Could not save persistent permission</string>
 </resources>

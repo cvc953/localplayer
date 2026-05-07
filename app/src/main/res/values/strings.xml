@@ -165,4 +165,24 @@
     <string name="action_remove_from_favorites">Eliminar de favoritos</string>
     <string name="action_remove_from_playlist">Quitar de la lista</string>
     <string name="action_view_all">Ver todas</string>
+
+    <!-- Storage Permission Handler -->
+    <string name="storage_setup_title">Configurar biblioteca</string>
+    <string name="storage_setup_subtitle">Un paso rápido para acceder a tu música local</string>
+    <string name="storage_permission_section_title">1. Permiso de almacenamiento</string>
+    <string name="storage_permission_section_subtitle">Necesario para leer tus archivos de audio</string>
+    <string name="storage_permission_granted">Permiso concedido</string>
+    <string name="storage_permission_pending">Permiso pendiente</string>
+    <string name="storage_permission_active">Permiso activo</string>
+    <string name="storage_permission_grant">Dar permiso</string>
+    <string name="storage_folder_section_title">2. Carpeta de música</string>
+    <string name="storage_folder_section_subtitle">Selecciona dónde guardas tus canciones</string>
+    <string name="storage_folder_configured">Carpeta configurada</string>
+    <string name="storage_folder_pending">Carpeta pendiente</string>
+    <string name="storage_folder_choose">Elegir carpeta</string>
+    <string name="storage_folder_permission_required">Primero debes conceder el permiso de almacenamiento.</string>
+    <string name="storage_toast_permission_denied">Se necesita acceso a la música</string>
+    <string name="storage_toast_folder_selected">Carpeta seleccionada</string>
+    <string name="storage_toast_permission_error">No se pudo guardar acceso a la carpeta</string>
+    <string name="storage_log_permission_error">No se pudo guardar permiso persistente</string>
 </resources>

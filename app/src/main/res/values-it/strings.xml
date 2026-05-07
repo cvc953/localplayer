@@ -165,4 +165,24 @@
     <string name="action_remove_from_favorites">Rimuovi dai preferiti</string>
     <string name="action_remove_from_playlist">Rimuovi dalla lista</string>
     <string name="action_view_all">Vedi tutte</string>
+
+    <!-- Storage Permission Handler -->
+    <string name="storage_setup_title">Configura libreria</string>
+    <string name="storage_setup_subtitle">Un rapido passo per accedere alla tua musica locale</string>
+    <string name="storage_permission_section_title">1. Permesso di archiviazione</string>
+    <string name="storage_permission_section_subtitle">Necessario per leggere i tuoi file audio</string>
+    <string name="storage_permission_granted">Permesso concesso</string>
+    <string name="storage_permission_pending">Permesso in sospeso</string>
+    <string name="storage_permission_active">Permesso attivo</string>
+    <string name="storage_permission_grant">Concedi permesso</string>
+    <string name="storage_folder_section_title">2. Cartella musicale</string>
+    <string name="storage_folder_section_subtitle">Seleziona dove archivi le tue canzoni</string>
+    <string name="storage_folder_configured">Cartella configurata</string>
+    <string name="storage_folder_pending">Cartella in sospeso</string>
+    <string name="storage_folder_choose">Scegli cartella</string>
+    <string name="storage_folder_permission_required">Devi prima concedere il permesso di archiviazione.</string>
+    <string name="storage_toast_permission_denied">L\'accesso alla musica è necessario</string>
+    <string name="storage_toast_folder_selected">Cartella selezionata</string>
+    <string name="storage_toast_permission_error">Impossibile salvare l\'accesso alla cartella</string>
+    <string name="storage_log_permission_error">Impossibile salvare il permesso persistente</string>
 </resources>
