@@ -1,28 +1,52 @@
-package com.cvc953.localplayer.util
+package com.cvc953.localplayer.ui.screens
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.extendedColors
 
 @Composable
@@ -32,7 +56,7 @@ fun StoragePermissionHandler(
     onSetupCompleted: () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
 
     val permission =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -48,15 +72,16 @@ fun StoragePermissionHandler(
             )
         }
     val hasFolderConfigured = rememberSaveable { mutableStateOf(isFolderConfiguredInitially) }
-    val setupWasInitiallyCompleted = rememberSaveable {
-        mutableStateOf(hasPermission.value && hasFolderConfigured.value)
-    }
+    val setupWasInitiallyCompleted =
+        rememberSaveable {
+            mutableStateOf(hasPermission.value && hasFolderConfigured.value)
+        }
 
     val permissionLauncher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { granted ->
             hasPermission.value = granted
             if (!granted) {
-                Toast.makeText(context, "Se necesita acceso a la musica", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.storage_toast_permission_denied), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -70,10 +95,10 @@ fun StoragePermissionHandler(
                     )
                     onFolderSelected(uri.toString())
                     hasFolderConfigured.value = true
-                    Toast.makeText(context, "Carpeta seleccionada", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.storage_toast_folder_selected), Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
-                    android.util.Log.w("StoragePermissionHandler", "No se pudo guardar permiso persistente", e)
-                    Toast.makeText(context, "No se pudo guardar acceso a la carpeta", Toast.LENGTH_SHORT).show()
+                    Log.w("StoragePermissionHandler", context.getString(R.string.storage_log_permission_error), e)
+                    Toast.makeText(context, context.getString(R.string.storage_toast_permission_error), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -105,20 +130,20 @@ fun StoragePermissionHandler(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "Configurar biblioteca",
+                text = stringResource(R.string.storage_setup_title),
                 color = MaterialTheme.colorScheme.onBackground,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = "Un paso rapido para acceder a tu musica local",
+                text = stringResource(R.string.storage_setup_subtitle),
                 color = MaterialTheme.extendedColors.textSecondary,
                 fontSize = 13.sp,
             )
 
             SetupSectionCard(
-                title = "1. Permiso de almacenamiento",
-                subtitle = "Necesario para leer tus archivos de audio",
+                title = stringResource(R.string.storage_permission_section_title),
+                subtitle = stringResource(R.string.storage_permission_section_subtitle),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -128,7 +153,14 @@ fun StoragePermissionHandler(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = if (hasPermission.value) "Permiso concedido" else "Permiso pendiente",
+                        text =
+                            if (hasPermission.value) {
+                                stringResource(
+                                    R.string.storage_permission_granted,
+                                )
+                            } else {
+                                stringResource(R.string.storage_permission_pending)
+                            },
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -150,23 +182,41 @@ fun StoragePermissionHandler(
                             disabledContentColor = MaterialTheme.extendedColors.textSecondary,
                         ),
                 ) {
-                    Text(if (hasPermission.value) "Permiso activo" else "Dar permiso")
+                    Text(
+                        if (hasPermission.value) {
+                            stringResource(
+                                R.string.storage_permission_active,
+                            )
+                        } else {
+                            stringResource(R.string.storage_permission_grant)
+                        },
+                    )
                 }
             }
 
             SetupSectionCard(
-                title = "2. Carpeta de musica",
-                subtitle = "Selecciona donde guardas tus canciones",
+                title = stringResource(R.string.storage_folder_section_title),
+                subtitle = stringResource(R.string.storage_folder_section_subtitle),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = if (hasFolderConfigured.value) Icons.Default.CheckCircle else Icons.Default.Folder,
                         contentDescription = null,
-                        tint = if (hasFolderConfigured.value) MaterialTheme.colorScheme.primary else MaterialTheme.extendedColors.textSecondary,
+                        tint =
+                            if (hasFolderConfigured.value) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.extendedColors.textSecondary
+                            },
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = if (hasFolderConfigured.value) "Carpeta configurada" else "Carpeta pendiente",
+                        text =
+                            if (hasFolderConfigured.value) {
+                                stringResource(R.string.storage_folder_configured)
+                            } else {
+                                stringResource(R.string.storage_folder_pending)
+                            },
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -184,12 +234,12 @@ fun StoragePermissionHandler(
                             disabledContentColor = MaterialTheme.extendedColors.textSecondary,
                         ),
                 ) {
-                    Text("Elegir carpeta")
+                    Text(stringResource(R.string.storage_folder_choose))
                 }
                 if (!hasPermission.value) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Primero debes conceder el permiso de almacenamiento.",
+                        text = stringResource(R.string.storage_folder_permission_required),
                         color = MaterialTheme.extendedColors.textSecondary,
                         fontSize = 12.sp,
                     )

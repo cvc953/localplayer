@@ -9,61 +9,44 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -76,20 +59,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.preferences.AppPrefs
 import com.cvc953.localplayer.ui.components.PlaylistAlbumArt
 import com.cvc953.localplayer.ui.extendedColors
-import com.cvc953.localplayer.ui.theme.LocalExtendedColors
-import com.cvc953.localplayer.ui.theme.md_textSecondary
-import com.cvc953.localplayer.ui.theme.predefinedThemeColors
-import com.cvc953.localplayer.viewmodel.EqualizerViewModel
-import com.cvc953.localplayer.viewmodel.FolderEntry
-import com.cvc953.localplayer.viewmodel.FolderViewModel
-import com.cvc953.localplayer.viewmodel.MainViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.launch
@@ -124,13 +102,17 @@ fun PlaylistsScreen(
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
 
+    // Strings localizados
+    val pressBackAgainMsg = stringResource(R.string.toast_press_back_again)
+    val exportErrorPrefix = stringResource(R.string.toast_export_playlists_error)
+
     BackHandler {
         val currentTime = System.currentTimeMillis()
         if (currentTime - lastBackPressTime < 1500) {
             activity?.finish()
         } else {
             lastBackPressTime = currentTime
-            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, pressBackAgainMsg, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -161,7 +143,7 @@ fun PlaylistsScreen(
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Escaneando canciones", color = MaterialTheme.colorScheme.onBackground)
+            Text(stringResource(id = R.string.scanning_songs), color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
@@ -172,10 +154,10 @@ fun PlaylistsScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.Companion.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Listas",
+                    text = stringResource(id = R.string.playlists_title),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -187,7 +169,7 @@ fun PlaylistsScreen(
                     IconButton(onClick = { sortMenuExpanded = true }) {
                         Icon(
                             Icons.Default.Sort,
-                            contentDescription = "Ordenar",
+                            contentDescription = stringResource(id = R.string.action_sort),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
@@ -199,7 +181,7 @@ fun PlaylistsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título A-Z",
+                                    stringResource(id = R.string.sort_title_asc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -211,7 +193,7 @@ fun PlaylistsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título Z-A",
+                                    stringResource(id = R.string.sort_title_desc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -231,7 +213,7 @@ fun PlaylistsScreen(
                 ) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "Buscar",
+                        contentDescription = stringResource(id = R.string.action_search),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -244,11 +226,11 @@ fun PlaylistsScreen(
                     singleLine = true,
                     placeholder = {
                         Text(
-                            "Buscar por lista",
+                            stringResource(id = R.string.search_playlists_placeholder),
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
-                    modifier = Modifier.Companion.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors =
                         TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -272,7 +254,6 @@ fun PlaylistsScreen(
                             try {
                                 val resolver = context.contentResolver
 
-                                // Try to persist permissions so write works reliably
                                 try {
                                     resolver.takePersistableUriPermission(
                                         uri,
@@ -288,8 +269,6 @@ fun PlaylistsScreen(
                                 val filename =
                                     "localplayer_playlists_${System.currentTimeMillis()}.json"
 
-                                // Some providers reject the raw tree URI for createDocument. Try the tree URI first,
-                                // then fall back to using the tree's document URI.
                                 var docUri =
                                     try {
                                         DocumentsContract.createDocument(
@@ -326,7 +305,7 @@ fun PlaylistsScreen(
                                     Toast
                                         .makeText(
                                             context,
-                                            "No se pudo crear archivo en la carpeta",
+                                            context.getString(R.string.toast_export_create_failed),
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                     return@launch
@@ -338,7 +317,6 @@ fun PlaylistsScreen(
                                     resolver.openOutputStream(docUri)?.use { os ->
                                         val text =
                                             playlistToExport?.let { p ->
-                                                // serialize single playlist
                                                 val array = JSONArray()
                                                 val idsArray = JSONArray()
                                                 p.songIds.forEach { idsArray.put(it) }
@@ -361,7 +339,7 @@ fun PlaylistsScreen(
                                     Toast
                                         .makeText(
                                             context,
-                                            "Playlists exportadas",
+                                            context.getString(R.string.toast_playlists_exported),
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                     playlistToExport = null
@@ -369,7 +347,7 @@ fun PlaylistsScreen(
                                     Toast
                                         .makeText(
                                             context,
-                                            "Error exportando playlists: $exportError",
+                                            context.getString(R.string.toast_export_playlists_error, exportError),
                                             Toast.LENGTH_LONG,
                                         ).show()
                                 }
@@ -462,14 +440,14 @@ fun PlaylistsScreen(
                                 Toast
                                     .makeText(
                                         context,
-                                        "Importadas $imported playlists",
+                                        context.getString(R.string.toast_playlists_imported_count, imported),
                                         Toast.LENGTH_SHORT,
                                     ).show()
                             } else {
                                 Toast
                                     .makeText(
                                         context,
-                                        "No se encontraron archivos .json en la carpeta",
+                                        context.getString(R.string.toast_no_json_found),
                                         Toast.LENGTH_SHORT,
                                     ).show()
                             }
@@ -483,20 +461,20 @@ fun PlaylistsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.Companion.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Spacer(Modifier.width(8.dp))
 
-                Column(horizontalAlignment = Alignment.Companion.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = { treeLauncher.launch(null) }) {
                         Icon(
                             Icons.Default.Download,
-                            contentDescription = "Importar",
+                            contentDescription = stringResource(R.string.action_import),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                     Text(
-                        text = "importar",
+                        text = stringResource(id = R.string.action_import_lowercase),
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 12.sp,
                     )
@@ -504,16 +482,16 @@ fun PlaylistsScreen(
 
                 Spacer(Modifier.width(24.dp))
 
-                Column(horizontalAlignment = Alignment.Companion.CenterHorizontally) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     IconButton(onClick = { showCreateDialog = true }) {
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = "Crear lista",
+                            contentDescription = stringResource(R.string.action_create_playlist),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
                     Text(
-                        text = "crear",
+                        text = stringResource(id = R.string.action_create_lowercase),
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 12.sp,
                     )
@@ -527,7 +505,7 @@ fun PlaylistsScreen(
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Text(
-                        text = "No hay listas por ahora",
+                        text = stringResource(id = R.string.playlists_empty_state),
                         color = MaterialTheme.colorScheme.onBackground,
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -537,7 +515,7 @@ fun PlaylistsScreen(
                             ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
                             ),
-                    ) { Text("Crear lista") }
+                    ) { Text(stringResource(R.string.action_create_playlist)) }
                 }
             } else {
                 LazyColumn(
@@ -571,7 +549,7 @@ fun PlaylistsScreen(
 
                             Column(
                                 modifier =
-                                    Modifier.Companion.weight(1f).clickable {
+                                    Modifier.weight(1f).clickable {
                                         onPlaylistClick(playlist.name)
                                     },
                             ) {
@@ -581,8 +559,8 @@ fun PlaylistsScreen(
                                     fontSize = 16.sp,
                                 )
                                 Text(
-                                    text = "${playlist.songIds.size} canciones",
-                                    color = md_textSecondary,
+                                    text = stringResource(R.string.songs_count, playlist.songIds.size),
+                                    color = MaterialTheme.extendedColors.textSecondary,
                                     fontSize = 12.sp,
                                 )
                             }
@@ -601,7 +579,7 @@ fun PlaylistsScreen(
                                 ) {
                                     Icon(
                                         Icons.Default.MoreVert,
-                                        contentDescription = "Opciones",
+                                        contentDescription = stringResource(id = R.string.action_more_options),
                                         tint = MaterialTheme.colorScheme.onBackground,
                                     )
                                 }
@@ -614,10 +592,7 @@ fun PlaylistsScreen(
                                     onDismissRequest = { menuExpandedPlaylistId = null },
                                     containerColor = MaterialTheme.extendedColors.surfaceSheet,
                                 ) {
-                                    val appPrefs =
-                                        remember {
-                                            AppPrefs(context)
-                                        }
+                                    val appPrefs = remember { AppPrefs(context) }
                                     val order = appPrefs.getPlaylistOrder(playlist.name)
                                     val playlistSongs =
                                         remember(songs, playlist, order) {
@@ -633,7 +608,7 @@ fun PlaylistsScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Reproducir ahora",
+                                                stringResource(id = R.string.action_play_now),
                                                 color = MaterialTheme.colorScheme.onSurface,
                                             )
                                         },
@@ -648,20 +623,18 @@ fun PlaylistsScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Añadir como siguiente",
+                                                stringResource(id = R.string.action_add_next),
                                                 color = MaterialTheme.colorScheme.onSurface,
                                             )
                                         },
                                         onClick = {
                                             menuExpandedPlaylistId = null
-                                        
-                                            // NO filter duplicates when adding full playlist
                                             val toAdd = playlistSongs
                                             playbackViewModel.addToQueueNextAll(toAdd)
                                             Toast
                                                 .makeText(
                                                     context,
-                                                    "Añadido ${toAdd.size} canciones como siguiente",
+                                                    context.getString(R.string.toast_added_next_count, toAdd.size),
                                                     Toast.LENGTH_SHORT,
                                                 ).show()
                                         },
@@ -669,20 +642,18 @@ fun PlaylistsScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Añadir al final",
+                                                stringResource(id = R.string.action_add_to_queue_end),
                                                 color = MaterialTheme.colorScheme.onSurface,
                                             )
                                         },
                                         onClick = {
                                             menuExpandedPlaylistId = null
-                                        
-                                            // NO filter duplicates when adding full playlist
                                             val toAdd = playlistSongs
                                             playbackViewModel.addToQueueEndAll(toAdd)
                                             Toast
                                                 .makeText(
                                                     context,
-                                                    "Añadido ${toAdd.size} canciones al final de la cola",
+                                                    context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                     Toast.LENGTH_SHORT,
                                                 ).show()
                                         },
@@ -690,7 +661,7 @@ fun PlaylistsScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Exportar",
+                                                stringResource(id = R.string.action_export),
                                                 color = MaterialTheme.colorScheme.onBackground,
                                             )
                                         },
@@ -703,7 +674,7 @@ fun PlaylistsScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Renombrar",
+                                                stringResource(id = R.string.action_rename),
                                                 color = MaterialTheme.colorScheme.onBackground,
                                             )
                                         },
@@ -717,7 +688,7 @@ fun PlaylistsScreen(
                                     DropdownMenuItem(
                                         text = {
                                             Text(
-                                                "Eliminar",
+                                                stringResource(id = R.string.action_delete),
                                                 color = Color(0xFFFF6B6B),
                                             )
                                         },
@@ -739,11 +710,16 @@ fun PlaylistsScreen(
             AlertDialog(
                 onDismissRequest = { playlistToDelete = null },
                 containerColor = MaterialTheme.colorScheme.background,
-                title = { Text("Eliminar lista", color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Text(
+                        stringResource(id = R.string.dialog_delete_playlist_title),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
                 text = {
                     Text(
-                        text = "Se eliminara la lista \"${target?.name}\".",
-                        color = md_textSecondary,
+                        text = stringResource(R.string.dialog_delete_playlist_message, target?.name ?: ""),
+                        color = MaterialTheme.extendedColors.textSecondary,
                     )
                 },
                 confirmButton = {
@@ -752,11 +728,11 @@ fun PlaylistsScreen(
                             target?.name?.let { name -> playlistViewModel.deletePlaylist(name) }
                             playlistToDelete = null
                         },
-                    ) { Text("Eliminar", color = Color(0xFFFF6B6B)) }
+                    ) { Text(stringResource(id = R.string.action_delete), color = Color(0xFFFF6B6B)) }
                 },
                 dismissButton = {
                     TextButton(onClick = { playlistToDelete = null }) {
-                        Text("Cancelar", color = MaterialTheme.colorScheme.onBackground)
+                        Text(stringResource(id = R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground)
                     }
                 },
             )
@@ -770,14 +746,19 @@ fun PlaylistsScreen(
                     createError = null
                 },
                 containerColor = MaterialTheme.colorScheme.surface,
-                title = { Text("Nueva lista", color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Text(
+                        stringResource(id = R.string.dialog_create_playlist_title),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
                 text = {
                     Column {
                         OutlinedTextField(
                             value = newPlaylistName,
                             onValueChange = { newPlaylistName = it },
                             singleLine = true,
-                            placeholder = { Text("Nombre de la lista") },
+                            placeholder = { Text(stringResource(id = R.string.playlist_name_placeholder)) },
                             colors =
                                 TextFieldDefaults.colors(
                                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -790,7 +771,7 @@ fun PlaylistsScreen(
                                 ),
                         )
                         if (createError != null) {
-                            Spacer(modifier = Modifier.Companion.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(text = createError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
                         }
                     }
@@ -804,10 +785,10 @@ fun PlaylistsScreen(
                                 newPlaylistName = ""
                                 createError = null
                             } else {
-                                createError = "Nombre invalido o duplicado"
+                                createError = context.getString(R.string.error_playlist_name_invalid)
                             }
                         },
-                    ) { Text("Crear", color = MaterialTheme.colorScheme.primary) }
+                    ) { Text(stringResource(id = R.string.action_create), color = MaterialTheme.colorScheme.primary) }
                 },
                 dismissButton = {
                     TextButton(
@@ -816,7 +797,7 @@ fun PlaylistsScreen(
                             newPlaylistName = ""
                             createError = null
                         },
-                    ) { Text("Cancelar", color = MaterialTheme.colorScheme.onBackground) }
+                    ) { Text(stringResource(id = R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground) }
                 },
             )
         }
@@ -829,14 +810,19 @@ fun PlaylistsScreen(
                     renameError = null
                 },
                 containerColor = MaterialTheme.colorScheme.background,
-                title = { Text("Renombrar lista", color = MaterialTheme.colorScheme.onBackground) },
+                title = {
+                    Text(
+                        stringResource(id = R.string.dialog_rename_playlist_title),
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                },
                 text = {
                     Column {
                         OutlinedTextField(
                             value = renamePlaylistName,
                             onValueChange = { renamePlaylistName = it },
                             singleLine = true,
-                            placeholder = { Text("Nombre de la lista") },
+                            placeholder = { Text(stringResource(id = R.string.playlist_name_placeholder)) },
                             colors =
                                 TextFieldDefaults.colors(
                                     focusedContainerColor = MaterialTheme.colorScheme.background,
@@ -844,12 +830,12 @@ fun PlaylistsScreen(
                                     focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                                     unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
                                     cursorColor = MaterialTheme.colorScheme.primary,
-                                    focusedTextColor = Color.Companion.White,
-                                    unfocusedTextColor = Color.Companion.White,
+                                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
                                 ),
                         )
                         if (renameError != null) {
-                            Spacer(modifier = Modifier.Companion.height(8.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             Text(text = renameError!!, color = Color(0xFFFF6B6B), fontSize = 12.sp)
                         }
                     }
@@ -868,10 +854,10 @@ fun PlaylistsScreen(
                                 renameError = null
                                 playlistToRename = null
                             } else {
-                                renameError = "Nombre inválido o duplicado"
+                                renameError = context.getString(R.string.error_playlist_name_invalid)
                             }
                         },
-                    ) { Text("Renombrar", color = MaterialTheme.colorScheme.primary) }
+                    ) { Text(stringResource(id = R.string.action_rename), color = MaterialTheme.colorScheme.primary) }
                 },
                 dismissButton = {
                     TextButton(
@@ -881,7 +867,7 @@ fun PlaylistsScreen(
                             renameError = null
                             playlistToRename = null
                         },
-                    ) { Text("Cancelar", color = Color.Companion.White) }
+                    ) { Text(stringResource(id = R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground) }
                 },
             )
         }
@@ -891,427 +877,4 @@ fun PlaylistsScreen(
 enum class PlaylistSortMode {
     TITLE_ASC,
     TITLE_DESC,
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Composable
-fun SettingsScreen(
-    viewModel: MainViewModel,
-    equalizerViewModel: EqualizerViewModel,
-    folderViewModel: FolderViewModel,
-    onClose: () -> Unit,
-) {
-    val context = LocalContext.current
-    val folderEntries by folderViewModel.folderEntries.collectAsState()
-    val theme by viewModel.themeMode.collectAsState()
-    val autoScan by viewModel.autoScanEnabled.collectAsState()
-    val dynamicColor by viewModel.dynamicColorEnabled.collectAsState()
-    val primaryColorHex by viewModel.primaryColorHex.collectAsState()
-    val eqEnabled by equalizerViewModel.equalizerEnabled.collectAsState()
-
-    val themeOptions = listOf("sistema", "claro", "oscuro")
-    var themeExpanded by remember { mutableStateOf(false) }
-    var folderToDelete by remember { mutableStateOf<FolderEntry?>(null) }
-
-    val launcher =
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.OpenDocumentTree(),
-        ) { uri ->
-            if (uri != null) {
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-                    )
-                } catch (_: Exception) {
-                }
-                folderViewModel.addMusicFolder(uri.toString())
-                Toast.makeText(context, "Carpeta añadida", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-    BackHandler(onBack = onClose)
-
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            "Ajustes",
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(
-                            "Personaliza la app y tu biblioteca",
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.68f),
-                            fontSize = 13.sp,
-                        )
-                    }
-                    IconButton(onClick = onClose) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Cerrar",
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                }
-            }
-
-            item {
-                SettingsSectionCard(
-                    title = "Apariencia y comportamiento",
-                    subtitle = "Opciones globales de visualización y escaneo",
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Tema", color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                "Selecciona tema de la aplicación",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
-                        Box {
-                            OutlinedButton(onClick = { themeExpanded = true }) {
-                                Text(theme.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() })
-                            }
-                            DropdownMenu(
-                                expanded = themeExpanded,
-                                onDismissRequest = { themeExpanded = false },
-                                containerColor = MaterialTheme.colorScheme.surface,
-                            ) {
-                                themeOptions.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                option.replaceFirstChar {
-                                                    if (it.isLowerCase()) it.titlecase() else it.toString()
-                                                },
-                                            )
-                                        },
-                                        onClick = {
-                                            viewModel.setThemeMode(option)
-                                            themeExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Color de acento", color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                "Selecciona el color de acento de la app",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(predefinedThemeColors) { themeColor ->
-                            val isSelected = themeColor.hex == primaryColorHex
-                            val borderColor =
-                                if (isSelected) themeColor.color else Color.Transparent
-                            val borderWidth = if (isSelected) 3.dp else 0.dp
-
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .size(40.dp)
-                                        .clip(CircleShape)
-                                        .then(
-                                            if (borderWidth > 0.dp) {
-                                                Modifier.Companion.border(
-                                                    borderWidth,
-                                                    borderColor,
-                                                    CircleShape,
-                                                )
-                                            } else {
-                                                Modifier
-                                            },
-                                        ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Surface(
-                                    modifier = Modifier.size(32.dp),
-                                    shape = CircleShape,
-                                    color = themeColor.color,
-                                    onClick = { viewModel.setPrimaryColor(themeColor.hex) },
-                                ) {
-                                    if (isSelected) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Default.Check,
-                                                contentDescription = themeColor.name,
-                                                tint = themeColor.onColor,
-                                                modifier = Modifier.size(18.dp),
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Color dinámico", color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                "Usar color de la carátula en el reproductor",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
-                        Switch(
-                            checked = dynamicColor,
-                            onCheckedChange = { viewModel.toggleDynamicColor(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-                }
-            }
-
-            item {
-                SettingsSectionCard(
-                    title = "Audio",
-                    subtitle = "Control del ecualizador y procesamiento de sonido",
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Activar ecualizador", color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                "Usar ecualizador nativo del sistema",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
-                        Switch(
-                            checked = eqEnabled,
-                            onCheckedChange = { equalizerViewModel.toggleEqualizer(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                    FilledTonalButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { equalizerViewModel.openEqualizerScreen() },
-                    ) {
-                        Icon(Icons.Default.Tune, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Abrir ecualizador avanzado")
-                    }
-                }
-            }
-
-            item {
-                SettingsSectionCard(
-                    title = "Biblioteca",
-                    subtitle = "Gestiona las carpetas que se incluyen en la música",
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Escaneo automático", color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                "Detectar cambios y escanear automáticamente",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
-                        Switch(
-                            checked = autoScan,
-                            onCheckedChange = { viewModel.toggleAutoScan(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
-
-                    FilledTonalButton(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { launcher.launch(null) },
-                    ) {
-                        Icon(Icons.Default.Folder, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Agregar carpeta")
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Text(
-                        "Carpetas configuradas",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    if (folderEntries.isEmpty()) {
-                        Text(
-                            "Ninguna carpeta configurada",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        folderEntries.forEachIndexed { index, entry ->
-                            if (index > 0) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 6.dp),
-                                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                                )
-                            }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(entry.name, color = MaterialTheme.colorScheme.onSurface)
-                                    Text(
-                                        "${entry.count} canciones",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 12.sp,
-                                    )
-                                }
-                                IconButton(onClick = { folderToDelete = entry }) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = "Eliminar",
-                                        tint = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(6.dp))
-            }
-        }
-
-        folderToDelete?.let { entry ->
-            AlertDialog(
-                onDismissRequest = { folderToDelete = null },
-                title = { Text("Eliminar carpeta") },
-                text = {
-                    Text(
-                        "¿Eliminar la carpeta \"${entry.name}\"?\n\nLas ${entry.count} canciones de esta carpeta ya no se mostrarán en la app.",
-                    )
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            folderViewModel.removeMusicFolder(entry.uri)
-                            Toast.makeText(context, "Carpeta eliminada", Toast.LENGTH_SHORT).show()
-                            folderToDelete = null
-                        },
-                    ) {
-                        Text("Eliminar", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { folderToDelete = null }) {
-                        Text("Cancelar")
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.surface,
-                textContentColor = MaterialTheme.colorScheme.onSurface,
-                titleContentColor = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-}
-
-@Suppress("ktlint:standard:function-naming")
-@Composable
-private fun SettingsSectionCard(
-    title: String,
-    subtitle: String,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.elevatedCardColors(containerColor = LocalExtendedColors.current.surfaceSheet),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(subtitle, color = LocalExtendedColors.current.textSecondary, fontSize = 12.sp)
-            Spacer(modifier = Modifier.height(12.dp))
-            content()
-        }
-    }
 }

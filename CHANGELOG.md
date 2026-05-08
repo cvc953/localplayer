@@ -7,9 +7,25 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Unreleased]
 
-### Próximas características
-- Widgets para la pantalla de inicio
-- Temas personalizables
+### Añadido
+- 🌐 Localización completa en español, inglés e italiano en toda la app
+- 🗣️ Gestión de preferencia de idioma aplicada globalmente desde MainActivity y SettingsScreen
+- 📂 Flujo de permisos de almacenamiento y selección de carpeta adaptado a i18n
+- 🖼️ Capturas de pantalla actualizadas para las variantes publicadas en inglés
+- 📋 Operaciones de cola ampliadas para agregar todos los temas sin duplicados y mantener la reproducción siguiente
+
+### Cambiado
+- ⚙️ Refactorización de MainActivity, SettingsScreen y varias pantallas principales para soportar i18n
+- 🎨 Limpieza de textos hardcoded en álbumes, artistas, playlists, letras, ecualizador y detalles
+- 📱 Ajustes de navegación y componentes de UI para una experiencia consistente entre idiomas
+
+### Corregido
+- 🐛 Correcciones de toasts, contadores de canciones y textos de acciones pendientes de localización
+- 🐛 Duplicados evitados al reproducir la siguiente canción en la cola
+
+### Técnico
+- Implementación de `LocaleUtil` y persistencia de idioma en `AppPrefs`
+- Mejora de las pruebas de lógica de cola en `PlaybackQueueLogicTest`
 
 ## [1.0.7] - 2026-05-03
 

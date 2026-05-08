@@ -62,6 +62,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -110,7 +111,7 @@ fun AlbumsScreen(
             activity?.finish()
         } else {
             lastBackPressTime = currentTime
-            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.toast_press_back_again), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -170,33 +171,33 @@ fun AlbumsScreen(
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.Companion.height(16.dp))
-            Text("Escaneando canciones", color = MaterialTheme.colorScheme.onBackground)
+            Text(stringResource(R.string.scanning_songs), color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
 
     Box(
-        modifier = Modifier.Companion.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        Column(modifier = Modifier.Companion.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
             Row(
-                modifier = Modifier.Companion.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.Companion.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Álbumes",
+                    text = stringResource(R.string.albums_title),
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Companion.Bold,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
-                    modifier = Modifier.Companion.weight(1f),
+                    modifier = Modifier.weight(1f),
                 )
 
                 Box {
                     IconButton(onClick = { sortMenuExpanded = true }) {
                         Icon(
                             Icons.Default.Sort,
-                            contentDescription = "Ordenar",
+                            contentDescription = stringResource(R.string.action_sort),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
@@ -208,7 +209,7 @@ fun AlbumsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título A-Z",
+                                    stringResource(R.string.sort_title_asc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -220,7 +221,7 @@ fun AlbumsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título Z-A",
+                                    stringResource(R.string.sort_title_desc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -240,7 +241,7 @@ fun AlbumsScreen(
                 ) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "Buscar",
+                        contentDescription = stringResource(R.string.action_search),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -250,7 +251,7 @@ fun AlbumsScreen(
                 }) {
                     Icon(
                         imageVector = if (viewAsGrid) Icons.Default.ViewList else Icons.Default.ViewModule,
-                        contentDescription = "Cambiar vista",
+                        contentDescription = stringResource(R.string.action_toggle_view),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -263,7 +264,7 @@ fun AlbumsScreen(
                     singleLine = true,
                     placeholder = {
                         Text(
-                            "Buscar por álbum",
+                            stringResource(R.string.search_albums_placeholder),
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
@@ -283,10 +284,10 @@ fun AlbumsScreen(
                 )
             }
 
-            Box(modifier = Modifier.Companion.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 if (viewAsGrid) {
                     LazyVerticalGrid(
-                        modifier = Modifier.Companion.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         columns = GridCells.Adaptive(140.dp),
                         state = gridState,
                         contentPadding = PaddingValues(12.dp),
@@ -430,7 +431,7 @@ fun AlbumsScreen(
                                         IconButton(onClick = { menuExpanded = true }) {
                                             Icon(
                                                 Icons.Default.MoreVert,
-                                                contentDescription = "Más opciones",
+contentDescription = stringResource(R.string.action_more_options),
                                                 tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
@@ -471,7 +472,7 @@ fun AlbumsScreen(
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Reproducir ahora",
+                                                        stringResource(R.string.action_play_now),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
@@ -495,7 +496,7 @@ fun AlbumsScreen(
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Añadir como siguiente",
+                                                        stringResource(R.string.action_add_next),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
@@ -508,7 +509,7 @@ fun AlbumsScreen(
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones como siguiente",
+                                                            context.getString(R.string.toast_added_next_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -516,7 +517,7 @@ fun AlbumsScreen(
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Añadir al final",
+                                                        stringResource(R.string.action_add_to_queue_end),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
@@ -529,7 +530,7 @@ fun AlbumsScreen(
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones al final de la cola",
+                                                            context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -562,7 +563,7 @@ fun AlbumsScreen(
                                                 ?.equals(mainArtist, ignoreCase = true) == true
                                     }
                                 Text(
-                                    text = "$songCount canciones",
+                                    text = stringResource(R.string.songs_count, songCount),
                                     color = MaterialTheme.extendedColors.textSecondary,
                                     fontSize = 12.sp,
                                 )
@@ -692,7 +693,7 @@ fun AlbumsScreen(
                                         overflow = TextOverflow.Companion.Ellipsis,
                                     )
                                     Text(
-                                        text = "${album.songCount} canciones",
+                                        text = stringResource(R.string.songs_count, album.songCount),
                                         color = md_textSecondary,
                                         fontSize = 12.sp,
                                         maxLines = 1,
@@ -706,7 +707,7 @@ fun AlbumsScreen(
                                     IconButton(onClick = { menuExpanded = true }) {
                                         Icon(
                                             Icons.Default.MoreVert,
-                                            contentDescription = "Más opciones",
+                                            contentDescription = stringResource(R.string.action_more_options),
                                             tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }
@@ -719,7 +720,7 @@ fun AlbumsScreen(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Reproducir ahora",
+                                                    stringResource(R.string.action_play_now),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
@@ -759,7 +760,7 @@ fun AlbumsScreen(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Añadir como siguiente",
+                                                    stringResource(R.string.action_add_next),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
@@ -792,7 +793,7 @@ fun AlbumsScreen(
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones como siguiente",
+                                                        context.getString(R.string.toast_added_next_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },
@@ -800,7 +801,7 @@ fun AlbumsScreen(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Añadir al final",
+                                                    stringResource(R.string.action_add_to_queue_end),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
@@ -831,7 +832,7 @@ fun AlbumsScreen(
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones al final de la cola",
+                                                        context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },

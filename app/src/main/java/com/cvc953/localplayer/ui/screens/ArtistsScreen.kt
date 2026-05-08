@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -122,6 +123,7 @@ fun ArtistsScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableLongStateOf(0L) }
+    val toastPressBackAgain = stringResource(R.string.toast_press_back_again)
 
     BackHandler {
         val currentTime = System.currentTimeMillis()
@@ -129,7 +131,7 @@ fun ArtistsScreen(
             activity?.finish()
         } else {
             lastBackPressTime = currentTime
-            Toast.makeText(context, "Presiona de nuevo para salir", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, toastPressBackAgain, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -166,7 +168,7 @@ fun ArtistsScreen(
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.Companion.height(16.dp))
-            Text("Escaneando canciones", color = MaterialTheme.colorScheme.onBackground)
+            Text(stringResource(R.string.scanning_songs), color = MaterialTheme.colorScheme.onBackground)
         }
         return
     }
@@ -180,7 +182,7 @@ fun ArtistsScreen(
                 verticalAlignment = Alignment.Companion.CenterVertically,
             ) {
                 Text(
-                    text = "Artistas",
+                    text = stringResource(R.string.artists_title),
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Companion.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
@@ -192,7 +194,7 @@ fun ArtistsScreen(
                     IconButton(onClick = { sortMenuExpanded = true }) {
                         Icon(
                             Icons.Default.Sort,
-                            contentDescription = "Ordenar",
+                            contentDescription = stringResource(R.string.action_sort),
                             tint = MaterialTheme.colorScheme.onBackground,
                         )
                     }
@@ -204,7 +206,7 @@ fun ArtistsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título A-Z",
+                                    stringResource(R.string.sort_title_asc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -216,7 +218,7 @@ fun ArtistsScreen(
                         DropdownMenuItem(
                             text = {
                                 Text(
-                                    "Título Z-A",
+                                    stringResource(R.string.sort_title_desc),
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
                             },
@@ -236,7 +238,7 @@ fun ArtistsScreen(
                 ) {
                     Icon(
                         Icons.Default.Search,
-                        contentDescription = "Buscar",
+                        contentDescription = stringResource(R.string.action_search),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -246,7 +248,7 @@ fun ArtistsScreen(
                 }) {
                     Icon(
                         imageVector = if (viewAsGrid) Icons.Default.ViewList else Icons.Default.ViewModule,
-                        contentDescription = "Cambiar vista",
+                        contentDescription = stringResource(R.string.action_toggle_view),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
@@ -259,11 +261,11 @@ fun ArtistsScreen(
                     singleLine = true,
                     placeholder = {
                         Text(
-                            "Buscar por artista",
+                            stringResource(R.string.search_artists_placeholder),
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
-                    modifier = Modifier.Companion.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors =
                         TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -408,7 +410,7 @@ fun ArtistsScreen(
                                         painter =
                                             artistArt?.let { BitmapPainter(it.asImageBitmap()) }
                                                 ?: painterResource(R.drawable.ic_default_album),
-                                        contentDescription = "album cover",
+                                        contentDescription = stringResource(R.string.album_cover),
                                         modifier =
                                             Modifier.Companion
                                                 .matchParentSize()
@@ -420,7 +422,7 @@ fun ArtistsScreen(
                                         IconButton(onClick = { menuExpanded = true }) {
                                             Icon(
                                                 Icons.Default.MoreVert,
-                                                contentDescription = "Más opciones",
+                                                contentDescription = stringResource(R.string.action_more_options),
                                                 tint = MaterialTheme.colorScheme.onSurface,
                                             )
                                         }
@@ -449,7 +451,7 @@ fun ArtistsScreen(
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Reproducir ahora",
+                                                        stringResource(R.string.action_play_now),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
@@ -472,20 +474,20 @@ fun ArtistsScreen(
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Añadir como siguiente",
+                                                        stringResource(R.string.action_add_next),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
                                                 onClick = {
                                                     menuExpanded = false
-                                                
+
                                                     // NO filter duplicates when adding full artist
                                                     val toAdd = artistSongs
                                                     playbackViewModel.addToQueueNextAll(toAdd)
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones como siguiente",
+                                                            context.getString(R.string.toast_added_next_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -493,20 +495,20 @@ fun ArtistsScreen(
                                             DropdownMenuItem(
                                                 text = {
                                                     Text(
-                                                        "Añadir al final",
+                                                        stringResource(R.string.action_add_to_queue_end),
                                                         color = MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 },
                                                 onClick = {
                                                     menuExpanded = false
-                                                
+
                                                     // NO filter duplicates when adding full artist
                                                     val toAdd = artistSongs
                                                     playbackViewModel.addToQueueEndAll(toAdd)
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Añadido ${toAdd.size} canciones al final de la cola",
+                                                            context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                 },
@@ -534,7 +536,7 @@ fun ArtistsScreen(
                                         }
                                     }
                                 Text(
-                                    text = "$songCount canciones",
+                                    text = stringResource(R.string.songs_count, songCount),
                                     color = MaterialTheme.extendedColors.textSecondary,
                                     fontSize = 12.sp,
                                 )
@@ -636,7 +638,7 @@ fun ArtistsScreen(
                                                 it.asImageBitmap(),
                                             )
                                         } ?: painterResource(R.drawable.ic_default_album),
-                                    contentDescription = "album cover",
+                                    contentDescription = stringResource(R.string.album_cover),
                                     modifier =
                                         Modifier.Companion.size(60.dp).clip(
                                             androidx.compose.foundation.shape
@@ -656,7 +658,7 @@ fun ArtistsScreen(
                                         overflow = TextOverflow.Companion.Ellipsis,
                                     )
                                     Text(
-                                        text = "${artist.songCount} canciones",
+                                        text = stringResource(R.string.songs_count, artist.songCount),
                                         color = md_textSecondary,
                                         fontSize = 12.sp,
                                         maxLines = 1,
@@ -669,7 +671,7 @@ fun ArtistsScreen(
                                     IconButton(onClick = { menuExpanded = true }) {
                                         Icon(
                                             Icons.Default.MoreVert,
-                                            contentDescription = "Más opciones",
+                                            contentDescription = stringResource(R.string.action_more_options),
                                             tint = MaterialTheme.colorScheme.onSurface,
                                         )
                                     }
@@ -704,7 +706,7 @@ fun ArtistsScreen(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Reproducir ahora",
+                                                    stringResource(R.string.action_play_now),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
@@ -725,20 +727,20 @@ fun ArtistsScreen(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Añadir como siguiente",
+                                                    stringResource(R.string.action_add_next),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
                                             onClick = {
                                                 menuExpanded = false
-                                            
+
                                                 // NO filter duplicates when adding full artist
                                                 val toAdd = artistSongs
                                                 playbackViewModel.addToQueueNextAll(toAdd)
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones como siguiente",
+                                                        context.getString(R.string.toast_added_next_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },
@@ -746,20 +748,20 @@ fun ArtistsScreen(
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    "Añadir al final",
+                                                    stringResource(R.string.action_add_to_queue_end),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             },
                                             onClick = {
                                                 menuExpanded = false
-                                            
+
                                                 // NO filter duplicates when adding full artist
                                                 val toAdd = artistSongs
                                                 playbackViewModel.addToQueueEndAll(toAdd)
                                                 Toast
                                                     .makeText(
                                                         context,
-                                                        "Añadido ${toAdd.size} canciones al final de la cola",
+                                                        context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
                                             },
