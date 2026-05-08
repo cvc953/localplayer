@@ -478,18 +478,16 @@ fun ArtistsScreen(
                                                 },
                                                 onClick = {
                                                     menuExpanded = false
-                                                    val currentQueue = playbackViewModel.queue.value
-                                                    val toAdd =
-                                                        artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.reversed().forEach {
-                                                        playbackViewModel.addToQueueNext(it)
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Añadido ${toAdd.size} canciones a la cola",
-                                                                Toast.LENGTH_SHORT,
-                                                            ).show()
-                                                    }
+                                                
+                                                    // NO filter duplicates when adding full artist
+                                                    val toAdd = artistSongs
+                                                    playbackViewModel.addToQueueNextAll(toAdd)
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            "Añadido ${toAdd.size} canciones como siguiente",
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
                                                 },
                                             )
                                             DropdownMenuItem(
@@ -501,18 +499,16 @@ fun ArtistsScreen(
                                                 },
                                                 onClick = {
                                                     menuExpanded = false
-                                                    val currentQueue = playbackViewModel.queue.value
-                                                    val toAdd =
-                                                        artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                    toAdd.forEach {
-                                                        playbackViewModel.addToQueueEnd(it)
-                                                        Toast
-                                                            .makeText(
-                                                                context,
-                                                                "Añadido ${toAdd.size} canciones al final de la cola",
-                                                                Toast.LENGTH_SHORT,
-                                                            ).show()
-                                                    }
+                                                
+                                                    // NO filter duplicates when adding full artist
+                                                    val toAdd = artistSongs
+                                                    playbackViewModel.addToQueueEndAll(toAdd)
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            "Añadido ${toAdd.size} canciones al final de la cola",
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
                                                 },
                                             )
                                         }
@@ -735,18 +731,16 @@ fun ArtistsScreen(
                                             },
                                             onClick = {
                                                 menuExpanded = false
-                                                val currentQueue = playbackViewModel.queue.value
-                                                val toAdd =
-                                                    artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                toAdd.reversed().forEach {
-                                                    playbackViewModel.addToQueueNext(it)
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "Añadido ${toAdd.size} canciones a la cola",
-                                                            Toast.LENGTH_SHORT,
-                                                        ).show()
-                                                }
+                                            
+                                                // NO filter duplicates when adding full artist
+                                                val toAdd = artistSongs
+                                                playbackViewModel.addToQueueNextAll(toAdd)
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Añadido ${toAdd.size} canciones como siguiente",
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
                                             },
                                         )
                                         DropdownMenuItem(
@@ -758,18 +752,16 @@ fun ArtistsScreen(
                                             },
                                             onClick = {
                                                 menuExpanded = false
-                                                val currentQueue = playbackViewModel.queue.value
-                                                val toAdd =
-                                                    artistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                toAdd.forEach {
-                                                    playbackViewModel.addToQueueEnd(it)
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "Añadido ${toAdd.size} canciones al final de la cola",
-                                                            Toast.LENGTH_SHORT,
-                                                        ).show()
-                                                }
+                                            
+                                                // NO filter duplicates when adding full artist
+                                                val toAdd = artistSongs
+                                                playbackViewModel.addToQueueEndAll(toAdd)
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Añadido ${toAdd.size} canciones al final de la cola",
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
                                             },
                                         )
                                     }

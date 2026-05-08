@@ -585,6 +585,38 @@ class PlaybackViewModel(
         }
     }
 
+    fun addToQueueNextAll(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        val currentQueue = _queue.value.toMutableList()
+        val currentIndex = playerState.value.currentSong?.let { currentQueue.indexOf(it) } ?: -1
+        val insertIndex = if (currentIndex >= 0) currentIndex + 1 else 0
+        // Add ALL songs without filtering duplicates
+        songs.reversed().forEach { song ->
+            currentQueue.add(insertIndex, song)
+        }
+        _queue.value = currentQueue
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+        } catch (_: Exception) {
+        }
+    }
+
+    fun addToQueueEndAll(songs: List<Song>) {
+        if (songs.isEmpty()) return
+        val currentQueue = _queue.value.toMutableList()
+        // Add ALL songs without filtering duplicates
+        songs.forEach { song ->
+            currentQueue.add(song)
+        }
+        _queue.value = currentQueue
+        try {
+            prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
+            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+        } catch (_: Exception) {
+        }
+    }
+
     fun removeFromQueue(song: Song) {
         _queue.value = _queue.value.filterNot { it.id == song.id }
         try {
@@ -723,14 +755,30 @@ class PlaybackViewModel(
         val currentIndex = queue.indexOf(current)
         if (currentIndex == -1) return
 
-        // Get the next song index
-        val nextIndex = currentIndex + 1
+        // Get the next song and SKIP duplicates (songs with same ID as current)
+        var nextIndex = currentIndex + 1
+        val currentId = current.id
+        
+        // Loop to find next different song
+        while (nextIndex < queue.size && queue[nextIndex].id == currentId) {
+            nextIndex++
+        }
+        
         if (nextIndex < queue.size) {
-            // Play the next song in the queue (respects shuffle if queue was already shuffled)
+            // Play the next different song in the queue
             play(queue[nextIndex])
         } else if (_repeatMode.value == RepeatMode.ALL) {
-            // Loop back to the beginning
-            play(queue[0])
+            // If we hit end, loop back to beginning AND skip duplicates from start
+            var newStart = 0
+            while (newStart < queue.size && queue[newStart].id == currentId) {
+                newStart++
+            }
+            if (newStart < queue.size) {
+                play(queue[newStart])
+            } else if (queue.isNotEmpty()) {
+                // If all songs have same ID, just play first
+                play(queue[0])
+            }
         }
         // If RepeatMode.NONE and we're at the end, don't play anything
     }

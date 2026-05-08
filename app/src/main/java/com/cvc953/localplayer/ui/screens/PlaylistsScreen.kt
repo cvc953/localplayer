@@ -654,18 +654,16 @@ fun PlaylistsScreen(
                                         },
                                         onClick = {
                                             menuExpandedPlaylistId = null
-                                            val currentQueue = playbackViewModel.queue.value
-                                            val toAdd =
-                                                playlistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                            toAdd.reversed().forEach {
-                                                playbackViewModel.addToQueueNext(it)
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "Añadido como siguiente",
-                                                        Toast.LENGTH_SHORT,
-                                                    ).show()
-                                            }
+                                        
+                                            // NO filter duplicates when adding full playlist
+                                            val toAdd = playlistSongs
+                                            playbackViewModel.addToQueueNextAll(toAdd)
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Añadido ${toAdd.size} canciones como siguiente",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         },
                                     )
                                     DropdownMenuItem(
@@ -677,18 +675,16 @@ fun PlaylistsScreen(
                                         },
                                         onClick = {
                                             menuExpandedPlaylistId = null
-                                            val currentQueue = playbackViewModel.queue.value
-                                            val toAdd =
-                                                playlistSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                            toAdd.forEach {
-                                                playbackViewModel.addToQueueEnd(it)
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "Añadido al final de la cola",
-                                                        Toast.LENGTH_SHORT,
-                                                    ).show()
-                                            }
+                                        
+                                            // NO filter duplicates when adding full playlist
+                                            val toAdd = playlistSongs
+                                            playbackViewModel.addToQueueEndAll(toAdd)
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Añadido ${toAdd.size} canciones al final de la cola",
+                                                    Toast.LENGTH_SHORT,
+                                                ).show()
                                         },
                                     )
                                     DropdownMenuItem(
