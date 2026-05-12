@@ -834,7 +834,7 @@ fun PlayerScreen(
             val isNormalLayout =
                 (aspectRatio in 1.15f..1.6f) ||
                     (aspectRatio in 0.50f..<0.75f) // Normal landscape O portrait (TU 360x640=0.5625)
-            val isLandscape = aspectRatio > 1.6f // Landscape ancho
+            val isLandscape = aspectRatio > 1.5f // Landscape ancho
             val isTallLayout = aspectRatio < 0.50f // Rectangular MUY alta (18:9 o más)
 
             // Tamaño dinámico de imagen
@@ -881,141 +881,173 @@ fun PlayerScreen(
                     else -> 8.dp
                 }
 
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = verticalPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                // Spacer(Modifier.weight(0.6f))
-                // Imagen del álbum responsiva
-                Image(
-                    painter =
-                        albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
-                            ?: painterResource(
-                                R.drawable.ic_default_album,
-                            ),
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(imageWidthPercent)
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Companion.Crop,
-                )
-
-                Spacer(Modifier.Companion.height(betweenSpacer))
-
-                SongTitleSection(
-                    title = song.title,
-                    artist = song.artist,
-                    album = song.album,
-                    albumArt = albumArt,
-                    primaryContentColor = playerPrimaryColor,
-                    secondaryContentColor = playerSecondaryColor,
-                    onArtistClick = {
-                        // Extraer artista principal cuando hay múltiples artistas
-                        val mainArtist =
-                            normalizeArtistName(song.artist).firstOrNull() ?: song.artist
-                        onNavigateToArtist(mainArtist)
-                    },
-                    onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
-                )
-
-                Spacer(Modifier.height(betweenSpacer))
-
-                PlayerControls(
-                    playbackViewModel = playbackViewModel,
-                    playerViewModel = playerViewModel,
-                    isPlaying = playerState.isPlaying,
-                    foregroundColor = playerPrimaryColor,
-                    secondaryColor = playerSecondaryColor,
-                    metaColor = playerMetaColor,
-                    audioFormat = audioFormat,
-                    audioBitrate = audioBitrate,
-                    audioSampleRate = audioSampleRate,
-                )
-
-                Spacer(Modifier.height(betweenSpacer))
-
-                Row(
+            if (isLandscape) {
+                @Composable
+                fun ActionButtons() = Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
-                    IconButton(
-                        onClick = {
-                            val favoritesName = "Favoritos"
-
-                            if (isFavorite) {
-                                // Quitar de favoritos
-                                playlistViewModel.removeSongFromPlaylist(
-                                    favoritesName,
-                                    song.id,
-                                )
-                                isFavorite = false
-                                Toast
-                                    .makeText(context, context.getString(R.string.removed_from_favorites), Toast.LENGTH_SHORT)
-                                    .show()
-                            } else {
-                                // Agregar a favoritos
-                                val favorites = playlists.find { it.name == favoritesName }
-                                if (favorites == null) {
-                                    playlistViewModel.createPlaylist(favoritesName)
-                                }
-                                playlistViewModel.addSongToPlaylist(favoritesName, song.id)
-                                isFavorite = true
-                                Toast
-                                    .makeText(context, context.getString(R.string.added_to_favorites), Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        },
-                    ) {
-                        Icon(
-                            imageVector =
-                                if (isFavorite) {
-                                    Icons.Default.Favorite
-                                } else {
-                                    Icons.Outlined.FavoriteBorder
-                                },
-                            contentDescription = stringResource(R.string.favorites),
-                            tint = playerPrimaryColor,
-                        )
+                    IconButton(onClick = {
+                        val f = "Favoritos"
+                        if (isFavorite) {
+                            playlistViewModel.removeSongFromPlaylist(f, song.id)
+                            isFavorite = false
+                            Toast.makeText(context, context.getString(R.string.removed_from_favorites), Toast.LENGTH_SHORT).show()
+                        } else {
+                            val p = playlists.find { it.name == f }
+                            if (p == null) { playlistViewModel.createPlaylist(f) }
+                            playlistViewModel.addSongToPlaylist(f, song.id)
+                            isFavorite = true
+                            Toast.makeText(context, context.getString(R.string.added_to_favorites), Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
+                        Icon(if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = stringResource(R.string.favorites), tint = playerPrimaryColor)
                     }
-
-                    Spacer(Modifier.Companion.width(16.dp))
-
+                    Spacer(Modifier.width(16.dp))
                     IconButton(onClick = { showQueue = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.QueueMusic,
-                            contentDescription = stringResource(R.string.view_queue),
-                            tint = playerPrimaryColor,
-                        )
+                        Icon(Icons.AutoMirrored.Filled.QueueMusic,
+                            contentDescription = stringResource(R.string.view_queue), tint = playerPrimaryColor)
                     }
-
                     Spacer(Modifier.width(16.dp))
-
                     IconButton(onClick = { showAddToPlaylistDialog = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-                            contentDescription = stringResource(R.string.add_to_playlist),
-                            tint = playerPrimaryColor,
-                        )
+                        Icon(Icons.AutoMirrored.Filled.PlaylistAdd,
+                            contentDescription = stringResource(R.string.add_to_playlist), tint = playerPrimaryColor)
                     }
-
                     Spacer(Modifier.width(16.dp))
-
                     IconButton(onClick = { playerViewModel.toggleLyrics() }) {
-                        Icon(
-                            imageVector = Icons.Default.Lyrics,
-                            contentDescription = stringResource(R.string.show_lyrics),
-                            tint = playerPrimaryColor,
-                        )
+                        Icon(Icons.Default.Lyrics,
+                            contentDescription = stringResource(R.string.show_lyrics), tint = playerPrimaryColor)
                     }
                 }
 
-                Spacer(Modifier.weight(1f))
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        modifier = Modifier.weight(0.5f),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
+                                ?: painterResource(R.drawable.ic_default_album),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxWidth(0.85f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Companion.Crop,
+                        )
+                    }
+
+                    Spacer(Modifier.width(24.dp))
+
+                    Column(
+                        modifier = Modifier.weight(0.5f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        SongTitleSection(
+                            title = song.title, artist = song.artist, album = song.album, albumArt = albumArt,
+                            primaryContentColor = playerPrimaryColor, secondaryContentColor = playerSecondaryColor,
+                            onArtistClick = {
+                                val mainArtist = normalizeArtistName(song.artist).firstOrNull() ?: song.artist
+                                onNavigateToArtist(mainArtist)
+                            },
+                            onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        PlayerControls(
+                            playbackViewModel = playbackViewModel, playerViewModel = playerViewModel,
+                            isPlaying = playerState.isPlaying, foregroundColor = playerPrimaryColor,
+                            secondaryColor = playerSecondaryColor, metaColor = playerMetaColor,
+                            audioFormat = audioFormat, audioBitrate = audioBitrate, audioSampleRate = audioSampleRate,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        ActionButtons()
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = verticalPadding),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Image(
+                        painter = albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
+                            ?: painterResource(R.drawable.ic_default_album),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth(imageWidthPercent).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Companion.Crop,
+                    )
+
+                    Spacer(Modifier.Companion.height(betweenSpacer))
+
+                    SongTitleSection(
+                        title = song.title, artist = song.artist, album = song.album, albumArt = albumArt,
+                        primaryContentColor = playerPrimaryColor, secondaryContentColor = playerSecondaryColor,
+                        onArtistClick = {
+                            val mainArtist = normalizeArtistName(song.artist).firstOrNull() ?: song.artist
+                            onNavigateToArtist(mainArtist)
+                        },
+                        onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
+                    )
+
+                    Spacer(Modifier.height(betweenSpacer))
+
+                    PlayerControls(
+                        playbackViewModel = playbackViewModel, playerViewModel = playerViewModel,
+                        isPlaying = playerState.isPlaying, foregroundColor = playerPrimaryColor,
+                        secondaryColor = playerSecondaryColor, metaColor = playerMetaColor,
+                        audioFormat = audioFormat, audioBitrate = audioBitrate, audioSampleRate = audioSampleRate,
+                    )
+
+                    Spacer(Modifier.height(betweenSpacer))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        IconButton(onClick = {
+                            val f = "Favoritos"
+                            if (isFavorite) {
+                                playlistViewModel.removeSongFromPlaylist(f, song.id)
+                                isFavorite = false
+                                Toast.makeText(context, context.getString(R.string.removed_from_favorites), Toast.LENGTH_SHORT).show()
+                            } else {
+                                val p = playlists.find { it.name == f }
+                                if (p == null) { playlistViewModel.createPlaylist(f) }
+                                playlistViewModel.addSongToPlaylist(f, song.id)
+                                isFavorite = true
+                                Toast.makeText(context, context.getString(R.string.added_to_favorites), Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Icon(if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = stringResource(R.string.favorites), tint = playerPrimaryColor)
+                        }
+
+                        Spacer(Modifier.Companion.width(16.dp))
+
+                        IconButton(onClick = { showQueue = true }) {
+                            Icon(Icons.AutoMirrored.Filled.QueueMusic,
+                                contentDescription = stringResource(R.string.view_queue), tint = playerPrimaryColor)
+                        }
+
+                        Spacer(Modifier.width(16.dp))
+
+                        IconButton(onClick = { showAddToPlaylistDialog = true }) {
+                            Icon(Icons.AutoMirrored.Filled.PlaylistAdd,
+                                contentDescription = stringResource(R.string.add_to_playlist), tint = playerPrimaryColor)
+                        }
+
+                        Spacer(Modifier.width(16.dp))
+
+                        IconButton(onClick = { playerViewModel.toggleLyrics() }) {
+                            Icon(Icons.Default.Lyrics,
+                                contentDescription = stringResource(R.string.show_lyrics), tint = playerPrimaryColor)
+                        }
+                    }
+
+                    Spacer(Modifier.weight(1f))
+                }
             }
 
             if (showAddToPlaylistDialog) {
@@ -1701,27 +1733,28 @@ fun SongTitleSection(
         (aspectRatio >= 1.15f && aspectRatio <= 1.6f) ||
             (aspectRatio >= 0.50f && aspectRatio < 0.75f)
     val isTallLayout = aspectRatio < 0.50f
+    val isTablet = minOf(screenWidth, screenHeight) >= 600
 
     val titleFontSize =
         when {
-            isCompactLayout -> 16.sp
-            isNormalLayout -> 18.sp
-            isTallLayout -> 24.sp
-            else -> 22.sp
+            isCompactLayout -> if (isTablet) 22.sp else 16.sp
+            isNormalLayout -> if (isTablet) 24.sp else 18.sp
+            isTallLayout -> if (isTablet) 28.sp else 24.sp
+            else -> if (isTablet) 26.sp else 22.sp
         }
     val subtitleFontSize =
         when {
-            isCompactLayout -> 11.sp
-            isNormalLayout -> 12.sp
-            isTallLayout -> 15.sp
-            else -> 14.sp
+            isCompactLayout -> if (isTablet) 14.sp else 11.sp
+            isNormalLayout -> if (isTablet) 16.sp else 12.sp
+            isTallLayout -> if (isTablet) 18.sp else 15.sp
+            else -> if (isTablet) 17.sp else 14.sp
         }
     val horizontalPadding =
         when {
-            isCompactLayout -> 10.dp
-            isNormalLayout -> 12.dp
-            isTallLayout -> 20.dp
-            else -> 24.dp
+            isCompactLayout -> if (isTablet) 16.dp else 10.dp
+            isNormalLayout -> if (isTablet) 20.dp else 12.dp
+            isTallLayout -> if (isTablet) 28.dp else 20.dp
+            else -> if (isTablet) 32.dp else 24.dp
         }
 
     Column(
@@ -1962,6 +1995,7 @@ fun PlayerControls(
         (aspectRatio in 1.15f..1.6f) ||
             (aspectRatio in 0.50f..<0.75f)
     val isTallLayout = aspectRatio < 0.50f
+    val isTablet = minOf(screenWidth, screenHeight) >= 600
 
     // Sincroniza el slider con el estado global solo si no se está arrastrando
     LaunchedEffect(playerState.position, playerState.duration, isUserSeeking) {
@@ -2012,21 +2046,23 @@ fun PlayerControls(
         Spacer(
             Modifier.height(
                 when {
-                    isCompactLayout -> 4.dp
-                    isNormalLayout -> 6.dp
-                    isTallLayout -> 16.dp
-                    else -> 12.dp
+                    isCompactLayout -> if (isTablet) 8.dp else 4.dp
+                    isNormalLayout -> if (isTablet) 10.dp else 6.dp
+                    isTallLayout -> if (isTablet) 20.dp else 16.dp
+                    else -> if (isTablet) 16.dp else 12.dp
                 },
             ),
         )
 
         val buttonSize =
             with(LocalDensity.current) {
+                val ref = minOf(screenWidth, screenHeight)
+                val tabletMul = if (isTablet) 1.3f else 1f
                 when {
-                    isCompactLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.14f)
-                    isNormalLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.15f)
-                    isTallLayout -> (LocalConfiguration.current.screenWidthDp.dp * 0.20f)
-                    else -> (LocalConfiguration.current.screenWidthDp.dp * 0.18f)
+                    isCompactLayout -> (ref.dp * 0.14f * tabletMul)
+                    isNormalLayout -> (ref.dp * 0.15f * tabletMul)
+                    isTallLayout -> (ref.dp * 0.20f * tabletMul)
+                    else -> (ref.dp * 0.18f * tabletMul)
                 }
             }
 
@@ -2111,10 +2147,10 @@ fun PlayerControls(
             Spacer(
                 Modifier.height(
                     when {
-                        isCompactLayout -> 6.dp
-                        isNormalLayout -> 6.dp
-                        isTallLayout -> 14.dp
-                        else -> 12.dp
+                        isCompactLayout -> if (isTablet) 10.dp else 6.dp
+                        isNormalLayout -> if (isTablet) 10.dp else 6.dp
+                        isTallLayout -> if (isTablet) 18.dp else 14.dp
+                        else -> if (isTablet) 16.dp else 12.dp
                     },
                 ),
             )
@@ -2125,19 +2161,17 @@ fun PlayerControls(
                         if (audioFormat.isNotEmpty() && audioBitrate.isNotEmpty()) append(" • ")
                         if (audioBitrate.isNotEmpty()) append(audioBitrate)
                         if ((audioFormat.isNotEmpty() || audioBitrate.isNotEmpty()) && audioSampleRate.isNotEmpty()) {
-                            append(
-                                " • ",
-                            )
+                            append(" • ")
                         }
                         if (audioSampleRate.isNotEmpty()) append(audioSampleRate)
                     },
                 color = metaColor,
                 fontSize =
                     when {
-                        isCompactLayout -> 9.sp
-                        isNormalLayout -> 10.sp
-                        isTallLayout -> 12.sp
-                        else -> 11.sp
+                        isCompactLayout -> if (isTablet) 12.sp else 9.sp
+                        isNormalLayout -> if (isTablet) 13.sp else 10.sp
+                        isTallLayout -> if (isTablet) 15.sp else 12.sp
+                        else -> if (isTablet) 14.sp else 11.sp
                     },
                 textAlign = TextAlign.Companion.Center,
             )

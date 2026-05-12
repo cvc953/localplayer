@@ -23,3 +23,6 @@ local.properties
 app/release.keystore
 
 paths-to-remove.txt
+.idea/deploymentTargetSelector.xml
+.idea/deploymentTargetSelector.xml
+.idea/deploymentTargetSelector.xml

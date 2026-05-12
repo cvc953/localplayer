@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -161,14 +162,16 @@ fun MainMusicScreenUpdated(onOpenPlayer: () -> Unit) {
         Box(modifier = Modifier.fillMaxSize()) {
             // === BOTTOM SHEET (debajo del BottomNavBar) ===
             BottomSheetScaffold(
+                modifier = Modifier.fillMaxSize(),
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = sheetPeekHeight,
                 sheetDragHandle = null,
+                sheetMaxWidth = 10000.dp,
                 sheetContainerColor = MaterialTheme.colorScheme.surface,
                 containerColor = MaterialTheme.colorScheme.background,
                 sheetShape = RectangleShape,
                 sheetContent = {
-                    Column {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         // MiniPlayer — se desvanece al expandir
                         if (playerState.currentSong != null) {
                             MiniPlayer(
