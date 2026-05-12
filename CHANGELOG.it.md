@@ -5,7 +5,23 @@ Tutte le modifiche rilevanti di questo progetto saranno documentate in questo fi
 Il formato si basa su [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.9]
+
+### Aggiunto
+- 📱 Adattamento del PlayerScreen per tablet: layout reattivo landscape/portrait
+- 🖼️ In landscape: copertina a sinistra, controlli a destra
+- 📏 BottomSheetScaffold ora occupa tutta la larghezza su tablet (sheetMaxWidth)
+- 🔍 Rilevamento tablet con ridimensionamento di font, pulsanti e spaziature
+
+### Modificato
+- 📐 Soglia landscape ridotta da >1.6 a >1.5 per rilevare tablet 1280x800
+- 🔘 Dimensione pulsanti basata su minOf(larghezza, altezza) invece di screenWidth
+- 🎨 Regolazione font e spazi in SongTitleSection e PlayerControls per tablet
+
+### Corretto
+- 🐛 Playlist con nomi di più parole non mostravano i brani (decodifica URL nella navigazione)
+
+## [1.0.8]
 
 ### Aggiunto
 - 🌐 Localizzazione completa in spagnolo, inglese e italiano in tutta l'app

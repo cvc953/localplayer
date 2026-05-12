@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.0.9]
+
+### Added
+- 📱 PlayerScreen tablet adaptation: responsive landscape/portrait layout
+- 🖼️ In landscape: album art on the left, controls on the right
+- 📏 BottomSheetScaffold now fills full width on tablets (sheetMaxWidth)
+- 🔍 Tablet detection with scaling of fonts, buttons, and spacing
+
+### Changed
+- 📐 Landscape threshold reduced from >1.6 to >1.5 to detect 1280x800 tablets
+- 🔘 Button sizing based on minOf(width, height) instead of screenWidth
+- 🎨 Font and spacing adjustments in SongTitleSection and PlayerControls for tablets
+
+### Fixed
+- 🐛 Playlists with multi-word names not showing songs (URL decoding in navigation)
+
+## [1.0.8]
 
 ### Added
 - 🌐 Full localization in Spanish, English, and Italian across the app

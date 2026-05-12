@@ -83,22 +83,40 @@ jobs:
         id: changelog
         run: |
           VERSION="${{ steps.extract_version.outputs.VERSION }}"
-          CHANGELOG_FILE="CHANGELOG.md"
           
-          if [[ ! -f "$CHANGELOG_FILE" ]]; then
-            echo "CHANGELOG_CONTENT=No hay changelog disponible para esta versión." >> $GITHUB_OUTPUT
-            exit 0
-          fi
+          extract_changelog() {
+            local file="$1"
+            if [[ ! -f "$file" ]]; then
+              echo ""
+              return
+            fi
+            awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" "$file"
+          }
           
-          # Extraer la sección del changelog para esta versión
-          # Busca desde "## [$VERSION]" hasta la siguiente línea que empiece con "## ["
-          CHANGELOG=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" "$CHANGELOG_FILE")
+          ES_CONTENT=$(extract_changelog "CHANGELOG.md")
+          EN_CONTENT=$(extract_changelog "CHANGELOG.en.md")
+          IT_CONTENT=$(extract_changelog "CHANGELOG.it.md")
           
-          if [[ -z "$CHANGELOG" ]]; then
+          if [[ -z "$ES_CONTENT" && -z "$EN_CONTENT" && -z "$IT_CONTENT" ]]; then
             echo "CHANGELOG_CONTENT=No se encontraron cambios documentados para la versión $VERSION." >> $GITHUB_OUTPUT
           else
-            # Guardar en un archivo temporal para evitar problemas con caracteres especiales
-            echo "$CHANGELOG" > release/changelog_content.txt
+            {
+              echo "### 🇪🇸 Español"
+              echo ""
+              echo "$ES_CONTENT"
+              echo ""
+              echo "---"
+              echo ""
+              echo "### 🇬🇧 English"
+              echo ""
+              echo "$EN_CONTENT"
+              echo ""
+              echo "---"
+              echo ""
+              echo "### 🇮🇹 Italiano"
+              echo ""
+              echo "$IT_CONTENT"
+            } > release/changelog_content.txt
             echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_OUTPUT
             cat release/changelog_content.txt >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT

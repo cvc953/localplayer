@@ -5,6 +5,22 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.0.9]
+
+### Añadido
+- 📱 Adaptación del PlayerScreen a tablets: layout responsivo landscape/portrait
+- 🖼️ En landscape: carátula a la izquierda, controles a la derecha
+- 📏 BottomSheetScaffold ahora ocupa todo el ancho en tablets (sheetMaxWidth)
+- 🔍 Detección de tablets con escalado de fuentes, botones y espaciados
+
+### Cambiado
+- 📐 Umbral de landscape reducido de >1.6 a >1.5 para detectar tablets 1280x800
+- 🔘 Tamaño de botones basado en minOf(ancho, alto) en vez de screenWidth
+- 🎨 Ajuste de fuentes y espaciados en SongTitleSection y PlayerControls para tablets
+
+### Corregido
+- 🐛 Playlists con nombres de más de una palabra no mostraban canciones (decodificación URL en navegación)
+
 ## [1.0.8]
 
 ### Añadido
