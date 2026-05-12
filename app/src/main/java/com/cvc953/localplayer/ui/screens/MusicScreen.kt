@@ -2,6 +2,9 @@ package com.cvc953.localplayer.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,17 +14,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -32,6 +41,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,6 +59,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
@@ -113,6 +129,12 @@ fun SongsContent(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var currentScrollLetter by remember { mutableStateOf<String?>(null) }
+    var selectedSongIds by remember { mutableStateOf(emptySet<Long>()) }
+    val isSelectionMode = selectedSongIds.isNotEmpty()
+
+    var showPlaylistDialog by remember { mutableStateOf(false) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var newPlaylistName by remember { mutableStateOf("") }
 
     val isScanning by songViewModel.isScanning.collectAsState()
 
@@ -301,6 +323,113 @@ fun SongsContent(
                     }
                 }
 
+                // Top action bar for selected songs
+                if (isSelectionMode) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = { selectedSongIds = emptySet() }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Cancelar selección",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Text(
+                                    text = "${selectedSongIds.size} ${stringResource(R.string.songs_selected)}",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                IconButton(
+                                    onClick = { showPlaylistDialog = true }
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.PlaylistAdd,
+                                        contentDescription = stringResource(R.string.add_to_playlist),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        val favoritesName = "Favoritos"
+                                        var favorites = playlists.find { it.name == favoritesName }
+                                        if (favorites == null) {
+                                            playlistViewModel.createPlaylist(favoritesName)
+                                        }
+                                        selectedSongIds.forEach { songId ->
+                                            playlistViewModel.addSongToPlaylist(favoritesName, songId)
+                                        }
+                                        Toast.makeText(context, context.getString(R.string.toast_added_to_playlist, favoritesName), Toast.LENGTH_SHORT).show()
+                                        selectedSongIds = emptySet()
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Default.Favorite,
+                                        contentDescription = stringResource(R.string.action_add_to_favorites),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        val songList = selectedSongIds.mapNotNull { id -> sortedSongs.firstOrNull { it.id == id } }
+                                        if (songList.isNotEmpty()) {
+                                            playbackViewModel.addToQueueNextAll(songList)
+                                            Toast.makeText(context, context.getString(R.string.toast_added_next), Toast.LENGTH_SHORT).show()
+                                        }
+                                        selectedSongIds = emptySet()
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Default.SkipNext,
+                                        contentDescription = stringResource(R.string.action_add_next),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        val songList = selectedSongIds.mapNotNull { id -> sortedSongs.firstOrNull { it.id == id } }
+                                        if (songList.isNotEmpty()) {
+                                            playbackViewModel.addToQueueEndAll(songList)
+                                            Toast.makeText(context, context.getString(R.string.toast_added_queue_end), Toast.LENGTH_SHORT).show()
+                                        }
+                                        selectedSongIds = emptySet()
+                                    },
+                                ) {
+                                    Icon(
+                                        Icons.Default.SkipPrevious,
+                                        contentDescription = stringResource(R.string.action_add_to_queue_end),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (showSearchBar) {
                     OutlinedTextField(
                         value = searchQuery,
@@ -395,15 +524,30 @@ fun SongsContent(
                                         isCurrent &&
                                             playerState
                                                 .isPlaying,
+                                    isSelectionMode = isSelectionMode,
+                                    isSelected = selectedSongIds.contains(song.id),
                                     onClick = {
-                                        // Usar el orden
-                                        // actual solo al
-                                        // reproducir desde
-                                        // esta vista
-                                        playbackViewModel.updateDisplayOrder(sortedSongs)
-                                        playbackViewModel.play(song)
-                                        // playerViewModel.showPlayerScreen(true)
-                                        // Si es necesario, iniciar servicio desde playbackViewModel
+                                        if (isSelectionMode) {
+                                            selectedSongIds = if (selectedSongIds.contains(song.id)) {
+                                                selectedSongIds - song.id
+                                            } else {
+                                                selectedSongIds + song.id
+                                            }
+                                        } else {
+                                            playbackViewModel.updateDisplayOrder(sortedSongs)
+                                            playbackViewModel.play(song)
+                                        }
+                                    },
+                                    onLongClick = {
+                                        if (!isSelectionMode) {
+                                            selectedSongIds = setOf(song.id)
+                                        } else {
+                                            selectedSongIds = if (selectedSongIds.contains(song.id)) {
+                                                selectedSongIds - song.id
+                                            } else {
+                                                selectedSongIds + song.id
+                                            }
+                                        }
                                     },
                                     onQueueNext = {
                                         playbackViewModel.addToQueueNext(song)
@@ -469,6 +613,138 @@ fun SongsContent(
                         ScrollLetterDisplay(letter = letter)
                     }
                 }
+            }
+
+            if (showPlaylistDialog) {
+                AlertDialog(
+                    onDismissRequest = { showPlaylistDialog = false },
+                    containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                    title = { Text(stringResource(R.string.add_to_playlist_title), color = MaterialTheme.colorScheme.onSurface) },
+                    text = {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                            ) {
+                                Button(
+                                    onClick = { showCreatePlaylistDialog = true },
+                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                    ),
+                                ) {
+                                    Text(stringResource(R.string.create_playlist_button))
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            if (showCreatePlaylistDialog) {
+                                AlertDialog(
+                                    onDismissRequest = {
+                                        showCreatePlaylistDialog = false
+                                        newPlaylistName = ""
+                                    },
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    title = { Text(stringResource(R.string.dialog_create_playlist_title), color = MaterialTheme.colorScheme.onBackground) },
+                                    text = {
+                                        OutlinedTextField(
+                                            value = newPlaylistName,
+                                            onValueChange = { newPlaylistName = it },
+                                            singleLine = true,
+                                            placeholder = { Text(stringResource(R.string.playlist_name_placeholder)) },
+                                            colors = TextFieldDefaults.colors(
+                                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                                                unfocusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                                                cursorColor = MaterialTheme.colorScheme.primary,
+                                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+                                            ),
+                                        )
+                                    },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                if (newPlaylistName.isNotBlank()) {
+                                                    playlistViewModel.createPlaylist(newPlaylistName)
+                                                    selectedSongIds.forEach { songId ->
+                                                        playlistViewModel.addSongToPlaylist(newPlaylistName, songId)
+                                                    }
+                                                    Toast.makeText(context, context.getString(R.string.playlist_created_and_added, newPlaylistName), Toast.LENGTH_SHORT).show()
+                                                    newPlaylistName = ""
+                                                    showCreatePlaylistDialog = false
+                                                    showPlaylistDialog = false
+                                                    selectedSongIds = emptySet()
+                                                }
+                                            },
+                                        ) {
+                                            Text(stringResource(R.string.action_create), color = MaterialTheme.colorScheme.primary)
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showCreatePlaylistDialog = false }) {
+                                            Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground)
+                                        }
+                                    },
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+
+                            androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
+                                items(playlists) { playlist ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 6.dp)
+                                            .clickable {
+                                                selectedSongIds.forEach { songId ->
+                                                    playlistViewModel.addSongToPlaylist(playlist.name, songId)
+                                                }
+                                                Toast.makeText(context, context.getString(R.string.song_added_to_playlist, playlist.name), Toast.LENGTH_SHORT).show()
+                                                showPlaylistDialog = false
+                                                selectedSongIds = emptySet()
+                                            },
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                                        ),
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                            )
+                                            Spacer(Modifier.width(12.dp))
+                                            Column {
+                                                Text(
+                                                    text = playlist.name,
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    fontSize = 14.sp,
+                                                )
+                                                Text(
+                                                    text = stringResource(R.string.songs_count, playlist.songIds.size),
+                                                    color = MaterialTheme.extendedColors.textSecondarySoft,
+                                                    fontSize = 12.sp,
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showPlaylistDialog = false }) {
+                            Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                )
             }
 
             if (showAbout) {

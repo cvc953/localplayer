@@ -185,4 +185,5 @@
     <string name="storage_toast_folder_selected">Carpeta seleccionada</string>
     <string name="storage_toast_permission_error">No se pudo guardar acceso a la carpeta</string>
     <string name="storage_log_permission_error">No se pudo guardar permiso persistente</string>
+    <string name="songs_selected">seleccionadas</string>
 </resources>

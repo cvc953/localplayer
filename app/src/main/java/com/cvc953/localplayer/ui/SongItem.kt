@@ -5,8 +5,10 @@ import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +28,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -70,6 +74,7 @@ val MaterialTheme.extendedColors: ExtendedColors
     @Composable
     get() = LocalExtendedColors.current
 
+@OptIn(ExperimentalFoundationApi::class)
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun SongItem(
@@ -82,6 +87,9 @@ fun SongItem(
     onAddToPlaylist: ((String, Long) -> Unit)? = null,
     onRemoveFromPlaylist: (() -> Unit)? = null,
     playlistViewModel: PlaylistViewModel = viewModel(),
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onLongClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
@@ -109,11 +117,32 @@ fun SongItem(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .clickable { onClick() }
+                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.background)
+                .then(
+                    if (onLongClick != null) {
+                        Modifier.combinedClickable(
+                            onClick = onClick,
+                            onLongClick = onLongClick
+                        )
+                    } else {
+                        Modifier.clickable { onClick() }
+                    }
+                )
                 .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        if (isSelectionMode) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onClick() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ),
+                modifier = Modifier.padding(end = 8.dp)
+            )
+        }
+
         Image(
             painter =
                 albumArt?.let { BitmapPainter(it.asImageBitmap()) }
