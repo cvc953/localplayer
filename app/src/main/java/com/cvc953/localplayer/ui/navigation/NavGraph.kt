@@ -147,7 +147,7 @@ fun AppNavigation(
             arguments = playlistDetailArguments,
             deepLinks = playlistDeepLinks,
         ) { backStackEntry ->
-            val playlistName = backStackEntry.arguments?.getString(Screen.PlaylistDetail.ARG_PLAYLIST_NAME) ?: ""
+            val playlistName = RouteParams.decode(backStackEntry.arguments?.getString(Screen.PlaylistDetail.ARG_PLAYLIST_NAME))
 
             PlaylistDetailScreen(
                 playlistViewModel = playlistViewModel,
