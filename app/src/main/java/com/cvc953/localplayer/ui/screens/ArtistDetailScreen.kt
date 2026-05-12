@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -54,8 +55,8 @@ import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.ui.SongItem
 import com.cvc953.localplayer.ui.components.DraggableSwipeRow
+import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.headers.ArtistHeader
-import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
@@ -103,30 +104,30 @@ fun ArtistDetailScreen(
     BackHandler { onBack() }
 
     Column(
-        modifier = Modifier.Companion.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         Row(
-            modifier = Modifier.Companion.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.Companion.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.Default.ArrowBack,
-                    contentDescription = "Volver",
+                    contentDescription = stringResource(R.string.action_go_back),
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
 
-            Spacer(modifier = Modifier.Companion.width(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-            Column(modifier = Modifier.Companion.weight(1f)) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = artistName,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Companion.Bold,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
-                    overflow = TextOverflow.Companion.Ellipsis,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -134,7 +135,7 @@ fun ArtistDetailScreen(
         val maxItems = 6
 
         LazyColumn(
-            modifier = Modifier.Companion.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -143,21 +144,23 @@ fun ArtistDetailScreen(
                     artistViewModel,
                     artistName,
                     playbackViewModel,
-                    Modifier.Companion.padding(16.dp),
+                    Modifier.padding(16.dp),
                     onViewAllSongs,
                 )
             }
             items(artistSongsSorted.take(maxItems)) { song ->
                 val isCurrent = playerState.currentSong?.id == song.id
+                val addedNextMsg = stringResource(R.string.toast_added_next)
+                val addedQueueEndMsg = stringResource(R.string.toast_added_queue_end)
 
                 DraggableSwipeRow(
                     onSwipeThreshold = {
                         playbackViewModel.addToQueueNext(song)
-                        Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
                     },
                     onSwipeLeftThreshold = {
                         playbackViewModel.addToQueueEnd(song)
-                        Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
                     },
                 ) {
                     SongItem(
@@ -171,63 +174,52 @@ fun ArtistDetailScreen(
                         },
                         onQueueNext = {
                             playbackViewModel.addToQueueNext(song)
-                            Toast
-                                .makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
                         },
                         onQueueEnd = {
                             playbackViewModel.addToQueueEnd(song)
-                            Toast
-                                .makeText(
-                                    context,
-                                    "Añadido al final de la cola",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                            Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
                         },
                         playlists = playlists,
                         onAddToPlaylist = { playlistName, songId ->
                             playlistViewModel.addSongToPlaylist(playlistName, songId)
-                            Toast
-                                .makeText(context, "Añadido a $playlistName", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(context, context.getString(R.string.toast_added_to_playlist, playlistName), Toast.LENGTH_SHORT).show()
                         },
                     )
                 }
             }
+
             // LazyRow de álbumes del artista
             item {
+                val unknownLabel = stringResource(R.string.unknown)
                 val albums =
-                    remember(artistSongs) {
+                    remember(artistSongs, unknownLabel) {
                         artistSongs
-                            .groupBy { it.album.ifBlank { "Desconocido" } }
+                            .groupBy { it.album.ifBlank { unknownLabel } }
                             .filterKeys { it.isNotBlank() }
                             .toList()
                     }
                 if (albums.isNotEmpty()) {
-                    Column(modifier = Modifier.Companion.fillMaxWidth()) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "Álbumes",
-                            fontWeight = FontWeight.Companion.Bold,
+                            text = stringResource(R.string.albums_title),
+                            fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
                             color = MaterialTheme.colorScheme.onBackground,
                             modifier =
-                                Modifier.Companion.padding(
+                                Modifier.padding(
                                     start = 8.dp,
                                     top = 8.dp,
                                     bottom = 8.dp,
                                 ),
                         )
                         LazyRow(
-                            // contentPadding = PaddingValues(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             items(albums) { (albumName, albumSongs) ->
-                                val context = LocalContext.current
                                 val representativeSong = albumSongs.firstOrNull()
                                 var albumArt by remember(representativeSong?.uri) {
-                                    mutableStateOf<Bitmap?>(
-                                        null,
-                                    )
+                                    mutableStateOf<Bitmap?>(null)
                                 }
                                 LaunchedEffect(representativeSong?.uri) {
                                     withContext(Dispatchers.IO) {
@@ -236,8 +228,7 @@ fun ArtistDetailScreen(
                                             val retriever = MediaMetadataRetriever()
                                             retriever.setDataSource(context, uri)
                                             retriever.embeddedPicture?.let {
-                                                albumArt =
-                                                    BitmapFactory.decodeByteArray(it, 0, it.size)
+                                                albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
                                             }
                                             retriever.release()
                                         } catch (_: Exception) {
@@ -246,10 +237,10 @@ fun ArtistDetailScreen(
                                 }
                                 Column(
                                     modifier =
-                                        Modifier.Companion
+                                        Modifier
                                             .width(120.dp)
                                             .clickable { onAlbumClick(albumName, artistName) },
-                                    horizontalAlignment = Alignment.Companion.CenterHorizontally,
+                                    horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
                                     Image(
                                         painter =
@@ -257,23 +248,23 @@ fun ArtistDetailScreen(
                                                 ?: painterResource(R.drawable.ic_default_album),
                                         contentDescription = null,
                                         modifier =
-                                            Modifier.Companion
+                                            Modifier
                                                 .size(100.dp)
                                                 .clip(RoundedCornerShape(8.dp)),
-                                        contentScale = ContentScale.Companion.Crop,
+                                        contentScale = ContentScale.Crop,
                                     )
-                                    Spacer(modifier = Modifier.Companion.height(6.dp))
+                                    Spacer(modifier = Modifier.height(6.dp))
                                     Text(
                                         text = albumName,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 14.sp,
                                         maxLines = 1,
-                                        textAlign = TextAlign.Companion.Center,
-                                        overflow = TextOverflow.Companion.Ellipsis,
+                                        textAlign = TextAlign.Center,
+                                        overflow = TextOverflow.Ellipsis,
                                     )
                                     Text(
-                                        text = "${albumSongs.size} canciones",
-                                        color = md_textSecondary,
+                                        text = stringResource(R.string.songs_count, albumSongs.size),
+                                        color = MaterialTheme.extendedColors.textSecondary,
                                         fontSize = 12.sp,
                                     )
                                 }

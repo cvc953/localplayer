@@ -44,9 +44,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.components.VerticalSlider
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.viewmodel.EqualizerViewModel
@@ -99,13 +101,13 @@ fun EqualizerScreen(
             ) {
                 Column(modifier = Modifier.Companion.weight(1f)) {
                     Text(
-                        "Ecualizador",
+                        stringResource(R.string.equalizer_title),
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Companion.Bold,
                     )
                     Text(
-                        "Ajusta bandas, presets y respuesta de audio",
+                        stringResource(R.string.equalizer_subtitle),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.68f),
                         fontSize = 13.sp,
                     )
@@ -113,19 +115,19 @@ fun EqualizerScreen(
                 IconButton(onClick = onClose) {
                     Icon(
                         Icons.Default.Close,
-                        contentDescription = "Cerrar",
+                        contentDescription = stringResource(R.string.action_close),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
 
             EqualizerSectionCard(
-                title = "Presets",
-                subtitle = "Elige perfiles del sistema o creados por ti",
+                title = stringResource(R.string.equalizer_section_presets_title),
+                subtitle = stringResource(R.string.equalizer_section_presets_subtitle),
             ) {
                 if (combinedPresets.isEmpty()) {
                     Text(
-                        "No hay presets disponibles en esta sesion.",
+                        stringResource(R.string.no_presets_available),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                     )
@@ -135,14 +137,14 @@ fun EqualizerScreen(
                         verticalAlignment = Alignment.Companion.CenterVertically,
                     ) {
                         Column(modifier = Modifier.Companion.weight(1f)) {
-                            Text("Preset activo", color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.preset_activo), color = MaterialTheme.colorScheme.onSurface)
                             Text(
                                 text =
                                     selectedPresetName
                                         ?: if (selectedPreset in equalizerPresets.indices) {
                                             equalizerPresets[selectedPreset]
                                         } else {
-                                            "Seleccionar"
+                                            stringResource(R.string.select_option)
                                         },
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 12.sp,
@@ -151,7 +153,7 @@ fun EqualizerScreen(
                         OutlinedButton(onClick = { expandedPresets = true }) {
                             Icon(Icons.Default.GraphicEq, contentDescription = null)
                             Spacer(modifier = Modifier.Companion.width(8.dp))
-                            Text("Cambiar")
+                            Text(stringResource(R.string.cambiar))
                         }
                         DropdownMenu(
                             expanded = expandedPresets,
@@ -163,20 +165,9 @@ fun EqualizerScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            if (isUserPreset) "$name (Usuario)" else name,
+                                            text = if (isUserPreset) "$name${stringResource(R.string.user_suffix)}" else name,
                                             color = MaterialTheme.colorScheme.onSurface,
                                         )
-                                    },
-                                    trailingIcon = {
-                                        if (isUserPreset) {
-                                            IconButton(onClick = { viewModel.removeUserPreset(name) }) {
-                                                Icon(
-                                                    Icons.Default.Delete,
-                                                    contentDescription = "Eliminar preset",
-                                                    tint = MaterialTheme.colorScheme.error,
-                                                )
-                                            }
-                                        }
                                     },
                                     onClick = {
                                         if (isUserPreset) {
@@ -194,8 +185,8 @@ fun EqualizerScreen(
             }
 
             EqualizerSectionCard(
-                title = "Bandas",
-                subtitle = "Desliza para ajustar cada frecuencia",
+                title = stringResource(R.string.equalizer_section_bands_title),
+                subtitle = stringResource(R.string.equalizer_section_bands_subtitle),
             ) {
                 if (bandCount > 0) {
                     Row(
@@ -223,11 +214,11 @@ fun EqualizerScreen(
                     ) {
                         Icon(Icons.Default.RestartAlt, contentDescription = null)
                         Spacer(modifier = Modifier.Companion.width(8.dp))
-                        Text("Resetear bandas")
+                        Text(stringResource(R.string.resetear_bandas))
                     }
                 } else {
                     Text(
-                        "No hay ecualizador disponible para la sesion actual.",
+                        stringResource(R.string.no_equalizer_available),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                     )
@@ -312,7 +303,7 @@ private fun BandSliderCard(
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 11.sp,
             )
-            Text("mB", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+            Text(stringResource(R.string.mb), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
         }
     }
 }

@@ -239,4 +239,21 @@ class AppPrefs(
     fun loadNextAlbumName(): String? = prefs.getString("next_album_name", null)
 
     fun loadNextAlbumArtist(): String? = prefs.getString("next_album_artist", null)
+
+    // Language preference: "sistema", "es", "en", "it"
+    fun getLanguage(): String {
+        val lang = prefs.getString("app_language", "sistema") ?: "sistema"
+        android.util.Log.d("AppPrefs", "getLanguage() = $lang")
+        return lang
+    }
+
+    fun setLanguage(language: String) {
+        android.util.Log.d("AppPrefs", "setLanguage($language)")
+        if (language != "sistema" && language != "es" && language != "en" && language != "it") {
+            android.util.Log.w("AppPrefs", "Invalid language code: $language, rejecting")
+            return
+        }
+        prefs.edit().putString("app_language", language).apply()
+        android.util.Log.d("AppPrefs", "Language saved: $language")
+    }
 }

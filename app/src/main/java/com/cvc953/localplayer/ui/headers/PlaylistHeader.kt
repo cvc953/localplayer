@@ -26,9 +26,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.components.PlaylistAlbumArt
@@ -65,7 +67,7 @@ fun PlaylistHeader(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "${playlistSongs.size} canciones",
+            text = stringResource(R.string.songs_count, playlistSongs.size),
             fontSize = 16.sp,
             color = MaterialTheme.extendedColors.textSecondary,
         )
@@ -102,12 +104,12 @@ fun PlaylistHeader(
                     ) {
                         Icon(
                             Icons.Default.PlayArrow,
-                            contentDescription = "Reproducir ahora",
+                            contentDescription = stringResource(R.string.action_play_now),
                             tint = Color.White,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(Modifier.width(2.dp))
-                        Text("Reproducir", color = Color.White, fontSize = 14.sp)
+                        Text(stringResource(R.string.action_play), color = Color.White, fontSize = 14.sp)
                     }
                 }
             }
@@ -135,9 +137,9 @@ fun PlaylistHeader(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Default.Shuffle, contentDescription = "Aleatorio", tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Shuffle, contentDescription = stringResource(R.string.action_shuffle), tint = Color.White, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(2.dp))
-                        Text("Aleatorio", color = Color.White, fontSize = 14.sp)
+                        Text(stringResource(R.string.action_shuffle), color = Color.White, fontSize = 14.sp)
                     }
                 }
             }

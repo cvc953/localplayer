@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -35,10 +35,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.SongItem
 import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.extendedColors
@@ -95,7 +97,11 @@ fun PlaylistDetailScreen(
             }
         }
 
-    // val context = LocalContext.current
+    // Cargar strings para Toasts
+    val addedNextMsg = stringResource(R.string.toast_added_next)
+    val addedQueueEndMsg = stringResource(R.string.toast_added_queue_end)
+    val removedFromPlaylistMsg = stringResource(R.string.toast_removed_from_playlist)
+    val addedToPlaylist = stringResource(R.string.toast_added_to_playlist)
 
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
@@ -105,7 +111,7 @@ fun PlaylistDetailScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.Default.ArrowBack,
-                    contentDescription = "Volver",
+                    contentDescription = stringResource(R.string.action_go_back),
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
@@ -124,7 +130,11 @@ fun PlaylistDetailScreen(
             var sortMenuExpanded by remember { mutableStateOf(false) }
             Box {
                 IconButton(onClick = { sortMenuExpanded = true }) {
-                    Icon(Icons.Default.Sort, contentDescription = "Ordenar", tint = MaterialTheme.colorScheme.onBackground)
+                    Icon(
+                        Icons.AutoMirrored.Filled.Sort,
+                        contentDescription = stringResource(R.string.action_sort),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                    )
                 }
                 DropdownMenu(
                     expanded = sortMenuExpanded,
@@ -132,21 +142,21 @@ fun PlaylistDetailScreen(
                     containerColor = MaterialTheme.extendedColors.surfaceSheet,
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Por playlist", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(stringResource(R.string.sort_by_playlist), color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             order = "PLAYLIST"
                             sortMenuExpanded = false
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text("Título A-Z", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(stringResource(R.string.sort_title_asc), color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             order = "AZ"
                             sortMenuExpanded = false
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text("Título Z-A", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(stringResource(R.string.sort_title_desc), color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             order = "ZA"
                             sortMenuExpanded = false
@@ -177,11 +187,11 @@ fun PlaylistDetailScreen(
                 DraggableSwipeRow(
                     onSwipeThreshold = {
                         playbackViewModel.addToQueueNext(song)
-                        Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
                     },
                     onSwipeLeftThreshold = {
                         playbackViewModel.addToQueueEnd(song)
-                        Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
                     },
                 ) {
                     SongItem(
@@ -193,23 +203,23 @@ fun PlaylistDetailScreen(
                         },
                         onQueueNext = {
                             playbackViewModel.addToQueueNext(song)
-                            Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
                         },
                         onQueueEnd = {
                             playbackViewModel.addToQueueEnd(song)
-                            Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
                         },
                         playlists = playlists,
                         onAddToPlaylist = { targetPlaylistName, songId ->
                             playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
-                            Toast.makeText(context, "Añadido a $targetPlaylistName", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, addedToPlaylist, Toast.LENGTH_SHORT).show()
                         },
                         onRemoveFromPlaylist = {
                             playlistViewModel.removeSongFromPlaylist(
                                 playlistName,
                                 song.id,
                             )
-                            Toast.makeText(context, "Eliminado de la lista", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
                         },
                     )
                 }

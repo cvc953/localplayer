@@ -12,11 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.cvc953.localplayer.ui.navigation.BottomNavItem
-import com.cvc953.localplayer.ui.navigation.Screen
-import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun BottomNavigationBar(
@@ -69,13 +68,14 @@ fun BottomNavigationBar(
             windowInsets = WindowInsets(0),
         ) {
             navItems.forEach { item ->
+                val title = stringResource(item.titleResId)
                 NavigationBarItem(
                     icon = {
-                        Icon(item.icon, contentDescription = item.title)
+                        Icon(item.icon, contentDescription = title)
                     },
                     label = {
                         Text(
-                            text = item.title,
+                            text = title,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             softWrap = false,

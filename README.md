@@ -9,6 +9,10 @@
 </p>
 
 <p align="center">
+  <a href="README.en.md">English</a> · <a href="README.it.md">Italiano</a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Android-24%2B-brightgreen" alt="Android API"/>
   <img src="https://img.shields.io/badge/Kotlin-2.0.21-blue" alt="Kotlin"/>
   <img src="https://img.shields.io/badge/Jetpack%20Compose-✓-blue" alt="Jetpack Compose"/>

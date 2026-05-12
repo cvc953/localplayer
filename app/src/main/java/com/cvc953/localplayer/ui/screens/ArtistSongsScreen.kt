@@ -61,11 +61,11 @@ fun ArtistSongsScreen(
     BackHandler { onBack() }
 
     Column(
-        modifier = Modifier.Companion.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         Row(
-            modifier = Modifier.Companion.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.Companion.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
                 Icon(
@@ -74,18 +74,18 @@ fun ArtistSongsScreen(
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
-            Spacer(modifier = Modifier.Companion.width(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = artistName,
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Companion.Bold,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 1,
-                overflow = TextOverflow.Companion.Ellipsis,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         LazyColumn(
-            modifier = Modifier.Companion.fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {

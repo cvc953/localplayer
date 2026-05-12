@@ -46,6 +46,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.cvc953.localplayer.R
 import androidx.compose.ui.zIndex
 import com.cvc953.localplayer.ui.SongItem
 import com.cvc953.localplayer.ui.components.AlphabetScrollerContent
@@ -125,7 +127,7 @@ fun SongsContent(
         ) {
             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.height(16.dp))
-            Text("Escaneando canciones", color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.scanning_songs), color = MaterialTheme.colorScheme.onSurface)
         }
     } else {
         Box(
@@ -141,7 +143,7 @@ fun SongsContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "Canciones",
+                        text = stringResource(R.string.songs_title),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -153,7 +155,7 @@ fun SongsContent(
                         IconButton(onClick = { sortMenuExpanded = true }) {
                             Icon(
                                 Icons.Default.Sort,
-                                contentDescription = "Ordenar",
+                                contentDescription = stringResource(R.string.action_sort),
                                 tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
@@ -167,7 +169,7 @@ fun SongsContent(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Título A-Z",
+                                        stringResource(R.string.sort_title_asc),
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
@@ -180,7 +182,7 @@ fun SongsContent(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Título Z-A",
+                                        stringResource(R.string.sort_title_desc),
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
@@ -193,7 +195,7 @@ fun SongsContent(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Artista A-Z",
+                                        stringResource(R.string.sort_artist_asc),
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
@@ -214,7 +216,7 @@ fun SongsContent(
                     ) {
                         Icon(
                             Icons.Default.Search,
-                            contentDescription = "Buscar",
+                            contentDescription = stringResource(R.string.action_search),
                             tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
@@ -223,7 +225,7 @@ fun SongsContent(
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(
                                 Icons.Default.MoreVert,
-                                contentDescription = "Más opciones",
+                                contentDescription = stringResource(R.string.action_more_options),
                                 tint = MaterialTheme.colorScheme.onSurface,
                             )
                         }
@@ -239,7 +241,7 @@ fun SongsContent(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Actualizar biblioteca",
+                                        stringResource(R.string.action_refresh_library),
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
@@ -258,7 +260,7 @@ fun SongsContent(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Ajustes",
+                                        stringResource(R.string.settings_title),
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
@@ -278,7 +280,7 @@ fun SongsContent(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        "Acerca de",
+                                        stringResource(R.string.action_about),
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
@@ -306,7 +308,7 @@ fun SongsContent(
                         singleLine = true,
                         placeholder = {
                             Text(
-                                "Buscar por título o artista",
+                                stringResource(R.string.search_songs_placeholder),
                                 color = MaterialTheme.colorScheme.onBackground,
                             )
                         },
@@ -341,7 +343,7 @@ fun SongsContent(
                                     Icon(
                                         Icons.Default.Close,
                                         contentDescription =
-                                            "Limpiar",
+                                            stringResource(R.string.action_clear_search),
                                         tint = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
@@ -373,7 +375,7 @@ fun SongsContent(
                                     Toast
                                         .makeText(
                                             context,
-                                            "Añadido como siguiente",
+                                            context.getString(R.string.toast_added_next),
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                 },
@@ -382,7 +384,7 @@ fun SongsContent(
                                     Toast
                                         .makeText(
                                             context,
-                                            "Añadido al final de la cola",
+                                            context.getString(R.string.toast_added_queue_end),
                                             Toast.LENGTH_SHORT,
                                         ).show()
                                 },
@@ -408,7 +410,7 @@ fun SongsContent(
                                         Toast
                                             .makeText(
                                                 context,
-                                                "Añadido como siguiente",
+                                                context.getString(R.string.toast_added_next),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
                                     },
@@ -417,7 +419,7 @@ fun SongsContent(
                                         Toast
                                             .makeText(
                                                 context,
-                                                "Añadido al final de la cola",
+                                                context.getString(R.string.toast_added_queue_end),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
                                     },
@@ -427,7 +429,7 @@ fun SongsContent(
                                         Toast
                                             .makeText(
                                                 context,
-                                                "Añadido a '$playlistName'",
+                                                context.getString(R.string.toast_added_to_playlist, playlistName),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
                                     },

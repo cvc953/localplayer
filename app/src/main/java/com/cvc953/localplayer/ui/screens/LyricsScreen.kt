@@ -100,6 +100,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -799,7 +800,7 @@ fun PlayerScreen(
                         else -> {
                             Text(
                                 text =
-                                    "No hay letras para esta canción",
+                                    stringResource(R.string.lyrics_not_available),
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Companion.Medium,
                                 textAlign = TextAlign.Companion.Center,
@@ -955,7 +956,7 @@ fun PlayerScreen(
                                 )
                                 isFavorite = false
                                 Toast
-                                    .makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT)
+                                    .makeText(context, context.getString(R.string.removed_from_favorites), Toast.LENGTH_SHORT)
                                     .show()
                             } else {
                                 // Agregar a favoritos
@@ -966,7 +967,7 @@ fun PlayerScreen(
                                 playlistViewModel.addSongToPlaylist(favoritesName, song.id)
                                 isFavorite = true
                                 Toast
-                                    .makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT)
+                                    .makeText(context, context.getString(R.string.added_to_favorites), Toast.LENGTH_SHORT)
                                     .show()
                             }
                         },
@@ -978,7 +979,7 @@ fun PlayerScreen(
                                 } else {
                                     Icons.Outlined.FavoriteBorder
                                 },
-                            contentDescription = "Favoritos",
+                            contentDescription = stringResource(R.string.favorites),
                             tint = playerPrimaryColor,
                         )
                     }
@@ -988,7 +989,7 @@ fun PlayerScreen(
                     IconButton(onClick = { showQueue = true }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.QueueMusic,
-                            contentDescription = "Ver cola",
+                            contentDescription = stringResource(R.string.view_queue),
                             tint = playerPrimaryColor,
                         )
                     }
@@ -998,7 +999,7 @@ fun PlayerScreen(
                     IconButton(onClick = { showAddToPlaylistDialog = true }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-                            contentDescription = "Agregar a playlist",
+                            contentDescription = stringResource(R.string.add_to_playlist),
                             tint = playerPrimaryColor,
                         )
                     }
@@ -1008,7 +1009,7 @@ fun PlayerScreen(
                     IconButton(onClick = { playerViewModel.toggleLyrics() }) {
                         Icon(
                             imageVector = Icons.Default.Lyrics,
-                            contentDescription = "Mostrar letras",
+                            contentDescription = stringResource(R.string.show_lyrics),
                             tint = playerPrimaryColor,
                         )
                     }
@@ -1023,7 +1024,7 @@ fun PlayerScreen(
                     containerColor = MaterialTheme.colorScheme.surface,
                     title = {
                         Text(
-                            "Agregar a Playlist",
+                            stringResource(R.string.add_to_playlist_title),
                             color = MaterialTheme.colorScheme.onBackground,
                         )
                     },
@@ -1042,7 +1043,7 @@ fun PlayerScreen(
                                             containerColor = MaterialTheme.colorScheme.primary,
                                         ),
                                 ) {
-                                    Text("Crear playlist")
+                                    Text(stringResource(R.string.create_playlist_button))
                                 }
                             }
 
@@ -1061,7 +1062,7 @@ fun PlayerScreen(
                                         MaterialTheme.colorScheme.surface,
                                     title = {
                                         Text(
-                                            "Nueva lista",
+                                            stringResource(R.string.dialog_create_playlist_title),
                                             color = MaterialTheme.colorScheme.onBackground,
                                         )
                                     },
@@ -1075,7 +1076,7 @@ fun PlayerScreen(
                                             singleLine = true,
                                             placeholder = {
                                                 Text(
-                                                    "Nombre de la lista",
+                                                    stringResource(R.string.playlist_name_placeholder),
                                                 )
                                             },
                                             colors =
@@ -1104,12 +1105,12 @@ fun PlayerScreen(
                                                     newPlaylistName,
                                                     song.id,
                                                 )
-                                                Toast
-                                                    .makeText(
-                                                        context,
-                                                        "Creado y agregado a $newPlaylistName",
-                                                        Toast.LENGTH_SHORT,
-                                                    ).show()
+                                                    Toast
+                                                        .makeText(
+                                                            context,
+                                                            context.getString(R.string.playlist_created_and_added, newPlaylistName),
+                                                            Toast.LENGTH_SHORT,
+                                                        ).show()
                                                 newPlaylistName =
                                                     ""
                                                 showCreatePlaylistDialog =
@@ -1118,11 +1119,11 @@ fun PlayerScreen(
                                                     false
                                             }
                                         }) {
-                                            Text(
-                                                "Crear",
-                                                color =
-                                                    MaterialTheme.colorScheme.primary,
-                                            )
+                                        Text(
+                                            stringResource(R.string.action_create),
+                                            color =
+                                                MaterialTheme.colorScheme.primary,
+                                        )
                                         }
                                     },
                                     dismissButton = {
@@ -1130,10 +1131,10 @@ fun PlayerScreen(
                                             showCreatePlaylistDialog =
                                                 false
                                         }) {
-                                            Text(
-                                                "Cancelar",
-                                                color = MaterialTheme.colorScheme.onBackground,
-                                            )
+                                        Text(
+                                            stringResource(R.string.action_cancel),
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                        )
                                         }
                                     },
                                 )
@@ -1161,7 +1162,7 @@ fun PlayerScreen(
                                                     Toast
                                                         .makeText(
                                                             context,
-                                                            "Agregado a ${playlist.name}",
+                                                            context.getString(R.string.song_added_to_playlist, playlist.name),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
                                                     showAddToPlaylistDialog = false

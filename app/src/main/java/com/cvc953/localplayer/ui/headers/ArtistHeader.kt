@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -138,19 +139,27 @@ fun ArtistHeader(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Text(text = "${artistSongs.size} canciones", fontSize = 16.sp, color = MaterialTheme.extendedColors.textSecondary)
+        Text(
+            text = stringResource(R.string.songs_count, artistSongs.size),
+            fontSize = 16.sp,
+            color = MaterialTheme.extendedColors.textSecondary,
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        val buttonColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(text = "Canciones", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             Text(
-                text = "Ver todas",
+                text = stringResource(R.string.songs_title),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                text = stringResource(R.string.action_view_all),
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.extendedColors.textSecondary,

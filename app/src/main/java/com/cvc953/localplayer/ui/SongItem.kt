@@ -45,12 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,14 +84,18 @@ fun SongItem(
     playlistViewModel: PlaylistViewModel = viewModel(),
 ) {
     val context = LocalContext.current
-    var albumArt by remember { mutableStateOf<Bitmap?>(null) } // aquí se guarda la carátula
+    var albumArt by remember { mutableStateOf<Bitmap?>(null) }
 
-    // Este bloque se ejecuta cada vez que el Composable se monta o cambia la canción
+    // Cargar mensajes para Toasts y UI
+    val removedFromFavoritesMsg = stringResource(R.string.removed_from_favorites)
+    val addedToFavoritesMsg = stringResource(R.string.added_to_favorites)
+    val actionCancelMsg = stringResource(R.string.action_cancel)
+
     LaunchedEffect(song.uri) {
         withContext(Dispatchers.IO) {
             try {
                 val retriever = MediaMetadataRetriever()
-                retriever.setDataSource(context, song.uri) // URI de la canción
+                retriever.setDataSource(context, song.uri)
                 retriever.embeddedPicture?.let {
                     albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
                 }
@@ -149,7 +153,7 @@ fun SongItem(
             IconButton(onClick = { menuExpanded = true }) {
                 Icon(
                     Icons.Default.MoreVert,
-                    contentDescription = "Más opciones",
+                    contentDescription = stringResource(R.string.action_more_options),
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -160,21 +164,21 @@ fun SongItem(
                 modifier = Modifier.background(MaterialTheme.extendedColors.surfaceSheet),
             ) {
                 DropdownMenuItem(
-                    text = { Text("Reproducir ahora", color = MaterialTheme.colorScheme.onSurface) },
+                    text = { Text(stringResource(R.string.action_play_now), color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         menuExpanded = false
                         onClick()
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text("Añadir como siguiente", color = MaterialTheme.colorScheme.onSurface) },
+                    text = { Text(stringResource(R.string.action_add_next), color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         menuExpanded = false
                         onQueueNext()
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text("Añadir al final", color = MaterialTheme.colorScheme.onSurface) },
+                    text = { Text(stringResource(R.string.action_add_to_queue_end), color = MaterialTheme.colorScheme.onSurface) },
                     onClick = {
                         menuExpanded = false
                         onQueueEnd()
@@ -182,7 +186,7 @@ fun SongItem(
                 )
                 if (onRemoveFromPlaylist != null) {
                     DropdownMenuItem(
-                        text = { Text("Quitar de la lista", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(stringResource(R.string.action_remove_from_playlist), color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             menuExpanded = false
                             onRemoveFromPlaylist()
@@ -191,7 +195,7 @@ fun SongItem(
                 }
                 if (playlists.isNotEmpty() && onAddToPlaylist != null) {
                     DropdownMenuItem(
-                        text = { Text("Agregar a playlist", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(stringResource(R.string.add_to_playlist), color = MaterialTheme.colorScheme.onSurface) },
                         onClick = {
                             menuExpanded = false
                             showPlaylistDialog = true
@@ -200,34 +204,28 @@ fun SongItem(
                 }
                 DropdownMenuItem(
                     text = {
+                        val isFav = playlists.any { it.name == "Favoritos" && it.songIds.contains(song.id) }
                         Text(
-                            if (playlists.any { it.name == "Favoritos" && it.songIds.contains(song.id) }) {
-                                "Eliminar de favoritos"
-                            } else {
-                                "Añadir a favoritos"
-                            },
+                            text = if (isFav) stringResource(R.string.action_remove_from_favorites) else stringResource(R.string.action_add_to_favorites),
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     },
                     onClick = {
                         menuExpanded = false
                         val favoritesName = "Favoritos"
-
-                        // Encuentra la playlist Favoritos, o crea una si no existe
                         var favorites = playlists.find { it.name == favoritesName }
                         if (favorites == null) {
                             playlistViewModel.createPlaylist(favoritesName)
-                            favorites = playlists.find { it.name == favoritesName } // recarga
+                            favorites = playlists.find { it.name == favoritesName }
                         }
 
                         val isFavorite = favorites?.songIds?.contains(song.id) == true
-
                         if (isFavorite) {
                             playlistViewModel.removeSongFromPlaylist(favoritesName, song.id)
-                            Toast.makeText(context, "Quitado de Favoritos", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, removedFromFavoritesMsg, Toast.LENGTH_SHORT).show()
                         } else {
                             playlistViewModel.addSongToPlaylist(favoritesName, song.id)
-                            Toast.makeText(context, "Agregado a Favoritos", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, addedToFavoritesMsg, Toast.LENGTH_SHORT).show()
                         }
                     },
                 )
@@ -238,7 +236,7 @@ fun SongItem(
             AlertDialog(
                 onDismissRequest = { showPlaylistDialog = false },
                 containerColor = MaterialTheme.extendedColors.surfaceSheet,
-                title = { Text("Agregar a Playlist", color = MaterialTheme.colorScheme.onSurface) },
+                title = { Text(stringResource(R.string.add_to_playlist_title), color = MaterialTheme.colorScheme.onSurface) },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
@@ -252,7 +250,7 @@ fun SongItem(
                                         containerColor = MaterialTheme.colorScheme.primary,
                                     ),
                             ) {
-                                Text("Crear playlist")
+                                Text(stringResource(R.string.create_playlist_button))
                             }
                         }
 
@@ -265,13 +263,13 @@ fun SongItem(
                                     newPlaylistName = ""
                                 },
                                 containerColor = MaterialTheme.colorScheme.surface,
-                                title = { Text("Nueva lista", color = MaterialTheme.colorScheme.onBackground) },
+                                title = { Text(stringResource(R.string.dialog_create_playlist_title), color = MaterialTheme.colorScheme.onBackground) },
                                 text = {
                                     OutlinedTextField(
                                         value = newPlaylistName,
                                         onValueChange = { newPlaylistName = it },
                                         singleLine = true,
-                                        placeholder = { Text("Nombre de la lista") },
+                                        placeholder = { Text(stringResource(R.string.playlist_name_placeholder)) },
                                         colors =
                                             TextFieldDefaults.colors(
                                                 focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -290,19 +288,19 @@ fun SongItem(
                                             if (newPlaylistName.isNotBlank()) {
                                                 playlistViewModel.createPlaylist(newPlaylistName)
                                                 playlistViewModel.addSongToPlaylist(newPlaylistName, song.id)
-                                                Toast.makeText(context, "Creado y agregado a $newPlaylistName", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.playlist_created_and_added, newPlaylistName), Toast.LENGTH_SHORT).show()
                                                 newPlaylistName = ""
                                                 showCreatePlaylistDialog = false
                                                 showPlaylistDialog = false
                                             }
                                         },
                                     ) {
-                                        Text("Crear", color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.action_create), color = MaterialTheme.colorScheme.primary)
                                     }
                                 },
                                 dismissButton = {
                                     TextButton(onClick = { showCreatePlaylistDialog = false }) {
-                                        Text("Cancelar", color = MaterialTheme.colorScheme.onBackground)
+                                        Text(actionCancelMsg, color = MaterialTheme.colorScheme.onBackground)
                                     }
                                 },
                             )
@@ -319,7 +317,7 @@ fun SongItem(
                                             .padding(vertical = 6.dp)
                                             .clickable {
                                                 onAddToPlaylist?.invoke(playlist.name, song.id)
-                                                Toast.makeText(context, "Agregado a ${playlist.name}", Toast.LENGTH_SHORT).show()
+                                                Toast.makeText(context, context.getString(R.string.song_added_to_playlist, playlist.name), Toast.LENGTH_SHORT).show()
                                                 showPlaylistDialog = false
                                             },
                                     colors =
@@ -345,7 +343,7 @@ fun SongItem(
                                                 fontSize = 14.sp,
                                             )
                                             Text(
-                                                text = "${playlist.songIds.size} canciones",
+                                                text = stringResource(R.string.songs_count, playlist.songIds.size),
                                                 color = LocalExtendedColors.current.textSecondarySoft,
                                                 fontSize = 12.sp,
                                             )
@@ -358,7 +356,7 @@ fun SongItem(
                 },
                 confirmButton = {
                     TextButton(onClick = { showPlaylistDialog = false }) {
-                        Text("Cancelar", color = MaterialTheme.colorScheme.primary)
+                        Text(actionCancelMsg, color = MaterialTheme.colorScheme.primary)
                     }
                 },
             )

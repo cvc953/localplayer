@@ -28,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.cvc953.localplayer.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -100,7 +102,7 @@ fun AlbumDetailScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Volver",
+                    contentDescription = stringResource(R.string.action_go_back),
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
@@ -141,11 +143,11 @@ fun AlbumDetailScreen(
                 DraggableSwipeRow(
                     onSwipeThreshold = {
                         playbackViewModel.addToQueueNext(song)
-                        Toast.makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_added_next_count, 1), Toast.LENGTH_SHORT).show()
                     },
                     onSwipeLeftThreshold = {
                         playbackViewModel.addToQueueEnd(song)
-                        Toast.makeText(context, "Añadido al final de la cola", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.toast_added_queue_end_count, 1), Toast.LENGTH_SHORT).show()
                     },
                 ) {
                     SongItem(
@@ -161,17 +163,17 @@ fun AlbumDetailScreen(
                         onQueueNext = {
                             playbackViewModel.addToQueueNext(song)
                             Toast
-                                .makeText(context, "Añadido como siguiente", Toast.LENGTH_SHORT)
+                                .makeText(context, context.getString(R.string.toast_added_next_count, 1), Toast.LENGTH_SHORT)
                                 .show()
                         },
                         onQueueEnd = {
                             playbackViewModel.addToQueueEnd(song)
-                            Toast
-                                .makeText(
-                                    context,
-                                    "Añadido al final de la cola",
-                                    Toast.LENGTH_SHORT,
-                                ).show()
+                                    Toast
+                                        .makeText(
+                                            context,
+                                            context.getString(R.string.toast_added_queue_end),
+                                            Toast.LENGTH_SHORT,
+                                        ).show()
                         },
                         playlists = playlists,
                         onAddToPlaylist = { playlistName, songId ->
