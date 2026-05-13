@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.cvc953.localplayer.ui.components.SongsContent
 import com.cvc953.localplayer.ui.screens.AlbumDetailScreen
 import com.cvc953.localplayer.ui.screens.AlbumsScreen
 import com.cvc953.localplayer.ui.screens.ArtistDetailScreen
@@ -13,7 +14,6 @@ import com.cvc953.localplayer.ui.screens.ArtistSongsScreen
 import com.cvc953.localplayer.ui.screens.ArtistsScreen
 import com.cvc953.localplayer.ui.screens.PlaylistDetailScreen
 import com.cvc953.localplayer.ui.screens.PlaylistsScreen
-import com.cvc953.localplayer.ui.screens.SongsContent
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel

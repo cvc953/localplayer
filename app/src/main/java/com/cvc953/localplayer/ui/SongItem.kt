@@ -4,8 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.widget.Toast
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -63,7 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.model.Song
-import com.cvc953.localplayer.ui.screens.formatDuration
+import com.cvc953.localplayer.ui.components.formatDuration
 import com.cvc953.localplayer.ui.theme.ExtendedColors
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
@@ -117,29 +117,30 @@ fun SongItem(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.background)
-                .then(
+                .background(
+                    if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) else MaterialTheme.colorScheme.background,
+                ).then(
                     if (onLongClick != null) {
                         Modifier.combinedClickable(
                             onClick = onClick,
-                            onLongClick = onLongClick
+                            onLongClick = onLongClick,
                         )
                     } else {
                         Modifier.clickable { onClick() }
-                    }
-                )
-                .padding(8.dp),
+                    },
+                ).padding(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (isSelectionMode) {
             Checkbox(
                 checked = isSelected,
                 onCheckedChange = { onClick() },
-                colors = CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.primary,
-                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier.padding(end = 8.dp)
+                colors =
+                    CheckboxDefaults.colors(
+                        checkedColor = MaterialTheme.colorScheme.primary,
+                        uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                modifier = Modifier.padding(end = 8.dp),
             )
         }
 
@@ -235,7 +236,14 @@ fun SongItem(
                     text = {
                         val isFav = playlists.any { it.name == "Favoritos" && it.songIds.contains(song.id) }
                         Text(
-                            text = if (isFav) stringResource(R.string.action_remove_from_favorites) else stringResource(R.string.action_add_to_favorites),
+                            text =
+                                if (isFav) {
+                                    stringResource(
+                                        R.string.action_remove_from_favorites,
+                                    )
+                                } else {
+                                    stringResource(R.string.action_add_to_favorites)
+                                },
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                     },
@@ -292,7 +300,12 @@ fun SongItem(
                                     newPlaylistName = ""
                                 },
                                 containerColor = MaterialTheme.colorScheme.surface,
-                                title = { Text(stringResource(R.string.dialog_create_playlist_title), color = MaterialTheme.colorScheme.onBackground) },
+                                title = {
+                                    Text(
+                                        stringResource(R.string.dialog_create_playlist_title),
+                                        color = MaterialTheme.colorScheme.onBackground,
+                                    )
+                                },
                                 text = {
                                     OutlinedTextField(
                                         value = newPlaylistName,
@@ -317,7 +330,12 @@ fun SongItem(
                                             if (newPlaylistName.isNotBlank()) {
                                                 playlistViewModel.createPlaylist(newPlaylistName)
                                                 playlistViewModel.addSongToPlaylist(newPlaylistName, song.id)
-                                                Toast.makeText(context, context.getString(R.string.playlist_created_and_added, newPlaylistName), Toast.LENGTH_SHORT).show()
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        context.getString(R.string.playlist_created_and_added, newPlaylistName),
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
                                                 newPlaylistName = ""
                                                 showCreatePlaylistDialog = false
                                                 showPlaylistDialog = false
@@ -346,7 +364,12 @@ fun SongItem(
                                             .padding(vertical = 6.dp)
                                             .clickable {
                                                 onAddToPlaylist?.invoke(playlist.name, song.id)
-                                                Toast.makeText(context, context.getString(R.string.song_added_to_playlist, playlist.name), Toast.LENGTH_SHORT).show()
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        context.getString(R.string.song_added_to_playlist, playlist.name),
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
                                                 showPlaylistDialog = false
                                             },
                                     colors =

@@ -11,7 +11,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cvc953.localplayer.preferences.AppPrefs
-import com.cvc953.localplayer.ui.screens.MainMusicScreenUpdated
+import com.cvc953.localplayer.ui.screens.MusicScreen
 import com.cvc953.localplayer.ui.theme.resolvePrimaryColor
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import java.util.Locale
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                         .getInsetsController(window!!, view)
                         ?.isAppearanceLightStatusBars = !darkTheme
                 }
-                MainMusicScreenUpdated { }
+                MusicScreen { }
             }
         }
     }
