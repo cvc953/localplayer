@@ -22,7 +22,8 @@ class PlaylistController(private val context: Context) {
                 val songIds = o.optJSONArray("songIds")?.let { arr ->
                     List(arr.length()) { idx -> arr.getLong(idx) }
                 } ?: emptyList()
-                list.add(Playlist(name, songIds))
+                val imageUri = o.optString("imageUri", null)
+                list.add(Playlist(name, songIds, imageUri))
             }
             list
         } catch (_: Exception) {
@@ -37,6 +38,7 @@ class PlaylistController(private val context: Context) {
             val obj = JSONObject()
             obj.put("name", playlist.name)
             obj.put("songIds", JSONArray(playlist.songIds))
+            if (playlist.imageUri != null) obj.put("imageUri", playlist.imageUri)
             json.put(obj)
         }
         file.writeText(json.toString())

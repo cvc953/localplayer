@@ -54,6 +54,7 @@ fun PlaylistHeader(
             playlistSongIds = playlist?.songIds ?: emptyList(),
             songs = songs,
             context = context,
+            customImageUri = playlist?.imageUri,
             modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
         )
         Spacer(modifier = Modifier.height(8.dp))

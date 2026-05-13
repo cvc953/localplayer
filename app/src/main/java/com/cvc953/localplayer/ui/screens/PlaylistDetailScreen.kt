@@ -1,8 +1,12 @@
 package com.cvc953.localplayer.ui.screens
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +22,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +53,7 @@ import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.headers.PlaylistHeader
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import java.io.File
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -103,6 +110,28 @@ fun PlaylistDetailScreen(
     val removedFromPlaylistMsg = stringResource(R.string.toast_removed_from_playlist)
     val addedToPlaylist = stringResource(R.string.toast_added_to_playlist)
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+    ) { uri: Uri? ->
+        if (uri != null && playlist != null) {
+            try {
+                val input = context.contentResolver.openInputStream(uri)
+                val dir = File(context.filesDir, "playlist_images")
+                dir.mkdirs()
+                val dest = File(dir, "${playlist.name}.jpg")
+                input?.use { inputStream ->
+                    dest.outputStream().use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                playlistViewModel.updatePlaylistImage(playlist.name, dest.toURI().toString())
+                Toast.makeText(context, "Imagen de playlist actualizada", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                android.util.Log.e("PlaylistDetail", "Error saving image", e)
+            }
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -126,8 +155,15 @@ fun PlaylistDetailScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            // Dropdown para orden
+            // Dropdown para orden y cambio de imagen
             var sortMenuExpanded by remember { mutableStateOf(false) }
+            IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
+                Icon(
+                    Icons.Default.CameraAlt,
+                    contentDescription = "Cambiar imagen",
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
+            }
             Box {
                 IconButton(onClick = { sortMenuExpanded = true }) {
                     Icon(
@@ -162,6 +198,17 @@ fun PlaylistDetailScreen(
                             sortMenuExpanded = false
                         },
                     )
+                    if (playlist?.imageUri != null) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                        DropdownMenuItem(
+                            text = { Text("Eliminar imagen", color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                playlistViewModel.updatePlaylistImage(playlist.name, null)
+                                sortMenuExpanded = false
+                                Toast.makeText(context, "Imagen restablecida", Toast.LENGTH_SHORT).show()
+                            },
+                        )
+                    }
                 }
             }
         }

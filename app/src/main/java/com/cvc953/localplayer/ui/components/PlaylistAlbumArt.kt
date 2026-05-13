@@ -27,10 +27,20 @@ fun PlaylistAlbumArt(
     songs: List<Song>,
     context: android.content.Context,
     modifier: Modifier = Modifier,
+    customImageUri: String? = null,
 ) {
     var combinedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    LaunchedEffect(playlistSongIds) {
+    LaunchedEffect(playlistSongIds, customImageUri) {
+        if (customImageUri != null) {
+            combinedBitmap = try {
+                val uri = android.net.Uri.parse(customImageUri)
+                val inputStream = context.contentResolver.openInputStream(uri)
+                inputStream?.use { BitmapFactory.decodeStream(it) }
+            } catch (_: Exception) { null }
+            return@LaunchedEffect
+        }
+
         if (playlistSongIds.isEmpty()) {
             combinedBitmap = null
             return@LaunchedEffect

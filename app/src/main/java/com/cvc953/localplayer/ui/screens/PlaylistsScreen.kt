@@ -538,6 +538,7 @@ fun PlaylistsScreen(
                                 playlistSongIds = playlist.songIds,
                                 songs = songs,
                                 context = LocalContext.current,
+                                customImageUri = playlist.imageUri,
                                 modifier =
                                     Modifier
                                         .size(60.dp)

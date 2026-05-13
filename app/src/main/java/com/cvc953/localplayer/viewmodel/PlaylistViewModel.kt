@@ -73,6 +73,14 @@ class PlaylistViewModel(application: Application) : AndroidViewModel(application
         _isScanning.value = false
     }
 
+    fun updatePlaylistImage(playlistName: String, imageUri: String?) {
+        val updated = _playlists.value.map {
+            if (it.name == playlistName) it.copy(imageUri = imageUri) else it
+        }
+        controller.savePlaylists(updated)
+        _playlists.value = updated
+    }
+
     fun getPlaylistsJson(): String {
         val playlists = _playlists.value
         val json = org.json.JSONArray()
