@@ -26,3 +26,4 @@ paths-to-remove.txt
 .idea/deploymentTargetSelector.xml
 .idea/deploymentTargetSelector.xml
 .idea/deploymentTargetSelector.xml
+.atl/skill-registry.md
