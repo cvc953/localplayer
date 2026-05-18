@@ -3,7 +3,12 @@ package com.cvc953.localplayer.ui.headers
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
@@ -173,6 +179,22 @@ fun AlbumHeader(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val playInteractionSource = remember { MutableInteractionSource() }
+            val isPlayPressed by playInteractionSource.collectIsPressedAsState()
+            val playScale by animateFloatAsState(
+                targetValue = if (isPlayPressed) 0.92f else 1f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                label = "playBounce",
+            )
+
+            val shuffleInteractionSource = remember { MutableInteractionSource() }
+            val isShufflePressed by shuffleInteractionSource.collectIsPressedAsState()
+            val shuffleScale by animateFloatAsState(
+                targetValue = if (isShufflePressed) 0.92f else 1f,
+                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+                label = "shuffleBounce",
+            )
+
             Box(
                 modifier =
                     Modifier
@@ -188,9 +210,10 @@ fun AlbumHeader(
                             playbackViewModel.play(albumSongs.first())
                         }
                     },
+                    interactionSource = playInteractionSource,
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = playScale; scaleY = playScale },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -224,9 +247,10 @@ fun AlbumHeader(
                             playbackViewModel.play(shuffled.first())
                         }
                     },
+                    interactionSource = shuffleInteractionSource,
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = shuffleScale; scaleY = shuffleScale },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

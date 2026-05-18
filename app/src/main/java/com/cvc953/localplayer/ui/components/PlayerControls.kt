@@ -5,6 +5,8 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,16 +38,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -72,11 +72,12 @@ fun PlayerControlsContent(
     val isTallLayout = aspectRatio < 0.50f
     val isTablet = minOf(screenWidth, screenHeight) >= 600
 
-    val progressBarState = ProgressBarState(
-        currentPosition = state.currentPosition,
-        duration = state.duration,
-        isPlaying = state.isPlaying,
-    )
+    val progressBarState =
+        ProgressBarState(
+            currentPosition = state.currentPosition,
+            duration = state.duration,
+            isPlaying = state.isPlaying,
+        )
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
@@ -146,14 +147,16 @@ fun PlayerControlsContent(
             )
         }
 
-        if (config.showAudioInfo && (state.audioFormat.isNotEmpty() || state.audioBitrate.isNotEmpty() || state.audioSampleRate.isNotEmpty())) {
+        if (config.showAudioInfo &&
+            (state.audioFormat.isNotEmpty() || state.audioBitrate.isNotEmpty() || state.audioSampleRate.isNotEmpty())
+        ) {
             Spacer(
                 Modifier.height(
                     when {
-                        isCompactLayout -> if (isTablet) 10.dp else 6.dp
-                        isNormalLayout -> if (isTablet) 10.dp else 6.dp
-                        isTallLayout -> if (isTablet) 18.dp else 14.dp
-                        else -> if (isTablet) 16.dp else 12.dp
+                        isCompactLayout -> if (isTablet) 14.dp else 10.dp
+                        isNormalLayout -> if (isTablet) 16.dp else 12.dp
+                        isTallLayout -> if (isTablet) 24.dp else 20.dp
+                        else -> if (isTablet) 22.dp else 18.dp
                     },
                 ),
             )
@@ -180,11 +183,12 @@ fun PlayerControlsContent(
             )
         }
 
-        Spacer(Modifier.height(if (isTablet) 12.dp else 8.dp))
+        Spacer(Modifier.height(if (isTablet) 18.dp else 14.dp))
         if (config.transportStyle == TransportStyle.LUNE) {
-            val bottomBtnSize = with(LocalDensity.current) {
-                (buttonSize * 0.55f).coerceAtLeast(36.dp).coerceAtMost(48.dp)
-            }
+            val bottomBtnSize =
+                with(LocalDensity.current) {
+                    (buttonSize * 0.55f).coerceAtLeast(36.dp).coerceAtMost(48.dp)
+                }
             LuneBottomRow(
                 state = state,
                 actions = actions,
@@ -211,21 +215,41 @@ private fun ProgressBarForConfig(
     modifier: Modifier,
 ) {
     when (style) {
-        ProgressBarStyle.MATERIAL -> MaterialSliderProgressBar(
-            state = state, onSeek = onSeek, onSeekStart = onSeekStart,
-            onSeekEnd = onSeekEnd, trackColor = color, modifier = modifier,
-        )
-        ProgressBarStyle.WAVY -> PixelPlayerProgressBar(
-            progress = if (state.duration > 0L) state.currentPosition.toFloat() / state.duration.toFloat() else 0f,
-            duration = state.duration, onSeek = onSeek, onSeekStart = onSeekStart,
-            onSeekEnd = onSeekEnd, color = color, modifier = modifier,
-        )
-        ProgressBarStyle.SQUIGGLY -> SquigglyProgressBar(
-            progress = if (state.duration > 0L) state.currentPosition.toFloat() / state.duration.toFloat() else 0f,
-            duration = state.duration, isPlaying = state.isPlaying,
-            onSeek = onSeek, onSeekStart = onSeekStart,
-            onSeekEnd = onSeekEnd, color = color, modifier = modifier,
-        )
+        ProgressBarStyle.MATERIAL -> {
+            MaterialSliderProgressBar(
+                state = state,
+                onSeek = onSeek,
+                onSeekStart = onSeekStart,
+                onSeekEnd = onSeekEnd,
+                trackColor = color,
+                modifier = modifier,
+            )
+        }
+
+        ProgressBarStyle.WAVY -> {
+            PixelPlayerProgressBar(
+                progress = if (state.duration > 0L) state.currentPosition.toFloat() / state.duration.toFloat() else 0f,
+                duration = state.duration,
+                onSeek = onSeek,
+                onSeekStart = onSeekStart,
+                onSeekEnd = onSeekEnd,
+                color = color,
+                modifier = modifier,
+            )
+        }
+
+        ProgressBarStyle.SQUIGGLY -> {
+            SquigglyProgressBar(
+                progress = if (state.duration > 0L) state.currentPosition.toFloat() / state.duration.toFloat() else 0f,
+                duration = state.duration,
+                isPlaying = state.isPlaying,
+                onSeek = onSeek,
+                onSeekStart = onSeekStart,
+                onSeekEnd = onSeekEnd,
+                color = color,
+                modifier = modifier,
+            )
+        }
     }
 }
 
@@ -253,27 +277,34 @@ private fun DefaultTransportRow(
 
         IconButton(onClick = { actions.onPrevious() }) {
             Icon(
-                Icons.Rounded.SkipPrevious, null,
+                Icons.Rounded.SkipPrevious,
+                null,
                 tint = state.primaryContentColor,
                 modifier = Modifier.size(buttonSize),
             )
         }
 
-        val playPauseModifier = when (playPauseStyle) {
-            PlayPauseStyle.FILLED_CIRCLE -> Modifier
-                .size(buttonSize)
-                .background(
-                    MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(50),
-                )
-            PlayPauseStyle.OUTLINED_CIRCLE -> Modifier
-                .size(buttonSize)
-                .border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = CircleShape,
-                )
-        }
+        val playPauseModifier =
+            when (playPauseStyle) {
+                PlayPauseStyle.FILLED_CIRCLE -> {
+                    Modifier
+                        .size(buttonSize)
+                        .background(
+                            MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(50),
+                        )
+                }
+
+                PlayPauseStyle.OUTLINED_CIRCLE -> {
+                    Modifier
+                        .size(buttonSize)
+                        .border(
+                            width = 2.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = CircleShape,
+                        )
+                }
+            }
 
         IconButton(
             onClick = { actions.onPlayPause() },
@@ -289,7 +320,8 @@ private fun DefaultTransportRow(
 
         IconButton(onClick = { actions.onNext() }) {
             Icon(
-                Icons.Rounded.SkipNext, null,
+                Icons.Rounded.SkipNext,
+                null,
                 tint = state.primaryContentColor,
                 modifier = Modifier.size(buttonSize),
             )
@@ -303,8 +335,12 @@ private fun DefaultTransportRow(
                     RepeatMode.ALL -> Icons.Rounded.Repeat
                 },
                 contentDescription = "Repeat",
-                tint = if (state.repeatMode != RepeatMode.NONE) MaterialTheme.colorScheme.primary
-                else state.primaryContentColor,
+                tint =
+                    if (state.repeatMode != RepeatMode.NONE) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        state.primaryContentColor
+                    },
                 modifier = Modifier.size(buttonSize),
             )
         }
@@ -404,11 +440,12 @@ private fun LuneTransportRow(
         )
 
         LuneCircleButton(
-            icon = when (state.repeatMode) {
-                RepeatMode.NONE -> Icons.Rounded.Repeat
-                RepeatMode.ONE -> Icons.Rounded.RepeatOne
-                RepeatMode.ALL -> Icons.Rounded.Repeat
-            },
+            icon =
+                when (state.repeatMode) {
+                    RepeatMode.NONE -> Icons.Rounded.Repeat
+                    RepeatMode.ONE -> Icons.Rounded.RepeatOne
+                    RepeatMode.ALL -> Icons.Rounded.Repeat
+                },
             tint = if (state.repeatMode != RepeatMode.NONE) MaterialTheme.colorScheme.primary else state.primaryContentColor,
             onClick = actions.onRepeatToggle,
             size = skipSize,
@@ -430,10 +467,11 @@ private fun LuneCircleButton(
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.85f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
-        ),
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
         label = "luneBounce",
     )
 
@@ -442,9 +480,13 @@ private fun LuneCircleButton(
         shape = CircleShape,
         color = containerColor,
         interactionSource = interactionSource,
-        modifier = Modifier
-            .size(size)
-            .graphicsLayer { scaleX = scale; scaleY = scale },
+        modifier =
+            Modifier
+                .size(size)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
@@ -468,12 +510,13 @@ private fun LuneBottomRow(
     val pillRadius = segmentHeight / 2f
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .height(segmentHeight)
-            .clip(RoundedCornerShape(pillRadius))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .height(segmentHeight)
+                .clip(RoundedCornerShape(pillRadius))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
@@ -540,29 +583,33 @@ private fun LunePillSegment(
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.85f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow,
-        ),
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
         label = "lunePillBounce",
     )
 
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(
-            topStart = if (roundLeft) pillRadius else 0.dp,
-            bottomStart = if (roundLeft) pillRadius else 0.dp,
-            topEnd = if (roundRight) pillRadius else 0.dp,
-            bottomEnd = if (roundRight) pillRadius else 0.dp,
-        ),
+        shape =
+            RoundedCornerShape(
+                topStart = if (roundLeft) pillRadius else 0.dp,
+                bottomStart = if (roundLeft) pillRadius else 0.dp,
+                topEnd = if (roundRight) pillRadius else 0.dp,
+                bottomEnd = if (roundRight) pillRadius else 0.dp,
+            ),
         color = if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else Color.Transparent,
         interactionSource = interactionSource,
-        modifier = modifier.graphicsLayer { scaleX = scale; scaleY = scale },
+        modifier =
+            modifier.graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            },
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, null, tint = tint, modifier = Modifier.size(22.dp))
         }
     }
 }
-
-
