@@ -73,6 +73,31 @@
     <string name="settings_accent_color_description">Select app accent color</string>
     <string name="settings_dynamic_color_label">Dynamic color</string>
     <string name="settings_dynamic_color_description">Use album art color in player</string>
+    <string name="settings_skin_label">Player Skin</string>
+    <string name="settings_skin_description">Change the player visual style</string>
+    <string name="skin_localplayer">LocalPlayer (Classic)</string>
+    <string name="skin_pixelplayer_expressive">PixelPlayer (Expressive)</string>
+    <string name="skin_gramophone">Gramophone (Minimalist)</string>
+
+    <string name="settings_album_art_shape_label">Album art shape</string>
+    <string name="album_art_rounded_8">Classic (8dp)</string>
+    <string name="album_art_rounded_22">Rounded (22dp)</string>
+    <string name="album_art_circle">Circle</string>
+
+    <string name="settings_progress_bar_label">Progress bar</string>
+    <string name="progress_bar_material">Classic</string>
+    <string name="progress_bar_wavy">Linear</string>
+    <string name="progress_bar_squiggly">Squiggly</string>
+
+    <string name="settings_transport_label">Transport style</string>
+    <string name="transport_default">Classic</string>
+    <string name="transport_lune">Material3 Expressive</string>
+
+    <string name="settings_playpause_label">Play/Pause style</string>
+    <string name="playpause_filled">Filled</string>
+    <string name="playpause_outlined">Outlined</string>
+
+    <string name="settings_audio_info_label">Audio info</string>
 
     <string name="settings_section_language_title">Language</string>
     <string name="settings_section_language_subtitle">Select app language</string>
@@ -184,4 +209,8 @@
     <string name="storage_toast_folder_selected">Folder selected</string>
     <string name="storage_toast_permission_error">Could not save folder access</string>
     <string name="storage_log_permission_error">Could not save persistent permission</string>
+    <string name="songs_selected">selected</string>
+    <string name="queue_title_upcoming">Upcoming</string>
+    <string name="queue_empty_upcoming">No upcoming songs</string>
+    <string name="action_reorder">Reorder</string>
 </resources>

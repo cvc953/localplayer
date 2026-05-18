@@ -3,6 +3,9 @@ package com.cvc953.localplayer.ui.headers
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,11 +34,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
@@ -54,6 +59,7 @@ import com.cvc953.localplayer.ui.screens.normalizeArtistName
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Suppress("ktlint:standard:function-naming")
@@ -173,6 +179,10 @@ fun AlbumHeader(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val scope = rememberCoroutineScope()
+            val playAnim = remember { Animatable(1f) }
+            val shuffleAnim = remember { Animatable(1f) }
+
             Box(
                 modifier =
                     Modifier
@@ -181,6 +191,10 @@ fun AlbumHeader(
             ) {
                 Button(
                     onClick = {
+                        scope.launch {
+                            playAnim.snapTo(0.92f)
+                            playAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                        }
                         if (albumSongs.isNotEmpty()) {
                             playbackViewModel.setShuffle(false)
                             playbackViewModel.playAlbum(albumName, artistName, albumSongs, songs)
@@ -190,7 +204,7 @@ fun AlbumHeader(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = playAnim.value; scaleY = playAnim.value },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -216,6 +230,10 @@ fun AlbumHeader(
             ) {
                 Button(
                     onClick = {
+                        scope.launch {
+                            shuffleAnim.snapTo(0.92f)
+                            shuffleAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                        }
                         if (albumSongs.isNotEmpty()) {
                             val shuffled = albumSongs.shuffled()
                             playbackViewModel.setShuffle(true)
@@ -226,7 +244,7 @@ fun AlbumHeader(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = shuffleAnim.value; scaleY = shuffleAnim.value },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

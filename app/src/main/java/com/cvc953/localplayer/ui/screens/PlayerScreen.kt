@@ -94,9 +94,16 @@ import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.components.LyricsView
-import com.cvc953.localplayer.ui.components.PlayerControls
+import com.cvc953.localplayer.ui.components.PlayerConfig
+import com.cvc953.localplayer.ui.components.PlayerControlActions
+import com.cvc953.localplayer.ui.components.PlayerControlState
+import com.cvc953.localplayer.ui.components.PlayerControlsContent
 import com.cvc953.localplayer.ui.components.SongTitleSection
 import com.cvc953.localplayer.ui.components.TtmlLyricsView
+import com.cvc953.localplayer.ui.components.parseAlbumArtShape
+import com.cvc953.localplayer.ui.components.parsePlayPauseStyle
+import com.cvc953.localplayer.ui.components.parseProgressBarStyle
+import com.cvc953.localplayer.ui.components.parseTransportStyle
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.util.darken
 import com.cvc953.localplayer.util.getDominantColor
@@ -135,6 +142,19 @@ fun PlayerScreen(
     val dynamicColorEnabled by mainViewModel.dynamicColorEnabled.collectAsState()
     val repeatMode by playbackViewModel.repeatMode.collectAsState()
     val song = playerState.currentSong ?: return
+    val albumArtShapeKey by mainViewModel.albumArtShape.collectAsState()
+    val progressBarStyleKey by mainViewModel.progressBarStyle.collectAsState()
+    val transportStyleKey by mainViewModel.transportStyle.collectAsState()
+    val playPauseStyleKey by mainViewModel.playPauseStyle.collectAsState()
+    val showAudioInfo by mainViewModel.showAudioInfo.collectAsState()
+    val config =
+        PlayerConfig(
+            albumArtShape = parseAlbumArtShape(albumArtShapeKey),
+            progressBarStyle = parseProgressBarStyle(progressBarStyleKey),
+            transportStyle = parseTransportStyle(transportStyleKey),
+            playPauseStyle = parsePlayPauseStyle(playPauseStyleKey),
+            showAudioInfo = showAudioInfo,
+        )
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -298,6 +318,53 @@ fun PlayerScreen(
             LocalExtendedColors.current.texMeta
         }
 
+    val controlState =
+        PlayerControlState(
+            isPlaying = playerState.isPlaying,
+            currentPosition = playerState.position,
+            duration = playerState.duration,
+            isShuffle = isShuffle,
+            repeatMode = repeatMode,
+            isFavorite = isFavorite,
+            audioFormat = audioFormat,
+            audioBitrate = audioBitrate,
+            audioSampleRate = audioSampleRate,
+            primaryContentColor = playerPrimaryColor,
+            secondaryContentColor = playerSecondaryColor,
+            metaColor = playerMetaColor,
+            dominantColor = dominantColor,
+        )
+    val controlActions =
+        PlayerControlActions(
+            onPlayPause = { playbackViewModel.togglePlayPause() },
+            onNext = { playbackViewModel.playNextSong() },
+            onPrevious = { playbackViewModel.playPreviousSong() },
+            onSeek = { playbackViewModel.seekTo(it) },
+            onSeekStart = { },
+            onSeekEnd = { },
+            onShuffleToggle = { playbackViewModel.toggleShuffle() },
+            onRepeatToggle = { playbackViewModel.toggleRepeat() },
+            onFavoriteToggle = {
+                val f = "Favoritos"
+                if (isFavorite) {
+                    playlistViewModel.removeSongFromPlaylist(f, song.id)
+                    isFavorite = false
+                    Toast.makeText(context, context.getString(R.string.removed_from_favorites), Toast.LENGTH_SHORT).show()
+                } else {
+                    val p = playlists.find { it.name == f }
+                    if (p == null) {
+                        playlistViewModel.createPlaylist(f)
+                    }
+                    playlistViewModel.addSongToPlaylist(f, song.id)
+                    isFavorite = true
+                    Toast.makeText(context, context.getString(R.string.added_to_favorites), Toast.LENGTH_SHORT).show()
+                }
+            },
+            onShowQueue = { showQueue = true },
+            onShowAddToPlaylist = { showAddToPlaylistDialog = true },
+            onToggleLyrics = { playerViewModel.toggleLyrics() },
+        )
+
     Box(
         modifier =
             Modifier
@@ -397,6 +464,7 @@ fun PlayerScreen(
                     // Rectangular MUY alta: 88%
                     else -> 0.75f // Default: 75%
                 }
+            val effectiveArtWidth = imageWidthPercent
 
             // Spacers dinámicos según layout
             val betweenSpacer =
@@ -425,60 +493,6 @@ fun PlayerScreen(
                 }
 
             if (isLandscape) {
-                @Composable
-                fun ActionButtons() =
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        IconButton(onClick = {
-                            val f = "Favoritos"
-                            if (isFavorite) {
-                                playlistViewModel.removeSongFromPlaylist(f, song.id)
-                                isFavorite = false
-                                Toast.makeText(context, context.getString(R.string.removed_from_favorites), Toast.LENGTH_SHORT).show()
-                            } else {
-                                val p = playlists.find { it.name == f }
-                                if (p == null) {
-                                    playlistViewModel.createPlaylist(f)
-                                }
-                                playlistViewModel.addSongToPlaylist(f, song.id)
-                                isFavorite = true
-                                Toast.makeText(context, context.getString(R.string.added_to_favorites), Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Icon(
-                                if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = stringResource(R.string.favorites),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        IconButton(onClick = { showQueue = true }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.QueueMusic,
-                                contentDescription = stringResource(R.string.view_queue),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        IconButton(onClick = { showAddToPlaylistDialog = true }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.PlaylistAdd,
-                                contentDescription = stringResource(R.string.add_to_playlist),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        IconButton(onClick = { playerViewModel.toggleLyrics() }) {
-                            Icon(
-                                Icons.Default.Lyrics,
-                                contentDescription = stringResource(R.string.show_lyrics),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-                    }
-
                 Row(
                     modifier = Modifier.fillMaxSize(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -492,7 +506,7 @@ fun PlayerScreen(
                                 albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
                                     ?: painterResource(R.drawable.ic_default_album),
                             contentDescription = null,
-                            modifier = Modifier.fillMaxWidth(0.85f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
+                            modifier = Modifier.fillMaxWidth(0.85f).aspectRatio(1f).clip(config.albumArtShape.toComposeShape()),
                             contentScale = ContentScale.Companion.Crop,
                         )
                     }
@@ -518,19 +532,10 @@ fun PlayerScreen(
                             onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
                         )
                         Spacer(Modifier.height(12.dp))
-                        PlayerControls(
-                            playbackViewModel = playbackViewModel,
-                            playerViewModel = playerViewModel,
-                            isPlaying = playerState.isPlaying,
-                            foregroundColor = playerPrimaryColor,
-                            secondaryColor = playerSecondaryColor,
-                            metaColor = playerMetaColor,
-                            audioFormat = audioFormat,
-                            audioBitrate = audioBitrate,
-                            audioSampleRate = audioSampleRate,
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        ActionButtons()
+
+                        Spacer(Modifier.height(betweenSpacer))
+
+                        PlayerControlsContent(config = config, state = controlState, actions = controlActions)
                     }
                 }
             } else {
@@ -544,10 +549,9 @@ fun PlayerScreen(
                             albumArt?.asImageBitmap()?.let { BitmapPainter(it) }
                                 ?: painterResource(R.drawable.ic_default_album),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxWidth(imageWidthPercent).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
+                        modifier = Modifier.fillMaxWidth(effectiveArtWidth).aspectRatio(1f).clip(config.albumArtShape.toComposeShape()),
                         contentScale = ContentScale.Companion.Crop,
                     )
-
                     Spacer(Modifier.Companion.height(betweenSpacer))
 
                     SongTitleSection(
@@ -564,79 +568,7 @@ fun PlayerScreen(
                         onAlbumClick = { onNavigateToAlbum(song.album, song.artist) },
                     )
 
-                    Spacer(Modifier.height(betweenSpacer))
-
-                    PlayerControls(
-                        playbackViewModel = playbackViewModel,
-                        playerViewModel = playerViewModel,
-                        isPlaying = playerState.isPlaying,
-                        foregroundColor = playerPrimaryColor,
-                        secondaryColor = playerSecondaryColor,
-                        metaColor = playerMetaColor,
-                        audioFormat = audioFormat,
-                        audioBitrate = audioBitrate,
-                        audioSampleRate = audioSampleRate,
-                    )
-
-                    Spacer(Modifier.height(betweenSpacer))
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        IconButton(onClick = {
-                            val f = "Favoritos"
-                            if (isFavorite) {
-                                playlistViewModel.removeSongFromPlaylist(f, song.id)
-                                isFavorite = false
-                                Toast.makeText(context, context.getString(R.string.removed_from_favorites), Toast.LENGTH_SHORT).show()
-                            } else {
-                                val p = playlists.find { it.name == f }
-                                if (p == null) {
-                                    playlistViewModel.createPlaylist(f)
-                                }
-                                playlistViewModel.addSongToPlaylist(f, song.id)
-                                isFavorite = true
-                                Toast.makeText(context, context.getString(R.string.added_to_favorites), Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Icon(
-                                if (isFavorite) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = stringResource(R.string.favorites),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-
-                        Spacer(Modifier.Companion.width(16.dp))
-
-                        IconButton(onClick = { showQueue = true }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.QueueMusic,
-                                contentDescription = stringResource(R.string.view_queue),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-
-                        Spacer(Modifier.width(16.dp))
-
-                        IconButton(onClick = { showAddToPlaylistDialog = true }) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.PlaylistAdd,
-                                contentDescription = stringResource(R.string.add_to_playlist),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-
-                        Spacer(Modifier.width(16.dp))
-
-                        IconButton(onClick = { playerViewModel.toggleLyrics() }) {
-                            Icon(
-                                Icons.Default.Lyrics,
-                                contentDescription = stringResource(R.string.show_lyrics),
-                                tint = playerPrimaryColor,
-                            )
-                        }
-                    }
+                    PlayerControlsContent(config = config, state = controlState, actions = controlActions)
 
                     Spacer(Modifier.weight(1f))
                 }
@@ -853,7 +785,7 @@ fun PlayerScreen(
                             onClick = {
                                 showAddToPlaylistDialog = false
                             },
-                        ) { Text("Cancelar", color = MaterialTheme.colorScheme.primary) }
+                        ) { Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary) }
                     },
                 )
             }
@@ -874,7 +806,7 @@ fun PlayerScreen(
                                 ),
                     ) {
                         Text(
-                            text = "Próximas canciones",
+                            text = stringResource(R.string.queue_title_upcoming),
                             color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Companion.Bold,
@@ -884,7 +816,7 @@ fun PlayerScreen(
 
                         if (dragList.isEmpty()) {
                             Text(
-                                text = "No hay próximas canciones",
+                                text = stringResource(R.string.queue_empty_upcoming),
                                 color = LocalExtendedColors.current.textSecondarySoft,
                                 fontSize = 14.sp,
                             )
@@ -1276,7 +1208,7 @@ fun PlayerScreen(
                                                 Icons.Default
                                                     .DragHandle,
                                             contentDescription =
-                                                "Reordenar",
+                                                stringResource(R.string.action_reorder),
                                             tint =
                                                 if (isDragging) {
                                                     MaterialTheme.colorScheme.primary

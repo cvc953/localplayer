@@ -15,4 +15,6 @@ data class Song(
     val filePath: String? = null,
     val trackNumber: Int,
     val discNumber: Int,
+    val sampleRate: Int? = null,
+    val mimeType: String? = null,
 )

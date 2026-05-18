@@ -60,6 +60,31 @@
     <string name="settings_accent_color_description">Seleziona il colore accento dell\'app</string>
     <string name="settings_dynamic_color_label">Colore dinamico</string>
     <string name="settings_dynamic_color_description">Usa il colore della copertina nel player</string>
+    <string name="settings_skin_label">Skin del Lettore</string>
+    <string name="settings_skin_description">Cambia lo stile visivo del lettore</string>
+    <string name="skin_localplayer">LocalPlayer (Classico)</string>
+    <string name="skin_pixelplayer_expressive">PixelPlayer (Espressivo)</string>
+    <string name="skin_gramophone">Gramophone (Minimalista)</string>
+
+    <string name="settings_album_art_shape_label">Forma copertina</string>
+    <string name="album_art_rounded_8">Classica (8dp)</string>
+    <string name="album_art_rounded_22">Arrotondata (22dp)</string>
+    <string name="album_art_circle">Cerchio</string>
+
+    <string name="settings_progress_bar_label">Barra di progresso</string>
+    <string name="progress_bar_material">Classica</string>
+    <string name="progress_bar_wavy">Lineare</string>
+    <string name="progress_bar_squiggly">Sinuosa (Squiggly)</string>
+
+    <string name="settings_transport_label">Stile pulsanti</string>
+    <string name="transport_default">Classico</string>
+    <string name="transport_lune">Material3 Espressivo</string>
+
+    <string name="settings_playpause_label">Stile Play/Pausa</string>
+    <string name="playpause_filled">Pieno</string>
+    <string name="playpause_outlined">Contornato</string>
+
+    <string name="settings_audio_info_label">Info audio</string>
 
     <string name="settings_section_language_title">Lingua</string>
     <string name="settings_section_language_subtitle">Seleziona la lingua dell\'app</string>
@@ -185,4 +210,8 @@
     <string name="storage_toast_folder_selected">Cartella selezionata</string>
     <string name="storage_toast_permission_error">Impossibile salvare l\'accesso alla cartella</string>
     <string name="storage_log_permission_error">Impossibile salvare il permesso persistente</string>
+    <string name="songs_selected">selezionate</string>
+    <string name="queue_title_upcoming">Prossimi brani</string>
+    <string name="queue_empty_upcoming">Nessun prossimo brano</string>
+    <string name="action_reorder">Riordina</string>
 </resources>

@@ -85,4 +85,12 @@ class PlaylistController(private val context: Context) {
         savePlaylists(updated)
         return updated
     }
+
+    fun reorderPlaylistSongs(playlists: List<Playlist>, playlistName: String, newSongIds: List<Long>): List<Playlist> {
+        val updated = playlists.map {
+            if (it.name == playlistName) it.copy(songIds = newSongIds) else it
+        }
+        savePlaylists(updated)
+        return updated
+    }
 }

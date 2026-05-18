@@ -5,8 +5,10 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,14 +17,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -34,26 +40,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.SongItem
-import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.headers.PlaylistHeader
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import java.io.File
+import kotlinx.coroutines.launch
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -77,7 +89,6 @@ fun PlaylistDetailScreen(
 
     val playlist = remember(playlists, playlistName) { playlists.find { it.name == playlistName } }
 
-    // Orden de la playlist: PLAYLIST, AZ, ZA
     var order by rememberSaveable(playlistName) { mutableStateOf(appPrefs.getPlaylistOrder(playlistName)) }
     LaunchedEffect(order) { appPrefs.setPlaylistOrder(playlistName, order) }
 
@@ -95,6 +106,15 @@ fun PlaylistDetailScreen(
             }
         }
 
+    val listState = rememberLazyListState()
+    var draggingIndex by remember { mutableStateOf<Int?>(null) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+    val dragList =
+        remember(playlistSongs) {
+            mutableStateListOf<Song>().also { it.addAll(playlistSongs) }
+        }
+    val scope = rememberCoroutineScope()
+
     val availableSongs =
         remember(songs, playlist) {
             if (playlist != null) {
@@ -104,7 +124,6 @@ fun PlaylistDetailScreen(
             }
         }
 
-    // Cargar strings para Toasts
     val addedNextMsg = stringResource(R.string.toast_added_next)
     val addedQueueEndMsg = stringResource(R.string.toast_added_queue_end)
     val removedFromPlaylistMsg = stringResource(R.string.toast_removed_from_playlist)
@@ -155,7 +174,6 @@ fun PlaylistDetailScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            // Dropdown para orden y cambio de imagen
             var sortMenuExpanded by remember { mutableStateOf(false) }
             IconButton(onClick = { imagePickerLauncher.launch("image/*") }) {
                 Icon(
@@ -214,12 +232,113 @@ fun PlaylistDetailScreen(
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(dragList) {
+                        detectDragGesturesAfterLongPress(
+                            onDragStart = { pos ->
+                                val layoutInfo =
+                                    listState
+                                        .layoutInfo
+                                val visibleY =
+                                    pos.y
+                                        .toInt()
+                                val rawIndex =
+                                    layoutInfo
+                                        .visibleItemsInfo
+                                        .firstOrNull { item ->
+                                            visibleY >=
+                                                item.offset &&
+                                                visibleY <=
+                                                item.offset +
+                                                item.size
+                                        }?.index
+                                if (rawIndex != null && rawIndex >= 1) {
+                                    draggingIndex = rawIndex - 1
+                                }
+                                dragOffset = 0f
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                dragOffset += dragAmount.y
+                                val layoutInfo =
+                                    listState.layoutInfo
+                                val visibleY =
+                                    change.position
+                                        .y
+                                        .toInt()
+
+                                val edgeThresholdPx = 72
+                                val autoScrollStepPx = 24f
+                                val viewportStart = layoutInfo.viewportStartOffset
+                                val viewportEnd = layoutInfo.viewportEndOffset
+
+                                if (visibleY <= viewportStart + edgeThresholdPx) {
+                                    scope.launch {
+                                        listState.scrollBy(-autoScrollStepPx)
+                                    }
+                                } else if (visibleY >= viewportEnd - edgeThresholdPx) {
+                                    scope.launch {
+                                        listState.scrollBy(autoScrollStepPx)
+                                    }
+                                }
+
+                                val rawTarget =
+                                    layoutInfo
+                                        .visibleItemsInfo
+                                        .firstOrNull { item ->
+                                            visibleY >=
+                                                item.offset &&
+                                                visibleY <=
+                                                item.offset +
+                                                item.size
+                                        }?.index
+                                val from = draggingIndex
+                                if (rawTarget != null && rawTarget >= 1 && from != null) {
+                                    val target = rawTarget - 1
+                                    if (target != from) {
+                                        val item =
+                                            dragList.removeAt(
+                                                from,
+                                            )
+                                        val newIndex =
+                                            target.coerceIn(
+                                                0,
+                                                dragList.size,
+                                            )
+                                        dragList.add(
+                                            newIndex,
+                                            item,
+                                        )
+                                        draggingIndex =
+                                            newIndex
+                                        dragOffset = 0f
+                                    }
+                                }
+                            },
+                            onDragEnd = {
+                                draggingIndex = null
+                                dragOffset = 0f
+                                if (order != "PLAYLIST") {
+                                    order = "PLAYLIST"
+                                }
+                                playlistViewModel.reorderPlaylistSongs(
+                                    playlistName,
+                                    dragList.map { it.id },
+                                )
+                            },
+                            onDragCancel = {
+                                draggingIndex = null
+                                dragOffset = 0f
+                            },
+                        )
+                    },
+            state = listState,
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                // Header igual que en AlbumDetailScreen
                 PlaylistHeader(
                     playlist = playlist,
                     songs = songs,
@@ -229,23 +348,33 @@ fun PlaylistDetailScreen(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            items(playlistSongs) { song ->
+            itemsIndexed(dragList) { idx, song ->
+                val isDragging = draggingIndex == idx
                 val isCurrent = playerState.currentSong?.id == song.id
-                DraggableSwipeRow(
-                    onSwipeThreshold = {
-                        playbackViewModel.addToQueueNext(song)
-                        Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
-                    },
-                    onSwipeLeftThreshold = {
-                        playbackViewModel.addToQueueEnd(song)
-                        Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
-                    },
+                val offsetDp =
+                    with(LocalDensity.current) {
+                        dragOffset.toDp()
+                    }
+                val animatedOffset by
+                    animateDpAsState(
+                        if (isDragging) offsetDp else 0.dp,
+                        label = "drag-offset",
+                    )
+
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .offset(y = if (isDragging) animatedOffset else 0.dp)
+                            .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    SongItem(
-                        song = song,
-                        isPlaying = isCurrent,
-                        onClick = {
-                            playbackViewModel.updateDisplayOrder(playlistSongs)
+                    Box(modifier = Modifier.weight(1f)) {
+                        SongItem(
+                            song = song,
+                            isPlaying = isCurrent,
+                            onClick = {
+                            playbackViewModel.updateDisplayOrder(dragList.toList())
                             playbackViewModel.play(song)
                         },
                         onQueueNext = {
@@ -268,6 +397,16 @@ fun PlaylistDetailScreen(
                             )
                             Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
                         },
+                    )
+                    }
+                    Icon(
+                        Icons.Default.DragHandle,
+                        contentDescription = stringResource(R.string.action_reorder),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier =
+                            Modifier
+                                .padding(start = 4.dp)
+                                .size(20.dp),
                     )
                 }
             }

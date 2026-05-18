@@ -73,6 +73,10 @@ class PlaylistViewModel(application: Application) : AndroidViewModel(application
         _isScanning.value = false
     }
 
+    fun reorderPlaylistSongs(playlistName: String, newSongIds: List<Long>) {
+        _playlists.value = controller.reorderPlaylistSongs(_playlists.value, playlistName, newSongIds)
+    }
+
     fun updatePlaylistImage(playlistName: String, imageUri: String?) {
         val updated = _playlists.value.map {
             if (it.name == playlistName) it.copy(imageUri = imageUri) else it

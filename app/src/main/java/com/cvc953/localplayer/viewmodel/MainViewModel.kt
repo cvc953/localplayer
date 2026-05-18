@@ -141,6 +141,17 @@ class MainViewModel(
     private val _primaryColorHex = MutableStateFlow(appPrefs.getPrimaryColor())
     val primaryColorHex: StateFlow<String> = _primaryColorHex
 
+    private val _albumArtShape = MutableStateFlow(appPrefs.getAlbumArtShape())
+    val albumArtShape: StateFlow<String> = _albumArtShape
+    private val _progressBarStyle = MutableStateFlow(appPrefs.getProgressBarStyle())
+    val progressBarStyle: StateFlow<String> = _progressBarStyle
+    private val _transportStyle = MutableStateFlow(appPrefs.getTransportStyle())
+    val transportStyle: StateFlow<String> = _transportStyle
+    private val _playPauseStyle = MutableStateFlow(appPrefs.getPlayPauseStyle())
+    val playPauseStyle: StateFlow<String> = _playPauseStyle
+    private val _showAudioInfo = MutableStateFlow(appPrefs.getShowAudioInfo())
+    val showAudioInfo: StateFlow<Boolean> = _showAudioInfo
+
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
 
@@ -416,6 +427,31 @@ class MainViewModel(
     fun setPrimaryColor(hex: String) {
         appPrefs.setPrimaryColor(hex)
         _primaryColorHex.value = hex
+    }
+
+    fun setAlbumArtShape(shape: String) {
+        appPrefs.setAlbumArtShape(shape)
+        _albumArtShape.value = shape
+    }
+
+    fun setProgressBarStyle(style: String) {
+        appPrefs.setProgressBarStyle(style)
+        _progressBarStyle.value = style
+    }
+
+    fun setTransportStyle(style: String) {
+        appPrefs.setTransportStyle(style)
+        _transportStyle.value = style
+    }
+
+    fun setPlayPauseStyle(style: String) {
+        appPrefs.setPlayPauseStyle(style)
+        _playPauseStyle.value = style
+    }
+
+    fun setShowAudioInfo(show: Boolean) {
+        appPrefs.setShowAudioInfo(show)
+        _showAudioInfo.value = show
     }
 
     fun openPlayerScreen() {

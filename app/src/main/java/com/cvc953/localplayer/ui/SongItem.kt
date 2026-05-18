@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,6 +44,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -93,6 +95,7 @@ fun SongItem(
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
+    var effectiveBitrateKbps by remember { mutableIntStateOf(0) }
 
     // Cargar mensajes para Toasts y UI
     val removedFromFavoritesMsg = stringResource(R.string.removed_from_favorites)
@@ -106,6 +109,12 @@ fun SongItem(
                 retriever.setDataSource(context, song.uri)
                 retriever.embeddedPicture?.let {
                     albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
+                }
+                if (effectiveBitrateKbps == 0) {
+                    val br = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
+                    if (br != null) {
+                        effectiveBitrateKbps = (br.toIntOrNull() ?: 0) / 1000
+                    }
                 }
                 retriever.release()
             } catch (_: Exception) {
@@ -172,7 +181,27 @@ fun SongItem(
             )
         }
 
-        Text(text = formatDuration(song.duration), color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
+        Column(horizontalAlignment = Alignment.End) {
+            if (effectiveBitrateKbps > 320) {
+                Box(
+                    modifier = Modifier
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            RoundedCornerShape(4.dp),
+                        )
+                        .padding(horizontal = 4.dp, vertical = 1.dp),
+                ) {
+                    Text(
+                        text = "HI-FI",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+            }
+            Text(text = formatDuration(song.duration), color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
+        }
 
         var menuExpanded by remember { mutableStateOf(false) }
         var showPlaylistDialog by remember { mutableStateOf(false) }

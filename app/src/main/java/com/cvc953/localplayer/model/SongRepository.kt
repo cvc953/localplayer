@@ -160,6 +160,8 @@ class SongRepository(
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
+                "sample_rate",
+                MediaStore.Audio.Media.MIME_TYPE,
             )
 
         val selectionInfo = buildSelectionForFolder()
@@ -185,6 +187,8 @@ class SongRepository(
             val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
             val trackNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.CD_TRACK_NUMBER)
             val discNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
+            val sampleRateCol = try { it.getColumnIndex("sample_rate") } catch (_: Exception) { -1 }
+            val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
 
             while (it.moveToNext()) {
                 totalScanned++
@@ -218,7 +222,9 @@ class SongRepository(
                         filePath = filePath,
                         trackNumber = it.getInt(trackNumberCol),
                         discNumber = it.getInt(discNumberCol),
-                    ),
+                        sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
+                        mimeType = it.getString(mimeTypeCol),
+                    )
                 )
             }
         }
@@ -433,6 +439,8 @@ class SongRepository(
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
+                "sample_rate",
+                MediaStore.Audio.Media.MIME_TYPE,
             )
 
         val total = countSongs()
@@ -462,6 +470,8 @@ class SongRepository(
             val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
             val trackNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.CD_TRACK_NUMBER)
             val discNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
+            val sampleRateCol = try { it.getColumnIndex("sample_rate") } catch (_: Exception) { -1 }
+            val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
@@ -528,6 +538,8 @@ class SongRepository(
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
+                "sample_rate",
+                MediaStore.Audio.Media.MIME_TYPE,
             )
 
         val total = countSongs()
@@ -556,6 +568,8 @@ class SongRepository(
             val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
             val trackNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.CD_TRACK_NUMBER)
             val discNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
+            val sampleRateCol = try { it.getColumnIndex("sample_rate") } catch (_: Exception) { -1 }
+            val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
@@ -591,6 +605,8 @@ class SongRepository(
                         filePath = filePath,
                         trackNumber = it.getInt(trackNumberCol),
                         discNumber = it.getInt(discNumberCol),
+                        sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
+                        mimeType = it.getString(mimeTypeCol),
                     )
 
                 list.add(song)
