@@ -1,0 +1,8 @@
+- Nuevo sistema de skins: LocalPlayer, PixelPlayerExpressive y Gramophone
+- Reordenamiento de canciones en playlists por arrastre
+- Visualización de frecuencia de muestreo y tipo MIME
+- Personalización de barra de progreso: clásico, lineal y serpenteante
+- Estilos de botón de reproducción intercambiables
+- Imagen personalizada para playlists
+- Refactorización de pantalla de letras
+- Nuevas opciones en Ajustes

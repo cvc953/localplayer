@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.10]
+
+### Added
+- 🎨 Player skin system: LocalPlayer, PixelPlayerExpressive, and Gramophone with interchangeable styles
+- 🔄 Song reordering in playlists via drag-to-reorder
+- 🔊 Sample rate and MIME type display in song info
+- 🎛️ Player customization options: progress bar styles (classic, linear, squiggly) and play button styles
+- 🖼️ Custom image support for playlists (image URI)
+- 📸 Additional phone screenshots for Play Store metadata
+
+### Changed
+- ♻️ LyricScreen full refactor for better maintainability
+- ⚙️ Settings screen expanded with new customization options
+
+### Fixed
+- 🐛 Various UI interaction fixes in album and playlist headers
+
 ## [1.0.9]
 
 ### Added

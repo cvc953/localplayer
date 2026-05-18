@@ -5,6 +5,23 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.0.10]
+
+### Añadido
+- 🎨 Sistema de skins de reproductor: LocalPlayer, PixelPlayerExpressive y Gramophone con estilos intercambiables
+- 🔄 Reordenamiento de canciones en playlists mediante arrastre (drag-to-reorder)
+- 🔊 Visualización de frecuencia de muestreo y tipo MIME en información de canción
+- 🎛️ Opciones de personalización del reproductor: estilos de barra de progreso (clásico, lineal, serpenteante) y estilos de botón de reproducción
+- 🖼️ Soporte de imagen personalizada para playlists (URI de imagen)
+- 📸 Capturas de pantalla adicionales para metadatos de Play Store
+
+### Cambiado
+- ♻️ Refactorización completa de LyricScreen para mejor mantenibilidad
+- ⚙️ Pantalla de ajustes ampliada con nuevas opciones de personalización
+
+### Corregido
+- 🐛 Varias correcciones en interacciones de UI en cabeceras de álbum y playlist
+
 ## [1.0.9]
 
 ### Añadido

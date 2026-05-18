@@ -1,0 +1,1 @@
+Lettore musicale locale moderno con supporto di testi sincronizzati parola per parola.

@@ -1,0 +1,8 @@
+- New player skin system: LocalPlayer, PixelPlayerExpressive, and Gramophone
+- Drag-to-reorder songs in playlists
+- Sample rate and MIME type display in song info
+- Progress bar styles: classic, linear, and squiggly
+- Interchangeable play button styles
+- Custom image support for playlists
+- LyricScreen refactor
+- New customization options in Settings
