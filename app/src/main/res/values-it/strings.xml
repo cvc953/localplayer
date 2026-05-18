@@ -60,12 +60,6 @@
     <string name="settings_accent_color_description">Seleziona il colore accento dell\'app</string>
     <string name="settings_dynamic_color_label">Colore dinamico</string>
     <string name="settings_dynamic_color_description">Usa il colore della copertina nel player</string>
-    <string name="settings_skin_label">Skin del Lettore</string>
-    <string name="settings_skin_description">Cambia lo stile visivo del lettore</string>
-    <string name="skin_localplayer">LocalPlayer (Classico)</string>
-    <string name="skin_pixelplayer_expressive">PixelPlayer (Espressivo)</string>
-    <string name="skin_gramophone">Gramophone (Minimalista)</string>
-
     <string name="settings_album_art_shape_label">Forma copertina</string>
     <string name="album_art_rounded_8">Classica (8dp)</string>
     <string name="album_art_rounded_22">Arrotondata (22dp)</string>

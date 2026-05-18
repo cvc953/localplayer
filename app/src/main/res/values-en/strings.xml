@@ -73,12 +73,6 @@
     <string name="settings_accent_color_description">Select app accent color</string>
     <string name="settings_dynamic_color_label">Dynamic color</string>
     <string name="settings_dynamic_color_description">Use album art color in player</string>
-    <string name="settings_skin_label">Player Skin</string>
-    <string name="settings_skin_description">Change the player visual style</string>
-    <string name="skin_localplayer">LocalPlayer (Classic)</string>
-    <string name="skin_pixelplayer_expressive">PixelPlayer (Expressive)</string>
-    <string name="skin_gramophone">Gramophone (Minimalist)</string>
-
     <string name="settings_album_art_shape_label">Album art shape</string>
     <string name="album_art_rounded_8">Classic (8dp)</string>
     <string name="album_art_rounded_22">Rounded (22dp)</string>
