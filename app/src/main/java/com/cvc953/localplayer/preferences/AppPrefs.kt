@@ -178,6 +178,42 @@ class AppPrefs(
         prefs.edit().putString("primary_color_hex", hex).apply()
     }
 
+    // Player config individual options
+    fun getAlbumArtShape(): String =
+        prefs.getString("album_art_shape", "rounded_8") ?: "rounded_8"
+
+    fun setAlbumArtShape(shape: String) {
+        prefs.edit().putString("album_art_shape", shape).apply()
+    }
+
+    fun getProgressBarStyle(): String =
+        prefs.getString("progress_bar_style", "material") ?: "material"
+
+    fun setProgressBarStyle(style: String) {
+        prefs.edit().putString("progress_bar_style", style).apply()
+    }
+
+    fun getTransportStyle(): String =
+        prefs.getString("transport_style", "default") ?: "default"
+
+    fun setTransportStyle(style: String) {
+        prefs.edit().putString("transport_style", style).apply()
+    }
+
+    fun getPlayPauseStyle(): String =
+        prefs.getString("playpause_style", "filled_circle") ?: "filled_circle"
+
+    fun setPlayPauseStyle(style: String) {
+        prefs.edit().putString("playpause_style", style).apply()
+    }
+
+    fun getShowAudioInfo(): Boolean =
+        prefs.getBoolean("show_audio_info", true)
+
+    fun setShowAudioInfo(show: Boolean) {
+        prefs.edit().putBoolean("show_audio_info", show).apply()
+    }
+
     // Playback state persistence (queue, current song, position, shuffle, repeat, playing)
     fun savePlaybackQueue(uris: List<String>) {
         prefs.edit().putString("playback_queue", org.json.JSONArray(uris).toString()).apply()

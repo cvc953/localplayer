@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -59,9 +61,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.cvc953.localplayer.MainActivity
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 import com.cvc953.localplayer.ui.theme.predefinedThemeColors
@@ -86,6 +88,11 @@ fun SettingsScreen(
     val dynamicColor by viewModel.dynamicColorEnabled.collectAsState()
     val primaryColorHex by viewModel.primaryColorHex.collectAsState()
     val eqEnabled by equalizerViewModel.equalizerEnabled.collectAsState()
+    val albumArtShapeKey by viewModel.albumArtShape.collectAsState()
+    val progressBarStyleKey by viewModel.progressBarStyle.collectAsState()
+    val transportStyleKey by viewModel.transportStyle.collectAsState()
+    val playPauseStyleKey by viewModel.playPauseStyle.collectAsState()
+    val showAudioInfo by viewModel.showAudioInfo.collectAsState()
 
     val themeOptions =
         listOf(
@@ -383,6 +390,296 @@ fun SettingsScreen(
                                         MaterialTheme.colorScheme.onSurface.copy(
                                             alpha = 0.16f,
                                         ),
+                                ),
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
+                    // --- Album Art Shape ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(id = R.string.settings_album_art_shape_label),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    val albumArtOptions =
+                        listOf(
+                            "rounded_8" to stringResource(id = R.string.album_art_rounded_8),
+                            "rounded_22" to stringResource(id = R.string.album_art_rounded_22),
+                            "circle" to stringResource(id = R.string.album_art_circle),
+                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        albumArtOptions.forEach { (key, label) ->
+                            val isSelected = albumArtShapeKey == key
+                            OutlinedButton(
+                                onClick = { viewModel.setAlbumArtShape(key) },
+                                modifier = Modifier.weight(1f),
+                                colors =
+                                    ButtonDefaults.outlinedButtonColors(
+                                        containerColor =
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                )
+                                            } else {
+                                                Color.Transparent
+                                            },
+                                    ),
+                                border =
+                                    if (isSelected) {
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    } else {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                                    },
+                            ) {
+                                Text(
+                                    label,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
+                    // --- Progress Bar Style ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(id = R.string.settings_progress_bar_label),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    val progressOptions =
+                        listOf(
+                            "material" to stringResource(id = R.string.progress_bar_material),
+                            "wavy" to stringResource(id = R.string.progress_bar_wavy),
+                            "squiggly" to stringResource(id = R.string.progress_bar_squiggly),
+                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        progressOptions.forEach { (key, label) ->
+                            val isSelected = progressBarStyleKey == key
+                            OutlinedButton(
+                                onClick = { viewModel.setProgressBarStyle(key) },
+                                modifier = Modifier.weight(1f),
+                                colors =
+                                    ButtonDefaults.outlinedButtonColors(
+                                        containerColor =
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                )
+                                            } else {
+                                                Color.Transparent
+                                            },
+                                    ),
+                                border =
+                                    if (isSelected) {
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    } else {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                                    },
+                            ) {
+                                Text(
+                                    label,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
+                    // --- Transport Style ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(id = R.string.settings_transport_label),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    val transportOptions =
+                        listOf(
+                            "default" to stringResource(id = R.string.transport_default),
+                            "lune" to stringResource(id = R.string.transport_lune),
+                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        transportOptions.forEach { (key, label) ->
+                            val isSelected = transportStyleKey == key
+                            OutlinedButton(
+                                onClick = { viewModel.setTransportStyle(key) },
+                                modifier = Modifier.weight(1f),
+                                colors =
+                                    ButtonDefaults.outlinedButtonColors(
+                                        containerColor =
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                )
+                                            } else {
+                                                Color.Transparent
+                                            },
+                                    ),
+                                border =
+                                    if (isSelected) {
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    } else {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                                    },
+                            ) {
+                                Text(
+                                    label,
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
+                    // --- PlayPause Style ---
+                    val isTransportLune = transportStyleKey == "lune"
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(id = R.string.settings_playpause_label),
+                                color =
+                                    if (isTransportLune) {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    val playPauseOptions =
+                        listOf(
+                            "filled_circle" to stringResource(id = R.string.playpause_filled),
+                            "outlined_circle" to stringResource(id = R.string.playpause_outlined),
+                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        playPauseOptions.forEach { (key, label) ->
+                            val isSelected = playPauseStyleKey == key
+                            OutlinedButton(
+                                onClick = { viewModel.setPlayPauseStyle(key) },
+                                enabled = !isTransportLune,
+                                modifier = Modifier.weight(1f),
+                                colors =
+                                    ButtonDefaults.outlinedButtonColors(
+                                        containerColor =
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                )
+                                            } else {
+                                                Color.Transparent
+                                            },
+                                    ),
+                                border =
+                                    if (isSelected) {
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    } else {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                                    },
+                            ) {
+                                Text(
+                                    label,
+                                    fontSize = 13.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
+                    // --- Show Audio Info ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(id = R.string.settings_audio_info_label),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
+                        Switch(
+                            checked = showAudioInfo,
+                            onCheckedChange = { viewModel.setShowAudioInfo(it) },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
                                 ),
                         )
                     }
