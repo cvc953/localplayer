@@ -149,8 +149,7 @@ class SongRepository(
         var totalScanned = 0
         var excluded = 0
 
-        val projection =
-            arrayOf(
+        val baseProjection = arrayOf(
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
@@ -160,21 +159,35 @@ class SongRepository(
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
-                "sample_rate",
                 MediaStore.Audio.Media.MIME_TYPE,
             )
+        val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            baseProjection + arrayOf("sample_rate")
+        } else {
+            baseProjection
+        }
 
         val selectionInfo = buildSelectionForFolder()
         Log.d("SongRepository", "scanSongsFromMediaStore: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
 
         val cursor =
-            context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                selectionInfo.first,
-                selectionInfo.second,
-                null,
-            )
+            try {
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    selectionInfo.first,
+                    selectionInfo.second,
+                    null,
+                )
+            } catch (_: IllegalArgumentException) {
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    baseProjection,
+                    selectionInfo.first,
+                    selectionInfo.second,
+                    null,
+                )
+            }
                 ?: return emptyList()
 
         cursor.use {
@@ -428,8 +441,7 @@ class SongRepository(
     }
 
     fun scanSongs(onProgress: (current: Int, total: Int) -> Unit): List<Song> {
-        val projection =
-            arrayOf(
+        val baseProjection = arrayOf(
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
@@ -439,9 +451,13 @@ class SongRepository(
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
-                "sample_rate",
                 MediaStore.Audio.Media.MIME_TYPE,
             )
+        val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            baseProjection + arrayOf("sample_rate")
+        } else {
+            baseProjection
+        }
 
         val total = countSongs()
         var current = 0
@@ -451,13 +467,23 @@ class SongRepository(
         Log.d("SongRepository", "scanSongs: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
 
         val cursor =
-            context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                selectionInfo.first,
-                selectionInfo.second,
-                null,
-            )
+            try {
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    selectionInfo.first,
+                    selectionInfo.second,
+                    null,
+                )
+            } catch (_: IllegalArgumentException) {
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    baseProjection,
+                    selectionInfo.first,
+                    selectionInfo.second,
+                    null,
+                )
+            }
                 ?: return emptyList()
 
         cursor.use {
@@ -483,13 +509,10 @@ class SongRepository(
                 val filePath = it.getString(dataCol)
                 val duration = it.getLong(durCol)
 
-                // Excluir archivos de WhatsApp y otras apps de mensajería
                 if (isExcludedPath(filePath)) {
                     continue
                 }
 
-                // Excluir archivos muy cortos (notificaciones, efectos de sonido)
-                // Duración mínima: 30 segundos (30000 ms)
                 if (duration < 30000) {
                     continue
                 }
@@ -507,6 +530,8 @@ class SongRepository(
                         filePath = filePath,
                         trackNumber = it.getInt(trackNumberCol),
                         discNumber = it.getInt(discNumberCol),
+                        sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
+                        mimeType = it.getString(mimeTypeCol),
                     )
 
                 list.add(song)
@@ -519,16 +544,11 @@ class SongRepository(
         return list
     }
 
-    /**
-     * Variante del escaneo que notifica cada canción encontrada. Llama a [onSongFound] por cada
-     * canción y a [onProgress] durante el proceso.
-     */
     fun scanSongsStreaming(
         onSongFound: (Song) -> Unit,
         onProgress: (current: Int, total: Int) -> Unit,
     ): List<Song> {
-        val projection =
-            arrayOf(
+        val baseProjection = arrayOf(
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ARTIST,
@@ -538,9 +558,13 @@ class SongRepository(
                 MediaStore.Audio.Media.DATA,
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
-                "sample_rate",
                 MediaStore.Audio.Media.MIME_TYPE,
             )
+        val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            baseProjection + arrayOf("sample_rate")
+        } else {
+            baseProjection
+        }
 
         val total = countSongs()
         var current = 0
@@ -549,13 +573,23 @@ class SongRepository(
         val selectionInfo = buildSelectionForFolder()
 
         val cursor =
-            context.contentResolver.query(
-                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                projection,
-                selectionInfo.first,
-                selectionInfo.second,
-                null,
-            )
+            try {
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    projection,
+                    selectionInfo.first,
+                    selectionInfo.second,
+                    null,
+                )
+            } catch (_: IllegalArgumentException) {
+                context.contentResolver.query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    baseProjection,
+                    selectionInfo.first,
+                    selectionInfo.second,
+                    null,
+                )
+            }
                 ?: return emptyList()
 
         cursor.use {
