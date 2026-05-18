@@ -72,8 +72,8 @@
     <string name="album_art_circle">Cerchio</string>
 
     <string name="settings_progress_bar_label">Barra di progresso</string>
-    <string name="progress_bar_material">Material</string>
-    <string name="progress_bar_wavy">Ondulata</string>
+    <string name="progress_bar_material">Classica</string>
+    <string name="progress_bar_wavy">Lineare</string>
     <string name="progress_bar_squiggly">Sinuosa (Squiggly)</string>
 
     <string name="settings_transport_label">Stile pulsanti</string>

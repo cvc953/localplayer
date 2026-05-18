@@ -1,10 +1,8 @@
 package com.cvc953.localplayer.ui.headers
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +42,7 @@ import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.components.PlaylistAlbumArt
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import kotlinx.coroutines.launch
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -88,21 +87,9 @@ fun PlaylistHeader(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val playInteractionSource = remember { MutableInteractionSource() }
-            val isPlayPressed by playInteractionSource.collectIsPressedAsState()
-            val playScale by animateFloatAsState(
-                targetValue = if (isPlayPressed) 0.92f else 1f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-                label = "playBounce",
-            )
-
-            val shuffleInteractionSource = remember { MutableInteractionSource() }
-            val isShufflePressed by shuffleInteractionSource.collectIsPressedAsState()
-            val shuffleScale by animateFloatAsState(
-                targetValue = if (isShufflePressed) 0.92f else 1f,
-                animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
-                label = "shuffleBounce",
-            )
+            val scope = rememberCoroutineScope()
+            val playAnim = remember { Animatable(1f) }
+            val shuffleAnim = remember { Animatable(1f) }
 
             Box(
                 modifier =
@@ -112,16 +99,19 @@ fun PlaylistHeader(
             ) {
                 Button(
                     onClick = {
+                        scope.launch {
+                            playAnim.snapTo(0.92f)
+                            playAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                        }
                         if (playlistSongs.isNotEmpty()) {
                             playbackViewModel.setShuffle(false)
                             playbackViewModel.updateDisplayOrder(playlistSongs)
                             playbackViewModel.play(playlistSongs.first())
                         }
                     },
-                    interactionSource = playInteractionSource,
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = playScale; scaleY = playScale },
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = playAnim.value; scaleY = playAnim.value },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -147,6 +137,10 @@ fun PlaylistHeader(
             ) {
                 Button(
                     onClick = {
+                        scope.launch {
+                            shuffleAnim.snapTo(0.92f)
+                            shuffleAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                        }
                         if (playlistSongs.isNotEmpty()) {
                             val shuffled = playlistSongs.shuffled()
                             playbackViewModel.setShuffle(true)
@@ -154,10 +148,9 @@ fun PlaylistHeader(
                             playbackViewModel.play(shuffled.first())
                         }
                     },
-                    interactionSource = shuffleInteractionSource,
                     colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = shuffleScale; scaleY = shuffleScale },
+                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = shuffleAnim.value; scaleY = shuffleAnim.value },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

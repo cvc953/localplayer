@@ -66,8 +66,8 @@
     <string name="album_art_circle">Círculo</string>
 
     <string name="settings_progress_bar_label">Barra de progreso</string>
-    <string name="progress_bar_material">Material</string>
-    <string name="progress_bar_wavy">Ondulada (Wavy)</string>
+    <string name="progress_bar_material">Clásico</string>
+    <string name="progress_bar_wavy">Lineal</string>
     <string name="progress_bar_squiggly">Serpenteante (Squiggly)</string>
 
     <string name="settings_transport_label">Estilo de botones</string>

@@ -85,8 +85,8 @@
     <string name="album_art_circle">Circle</string>
 
     <string name="settings_progress_bar_label">Progress bar</string>
-    <string name="progress_bar_material">Material</string>
-    <string name="progress_bar_wavy">Wavy</string>
+    <string name="progress_bar_material">Classic</string>
+    <string name="progress_bar_wavy">Linear</string>
     <string name="progress_bar_squiggly">Squiggly</string>
 
     <string name="settings_transport_label">Transport style</string>

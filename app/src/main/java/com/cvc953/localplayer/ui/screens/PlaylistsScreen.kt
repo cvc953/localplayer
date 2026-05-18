@@ -148,6 +148,110 @@ fun PlaylistsScreen(
         return
     }
 
+    val scope2 = rememberCoroutineScope()
+
+    val treeLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            if (uri != null) {
+                scope2.launch {
+                    val resolver = context.contentResolver
+                    val childrenUri =
+                        DocumentsContract.buildChildDocumentsUriUsingTree(
+                            uri,
+                            DocumentsContract.getTreeDocumentId(uri),
+                        )
+                    val projection =
+                        arrayOf(
+                            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                            DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        )
+                    val texts = mutableListOf<String>()
+                    resolver
+                        .query(childrenUri, projection, null, null, null)
+                        ?.use { cursor ->
+                            while (cursor.moveToNext()) {
+                                val docId = cursor.getString(0)
+                                val name = cursor.getString(1) ?: ""
+                                if (name.endsWith(".json", true)) {
+                                    try {
+                                        val docUri =
+                                            DocumentsContract.buildDocumentUriUsingTree(
+                                                uri,
+                                                docId,
+                                            )
+                                        resolver
+                                            .openInputStream(docUri)
+                                            ?.bufferedReader()
+                                            ?.use { r ->
+                                                texts.add(r.readText())
+                                            }
+                                    } catch (_: Exception) {
+                                    }
+                                }
+                            }
+                        }
+
+                    if (texts.isNotEmpty()) {
+                        var imported = 0
+                        texts.forEach { text ->
+                            try {
+                                val array =
+                                    if (text.trimStart().startsWith("[")) {
+                                        JSONArray(text)
+                                    } else {
+                                        JSONArray().apply {
+                                            put(JSONObject(text))
+                                        }
+                                    }
+                                for (i in 0 until array.length()) {
+                                    val obj = array.getJSONObject(i)
+                                    val name = obj.optString("name", "").trim()
+                                    if (name.isEmpty()) continue
+                                    val idsArr =
+                                        obj.optJSONArray("songIds")
+                                            ?: JSONArray()
+                                    val ids = mutableListOf<Long>()
+                                    for (j in 0 until idsArr.length()) {
+                                        ids.add(idsArr.optLong(j))
+                                    }
+
+                                    if (playlistViewModel.playlists.value.any {
+                                            it.name.equals(name, ignoreCase = true)
+                                        }
+                                    ) {
+                                        continue
+                                    }
+
+                                    val created = playlistViewModel.createPlaylist(name)
+                                    if (created && ids.isNotEmpty()) {
+                                        playlistViewModel.addSongsToPlaylist(name, ids)
+                                    }
+                                    imported++
+                                }
+                            } catch (_: Exception) {
+                            }
+                        }
+                        if (imported > 0) {
+                            playlistViewModel.reloadPlaylists()
+                            Toast
+                                .makeText(
+                                    context,
+                                    context.getString(R.string.toast_playlists_imported_count, imported),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                        } else {
+                            Toast
+                                .makeText(
+                                    context,
+                                    context.getString(R.string.toast_no_json_found),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                        }
+                    }
+                }
+            }
+        }
+
     Box(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
@@ -217,6 +321,47 @@ fun PlaylistsScreen(
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
+
+                var moreMenuExpanded by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { moreMenuExpanded = true }) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.action_more_options),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = moreMenuExpanded,
+                        onDismissRequest = { moreMenuExpanded = false },
+                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.action_import),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            onClick = {
+                                moreMenuExpanded = false
+                                treeLauncher.launch(null)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.action_create_playlist),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            onClick = {
+                                moreMenuExpanded = false
+                                showCreateDialog = true
+                            },
+                        )
+                    }
+                }
             }
 
             if (showSearchBar) {
@@ -246,7 +391,6 @@ fun PlaylistsScreen(
                 )
             }
 
-            val scope2 = rememberCoroutineScope()
             val exportLauncher =
                 rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
                     if (uri != null) {
@@ -356,148 +500,6 @@ fun PlaylistsScreen(
                         }
                     }
                 }
-            val treeLauncher =
-                rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-                    if (uri != null) {
-                        scope2.launch {
-                            val resolver = context.contentResolver
-                            val childrenUri =
-                                DocumentsContract.buildChildDocumentsUriUsingTree(
-                                    uri,
-                                    DocumentsContract.getTreeDocumentId(uri),
-                                )
-                            val projection =
-                                arrayOf(
-                                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-                                )
-                            val texts = mutableListOf<String>()
-                            resolver
-                                .query(childrenUri, projection, null, null, null)
-                                ?.use { cursor ->
-                                    while (cursor.moveToNext()) {
-                                        val docId = cursor.getString(0)
-                                        val name = cursor.getString(1) ?: ""
-                                        if (name.endsWith(".json", true)) {
-                                            try {
-                                                val docUri =
-                                                    DocumentsContract.buildDocumentUriUsingTree(
-                                                        uri,
-                                                        docId,
-                                                    )
-                                                resolver
-                                                    .openInputStream(docUri)
-                                                    ?.bufferedReader()
-                                                    ?.use { r ->
-                                                        texts.add(r.readText())
-                                                    }
-                                            } catch (_: Exception) {
-                                            }
-                                        }
-                                    }
-                                }
-
-                            if (texts.isNotEmpty()) {
-                                var imported = 0
-                                texts.forEach { text ->
-                                    try {
-                                        val array =
-                                            if (text.trimStart().startsWith("[")) {
-                                                JSONArray(text)
-                                            } else {
-                                                JSONArray().apply {
-                                                    put(JSONObject(text))
-                                                }
-                                            }
-                                        for (i in 0 until array.length()) {
-                                            val obj = array.getJSONObject(i)
-                                            val name = obj.optString("name", "").trim()
-                                            if (name.isEmpty()) continue
-                                            val idsArr =
-                                                obj.optJSONArray("songIds")
-                                                    ?: JSONArray()
-                                            val ids = mutableListOf<Long>()
-                                            for (j in 0 until idsArr.length()) {
-                                                ids.add(idsArr.optLong(j))
-                                            }
-
-                                            if (playlistViewModel.playlists.value.any {
-                                                    it.name.equals(name, ignoreCase = true)
-                                                }
-                                            ) {
-                                                continue
-                                            }
-
-                                            val created = playlistViewModel.createPlaylist(name)
-                                            if (created && ids.isNotEmpty()) {
-                                                playlistViewModel.addSongsToPlaylist(name, ids)
-                                            }
-                                            imported++
-                                        }
-                                    } catch (_: Exception) {
-                                    }
-                                }
-                                Toast
-                                    .makeText(
-                                        context,
-                                        context.getString(R.string.toast_playlists_imported_count, imported),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                            } else {
-                                Toast
-                                    .makeText(
-                                        context,
-                                        context.getString(R.string.toast_no_json_found),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                            }
-                        }
-                    }
-                }
-
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Spacer(Modifier.width(8.dp))
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    IconButton(onClick = { treeLauncher.launch(null) }) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = stringResource(R.string.action_import),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                    Text(
-                        text = stringResource(id = R.string.action_import_lowercase),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 12.sp,
-                    )
-                }
-
-                Spacer(Modifier.width(24.dp))
-
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    IconButton(onClick = { showCreateDialog = true }) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = stringResource(R.string.action_create_playlist),
-                            tint = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                    Text(
-                        text = stringResource(id = R.string.action_create_lowercase),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 12.sp,
-                    )
-                }
-            }
-
             if (sortedPlaylists.isEmpty()) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(16.dp),
