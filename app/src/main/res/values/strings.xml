@@ -60,6 +60,12 @@
     <string name="settings_accent_color_description">Seleccionar color de acento de la app</string>
     <string name="settings_dynamic_color_label">Color dinámico</string>
     <string name="settings_dynamic_color_description">Usar color de la carátula en el reproductor</string>
+    <string name="settings_skin_label">Skin del reproductor</string>
+    <string name="settings_skin_description">Cambiar el estilo visual del reproductor</string>
+    <string name="skin_localplayer">LocalPlayer (Clásico)</string>
+    <string name="skin_pixelplayer_expressive">PixelPlayer (Expresivo)</string>
+    <string name="skin_gramophone">Gramophone (Minimalista)</string>
+
     <string name="settings_album_art_shape_label">Forma de carátula</string>
     <string name="album_art_rounded_8">Clásica (8dp)</string>
     <string name="album_art_rounded_22">Redondeada (22dp)</string>
