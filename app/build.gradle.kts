@@ -17,8 +17,8 @@ android {
         applicationId = "com.cvc953.localplayer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 9
-        versionName = "1.0.10"
+        versionCode = 10
+        versionName = "1.0.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -83,8 +83,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.text)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.animation.core)
-	implementation(libs.androidx.appcompat)
-	testImplementation(libs.junit)
+    implementation(libs.androidx.appcompat)
+    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

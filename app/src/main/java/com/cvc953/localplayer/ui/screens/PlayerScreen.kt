@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -420,14 +421,14 @@ fun PlayerScreen(
                     }
                 }
 
-                // MiniPlayer al final
+                // MiniPlayer al final, con padding para botones de navegación
                 MiniPlayer(
                     song = song,
                     isPlaying = playerState.isPlaying,
                     onPlayPause = { playbackViewModel.togglePlayPause() },
                     onClick = { playerViewModel.toggleLyrics() },
                     onNext = { playbackViewModel.playNextSong() },
-                    modifier = Modifier,
+                    modifier = Modifier.navigationBarsPadding(),
                 )
             }
         } else {

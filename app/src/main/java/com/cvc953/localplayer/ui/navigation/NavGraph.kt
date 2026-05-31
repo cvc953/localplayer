@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.cvc953.localplayer.ui.components.SongsContent
+import com.cvc953.localplayer.ui.navigation.Screen
 import com.cvc953.localplayer.ui.screens.AlbumDetailScreen
 import com.cvc953.localplayer.ui.screens.AlbumsScreen
 import com.cvc953.localplayer.ui.screens.ArtistDetailScreen
@@ -35,11 +36,12 @@ fun AppNavigation(
     playerViewModel: PlayerViewModel = viewModel(),
     artistViewModel: ArtistViewModel = viewModel(),
     albumViewModel: AlbumViewModel = viewModel(),
+    startDestination: String = Screen.Songs.route,
 ) {
     NavHost(
         modifier = modifier,
         navController = navController,
-        startDestination = Screen.Songs.route,
+        startDestination = startDestination,
     ) {
         // Pantalla de Canciones
         composable(Screen.Songs.route) {

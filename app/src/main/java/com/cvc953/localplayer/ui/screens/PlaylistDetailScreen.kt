@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -60,6 +61,8 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.SongItem
+import com.cvc953.localplayer.ui.components.MultiSongSelectionBar
+import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.headers.PlaylistHeader
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
@@ -114,6 +117,10 @@ fun PlaylistDetailScreen(
             mutableStateListOf<Song>().also { it.addAll(playlistSongs) }
         }
     val scope = rememberCoroutineScope()
+    var selectedSongIds by remember { mutableStateOf(emptySet<Long>()) }
+    val isSelectionMode = selectedSongIds.isNotEmpty()
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var showSearchBar by rememberSaveable { mutableStateOf(false) }
 
     val availableSongs =
         remember(songs, playlist) {
@@ -182,6 +189,18 @@ fun PlaylistDetailScreen(
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
+            IconButton(
+                onClick = {
+                    showSearchBar = !showSearchBar
+                    if (!showSearchBar) searchQuery = ""
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = stringResource(R.string.action_search),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
+            }
             Box {
                 IconButton(onClick = { sortMenuExpanded = true }) {
                     Icon(
@@ -228,6 +247,54 @@ fun PlaylistDetailScreen(
                         )
                     }
                 }
+            }
+        }
+
+        if (showSearchBar) {
+            NativeSearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                placeholder = stringResource(R.string.search_songs_placeholder),
+            )
+        }
+
+        val filteredDragList =
+            remember(dragList, searchQuery) {
+                val q = searchQuery.trim().lowercase()
+                if (q.isEmpty()) {
+                    dragList.toList()
+                } else {
+                    dragList.filter { song ->
+                        song.title.lowercase().contains(q) ||
+                            song.album.lowercase().contains(q) ||
+                            song.artist.lowercase().contains(q)
+                    }
+                }
+            }
+
+        if (isSelectionMode) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                MultiSongSelectionBar(
+                    selectedSongIds = selectedSongIds,
+                    songs = dragList.toList(),
+                    playlists = playlists,
+                    onClearSelection = { selectedSongIds = emptySet() },
+                    onCreatePlaylist = { name -> playlistViewModel.createPlaylist(name) },
+                    onAddSongToPlaylist = { targetPlaylistName, songId ->
+                        playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
+                    },
+                    onAddToQueueNextAll = { songList ->
+                        playbackViewModel.addToQueueNextAll(songList)
+                    },
+                    onAddToQueueEndAll = { songList ->
+                        playbackViewModel.addToQueueEndAll(songList)
+                    },
+                )
             }
         }
 
@@ -348,8 +415,10 @@ fun PlaylistDetailScreen(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            itemsIndexed(dragList) { idx, song ->
-                val isDragging = draggingIndex == idx
+            itemsIndexed(filteredDragList, key = { _, song -> song.id }) { idx, song ->
+                val actualIndex = dragList.indexOfFirst { it.id == song.id }
+                if (actualIndex < 0) return@itemsIndexed
+                val isDragging = draggingIndex == actualIndex
                 val isCurrent = playerState.currentSong?.id == song.id
                 val offsetDp =
                     with(LocalDensity.current) {
@@ -373,10 +442,29 @@ fun PlaylistDetailScreen(
                         SongItem(
                             song = song,
                             isPlaying = isCurrent,
+                            isSelectionMode = isSelectionMode,
+                            isSelected = selectedSongIds.contains(song.id),
                             onClick = {
-                            playbackViewModel.updateDisplayOrder(dragList.toList())
-                            playbackViewModel.play(song)
-                        },
+                                if (isSelectionMode) {
+                                    selectedSongIds =
+                                        if (selectedSongIds.contains(song.id)) {
+                                            selectedSongIds - song.id
+                                        } else {
+                                            selectedSongIds + song.id
+                                        }
+                                } else {
+                                    playbackViewModel.updateDisplayOrder(dragList.toList())
+                                    playbackViewModel.play(song)
+                                }
+                            },
+                            onLongClick = {
+                                selectedSongIds =
+                                    if (selectedSongIds.contains(song.id)) {
+                                        selectedSongIds - song.id
+                                    } else {
+                                        selectedSongIds + song.id
+                                    }
+                            },
                         onQueueNext = {
                             playbackViewModel.addToQueueNext(song)
                             Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()

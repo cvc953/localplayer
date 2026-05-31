@@ -1,8 +1,12 @@
 package com.cvc953.localplayer.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -14,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.cvc953.localplayer.ui.navigation.BottomNavItem
 
@@ -62,10 +67,17 @@ fun BottomNavigationBar(
             modifier
                 .fillMaxWidth(),
     ) {
+        // Fill strip to close gap between NavBar and MiniPlayer
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        )
         NavigationBar(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            windowInsets = WindowInsets(0),
+            windowInsets = WindowInsets.navigationBars,
         ) {
             navItems.forEach { item ->
                 val title = stringResource(item.titleResId)

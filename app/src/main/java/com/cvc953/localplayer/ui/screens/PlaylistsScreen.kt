@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Playlist
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.components.PlaylistAlbumArt
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
@@ -365,29 +366,10 @@ fun PlaylistsScreen(
             }
 
             if (showSearchBar) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    singleLine = true,
-                    placeholder = {
-                        Text(
-                            stringResource(id = R.string.search_playlists_placeholder),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    colors =
-                        TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                            cursorColor = MaterialTheme.colorScheme.primary,
-                            focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
-                            focusedLabelColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                NativeSearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    placeholder = stringResource(id = R.string.search_playlists_placeholder),
                 )
             }
 
