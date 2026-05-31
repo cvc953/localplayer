@@ -1,7 +1,8 @@
-- Barre di ricerca native Material3 nelle schermate principali
-- Ricerca aggiunta nei dettagli artista, album, playlist e brani artista
-- Selezione multipla brani estratta come componente riutilizzabile
-- Nuova opzione nelle Impostazioni per scegliere la scheda iniziale
-- Nuovi valori predefiniti UI: barra serpentina, copertina arrotondata e pulsanti Material3
-- Corretto il riordino coda con shuffle attivo (mantiene l'ordine manuale)
-- Correzioni edge-to-edge per barra inferiore e mini player con gesti e 3 pulsanti
+- Nuovo sistema di skin: LocalPlayer, PixelPlayerExpressive e Gramophone
+- Riordinamento dei brani nelle playlist tramite trascinamento
+- Visualizzazione della frequenza di campionamento e del tipo MIME
+- Stili della barra di progresso: classico, lineare e serpentino
+- Stili del pulsante di riproduzione intercambiabili
+- Immagine personalizzata per le playlist
+- Refactoring di LyricScreen
+- Nuove opzioni di personalizzazione nelle Impostazioni

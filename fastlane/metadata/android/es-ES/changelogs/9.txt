@@ -1,7 +1,8 @@
-- Barras de búsqueda nativas Material3 en las pantallas principales
-- Búsqueda añadida en detalles de artista, álbum, playlist y canciones del artista
-- Selección múltiple de canciones extraída como componente reutilizable
-- Nueva opción en Ajustes para elegir pestaña inicial al abrir la app
-- Nuevos valores por defecto: barra serpenteante, carátula redondeada y botones Material3
-- Corregido el reordenamiento de cola con shuffle activo (respeta el orden manual)
-- Correcciones edge-to-edge en barra inferior y miniplayer para gestos y 3 botones
+- Nuevo sistema de skins: LocalPlayer, PixelPlayerExpressive y Gramophone
+- Reordenamiento de canciones en playlists por arrastre
+- Visualización de frecuencia de muestreo y tipo MIME
+- Personalización de barra de progreso: clásico, lineal y serpenteante
+- Estilos de botón de reproducción intercambiables
+- Imagen personalizada para playlists
+- Refactorización de pantalla de letras
+- Nuevas opciones en Ajustes

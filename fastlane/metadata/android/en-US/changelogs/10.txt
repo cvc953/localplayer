@@ -1,0 +1,7 @@
+- Native Material3 search bars across main library screens
+- Search added to artist, album, playlist, and artist songs detail screens
+- Multi-song selection extracted as reusable component in detail lists
+- New Settings option to choose default startup tab
+- Updated default UI: squiggly progress bar, rounded artwork, Material3 buttons
+- Fixed queue drag reorder with shuffle enabled (preserves manual order)
+- Bottom navigation and mini-player edge-to-edge fixes for gesture/3-button navigation
