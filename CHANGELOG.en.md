@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+
+## [1.0.11]
+
+### Changed
+- 🔎 Migrated list search bars to native Material2 SearchBar (with keyboard auto-open)
+- 🧩 Extracted and reused multi-song selection component across detail screens
+- 🏁 Added a new Settings option to choose the default startup tab (Songs/Albums/Artists/Playlists)
+- 🎛️ Updated interface defaults: squiggly progress bar, rounded album art, and Material2 buttons
+
+### Fixed
+- 🐛 Fixed manual queue reorder while shuffle is enabled (no more unwanted reshuffle)
+- 🐛 Edge-to-edge fixes for bottom nav and mini player with both gesture and 2-button navigation
+
 ## [1.0.10]
 
 ### Added
@@ -22,17 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 - 🐛 Various UI interaction fixes in album and playlist headers
 
-## [1.0.11]
 
-### Changed
-- 🔎 Migrated list search bars to native Material3 SearchBar (with keyboard auto-open)
-- 🧩 Extracted and reused multi-song selection component across detail screens
-- 🏁 Added a new Settings option to choose the default startup tab (Songs/Albums/Artists/Playlists)
-- 🎛️ Updated interface defaults: squiggly progress bar, rounded album art, and Material3 buttons
-
-### Fixed
-- 🐛 Fixed manual queue reorder while shuffle is enabled (no more unwanted reshuffle)
-- 🐛 Edge-to-edge fixes for bottom nav and mini player with both gesture and 3-button navigation
 
 ## [1.0.9]
 

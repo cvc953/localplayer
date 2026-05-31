@@ -5,6 +5,19 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+
+## [1.0.11]
+
+### Cambiado
+- 🔎 Migración de barras de búsqueda a SearchBar nativa de Material3 (con teclado automático al abrir)
+- 🧩 Extracción y reutilización del componente de selección múltiple de canciones en pantallas de detalle
+- 🏁 Nueva opción en Ajustes para elegir pestaña inicial por defecto (Canciones/Álbumes/Artistas/Listas)
+- 🎛️ Nuevos valores por defecto de interfaz: barra serpenteante, carátula redondeada y botones Material3
+
+### Corregido
+- 🐛 Corrección del reordenamiento manual de la cola con shuffle activo (ya no reshufflea)
+- 🐛 Correcciones edge-to-edge en barra inferior y miniplayer con navegación por botones/gestos
+
 ## [1.0.10]
 
 ### Añadido
@@ -22,17 +35,6 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### Corregido
 - 🐛 Varias correcciones en interacciones de UI en cabeceras de álbum y playlist
 
-## [1.0.11]
-
-### Cambiado
-- 🔎 Migración de barras de búsqueda a SearchBar nativa de Material3 (con teclado automático al abrir)
-- 🧩 Extracción y reutilización del componente de selección múltiple de canciones en pantallas de detalle
-- 🏁 Nueva opción en Ajustes para elegir pestaña inicial por defecto (Canciones/Álbumes/Artistas/Listas)
-- 🎛️ Nuevos valores por defecto de interfaz: barra serpenteante, carátula redondeada y botones Material3
-
-### Corregido
-- 🐛 Corrección del reordenamiento manual de la cola con shuffle activo (ya no reshufflea)
-- 🐛 Correcciones edge-to-edge en barra inferior y miniplayer con navegación por botones/gestos
 
 ## [1.0.9]
 

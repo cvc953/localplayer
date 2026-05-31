@@ -5,6 +5,19 @@ Tutte le modifiche rilevanti di questo progetto saranno documentate in questo fi
 Il formato si basa su [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
+
+## [1.0.11]
+
+### Modificato
+- 🔎 Migrazione delle barre di ricerca alla SearchBar nativa Material3 (con apertura automatica della tastiera)
+- 🧩 Estrazione e riuso del componente di selezione multipla brani nelle schermate di dettaglio
+- 🏁 Nuova opzione nelle Impostazioni per scegliere la scheda iniziale (Brani/Album/Artisti/Playlist)
+- 🎛️ Valori predefiniti interfaccia aggiornati: barra serpentina, copertina arrotondata e pulsanti Material3
+
+### Corretto
+- 🐛 Corretto il riordinamento manuale della coda con shuffle attivo (niente reshuffle indesiderato)
+- 🐛 Correzioni edge-to-edge per barra inferiore e mini player con navigazione gestuale e a 3 pulsanti
+
 ## [1.0.10]
 
 ### Aggiunto
@@ -22,17 +35,6 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 ### Corretto
 - 🐛 Varie correzioni alle interazioni UI nelle intestazioni di album e playlist
 
-## [1.0.11]
-
-### Modificato
-- 🔎 Migrazione delle barre di ricerca alla SearchBar nativa Material3 (con apertura automatica della tastiera)
-- 🧩 Estrazione e riuso del componente di selezione multipla brani nelle schermate di dettaglio
-- 🏁 Nuova opzione nelle Impostazioni per scegliere la scheda iniziale (Brani/Album/Artisti/Playlist)
-- 🎛️ Valori predefiniti interfaccia aggiornati: barra serpentina, copertina arrotondata e pulsanti Material3
-
-### Corretto
-- 🐛 Corretto il riordinamento manuale della coda con shuffle attivo (niente reshuffle indesiderato)
-- 🐛 Correzioni edge-to-edge per barra inferiore e mini player con navigazione gestuale e a 3 pulsanti
 
 ## [1.0.9]
 
