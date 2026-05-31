@@ -180,21 +180,21 @@ class AppPrefs(
 
     // Player config individual options
     fun getAlbumArtShape(): String =
-        prefs.getString("album_art_shape", "rounded_8") ?: "rounded_8"
+        prefs.getString("album_art_shape", "rounded_22") ?: "rounded_22"
 
     fun setAlbumArtShape(shape: String) {
         prefs.edit().putString("album_art_shape", shape).apply()
     }
 
     fun getProgressBarStyle(): String =
-        prefs.getString("progress_bar_style", "material") ?: "material"
+        prefs.getString("progress_bar_style", "squiggly") ?: "squiggly"
 
     fun setProgressBarStyle(style: String) {
         prefs.edit().putString("progress_bar_style", style).apply()
     }
 
     fun getTransportStyle(): String =
-        prefs.getString("transport_style", "default") ?: "default"
+        prefs.getString("transport_style", "lune") ?: "lune"
 
     fun setTransportStyle(style: String) {
         prefs.edit().putString("transport_style", style).apply()
@@ -212,6 +212,15 @@ class AppPrefs(
 
     fun setShowAudioInfo(show: Boolean) {
         prefs.edit().putBoolean("show_audio_info", show).apply()
+    }
+
+    // Default tab when opening app: "songs", "albums", "artists", "playlists"
+    fun getDefaultStartTab(): String =
+        prefs.getString("default_start_tab", "songs") ?: "songs"
+
+    fun setDefaultStartTab(tab: String) {
+        if (tab != "songs" && tab != "albums" && tab != "artists" && tab != "playlists") return
+        prefs.edit().putString("default_start_tab", tab).apply()
     }
 
     // Playback state persistence (queue, current song, position, shuffle, repeat, playing)

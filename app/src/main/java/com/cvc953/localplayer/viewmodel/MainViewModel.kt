@@ -151,6 +151,8 @@ class MainViewModel(
     val playPauseStyle: StateFlow<String> = _playPauseStyle
     private val _showAudioInfo = MutableStateFlow(appPrefs.getShowAudioInfo())
     val showAudioInfo: StateFlow<Boolean> = _showAudioInfo
+    private val _defaultStartTab = MutableStateFlow(appPrefs.getDefaultStartTab())
+    val defaultStartTab: StateFlow<String> = _defaultStartTab
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
@@ -452,6 +454,11 @@ class MainViewModel(
     fun setShowAudioInfo(show: Boolean) {
         appPrefs.setShowAudioInfo(show)
         _showAudioInfo.value = show
+    }
+
+    fun setDefaultStartTab(tab: String) {
+        appPrefs.setDefaultStartTab(tab)
+        _defaultStartTab.value = appPrefs.getDefaultStartTab()
     }
 
     fun openPlayerScreen() {

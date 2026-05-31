@@ -100,6 +100,8 @@
     <string name="settings_section_library_subtitle">Gestisci le cartelle incluse nella musica</string>
     <string name="settings_auto_scan_label">Scansione automatica</string>
     <string name="settings_auto_scan_description">Rileva modifiche e scansiona automaticamente</string>
+    <string name="settings_default_tab_label">Scheda predefinita</string>
+    <string name="settings_default_tab_description">Scegli quale sezione aprire all\'avvio dell\'app</string>
     <string name="action_add_folder">Aggiungi cartella</string>
     <string name="settings_folders_configured_title">Cartelle configurate</string>
     <string name="settings_folders_empty">Nessuna cartella configurata</string>

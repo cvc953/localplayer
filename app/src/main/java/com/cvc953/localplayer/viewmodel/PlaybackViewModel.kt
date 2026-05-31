@@ -640,27 +640,25 @@ class PlaybackViewModel(
     }
 
     fun updateDisplayOrder(songs: List<Song>) {
-        // If playAlbum() prepared a full queue with all albums, use that instead
-        val queueToUse =
+        // If playAlbum()/playArtist() prepared a full queue, use that and apply shuffle.
+        // Otherwise, the caller (e.g. drag-to-reorder) provides the exact order — respect it.
+        val finalQueue =
             if (_pendingFullQueue != null) {
                 val fullQueue = _pendingFullQueue!!
-                _pendingFullQueue = null // Clear after use
-                fullQueue
-            } else {
-                songs
-            }
-
-        val finalQueue =
-            if (_isShuffle.value) {
-                val current = playerState.value.currentSong
-                val rest = queueToUse.filter { it != current }.shuffled()
-                if (current != null && queueToUse.contains(current)) {
-                    listOf(current) + rest
+                _pendingFullQueue = null
+                if (_isShuffle.value) {
+                    val current = playerState.value.currentSong
+                    val rest = fullQueue.filter { it != current }.shuffled()
+                    if (current != null && fullQueue.contains(current)) {
+                        listOf(current) + rest
+                    } else {
+                        rest
+                    }
                 } else {
-                    rest
+                    fullQueue
                 }
             } else {
-                queueToUse
+                songs
             }
 
         _queue.value = finalQueue

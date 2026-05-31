@@ -93,6 +93,7 @@ fun SettingsScreen(
     val transportStyleKey by viewModel.transportStyle.collectAsState()
     val playPauseStyleKey by viewModel.playPauseStyle.collectAsState()
     val showAudioInfo by viewModel.showAudioInfo.collectAsState()
+    val defaultStartTab by viewModel.defaultStartTab.collectAsState()
 
     val themeOptions =
         listOf(
@@ -109,7 +110,16 @@ fun SettingsScreen(
         )
     var themeExpanded by remember { mutableStateOf(false) }
     var languageExpanded by remember { mutableStateOf(false) }
+    var defaultTabExpanded by remember { mutableStateOf(false) }
     var folderToDelete by remember { mutableStateOf<FolderEntry?>(null) }
+
+    val defaultTabOptions =
+        listOf(
+            "songs" to stringResource(id = R.string.songs_title),
+            "albums" to stringResource(id = R.string.albums_title),
+            "artists" to stringResource(id = R.string.artists_title),
+            "playlists" to stringResource(id = R.string.playlists_title),
+        )
 
     val launcher =
         rememberLauncherForActivityResult(
@@ -736,6 +746,48 @@ fun SettingsScreen(
                     title = stringResource(id = R.string.settings_section_library_title),
                     subtitle = stringResource(id = R.string.settings_section_library_subtitle),
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(id = R.string.settings_default_tab_label), color = MaterialTheme.colorScheme.onSurface)
+                            Text(
+                                stringResource(id = R.string.settings_default_tab_description),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Box {
+                            OutlinedButton(onClick = { defaultTabExpanded = true }) {
+                                Text(
+                                    defaultTabOptions.find { it.first == defaultStartTab }?.second
+                                        ?: stringResource(id = R.string.songs_title),
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = defaultTabExpanded,
+                                onDismissRequest = { defaultTabExpanded = false },
+                                containerColor = MaterialTheme.colorScheme.surface,
+                            ) {
+                                defaultTabOptions.forEach { (key, label) ->
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = {
+                                            viewModel.setDefaultStartTab(key)
+                                            defaultTabExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 12.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,

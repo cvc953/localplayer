@@ -45,10 +45,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -131,10 +129,6 @@ fun SongsContent(
     var currentScrollLetter by remember { mutableStateOf<String?>(null) }
     var selectedSongIds by remember { mutableStateOf(emptySet<Long>()) }
     val isSelectionMode = selectedSongIds.isNotEmpty()
-
-    var showPlaylistDialog by remember { mutableStateOf(false) }
-    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
-    var newPlaylistName by remember { mutableStateOf("") }
 
     val isScanning by songViewModel.isScanning.collectAsState()
 
@@ -331,165 +325,30 @@ fun SongsContent(
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.surfaceVariant),
                     ) {
-                        Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                IconButton(
-                                    onClick = { selectedSongIds = emptySet() },
-                                ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Cancelar selección",
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                Text(
-                                    text = "${selectedSongIds.size} ${stringResource(R.string.songs_selected)}",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                            Row(
-                                modifier = Modifier.horizontalScroll(rememberScrollState()),
-                                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                IconButton(
-                                    onClick = { showPlaylistDialog = true },
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.PlaylistAdd,
-                                        contentDescription = stringResource(R.string.add_to_playlist),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        val favoritesName = "Favoritos"
-                                        var favorites = playlists.find { it.name == favoritesName }
-                                        if (favorites == null) {
-                                            playlistViewModel.createPlaylist(favoritesName)
-                                        }
-                                        selectedSongIds.forEach { songId ->
-                                            playlistViewModel.addSongToPlaylist(favoritesName, songId)
-                                        }
-                                        Toast
-                                            .makeText(
-                                                context,
-                                                context.getString(R.string.toast_added_to_playlist, favoritesName),
-                                                Toast.LENGTH_SHORT,
-                                            ).show()
-                                        selectedSongIds = emptySet()
-                                    },
-                                ) {
-                                    Icon(
-                                        Icons.Default.Favorite,
-                                        contentDescription = stringResource(R.string.action_add_to_favorites),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        val songList = selectedSongIds.mapNotNull { id -> sortedSongs.firstOrNull { it.id == id } }
-                                        if (songList.isNotEmpty()) {
-                                            playbackViewModel.addToQueueNextAll(songList)
-                                            Toast.makeText(context, context.getString(R.string.toast_added_next), Toast.LENGTH_SHORT).show()
-                                        }
-                                        selectedSongIds = emptySet()
-                                    },
-                                ) {
-                                    Icon(
-                                        Icons.Default.SkipNext,
-                                        contentDescription = stringResource(R.string.action_add_next),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        val songList = selectedSongIds.mapNotNull { id -> sortedSongs.firstOrNull { it.id == id } }
-                                        if (songList.isNotEmpty()) {
-                                            playbackViewModel.addToQueueEndAll(songList)
-                                            Toast
-                                                .makeText(
-                                                    context,
-                                                    context.getString(R.string.toast_added_queue_end),
-                                                    Toast.LENGTH_SHORT,
-                                                ).show()
-                                        }
-                                        selectedSongIds = emptySet()
-                                    },
-                                ) {
-                                    Icon(
-                                        Icons.Default.SkipPrevious,
-                                        contentDescription = stringResource(R.string.action_add_to_queue_end),
-                                        tint = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
-                        }
+                        MultiSongSelectionBar(
+                            selectedSongIds = selectedSongIds,
+                            songs = sortedSongs,
+                            playlists = playlists,
+                            onClearSelection = { selectedSongIds = emptySet() },
+                            onCreatePlaylist = { name -> playlistViewModel.createPlaylist(name) },
+                            onAddSongToPlaylist = { playlistName, songId ->
+                                playlistViewModel.addSongToPlaylist(playlistName, songId)
+                            },
+                            onAddToQueueNextAll = { songList ->
+                                playbackViewModel.addToQueueNextAll(songList)
+                            },
+                            onAddToQueueEndAll = { songList ->
+                                playbackViewModel.addToQueueEndAll(songList)
+                            },
+                        )
                     }
                 }
 
                 if (showSearchBar) {
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        singleLine = true,
-                        placeholder = {
-                            Text(
-                                stringResource(R.string.search_songs_placeholder),
-                                color = MaterialTheme.colorScheme.onBackground,
-                            )
-                        },
-                        modifier =
-                            Modifier.Companion
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                        colors =
-                            TextFieldDefaults.colors(
-                                focusedContainerColor =
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                unfocusedContainerColor =
-                                    MaterialTheme.colorScheme.surfaceVariant,
-                                focusedIndicatorColor =
-                                    MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor =
-                                    MaterialTheme.colorScheme.outline,
-                                cursorColor = MaterialTheme.colorScheme.primary,
-                                focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                                unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
-                                focusedLabelColor =
-                                    MaterialTheme.colorScheme.primary,
-                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(
-                                    onClick = {
-                                        searchQuery = ""
-                                    },
-                                ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription =
-                                            stringResource(R.string.action_clear_search),
-                                        tint = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                }
-                            }
-                        },
+                    NativeSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        placeholder = stringResource(R.string.search_songs_placeholder),
                     )
                 }
                 Box(modifier = Modifier.Companion.fillMaxSize()) {
@@ -627,157 +486,6 @@ fun SongsContent(
                         ScrollLetterDisplay(letter = letter)
                     }
                 }
-            }
-
-            if (showPlaylistDialog) {
-                AlertDialog(
-                    onDismissRequest = { showPlaylistDialog = false },
-                    containerColor = MaterialTheme.extendedColors.surfaceSheet,
-                    title = { Text(stringResource(R.string.add_to_playlist_title), color = MaterialTheme.colorScheme.onSurface) },
-                    text = {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
-                            ) {
-                                Button(
-                                    onClick = { showCreatePlaylistDialog = true },
-                                    colors =
-                                        ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary,
-                                        ),
-                                ) {
-                                    Text(stringResource(R.string.create_playlist_button))
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            if (showCreatePlaylistDialog) {
-                                AlertDialog(
-                                    onDismissRequest = {
-                                        showCreatePlaylistDialog = false
-                                        newPlaylistName = ""
-                                    },
-                                    containerColor = MaterialTheme.colorScheme.surface,
-                                    title = {
-                                        Text(
-                                            stringResource(R.string.dialog_create_playlist_title),
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                        )
-                                    },
-                                    text = {
-                                        OutlinedTextField(
-                                            value = newPlaylistName,
-                                            onValueChange = { newPlaylistName = it },
-                                            singleLine = true,
-                                            placeholder = { Text(stringResource(R.string.playlist_name_placeholder)) },
-                                            colors =
-                                                TextFieldDefaults.colors(
-                                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                                                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                                    unfocusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                    cursorColor = MaterialTheme.colorScheme.primary,
-                                                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                                                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
-                                                ),
-                                        )
-                                    },
-                                    confirmButton = {
-                                        TextButton(
-                                            onClick = {
-                                                if (newPlaylistName.isNotBlank()) {
-                                                    playlistViewModel.createPlaylist(newPlaylistName)
-                                                    selectedSongIds.forEach { songId ->
-                                                        playlistViewModel.addSongToPlaylist(newPlaylistName, songId)
-                                                    }
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            context.getString(R.string.playlist_created_and_added, newPlaylistName),
-                                                            Toast.LENGTH_SHORT,
-                                                        ).show()
-                                                    newPlaylistName = ""
-                                                    showCreatePlaylistDialog = false
-                                                    showPlaylistDialog = false
-                                                    selectedSongIds = emptySet()
-                                                }
-                                            },
-                                        ) {
-                                            Text(stringResource(R.string.action_create), color = MaterialTheme.colorScheme.primary)
-                                        }
-                                    },
-                                    dismissButton = {
-                                        TextButton(onClick = { showCreatePlaylistDialog = false }) {
-                                            Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onBackground)
-                                        }
-                                    },
-                                )
-                            }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-
-                            LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                                items(playlists) { playlist ->
-                                    Card(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 6.dp)
-                                                .clickable {
-                                                    selectedSongIds.forEach { songId ->
-                                                        playlistViewModel.addSongToPlaylist(playlist.name, songId)
-                                                    }
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            context.getString(R.string.song_added_to_playlist, playlist.name),
-                                                            Toast.LENGTH_SHORT,
-                                                        ).show()
-                                                    showPlaylistDialog = false
-                                                    selectedSongIds = emptySet()
-                                                },
-                                        colors =
-                                            CardDefaults.cardColors(
-                                                containerColor = MaterialTheme.extendedColors.surfaceSheet,
-                                            ),
-                                        shape = RoundedCornerShape(8.dp),
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                            )
-                                            Spacer(Modifier.width(12.dp))
-                                            Column {
-                                                Text(
-                                                    text = playlist.name,
-                                                    color = MaterialTheme.colorScheme.onBackground,
-                                                    fontSize = 14.sp,
-                                                )
-                                                Text(
-                                                    text = stringResource(R.string.songs_count, playlist.songIds.size),
-                                                    color = MaterialTheme.extendedColors.textSecondarySoft,
-                                                    fontSize = 12.sp,
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { showPlaylistDialog = false }) {
-                            Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.primary)
-                        }
-                    },
-                )
             }
 
             if (showAbout) {

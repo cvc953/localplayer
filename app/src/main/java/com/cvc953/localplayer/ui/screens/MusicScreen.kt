@@ -5,8 +5,11 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -93,9 +96,10 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
         val scope = rememberCoroutineScope()
 
         val playerState by playbackViewModel.playerState.collectAsState()
-        val showSettings by playerViewModel.isSettingsVisible.collectAsState()
-        val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
-        val showAbout by playerViewModel.isAboutVisible.collectAsState()
+    val showSettings by playerViewModel.isSettingsVisible.collectAsState()
+    val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
+    val showAbout by playerViewModel.isAboutVisible.collectAsState()
+    val defaultStartTab by mainViewModel.defaultStartTab.collectAsState()
         val activity = context as? Activity
         var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -111,15 +115,16 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
 
         val bottomNavHeight = 80.dp
 
-        // Peek = MiniPlayer + espacio para que quede arriba del BottomNavBar
-        // El BottomNavBar (zIndex 5) tapa la parte de abajo del peek
-        val sheetPeekHeight = 76.dp + 80.dp
-
         // Polling del offset del sheet para animación progresiva
         val density = LocalDensity.current
         val configuration = LocalConfiguration.current
+
+        val navBarBottomHeightDp = with(density) { WindowInsets.navigationBars.getBottom(density).toDp() }
+
+        // Peek = MiniPlayer + BottomNavBar + navigation bar padding
+        val sheetPeekHeight = 76.dp + bottomNavHeight + navBarBottomHeightDp
         val peekPx = with(density) { sheetPeekHeight.toPx() }
-        val hideOffsetPx = with(density) { (bottomNavHeight + 16.dp).toPx() }
+        val hideOffsetPx = peekPx
 
         var bottomNavOffset by remember { mutableStateOf(0.dp) }
         var miniPlayerAlpha by remember { mutableFloatStateOf(1f) }
@@ -245,6 +250,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
                         playerViewModel = playerViewModel,
                         artistViewModel = artistViewModel,
                         albumViewModel = albumViewModel,
+                        startDestination = defaultStartTab,
                     )
                 }
             }

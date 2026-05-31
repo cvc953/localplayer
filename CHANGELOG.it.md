@@ -18,9 +18,15 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 ### Modificato
 - ♻️ Refactoring completo di LyricScreen per una migliore manutenibilità
 - ⚙️ Schermata impostazioni ampliata con nuove opzioni di personalizzazione
+- 🔎 Migrazione delle barre di ricerca alla SearchBar nativa Material3 (con apertura automatica della tastiera)
+- 🧩 Estrazione e riuso del componente di selezione multipla brani nelle schermate di dettaglio
+- 🏁 Nuova opzione nelle Impostazioni per scegliere la scheda iniziale (Brani/Album/Artisti/Playlist)
+- 🎛️ Valori predefiniti interfaccia aggiornati: barra serpentina, copertina arrotondata e pulsanti Material3
 
 ### Corretto
 - 🐛 Varie correzioni alle interazioni UI nelle intestazioni di album e playlist
+- 🐛 Corretto il riordinamento manuale della coda con shuffle attivo (niente reshuffle indesiderato)
+- 🐛 Correzioni edge-to-edge per barra inferiore e mini player con navigazione gestuale e a 3 pulsanti
 
 ## [1.0.9]
 

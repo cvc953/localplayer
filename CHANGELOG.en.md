@@ -18,9 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - ♻️ LyricScreen full refactor for better maintainability
 - ⚙️ Settings screen expanded with new customization options
+- 🔎 Migrated list search bars to native Material3 SearchBar (with keyboard auto-open)
+- 🧩 Extracted and reused multi-song selection component across detail screens
+- 🏁 Added a new Settings option to choose the default startup tab (Songs/Albums/Artists/Playlists)
+- 🎛️ Updated interface defaults: squiggly progress bar, rounded album art, and Material3 buttons
 
 ### Fixed
 - 🐛 Various UI interaction fixes in album and playlist headers
+- 🐛 Fixed manual queue reorder while shuffle is enabled (no more unwanted reshuffle)
+- 🐛 Edge-to-edge fixes for bottom nav and mini player with both gesture and 3-button navigation
 
 ## [1.0.9]
 
