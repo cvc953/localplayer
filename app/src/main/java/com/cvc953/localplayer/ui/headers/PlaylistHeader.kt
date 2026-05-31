@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -54,9 +55,10 @@ fun PlaylistHeader(
     playbackViewModel: PlaybackViewModel,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth().padding(8.dp),
-    ) {
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
+
+    val albumArtComponent: @Composable () -> Unit = {
         PlaylistAlbumArt(
             playlistSongIds = playlist?.songIds ?: emptyList(),
             songs = songs,
@@ -64,106 +66,116 @@ fun PlaylistHeader(
             customImageUri = playlist?.imageUri,
             modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
         )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = playlist?.name ?: "",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 2,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+    }
 
-        Text(
-            text = stringResource(R.string.songs_count, playlistSongs.size),
-            fontSize = 16.sp,
-            color = MaterialTheme.extendedColors.textSecondary,
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        val buttonColor = MaterialTheme.colorScheme.primary
+    val infoColumn: @Composable () -> Unit = {
+        Column {
+            Text(
+                text = playlist?.name ?: "",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+            )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = stringResource(R.string.songs_count, playlistSongs.size),
+                fontSize = 16.sp,
+                color = MaterialTheme.extendedColors.textSecondary,
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            val buttonColor = MaterialTheme.colorScheme.primary
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val scope = rememberCoroutineScope()
+                val playAnim = remember { Animatable(1f) }
+                val shuffleAnim = remember { Animatable(1f) }
+
+                Box(modifier = Modifier.weight(1f).height(60.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                playAnim.snapTo(0.92f)
+                                playAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                            }
+                            if (playlistSongs.isNotEmpty()) {
+                                playbackViewModel.setShuffle(false)
+                                playbackViewModel.updateDisplayOrder(playlistSongs)
+                                playbackViewModel.play(playlistSongs.first())
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = playAnim.value; scaleY = playAnim.value },
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.action_play_now), tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(2.dp))
+                            Text(stringResource(R.string.action_play), color = Color.White, fontSize = 14.sp)
+                        }
+                    }
+                }
+                Box(modifier = Modifier.weight(1f).height(60.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                shuffleAnim.snapTo(0.92f)
+                                shuffleAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                            }
+                            if (playlistSongs.isNotEmpty()) {
+                                val shuffled = playlistSongs.shuffled()
+                                playbackViewModel.setShuffle(true)
+                                playbackViewModel.updateDisplayOrder(shuffled)
+                                playbackViewModel.play(shuffled.first())
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+                        modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = shuffleAnim.value; scaleY = shuffleAnim.value },
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Default.Shuffle, contentDescription = stringResource(R.string.action_shuffle), tint = Color.White, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(2.dp))
+                            Text(stringResource(R.string.action_shuffle), color = Color.White, fontSize = 14.sp)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (isLandscape) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = modifier.fillMaxWidth().padding(8.dp),
+            verticalAlignment = Alignment.Bottom,
         ) {
-            val scope = rememberCoroutineScope()
-            val playAnim = remember { Animatable(1f) }
-            val shuffleAnim = remember { Animatable(1f) }
-
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .height(60.dp),
-            ) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            playAnim.snapTo(0.92f)
-                            playAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
-                        }
-                        if (playlistSongs.isNotEmpty()) {
-                            playbackViewModel.setShuffle(false)
-                            playbackViewModel.updateDisplayOrder(playlistSongs)
-                            playbackViewModel.play(playlistSongs.first())
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = playAnim.value; scaleY = playAnim.value },
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = stringResource(R.string.action_play_now),
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp),
-                        )
-                        Spacer(Modifier.width(2.dp))
-                        Text(stringResource(R.string.action_play), color = Color.White, fontSize = 14.sp)
-                    }
-                }
-            }
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .height(60.dp),
-            ) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            shuffleAnim.snapTo(0.92f)
-                            shuffleAnim.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
-                        }
-                        if (playlistSongs.isNotEmpty()) {
-                            val shuffled = playlistSongs.shuffled()
-                            playbackViewModel.setShuffle(true)
-                            playbackViewModel.updateDisplayOrder(shuffled)
-                            playbackViewModel.play(shuffled.first())
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
-                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                    modifier = Modifier.fillMaxWidth().graphicsLayer { scaleX = shuffleAnim.value; scaleY = shuffleAnim.value },
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Default.Shuffle, contentDescription = stringResource(R.string.action_shuffle), tint = Color.White, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(2.dp))
-                        Text(stringResource(R.string.action_shuffle), color = Color.White, fontSize = 14.sp)
-                    }
-                }
-            }
-            Spacer(Modifier.height(20.dp))
+            Box(modifier = Modifier.weight(0.4f)) { albumArtComponent() }
+            Spacer(modifier = Modifier.width(16.dp))
+            Box(modifier = Modifier.weight(0.6f)) { infoColumn() }
+        }
+    } else {
+        Column(
+            modifier = modifier.fillMaxWidth().padding(8.dp),
+        ) {
+            albumArtComponent()
+            Spacer(modifier = Modifier.height(8.dp))
+            infoColumn()
         }
     }
 }
