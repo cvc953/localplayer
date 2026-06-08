@@ -21,7 +21,6 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [1.0.10]
 
 ### Añadido
-- 🎨 Sistema de skins de reproductor: LocalPlayer, PixelPlayerExpressive y Gramophone con estilos intercambiables
 - 🔄 Reordenamiento de canciones en playlists mediante arrastre (drag-to-reorder)
 - 🔊 Visualización de frecuencia de muestreo y tipo MIME en información de canción
 - 🎛️ Opciones de personalización del reproductor: estilos de barra de progreso (clásico, lineal, serpenteante) y estilos de botón de reproducción
