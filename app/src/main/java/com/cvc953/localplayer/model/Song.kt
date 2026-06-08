@@ -17,4 +17,5 @@ data class Song(
     val discNumber: Int,
     val sampleRate: Int? = null,
     val mimeType: String? = null,
+    val dateAdded: Long = 0,
 )

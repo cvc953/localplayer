@@ -119,9 +119,13 @@
 
     <string name="songs_title">Brani</string>
     <string name="sort_artist_asc">Artista A-Z</string>
+    <string name="sort_artist_desc">Artista Z-A</string>
+    <string name="sort_recently_added">Aggiunte di recente</string>
     <string name="action_refresh_library">Aggiorna libreria</string>
     <string name="action_about">Informazioni</string>
     <string name="search_songs_placeholder">Cerca per titolo o artista</string>
+    <string name="lyrics_download_prompt">Scarica i testi con TimeLyr</string>
+    <string name="download_timelyr">TimeLyr</string>
     <string name="action_clear_search">Cancella</string>
     <string name="toast_added_next">Aggiunto come successivo</string>
     <string name="toast_added_queue_end">Aggiunto alla fine della coda</string>

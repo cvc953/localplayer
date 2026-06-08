@@ -119,6 +119,14 @@ fun SongsContent(
                 SortMode.ARTIST_ASC -> {
                     filteredSongs.sortedBy { it.artist.lowercase() }
                 }
+
+                SortMode.ARTIST_DESC -> {
+                    filteredSongs.sortedByDescending { it.artist.lowercase() }
+                }
+
+                SortMode.DATE_ADDED -> {
+                    filteredSongs.sortedByDescending { it.dateAdded }
+                }
             }
         }
 
@@ -218,6 +226,32 @@ fun SongsContent(
                                 onClick = {
                                     sortMode =
                                         SortMode.ARTIST_ASC
+                                    sortMenuExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(R.string.sort_artist_desc),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                },
+                                onClick = {
+                                    sortMode =
+                                        SortMode.ARTIST_DESC
+                                    sortMenuExpanded = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        stringResource(R.string.sort_recently_added),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                },
+                                onClick = {
+                                    sortMode =
+                                        SortMode.DATE_ADDED
                                     sortMenuExpanded = false
                                 },
                             )
@@ -455,15 +489,12 @@ fun SongsContent(
                         }
                     }
                     // Barra de scroll alfabético
-                    if (sortMode == SortMode.TITLE_ASC ||
-                        sortMode == SortMode.TITLE_DESC ||
-                        sortMode == SortMode.ARTIST_ASC
-                    ) {
+                    if (sortMode != SortMode.DATE_ADDED) {
                         AlphabetScrollerContent(
                             items = sortedSongs,
                             getItemName = { song ->
                                 when (sortMode) {
-                                    SortMode.ARTIST_ASC -> song.artist
+                                    SortMode.ARTIST_ASC, SortMode.ARTIST_DESC -> song.artist
                                     else -> song.title
                                 }
                             },
@@ -507,11 +538,15 @@ private enum class SortMode {
     TITLE_ASC,
     TITLE_DESC,
     ARTIST_ASC,
+    ARTIST_DESC,
+    DATE_ADDED,
 }
 
 private fun SortMode.next(): SortMode =
     when (this) {
         SortMode.TITLE_ASC -> SortMode.TITLE_DESC
         SortMode.TITLE_DESC -> SortMode.ARTIST_ASC
-        SortMode.ARTIST_ASC -> SortMode.TITLE_ASC
+        SortMode.ARTIST_ASC -> SortMode.ARTIST_DESC
+        SortMode.ARTIST_DESC -> SortMode.DATE_ADDED
+        SortMode.DATE_ADDED -> SortMode.TITLE_ASC
     }

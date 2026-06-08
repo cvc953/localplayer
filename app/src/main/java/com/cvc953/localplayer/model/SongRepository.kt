@@ -160,6 +160,7 @@ class SongRepository(
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
                 MediaStore.Audio.Media.MIME_TYPE,
+                MediaStore.Audio.Media.DATE_ADDED,
             )
         val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             baseProjection + arrayOf("sample_rate")
@@ -202,6 +203,7 @@ class SongRepository(
             val discNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
             val sampleRateCol = try { it.getColumnIndex("sample_rate") } catch (_: Exception) { -1 }
             val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            val dateAddedCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
 
             while (it.moveToNext()) {
                 totalScanned++
@@ -237,6 +239,7 @@ class SongRepository(
                         discNumber = it.getInt(discNumberCol),
                         sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
                         mimeType = it.getString(mimeTypeCol),
+                        dateAdded = it.getLong(dateAddedCol),
                     )
                 )
             }
@@ -269,6 +272,7 @@ class SongRepository(
                         put("filePath", it.filePath ?: "")
                         put("trackNumber", it.trackNumber)
                         put("discNumber", it.discNumber)
+                        put("dateAdded", it.dateAdded)
                     },
                 )
             }
@@ -304,6 +308,7 @@ class SongRepository(
                         albumArt = null,
                         trackNumber = o.getInt("trackNumber"),
                         discNumber = o.getInt("discNumber"),
+                        dateAdded = o.optLong("dateAdded", 0L),
                     ),
                 )
             }

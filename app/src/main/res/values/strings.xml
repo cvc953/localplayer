@@ -119,9 +119,13 @@
 
     <string name="songs_title">Canciones</string>
     <string name="sort_artist_asc">Artista A-Z</string>
+    <string name="sort_artist_desc">Artista Z-A</string>
+    <string name="sort_recently_added">Agregadas recientemente</string>
     <string name="action_refresh_library">Actualizar biblioteca</string>
     <string name="action_about">Acerca de</string>
     <string name="search_songs_placeholder">Buscar por título o artista</string>
+    <string name="lyrics_download_prompt">Descarga letras con TimeLyr</string>
+    <string name="download_timelyr">TimeLyr</string>
     <string name="action_clear_search">Limpiar</string>
     <string name="toast_added_next">Añadido como siguiente</string>
     <string name="toast_added_queue_end">Añadido al final de la cola</string>

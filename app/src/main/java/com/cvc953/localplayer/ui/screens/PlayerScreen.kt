@@ -1,8 +1,10 @@
 package com.cvc953.localplayer.ui.screens
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -409,14 +411,55 @@ fun PlayerScreen(
                         }
 
                         else -> {
-                            Text(
-                                text =
-                                    stringResource(R.string.lyrics_not_available),
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Companion.Medium,
-                                textAlign = TextAlign.Companion.Center,
-                                color = LocalExtendedColors.current.textSecondary,
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier.padding(horizontal = 32.dp),
+                            ) {
+                                Text(
+                                    text =
+                                        stringResource(R.string.lyrics_not_available),
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Companion.Medium,
+                                    textAlign = TextAlign.Companion.Center,
+                                    color = LocalExtendedColors.current.textSecondary,
+                                )
+                                Text(
+                                    text = stringResource(R.string.lyrics_download_prompt),
+                                    fontSize = 14.sp,
+                                    textAlign = TextAlign.Companion.Center,
+                                    color = LocalExtendedColors.current.textSecondary.copy(alpha = 0.7f),
+                                )
+                                Button(
+                                    onClick = {
+                                        val packageName = "com.cvc953.lyrio"
+                                        val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
+                                        if (launchIntent != null) {
+                                            context.startActivity(launchIntent)
+                                        } else {
+                                            val intent =
+                                                Intent(
+                                                    Intent.ACTION_VIEW,
+                                                    Uri.parse("https://github.com/cvc953/TimeLyr/releases"),
+                                                )
+                                            context.startActivity(intent)
+                                        }
+                                    },
+                                    colors =
+                                        ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                                        ),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Lyrics,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(stringResource(R.string.download_timelyr))
+                                }
+                            }
                         }
                     }
                 }

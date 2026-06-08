@@ -131,9 +131,13 @@
 
     <string name="songs_title">Songs</string>
     <string name="sort_artist_asc">Artist A-Z</string>
+    <string name="sort_artist_desc">Artist Z-A</string>
+    <string name="sort_recently_added">Recently Added</string>
     <string name="action_refresh_library">Refresh library</string>
     <string name="action_about">About</string>
     <string name="search_songs_placeholder">Search by title or artist</string>
+    <string name="lyrics_download_prompt">Download lyrics with TimeLyr</string>
+    <string name="download_timelyr">TimeLyr</string>
     <string name="action_clear_search">Clear</string>
     <string name="toast_added_next">Added as next</string>
     <string name="toast_added_queue_end">Added to queue end</string>

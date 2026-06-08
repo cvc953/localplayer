@@ -96,10 +96,10 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
         val scope = rememberCoroutineScope()
 
         val playerState by playbackViewModel.playerState.collectAsState()
-    val showSettings by playerViewModel.isSettingsVisible.collectAsState()
-    val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
-    val showAbout by playerViewModel.isAboutVisible.collectAsState()
-    val defaultStartTab by mainViewModel.defaultStartTab.collectAsState()
+        val showSettings by playerViewModel.isSettingsVisible.collectAsState()
+        val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
+        val showAbout by playerViewModel.isAboutVisible.collectAsState()
+        val defaultStartTab by mainViewModel.defaultStartTab.collectAsState()
         val activity = context as? Activity
         var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
