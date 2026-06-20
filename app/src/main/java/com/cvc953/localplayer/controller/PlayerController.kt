@@ -269,6 +269,7 @@ class PlayerController(
                                 Log.d("PlayerController", "RepeatMode.NONE - End of queue, pausing")
                                 _state.update { it.copy(isPlaying = false) }
                                 releaseAudioFocus()
+                                progressJob?.cancel()
                             }
                         }
                     }
@@ -312,7 +313,7 @@ class PlayerController(
                     } catch (_: Exception) {
                         break
                     }
-                    delay(60L)
+                    delay(1000L)
                 }
             }
     }
@@ -357,6 +358,7 @@ class PlayerController(
     fun pause() {
         mediaPlayer?.pause()
         _state.update { it.copy(isPlaying = false) }
+        progressJob?.cancel()
     }
 
     fun resume() {

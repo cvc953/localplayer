@@ -481,7 +481,7 @@ fun PlayerScreen(
             val aspectRatio = screenWidth.toFloat() / screenHeight.toFloat()
 
             // LOG TEMPORAL - Debug ratio detection
-            Log.d("PlayerScreen", "Screen: ${screenWidth}x$screenHeight, Ratio: $aspectRatio")
+            LaunchedEffect(Unit) { Log.d("PlayerScreen", "Screen: ${screenWidth}x$screenHeight, Ratio: $aspectRatio") }
 
             // Determinar tipo de pantalla (maneja portrait Y landscape)
             val isCompactLayout = aspectRatio >= 0.90f && aspectRatio < 1.15f // Cuadrada

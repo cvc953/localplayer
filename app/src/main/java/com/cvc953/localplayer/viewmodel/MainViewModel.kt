@@ -221,7 +221,7 @@ class MainViewModel(
             try {
                 android.util.Log.d("MainViewModel", "refreshMusicLibrary: Starting scan")
                 // When auto-scan is enabled we must force a full rescan to detect newly added files
-                val newSongs = if (appPrefs.isAutoScanEnabled()) repository.forceRescanSongs() else repository.loadSongs()
+                val newSongs = if (appPrefs.isAutoScanEnabled()) repository.loadSongs() else repository.loadSongs()
                 val currentSongs = _songs.value
 
                 android.util.Log.d("MainViewModel", "refreshMusicLibrary: Found ${newSongs.size} songs, current has ${currentSongs.size}")
@@ -333,7 +333,7 @@ class MainViewModel(
                         val loaded =
                             if (appPrefs.isAutoScanEnabled()) {
                                 withContext(Dispatchers.IO) {
-                                    repository.forceRescanSongs()
+                                    repository.loadSongs()
                                 }
                             } else {
                                 withContext(Dispatchers.IO) { repository.loadSongs() }

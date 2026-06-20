@@ -63,6 +63,7 @@ class MusicService : Service() {
         serviceJob =
             serviceScope.launch {
                 var lastSongUri: String? = null
+                var lastUpdateTimeMs = 0L
                 playerController.state.collect { st ->
                     val newSong = st.currentSong
                     val newSongUri = newSong?.uri?.toString()
@@ -77,22 +78,38 @@ class MusicService : Service() {
                         currentSongUri = newSongUri
                         albumArt = null
                         loadAlbumArt(newSongUri)
+                        // Always update when song changes, activate MediaSession
+                        mediaSession.isActive = true
+                        updateMediaSession()
+                        updateNotification()
+                        lastUpdateTimeMs = System.currentTimeMillis()
                     } else if (newSong != null) {
                         // Misma canción, solo actualiza estado
                         title = newSong.title.ifBlank { "Reproduciendo" }
                         artist = newSong.artist
+                        val playStateChanged = isPlaying != st.isPlaying
                         isPlaying = st.isPlaying
                         positionMs = st.position
                         durationMs = st.duration
-                        updateMediaSession()
-                        updateNotification()
+                        // Throttle: update immediately on play/state changes, else at most once per second
+                        val now = System.currentTimeMillis()
+                        if (playStateChanged || now - lastUpdateTimeMs >= 1000L) {
+                            updateMediaSession()
+                            updateNotification()
+                            lastUpdateTimeMs = now
+                        }
                     } else {
-                        // No hay canción actual
+                        // No hay canción actual — deactivate MediaSession
                         isPlaying = st.isPlaying
                         positionMs = st.position
                         durationMs = st.duration
-                        updateMediaSession()
-                        updateNotification()
+                        mediaSession.isActive = false
+                        val now = System.currentTimeMillis()
+                        if (now - lastUpdateTimeMs >= 1000L) {
+                            updateMediaSession()
+                            updateNotification()
+                            lastUpdateTimeMs = now
+                        }
                     }
                 }
             }
@@ -381,6 +398,8 @@ class MusicService : Service() {
 
     override fun onDestroy() {
         // Don't explicitly recycle albumArt; let the system GC handle it to avoid races
+        serviceJob?.cancel()
+        serviceScope?.cancel()
         mediaSession.isActive = false
         mediaSession.release()
         super.onDestroy()
