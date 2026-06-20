@@ -112,6 +112,7 @@ fun PlaylistDetailScreen(
     val listState = rememberLazyListState()
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
+    var isDragging by remember { mutableStateOf(false) }
     val dragList =
         remember(playlistSongs) {
             mutableStateListOf<Song>().also { it.addAll(playlistSongs) }
@@ -302,7 +303,8 @@ fun PlaylistDetailScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .pointerInput(dragList) {
+                    .pointerInput(isSelectionMode) {
+                        if (isSelectionMode) return@pointerInput
                         detectDragGesturesAfterLongPress(
                             onDragStart = { pos ->
                                 val layoutInfo =
@@ -325,6 +327,7 @@ fun PlaylistDetailScreen(
                                     draggingIndex = rawIndex - 1
                                 }
                                 dragOffset = 0f
+                                isDragging = true
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
@@ -387,6 +390,7 @@ fun PlaylistDetailScreen(
                             onDragEnd = {
                                 draggingIndex = null
                                 dragOffset = 0f
+                                isDragging = false
                                 if (order != "PLAYLIST") {
                                     order = "PLAYLIST"
                                 }
@@ -398,6 +402,7 @@ fun PlaylistDetailScreen(
                             onDragCancel = {
                                 draggingIndex = null
                                 dragOffset = 0f
+                                isDragging = false
                             },
                         )
                     },
@@ -458,12 +463,14 @@ fun PlaylistDetailScreen(
                                 }
                             },
                             onLongClick = {
-                                selectedSongIds =
-                                    if (selectedSongIds.contains(song.id)) {
-                                        selectedSongIds - song.id
-                                    } else {
-                                        selectedSongIds + song.id
-                                    }
+                                if (!isDragging) {
+                                    selectedSongIds =
+                                        if (selectedSongIds.contains(song.id)) {
+                                            selectedSongIds - song.id
+                                        } else {
+                                            selectedSongIds + song.id
+                                        }
+                                }
                             },
                         onQueueNext = {
                             playbackViewModel.addToQueueNext(song)
