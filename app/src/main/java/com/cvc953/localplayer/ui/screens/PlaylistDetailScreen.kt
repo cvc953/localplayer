@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
@@ -146,6 +147,20 @@ fun PlaylistDetailScreen(
         }
     }
 
+    val filteredDragList =
+        remember(dragList, searchQuery) {
+            val q = searchQuery.trim().lowercase()
+            if (q.isEmpty()) {
+                dragList.toList()
+            } else {
+                dragList.filter { song ->
+                    song.title.lowercase().contains(q) ||
+                        song.album.lowercase().contains(q) ||
+                        song.artist.lowercase().contains(q)
+                }
+            }
+        }
+
     Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -246,98 +261,83 @@ fun PlaylistDetailScreen(
             )
         }
 
-        val filteredDragList =
-            remember(dragList, searchQuery) {
-                val q = searchQuery.trim().lowercase()
-                if (q.isEmpty()) {
-                    dragList.toList()
-                } else {
-                    dragList.filter { song ->
-                        song.title.lowercase().contains(q) ||
-                            song.album.lowercase().contains(q) ||
-                            song.artist.lowercase().contains(q)
-                    }
-                }
-            }
+        val isSearchActive = searchQuery.isNotBlank()
 
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .pointerInput(filteredDragList, order) {
-                        detectDragGesturesAfterLongPress(
-                            onDragStart = { pos ->
-                                val layoutInfo = listState.layoutInfo
-                                val visibleY = pos.y.toInt()
-                                val rawIndex =
-                                    layoutInfo.visibleItemsInfo
-                                        .firstOrNull { item ->
-                                            visibleY >= item.offset &&
-                                                visibleY <= item.offset + item.size
-                                        }?.index
-                                if (rawIndex != null && rawIndex >= 1) {
-                                    val filteredIdx = rawIndex - 1
-                                    if (filteredIdx < filteredDragList.size) {
-                                        val song = filteredDragList[filteredIdx]
-                                        draggingIndex =
-                                            dragList.indexOfFirst { it.id == song.id }
-                                    }
-                                }
-                                dragOffset = 0f
-                            },
-                            onDrag = { change, dragAmount ->
-                                change.consume()
-                                dragOffset += dragAmount.y
-                                val visibleY = change.position.y.toInt()
-                                val edgeThresholdPx = 72
-                                val autoScrollStepPx = 24f
-                                val viewportStart = listState.layoutInfo.viewportStartOffset
-                                val viewportEnd = listState.layoutInfo.viewportEndOffset
-
-                                if (visibleY <= viewportStart + edgeThresholdPx) {
-                                    scope.launch { listState.scrollBy(-autoScrollStepPx) }
-                                } else if (visibleY >= viewportEnd - edgeThresholdPx) {
-                                    scope.launch { listState.scrollBy(autoScrollStepPx) }
-                                }
-
-                                val from = draggingIndex ?: return@detectDragGesturesAfterLongPress
-                                val rawTarget =
-                                    listState.layoutInfo.visibleItemsInfo
-                                        .firstOrNull { item ->
-                                            visibleY >= item.offset &&
-                                                visibleY <= item.offset + item.size
-                                        }?.index
-                                if (rawTarget != null && rawTarget >= 1) {
-                                    val targetFilteredIdx = rawTarget - 1
-                                    if (targetFilteredIdx < filteredDragList.size) {
-                                        val targetSong = filteredDragList[targetFilteredIdx]
-                                        val targetDragIdx =
-                                            dragList.indexOfFirst { it.id == targetSong.id }
-                                        if (targetDragIdx >= 0 && targetDragIdx != from) {
-                                            val item = dragList.removeAt(from)
-                                            dragList.add(targetDragIdx, item)
-                                            draggingIndex = targetDragIdx
-                                            dragOffset = 0f
+                    .let { modifier ->
+                        if (isSearchActive) {
+                            modifier // sin drag cuando hay búsqueda activa
+                        } else {
+                            modifier.pointerInput(dragList) {
+                                detectDragGesturesAfterLongPress(
+                                    onDragStart = { pos ->
+                                        val layoutInfo = listState.layoutInfo
+                                        val visibleY = pos.y.toInt()
+                                        val rawIndex =
+                                            layoutInfo.visibleItemsInfo
+                                                .firstOrNull { item ->
+                                                    visibleY >= item.offset &&
+                                                        visibleY <= item.offset + item.size
+                                                }?.index
+                                        if (rawIndex != null && rawIndex >= 1) {
+                                            draggingIndex = rawIndex - 1
                                         }
-                                    }
-                                }
-                            },
-                            onDragEnd = {
-                                draggingIndex = null
-                                dragOffset = 0f
-                                if (order != "PLAYLIST") {
-                                    order = "PLAYLIST"
-                                }
-                                playlistViewModel.reorderPlaylistSongs(
-                                    playlistName,
-                                    dragList.map { it.id },
+                                        dragOffset = 0f
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        dragOffset += dragAmount.y
+                                        val visibleY = change.position.y.toInt()
+                                        val edgeThresholdPx = 72
+                                        val autoScrollStepPx = 24f
+                                        val viewportStart = listState.layoutInfo.viewportStartOffset
+                                        val viewportEnd = listState.layoutInfo.viewportEndOffset
+
+                                        if (visibleY <= viewportStart + edgeThresholdPx) {
+                                            scope.launch { listState.scrollBy(-autoScrollStepPx) }
+                                        } else if (visibleY >= viewportEnd - edgeThresholdPx) {
+                                            scope.launch { listState.scrollBy(autoScrollStepPx) }
+                                        }
+
+                                        val rawTarget =
+                                            listState.layoutInfo.visibleItemsInfo
+                                                .firstOrNull { item ->
+                                                    visibleY >= item.offset &&
+                                                        visibleY <= item.offset + item.size
+                                                }?.index
+                                        val from = draggingIndex
+                                        if (rawTarget != null && rawTarget >= 1 && from != null) {
+                                            val target = rawTarget - 1
+                                            if (target != from) {
+                                                val item = dragList.removeAt(from)
+                                                val newIndex = target.coerceIn(0, dragList.size)
+                                                dragList.add(newIndex, item)
+                                                draggingIndex = newIndex
+                                                dragOffset = 0f
+                                            }
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        draggingIndex = null
+                                        dragOffset = 0f
+                                        if (order != "PLAYLIST") {
+                                            order = "PLAYLIST"
+                                        }
+                                        playlistViewModel.reorderPlaylistSongs(
+                                            playlistName,
+                                            dragList.map { it.id },
+                                        )
+                                    },
+                                    onDragCancel = {
+                                        draggingIndex = null
+                                        dragOffset = 0f
+                                    },
                                 )
-                            },
-                            onDragCancel = {
-                                draggingIndex = null
-                                dragOffset = 0f
-                            },
-                        )
+                            }
+                        }
                     },
             state = listState,
             contentPadding = PaddingValues(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 16.dp),
@@ -353,72 +353,125 @@ fun PlaylistDetailScreen(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            itemsIndexed(filteredDragList, key = { _, song -> song.id }) { _, song ->
-                val actualIndex = dragList.indexOfFirst { it.id == song.id }
-                if (actualIndex < 0) return@itemsIndexed
-                val isDragging = draggingIndex == actualIndex
-                val isCurrent = playerState.currentSong?.id == song.id
-                val offsetDp =
-                    with(LocalDensity.current) {
-                        dragOffset.toDp()
-                    }
 
-                DraggableSwipeRow(
-                    onSwipeThreshold = {
-                        playbackViewModel.addToQueueNext(song)
-                        Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
-                    },
-                    onSwipeLeftThreshold = {
-                        playbackViewModel.addToQueueEnd(song)
-                        Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
-                    },
-                ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .offset(y = if (isDragging) offsetDp else 0.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+            if (isSearchActive) {
+                // Sin drag: lista filtrada simple
+                itemsIndexed(filteredDragList, key = { _, song -> song.id }) { _, song ->
+                    DraggableSwipeRow(
+                        onSwipeThreshold = {
+                            playbackViewModel.addToQueueNext(song)
+                            Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
+                        },
+                        onSwipeLeftThreshold = {
+                            playbackViewModel.addToQueueEnd(song)
+                            Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
+                        },
                     ) {
-                        Box(modifier = Modifier.weight(1f)) {
-                            SongItem(
-                                song = song,
-                                isPlaying = isCurrent,
-                                onClick = {
-                                    playbackViewModel.updateDisplayOrder(dragList.toList())
-                                    playbackViewModel.play(song)
-                                },
-                                onQueueNext = {
-                                    playbackViewModel.addToQueueNext(song)
-                                    Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
-                                },
-                                onQueueEnd = {
-                                    playbackViewModel.addToQueueEnd(song)
-                                    Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
-                                },
-                                playlists = playlists,
-                                onAddToPlaylist = { targetPlaylistName, songId ->
-                                    playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
-                                    Toast.makeText(context, addedToPlaylist, Toast.LENGTH_SHORT).show()
-                                },
-                                onRemoveFromPlaylist = {
-                                    playlistViewModel.removeSongFromPlaylist(
-                                        playlistName,
-                                        song.id,
-                                    )
-                                    Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
-                                },
-                            )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                SongItem(
+                                    song = song,
+                                    isPlaying = playerState.currentSong?.id == song.id,
+                                    onClick = {
+                                        playbackViewModel.updateDisplayOrder(dragList.toList())
+                                        playbackViewModel.play(song)
+                                    },
+                                    onQueueNext = {
+                                        playbackViewModel.addToQueueNext(song)
+                                        Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
+                                    },
+                                    onQueueEnd = {
+                                        playbackViewModel.addToQueueEnd(song)
+                                        Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
+                                    },
+                                    playlists = playlists,
+                                    onAddToPlaylist = { targetPlaylistName, songId ->
+                                        playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
+                                        Toast.makeText(context, addedToPlaylist, Toast.LENGTH_SHORT).show()
+                                    },
+                                    onRemoveFromPlaylist = {
+                                        playlistViewModel.removeSongFromPlaylist(playlistName, song.id)
+                                        Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
+                                    },
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(24.dp))
                         }
-                        Icon(
-                            Icons.Default.DragHandle,
-                            contentDescription = stringResource(R.string.action_reorder),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    }
+                }
+            } else {
+                // Con drag: lista completa original (sin filtro)
+                itemsIndexed(dragList) { idx, song ->
+                    val isDragging = draggingIndex == idx
+                    val isCurrent = playerState.currentSong?.id == song.id
+                    val offsetDp =
+                        with(LocalDensity.current) {
+                            dragOffset.toDp()
+                        }
+                    val animatedOffset by
+                        animateDpAsState(
+                            if (isDragging) offsetDp else 0.dp,
+                            label = "drag-offset",
+                        )
+
+                    DraggableSwipeRow(
+                        onSwipeThreshold = {
+                            playbackViewModel.addToQueueNext(song)
+                            Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
+                        },
+                        onSwipeLeftThreshold = {
+                            playbackViewModel.addToQueueEnd(song)
+                            Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
+                        },
+                    ) {
+                        Row(
                             modifier =
                                 Modifier
-                                    .padding(start = 4.dp)
-                                    .size(20.dp),
-                        )
+                                    .fillMaxWidth()
+                                    .offset(y = if (isDragging) animatedOffset else 0.dp)
+                                    .padding(horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                SongItem(
+                                    song = song,
+                                    isPlaying = isCurrent,
+                                    onClick = {
+                                        playbackViewModel.updateDisplayOrder(dragList.toList())
+                                        playbackViewModel.play(song)
+                                    },
+                                    onQueueNext = {
+                                        playbackViewModel.addToQueueNext(song)
+                                        Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
+                                    },
+                                    onQueueEnd = {
+                                        playbackViewModel.addToQueueEnd(song)
+                                        Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
+                                    },
+                                    playlists = playlists,
+                                    onAddToPlaylist = { targetPlaylistName, songId ->
+                                        playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
+                                        Toast.makeText(context, addedToPlaylist, Toast.LENGTH_SHORT).show()
+                                    },
+                                    onRemoveFromPlaylist = {
+                                        playlistViewModel.removeSongFromPlaylist(playlistName, song.id)
+                                        Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
+                                    },
+                                )
+                            }
+                            Icon(
+                                Icons.Default.DragHandle,
+                                contentDescription = stringResource(R.string.action_reorder),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier =
+                                    Modifier
+                                        .padding(start = 4.dp)
+                                        .size(20.dp),
+                            )
+                        }
                     }
                 }
             }
