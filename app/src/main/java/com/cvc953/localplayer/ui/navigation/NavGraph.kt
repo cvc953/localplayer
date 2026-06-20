@@ -58,6 +58,7 @@ fun AppNavigation(
             AlbumsScreen(
                 albumViewModel = albumViewModel,
                 playbackViewModel = playbackViewModel,
+                playerViewModel = playerViewModel,
                 onAlbumClick = { albumName, artistName ->
                     navController.navigateAlbumDetail(albumName, artistName)
                 },
@@ -88,6 +89,7 @@ fun AppNavigation(
             ArtistsScreen(
                 artistViewModel = artistViewModel,
                 playbackViewModel = playbackViewModel,
+                playerViewModel = playerViewModel,
                 onArtistClick = { artistName ->
                     navController.navigateArtistDetail(artistName)
                 },
@@ -136,10 +138,11 @@ fun AppNavigation(
         composable(Screen.Playlists.route) {
             PlaylistsScreen(
                 playlistViewModel = playlistViewModel,
+                playbackViewModel = playbackViewModel,
+                playerViewModel = playerViewModel,
                 onPlaylistClick = { playlistName ->
                     navController.navigatePlaylistDetail(playlistName)
                 },
-                playbackViewModel = playbackViewModel,
             )
         }
 

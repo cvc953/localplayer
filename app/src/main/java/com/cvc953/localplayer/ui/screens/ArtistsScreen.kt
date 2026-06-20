@@ -31,8 +31,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
@@ -78,6 +80,7 @@ import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.theme.md_textSecondary
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -91,6 +94,7 @@ import kotlin.collections.map
 fun ArtistsScreen(
     artistViewModel: ArtistViewModel,
     playbackViewModel: PlaybackViewModel,
+    playerViewModel: PlayerViewModel,
     onArtistClick: (artistName: String) -> Unit,
 ) {
     // Use the global SongViewModel to fetch all songs so we can build artist thumbnails
@@ -250,6 +254,61 @@ fun ArtistsScreen(
                         contentDescription = stringResource(R.string.action_toggle_view),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
+                }
+
+                var moreMenuExpanded by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(onClick = { moreMenuExpanded = true }) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = stringResource(R.string.action_more_options),
+                            tint = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = moreMenuExpanded,
+                        onDismissRequest = { moreMenuExpanded = false },
+                        containerColor = MaterialTheme.extendedColors.surfaceSheet,
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.settings_title),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            onClick = {
+                                moreMenuExpanded = false
+                                playerViewModel.showSettings(true)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.action_about),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            onClick = {
+                                moreMenuExpanded = false
+                                playerViewModel.showAbout(true)
+                            },
+                        )
+                    }
                 }
             }
 

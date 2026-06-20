@@ -28,8 +28,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -70,6 +72,7 @@ import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.components.PlaylistAlbumArt
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -80,6 +83,7 @@ import org.json.JSONObject
 fun PlaylistsScreen(
     playlistViewModel: PlaylistViewModel,
     playbackViewModel: PlaybackViewModel,
+    playerViewModel: PlayerViewModel,
     onPlaylistClick: (String) -> Unit,
 ) {
     val isScanning by playlistViewModel.isScanning.collectAsState()
@@ -359,6 +363,45 @@ fun PlaylistsScreen(
                             onClick = {
                                 moreMenuExpanded = false
                                 showCreateDialog = true
+                            },
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.settings_title),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Settings,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            onClick = {
+                                moreMenuExpanded = false
+                                playerViewModel.showSettings(true)
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    stringResource(R.string.action_about),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                )
+                            },
+                            onClick = {
+                                moreMenuExpanded = false
+                                playerViewModel.showAbout(true)
                             },
                         )
                     }
