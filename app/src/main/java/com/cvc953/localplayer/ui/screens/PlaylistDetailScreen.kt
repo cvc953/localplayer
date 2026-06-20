@@ -61,7 +61,6 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.SongItem
-import com.cvc953.localplayer.ui.components.MultiSongSelectionBar
 import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.headers.PlaylistHeader
@@ -112,14 +111,11 @@ fun PlaylistDetailScreen(
     val listState = rememberLazyListState()
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
-    var isDragging by remember { mutableStateOf(false) }
     val dragList =
         remember(playlistSongs) {
             mutableStateListOf<Song>().also { it.addAll(playlistSongs) }
         }
     val scope = rememberCoroutineScope()
-    var selectedSongIds by remember { mutableStateOf(emptySet<Long>()) }
-    val isSelectionMode = selectedSongIds.isNotEmpty()
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
 
@@ -273,38 +269,11 @@ fun PlaylistDetailScreen(
                 }
             }
 
-        if (isSelectionMode) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-            ) {
-                MultiSongSelectionBar(
-                    selectedSongIds = selectedSongIds,
-                    songs = dragList.toList(),
-                    playlists = playlists,
-                    onClearSelection = { selectedSongIds = emptySet() },
-                    onCreatePlaylist = { name -> playlistViewModel.createPlaylist(name) },
-                    onAddSongToPlaylist = { targetPlaylistName, songId ->
-                        playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
-                    },
-                    onAddToQueueNextAll = { songList ->
-                        playbackViewModel.addToQueueNextAll(songList)
-                    },
-                    onAddToQueueEndAll = { songList ->
-                        playbackViewModel.addToQueueEndAll(songList)
-                    },
-                )
-            }
-        }
-
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .pointerInput(isSelectionMode) {
-                        if (isSelectionMode) return@pointerInput
+                    .pointerInput(Unit) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = { pos ->
                                 val layoutInfo =
@@ -327,7 +296,6 @@ fun PlaylistDetailScreen(
                                     draggingIndex = rawIndex - 1
                                 }
                                 dragOffset = 0f
-                                isDragging = true
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
@@ -390,7 +358,6 @@ fun PlaylistDetailScreen(
                             onDragEnd = {
                                 draggingIndex = null
                                 dragOffset = 0f
-                                isDragging = false
                                 if (order != "PLAYLIST") {
                                     order = "PLAYLIST"
                                 }
@@ -402,7 +369,6 @@ fun PlaylistDetailScreen(
                             onDragCancel = {
                                 draggingIndex = null
                                 dragOffset = 0f
-                                isDragging = false
                             },
                         )
                     },
@@ -447,31 +413,13 @@ fun PlaylistDetailScreen(
                         SongItem(
                             song = song,
                             isPlaying = isCurrent,
-                            isSelectionMode = isSelectionMode,
-                            isSelected = selectedSongIds.contains(song.id),
+                            isSelectionMode = false,
+                            isSelected = false,
                             onClick = {
-                                if (isSelectionMode) {
-                                    selectedSongIds =
-                                        if (selectedSongIds.contains(song.id)) {
-                                            selectedSongIds - song.id
-                                        } else {
-                                            selectedSongIds + song.id
-                                        }
-                                } else {
-                                    playbackViewModel.updateDisplayOrder(dragList.toList())
-                                    playbackViewModel.play(song)
-                                }
+                                playbackViewModel.updateDisplayOrder(dragList.toList())
+                                playbackViewModel.play(song)
                             },
-                            onLongClick = {
-                                if (!isDragging) {
-                                    selectedSongIds =
-                                        if (selectedSongIds.contains(song.id)) {
-                                            selectedSongIds - song.id
-                                        } else {
-                                            selectedSongIds + song.id
-                                        }
-                                }
-                            },
+                            onLongClick = {},
                         onQueueNext = {
                             playbackViewModel.addToQueueNext(song)
                             Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
