@@ -119,15 +119,6 @@ fun PlaylistDetailScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
 
-    val availableSongs =
-        remember(songs, playlist) {
-            if (playlist != null) {
-                songs.filter { it.id !in playlist.songIds }
-            } else {
-                emptyList()
-            }
-        }
-
     val addedNextMsg = stringResource(R.string.toast_added_next)
     val addedQueueEndMsg = stringResource(R.string.toast_added_queue_end)
     val removedFromPlaylistMsg = stringResource(R.string.toast_removed_from_playlist)
@@ -273,85 +264,61 @@ fun PlaylistDetailScreen(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .pointerInput(Unit) {
+                    .pointerInput(filteredDragList, order) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = { pos ->
-                                val layoutInfo =
-                                    listState
-                                        .layoutInfo
-                                val visibleY =
-                                    pos.y
-                                        .toInt()
+                                val layoutInfo = listState.layoutInfo
+                                val visibleY = pos.y.toInt()
                                 val rawIndex =
-                                    layoutInfo
-                                        .visibleItemsInfo
+                                    layoutInfo.visibleItemsInfo
                                         .firstOrNull { item ->
-                                            visibleY >=
-                                                item.offset &&
-                                                visibleY <=
-                                                item.offset +
-                                                item.size
+                                            visibleY >= item.offset &&
+                                                visibleY <= item.offset + item.size
                                         }?.index
                                 if (rawIndex != null && rawIndex >= 1) {
-                                    draggingIndex = rawIndex - 1
+                                    val filteredIdx = rawIndex - 1
+                                    if (filteredIdx < filteredDragList.size) {
+                                        val song = filteredDragList[filteredIdx]
+                                        draggingIndex =
+                                            dragList.indexOfFirst { it.id == song.id }
+                                    }
                                 }
                                 dragOffset = 0f
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
                                 dragOffset += dragAmount.y
-                                val layoutInfo =
-                                    listState.layoutInfo
-                                val visibleY =
-                                    change.position
-                                        .y
-                                        .toInt()
-
+                                val visibleY = change.position.y.toInt()
                                 val edgeThresholdPx = 72
                                 val autoScrollStepPx = 24f
-                                val viewportStart = layoutInfo.viewportStartOffset
-                                val viewportEnd = layoutInfo.viewportEndOffset
+                                val viewportStart = listState.layoutInfo.viewportStartOffset
+                                val viewportEnd = listState.layoutInfo.viewportEndOffset
 
                                 if (visibleY <= viewportStart + edgeThresholdPx) {
-                                    scope.launch {
-                                        listState.scrollBy(-autoScrollStepPx)
-                                    }
+                                    scope.launch { listState.scrollBy(-autoScrollStepPx) }
                                 } else if (visibleY >= viewportEnd - edgeThresholdPx) {
-                                    scope.launch {
-                                        listState.scrollBy(autoScrollStepPx)
-                                    }
+                                    scope.launch { listState.scrollBy(autoScrollStepPx) }
                                 }
 
+                                val from = draggingIndex ?: return@detectDragGesturesAfterLongPress
                                 val rawTarget =
-                                    layoutInfo
-                                        .visibleItemsInfo
+                                    listState.layoutInfo.visibleItemsInfo
                                         .firstOrNull { item ->
-                                            visibleY >=
-                                                item.offset &&
-                                                visibleY <=
-                                                item.offset +
-                                                item.size
+                                            visibleY >= item.offset &&
+                                                visibleY <= item.offset + item.size
                                         }?.index
-                                val from = draggingIndex
-                                if (rawTarget != null && rawTarget >= 1 && from != null) {
-                                    val target = rawTarget - 1
-                                    if (target != from) {
-                                        val item =
-                                            dragList.removeAt(
-                                                from,
-                                            )
-                                        val newIndex =
-                                            target.coerceIn(
-                                                0,
-                                                dragList.size,
-                                            )
-                                        dragList.add(
-                                            newIndex,
-                                            item,
-                                        )
-                                        draggingIndex =
-                                            newIndex
-                                        dragOffset = 0f
+                                if (rawTarget != null && rawTarget >= 1) {
+                                    val targetFilteredIdx = rawTarget - 1
+                                    if (targetFilteredIdx < filteredDragList.size) {
+                                        val targetSong = filteredDragList[targetFilteredIdx]
+                                        val targetDragIdx =
+                                            dragList.indexOfFirst { it.id == targetSong.id }
+                                        if (targetDragIdx >= 0 && targetDragIdx != from) {
+                                            val item = dragList.removeAt(from)
+                                            dragList.add(targetDragIdx, item)
+                                            draggingIndex = targetDragIdx
+                                            dragOffset = 0f
+                                        }
                                     }
                                 }
                             },
@@ -386,7 +353,7 @@ fun PlaylistDetailScreen(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            itemsIndexed(filteredDragList, key = { _, song -> song.id }) { idx, song ->
+            itemsIndexed(filteredDragList, key = { _, song -> song.id }) { _, song ->
                 val actualIndex = dragList.indexOfFirst { it.id == song.id }
                 if (actualIndex < 0) return@itemsIndexed
                 val isDragging = draggingIndex == actualIndex
@@ -396,14 +363,13 @@ fun PlaylistDetailScreen(
                         dragOffset.toDp()
                     }
 
-                val currentSong = song
                 DraggableSwipeRow(
                     onSwipeThreshold = {
-                        playbackViewModel.addToQueueNext(currentSong)
+                        playbackViewModel.addToQueueNext(song)
                         Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
                     },
                     onSwipeLeftThreshold = {
-                        playbackViewModel.addToQueueEnd(currentSong)
+                        playbackViewModel.addToQueueEnd(song)
                         Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
                     },
                 ) {
@@ -411,21 +377,17 @@ fun PlaylistDetailScreen(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .offset(y = if (isDragging) offsetDp else 0.dp)
-                                .padding(horizontal = 4.dp),
+                                .offset(y = if (isDragging) offsetDp else 0.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(modifier = Modifier.weight(1f)) {
                             SongItem(
                                 song = song,
                                 isPlaying = isCurrent,
-                                isSelectionMode = false,
-                                isSelected = false,
                                 onClick = {
                                     playbackViewModel.updateDisplayOrder(dragList.toList())
                                     playbackViewModel.play(song)
                                 },
-                                onLongClick = {},
                                 onQueueNext = {
                                     playbackViewModel.addToQueueNext(song)
                                     Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
