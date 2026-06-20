@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
@@ -61,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.SongItem
+import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.headers.PlaylistHeader
@@ -395,62 +395,69 @@ fun PlaylistDetailScreen(
                     with(LocalDensity.current) {
                         dragOffset.toDp()
                     }
-                val animatedOffset by
-                    animateDpAsState(
-                        if (isDragging) offsetDp else 0.dp,
-                        label = "drag-offset",
-                    )
 
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .offset(y = if (isDragging) animatedOffset else 0.dp)
-                            .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                val currentSong = song
+                DraggableSwipeRow(
+                    onSwipeThreshold = {
+                        playbackViewModel.addToQueueNext(currentSong)
+                        Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
+                    },
+                    onSwipeLeftThreshold = {
+                        playbackViewModel.addToQueueEnd(currentSong)
+                        Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
+                    },
                 ) {
-                    Box(modifier = Modifier.weight(1f)) {
-                        SongItem(
-                            song = song,
-                            isPlaying = isCurrent,
-                            isSelectionMode = false,
-                            isSelected = false,
-                            onClick = {
-                                playbackViewModel.updateDisplayOrder(dragList.toList())
-                                playbackViewModel.play(song)
-                            },
-                            onLongClick = {},
-                        onQueueNext = {
-                            playbackViewModel.addToQueueNext(song)
-                            Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
-                        },
-                        onQueueEnd = {
-                            playbackViewModel.addToQueueEnd(song)
-                            Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
-                        },
-                        playlists = playlists,
-                        onAddToPlaylist = { targetPlaylistName, songId ->
-                            playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
-                            Toast.makeText(context, addedToPlaylist, Toast.LENGTH_SHORT).show()
-                        },
-                        onRemoveFromPlaylist = {
-                            playlistViewModel.removeSongFromPlaylist(
-                                playlistName,
-                                song.id,
-                            )
-                            Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
-                        },
-                    )
-                    }
-                    Icon(
-                        Icons.Default.DragHandle,
-                        contentDescription = stringResource(R.string.action_reorder),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Row(
                         modifier =
                             Modifier
-                                .padding(start = 4.dp)
-                                .size(20.dp),
-                    )
+                                .fillMaxWidth()
+                                .offset(y = if (isDragging) offsetDp else 0.dp)
+                                .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            SongItem(
+                                song = song,
+                                isPlaying = isCurrent,
+                                isSelectionMode = false,
+                                isSelected = false,
+                                onClick = {
+                                    playbackViewModel.updateDisplayOrder(dragList.toList())
+                                    playbackViewModel.play(song)
+                                },
+                                onLongClick = {},
+                                onQueueNext = {
+                                    playbackViewModel.addToQueueNext(song)
+                                    Toast.makeText(context, addedNextMsg, Toast.LENGTH_SHORT).show()
+                                },
+                                onQueueEnd = {
+                                    playbackViewModel.addToQueueEnd(song)
+                                    Toast.makeText(context, addedQueueEndMsg, Toast.LENGTH_SHORT).show()
+                                },
+                                playlists = playlists,
+                                onAddToPlaylist = { targetPlaylistName, songId ->
+                                    playlistViewModel.addSongToPlaylist(targetPlaylistName, songId)
+                                    Toast.makeText(context, addedToPlaylist, Toast.LENGTH_SHORT).show()
+                                },
+                                onRemoveFromPlaylist = {
+                                    playlistViewModel.removeSongFromPlaylist(
+                                        playlistName,
+                                        song.id,
+                                    )
+                                    Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
+                                },
+                            )
+                        }
+                        Icon(
+                            Icons.Default.DragHandle,
+                            contentDescription = stringResource(R.string.action_reorder),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier =
+                                Modifier
+                                    .padding(start = 4.dp)
+                                    .size(20.dp),
+                        )
+                    }
                 }
             }
         }
