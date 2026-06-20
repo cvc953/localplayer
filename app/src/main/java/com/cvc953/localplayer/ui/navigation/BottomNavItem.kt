@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -21,4 +22,6 @@ sealed class BottomNavItem(
     object Artists : BottomNavItem("artists", R.string.artists_title, Icons.Default.Person)
 
     object Playlists : BottomNavItem("playlists", R.string.playlists_title, Icons.AutoMirrored.Filled.PlaylistPlay)
+
+    object Genres : BottomNavItem("genres", R.string.genres_title, Icons.Default.LibraryMusic)
 }

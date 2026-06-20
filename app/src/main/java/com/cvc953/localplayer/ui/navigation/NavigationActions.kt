@@ -36,6 +36,14 @@ fun NavController.navigatePlaylists() {
     navigate(Screen.Playlists.route)
 }
 
+fun NavController.navigateGenres() {
+    navigate(Screen.Genres.route)
+}
+
+fun NavController.navigateGenreDetail(genreName: String) {
+    navigate(Screen.GenreDetail.createRoute(genreName))
+}
+
 fun NavController.navigatePlaylistDetail(playlistName: String) {
     navigate(Screen.PlaylistDetail.createRoute(playlistName))
 }

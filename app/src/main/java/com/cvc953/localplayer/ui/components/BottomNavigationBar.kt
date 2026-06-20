@@ -33,6 +33,7 @@ fun BottomNavigationBar(
             BottomNavItem.Albums,
             BottomNavItem.Artists,
             BottomNavItem.Playlists,
+            BottomNavItem.Genres,
         )
 
     // Use currentBackStackEntryAsState to ensure recomposition when destination changes
@@ -59,6 +60,11 @@ fun BottomNavigationBar(
             currentRoute.startsWith("playlist/") -> "playlists"
 
             // playlist detail -> playlists tab
+            currentRoute == "genres" -> "genres"
+
+            currentRoute.startsWith("genre/") -> "genres"
+
+            // genre detail -> genres tab
             else -> "songs" // Default
         }
 

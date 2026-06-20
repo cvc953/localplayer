@@ -111,6 +111,8 @@
     <string name="toast_folder_deleted">Carpeta eliminada</string>
     <string name="toast_folder_added">Carpeta agregada</string>
     <string name="playlists_title">Listas</string>
+    <string name="genres_title">Géneros</string>
+    <string name="search_genres_placeholder">Buscar por género</string>
     <string name="toast_export_create_failed">No se pudo crear archivo en la carpeta</string>
     <string name="toast_playlists_exported">Listas exportadas</string>
     <string name="toast_export_playlists_error">Error exportando listas: %1$s</string>

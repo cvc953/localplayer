@@ -53,6 +53,7 @@ import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import com.cvc953.localplayer.viewmodel.FolderViewModel
+import com.cvc953.localplayer.viewmodel.GenreViewModel
 import com.cvc953.localplayer.viewmodel.MainViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
@@ -74,6 +75,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
     val playerViewModel: PlayerViewModel = viewModel()
     val artistViewModel: ArtistViewModel = viewModel()
     val albumViewModel: AlbumViewModel = viewModel()
+    val genreViewModel: GenreViewModel = viewModel()
     val mainViewModel: MainViewModel = viewModel()
     val equalizerViewModel: EqualizerViewModel = viewModel()
     val folderViewModel: FolderViewModel = viewModel()
@@ -250,6 +252,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
                         playerViewModel = playerViewModel,
                         artistViewModel = artistViewModel,
                         albumViewModel = albumViewModel,
+                        genreViewModel = genreViewModel,
                         startDestination = defaultStartTab,
                     )
                 }

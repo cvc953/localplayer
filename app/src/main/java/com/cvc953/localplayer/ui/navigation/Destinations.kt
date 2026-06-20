@@ -53,6 +53,17 @@ sealed class Screen(
 
     object Playlists : Screen("playlists")
 
+    object Genres : Screen("genres")
+
+    object GenreDetail : Screen("genre/{genreName}") {
+        const val ARG_GENRE_NAME = "genreName"
+
+        fun createRoute(genreName: String): String {
+            val encoded = URLEncoder.encode(genreName, StandardCharsets.UTF_8.toString())
+            return "genre/$encoded"
+        }
+    }
+
     object PlaylistDetail : Screen("playlist/{playlistName}") {
         const val ARG_PLAYLIST_NAME = "playlistName"
 
@@ -93,6 +104,11 @@ val artistSongsArguments =
 val playlistDetailArguments =
     listOf(
         navArgument(Screen.PlaylistDetail.ARG_PLAYLIST_NAME) { type = NavType.StringType },
+    )
+
+val genreDetailArguments =
+    listOf(
+        navArgument(Screen.GenreDetail.ARG_GENRE_NAME) { type = NavType.StringType },
     )
 
 /**

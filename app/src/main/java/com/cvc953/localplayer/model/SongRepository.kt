@@ -161,6 +161,7 @@ class SongRepository(
                 MediaStore.Audio.Media.DISC_NUMBER,
                 MediaStore.Audio.Media.MIME_TYPE,
                 MediaStore.Audio.Media.DATE_ADDED,
+                MediaStore.Audio.Media.GENRE,
             )
         val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             baseProjection + arrayOf("sample_rate")
@@ -204,6 +205,7 @@ class SongRepository(
             val sampleRateCol = try { it.getColumnIndex("sample_rate") } catch (_: Exception) { -1 }
             val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
             val dateAddedCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+            val genreCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)
 
             while (it.moveToNext()) {
                 totalScanned++
@@ -240,6 +242,7 @@ class SongRepository(
                         sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
                         mimeType = it.getString(mimeTypeCol),
                         dateAdded = it.getLong(dateAddedCol),
+                        genre = it.getString(genreCol),
                     )
                 )
             }
@@ -273,6 +276,7 @@ class SongRepository(
                         put("trackNumber", it.trackNumber)
                         put("discNumber", it.discNumber)
                         put("dateAdded", it.dateAdded)
+                        put("genre", it.genre)
                     },
                 )
             }
@@ -291,6 +295,15 @@ class SongRepository(
                 context.openFileInput("songs_cache.json").bufferedReader().use { it.readText() }
 
             val json = JSONArray(text)
+            if (json.length() == 0) return emptyList()
+
+            // Invalidar caché si no tiene el campo genre (cache de versión anterior)
+            val first = json.getJSONObject(0)
+            if (!first.has("genre")) {
+                Log.d("SongRepository", "Cache version mismatch (missing genre), forcing rescan")
+                return emptyList()
+            }
+
             val list = mutableListOf<Song>()
 
             for (i in 0 until json.length()) {
@@ -309,6 +322,7 @@ class SongRepository(
                         trackNumber = o.getInt("trackNumber"),
                         discNumber = o.getInt("discNumber"),
                         dateAdded = o.optLong("dateAdded", 0L),
+                        genre = o.optString("genre", ""),
                     ),
                 )
             }
@@ -503,6 +517,7 @@ class SongRepository(
             val discNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
             val sampleRateCol = try { it.getColumnIndex("sample_rate") } catch (_: Exception) { -1 }
             val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            val genreCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
@@ -537,6 +552,7 @@ class SongRepository(
                         discNumber = it.getInt(discNumberCol),
                         sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
                         mimeType = it.getString(mimeTypeCol),
+                        genre = it.getString(genreCol),
                     )
 
                 list.add(song)
@@ -564,6 +580,7 @@ class SongRepository(
                 MediaStore.Audio.Media.CD_TRACK_NUMBER,
                 MediaStore.Audio.Media.DISC_NUMBER,
                 MediaStore.Audio.Media.MIME_TYPE,
+                MediaStore.Audio.Media.GENRE,
             )
         val projection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             baseProjection + arrayOf("sample_rate")
@@ -609,6 +626,7 @@ class SongRepository(
             val discNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
             val sampleRateCol = try { it.getColumnIndex("sample_rate") } catch (_: Exception) { -1 }
             val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            val genreCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
@@ -646,6 +664,7 @@ class SongRepository(
                         discNumber = it.getInt(discNumberCol),
                         sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
                         mimeType = it.getString(mimeTypeCol),
+                        genre = it.getString(genreCol),
                     )
 
                 list.add(song)
@@ -662,6 +681,28 @@ class SongRepository(
         }
 
         return list
+    }
+
+    /**
+     * Devuelve la lista de géneros únicos con el número de canciones de cada uno.
+     */
+    fun getAllGenres(): List<Genre> {
+        val songs = loadSongs()
+        return songs
+            .groupBy { it.genre.ifBlank { "Desconocido" } }
+            .map { (name, songs) -> Genre(name, songs.size) }
+            .sortedBy { it.name.lowercase() }
+    }
+
+    /**
+     * Devuelve las canciones que pertenecen a un género específico.
+     */
+    fun getSongsForGenre(genreName: String): List<Song> {
+        val songs = loadSongs()
+        return songs.filter { song ->
+            val genre = song.genre.ifBlank { "Desconocido" }
+            genre.equals(genreName, ignoreCase = true)
+        }
     }
 
     /**

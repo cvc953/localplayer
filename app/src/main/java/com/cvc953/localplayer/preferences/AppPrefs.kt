@@ -214,12 +214,12 @@ class AppPrefs(
         prefs.edit().putBoolean("show_audio_info", show).apply()
     }
 
-    // Default tab when opening app: "songs", "albums", "artists", "playlists"
+    // Default tab when opening app: "songs", "albums", "artists", "playlists", "genres"
     fun getDefaultStartTab(): String =
         prefs.getString("default_start_tab", "songs") ?: "songs"
 
     fun setDefaultStartTab(tab: String) {
-        if (tab != "songs" && tab != "albums" && tab != "artists" && tab != "playlists") return
+        if (tab != "songs" && tab != "albums" && tab != "artists" && tab != "playlists" && tab != "genres") return
         prefs.edit().putString("default_start_tab", tab).apply()
     }
 

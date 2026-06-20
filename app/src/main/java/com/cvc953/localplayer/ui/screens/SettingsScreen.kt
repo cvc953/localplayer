@@ -119,6 +119,7 @@ fun SettingsScreen(
             "albums" to stringResource(id = R.string.albums_title),
             "artists" to stringResource(id = R.string.artists_title),
             "playlists" to stringResource(id = R.string.playlists_title),
+            "genres" to stringResource(id = R.string.genres_title),
         )
 
     val launcher =

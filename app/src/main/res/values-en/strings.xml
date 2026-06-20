@@ -123,6 +123,8 @@
     <string name="toast_folder_deleted">Folder deleted</string>
     <string name="toast_folder_added">Folder added</string>
     <string name="playlists_title">Playlists</string>
+    <string name="genres_title">Genres</string>
+    <string name="search_genres_placeholder">Search by genre</string>
     <string name="toast_export_create_failed">Could not create file in folder</string>
     <string name="toast_playlists_exported">Playlists exported</string>
     <string name="toast_export_playlists_error">Error exporting playlists: %1$s</string>

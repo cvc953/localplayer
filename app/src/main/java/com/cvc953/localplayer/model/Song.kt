@@ -18,4 +18,5 @@ data class Song(
     val sampleRate: Int? = null,
     val mimeType: String? = null,
     val dateAdded: Long = 0,
+    val genre: String = "",
 )

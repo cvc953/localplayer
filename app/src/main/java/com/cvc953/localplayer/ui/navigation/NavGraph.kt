@@ -13,10 +13,13 @@ import com.cvc953.localplayer.ui.screens.AlbumsScreen
 import com.cvc953.localplayer.ui.screens.ArtistDetailScreen
 import com.cvc953.localplayer.ui.screens.ArtistSongsScreen
 import com.cvc953.localplayer.ui.screens.ArtistsScreen
+import com.cvc953.localplayer.ui.screens.GenreDetailScreen
+import com.cvc953.localplayer.ui.screens.GenresScreen
 import com.cvc953.localplayer.ui.screens.PlaylistDetailScreen
 import com.cvc953.localplayer.ui.screens.PlaylistsScreen
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
+import com.cvc953.localplayer.viewmodel.GenreViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
@@ -36,6 +39,7 @@ fun AppNavigation(
     playerViewModel: PlayerViewModel = viewModel(),
     artistViewModel: ArtistViewModel = viewModel(),
     albumViewModel: AlbumViewModel = viewModel(),
+    genreViewModel: GenreViewModel = viewModel(),
     startDestination: String = Screen.Songs.route,
 ) {
     NavHost(
@@ -131,6 +135,32 @@ fun AppNavigation(
                 artistName = artistName,
                 onBack = { navController.navigateBack() },
                 playbackViewModel = playbackViewModel,
+            )
+        }
+
+        // Pantalla de Géneros
+        composable(Screen.Genres.route) {
+            GenresScreen(
+                genreViewModel = genreViewModel,
+                playbackViewModel = playbackViewModel,
+                playerViewModel = playerViewModel,
+                onGenreClick = { genreName ->
+                    navController.navigateGenreDetail(genreName)
+                },
+            )
+        }
+
+        // Detalle de Género
+        composable(
+            route = Screen.GenreDetail.route,
+            arguments = genreDetailArguments,
+        ) { backStackEntry ->
+            val genreName = RouteParams.decode(backStackEntry.arguments?.getString(Screen.GenreDetail.ARG_GENRE_NAME))
+
+            GenreDetailScreen(
+                genreName = genreName,
+                playbackViewModel = playbackViewModel,
+                onBack = { navController.navigateBack() },
             )
         }
 
