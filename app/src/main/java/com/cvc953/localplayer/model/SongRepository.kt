@@ -242,7 +242,7 @@ class SongRepository(
                         sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
                         mimeType = it.getString(mimeTypeCol),
                         dateAdded = it.getLong(dateAddedCol),
-                        genre = it.getString(genreCol),
+                        genre = it.getString(genreCol) ?: "",
                     )
                 )
             }
@@ -552,7 +552,7 @@ class SongRepository(
                         discNumber = it.getInt(discNumberCol),
                         sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
                         mimeType = it.getString(mimeTypeCol),
-                        genre = it.getString(genreCol),
+                        genre = it.getString(genreCol) ?: "",
                     )
 
                 list.add(song)
@@ -664,7 +664,7 @@ class SongRepository(
                         discNumber = it.getInt(discNumberCol),
                         sampleRate = if (sampleRateCol >= 0) { val v = it.getInt(sampleRateCol); if (v > 0) v else null } else null,
                         mimeType = it.getString(mimeTypeCol),
-                        genre = it.getString(genreCol),
+                        genre = it.getString(genreCol) ?: "",
                     )
 
                 list.add(song)
