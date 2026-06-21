@@ -20,12 +20,15 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -95,6 +98,8 @@ fun SettingsScreen(
     val showAudioInfo by viewModel.showAudioInfo.collectAsState()
     val genresTabEnabled by viewModel.genresTabEnabled.collectAsState()
     val defaultStartTab by viewModel.defaultStartTab.collectAsState()
+
+    var showColorPicker by remember { mutableStateOf(false) }
 
     val themeOptions =
         listOf(
@@ -371,6 +376,34 @@ fun SettingsScreen(
                                 }
                             }
                         }
+                        item {
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                onClick = { showColorPicker = true },
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.Add,
+                                        contentDescription = "Personalizar",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (showColorPicker) {
+                        ColorPickerDialog(
+                            initialHex = primaryColorHex,
+                            onColorSelected = { hex ->
+                                viewModel.setPrimaryColor(hex)
+                                showColorPicker = false
+                            },
+                            onDismiss = { showColorPicker = false },
+                        )
                     }
 
                     HorizontalDivider(
@@ -940,6 +973,113 @@ fun SettingsScreen(
             )
         }
     }
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+private fun ColorPickerDialog(
+    initialHex: String,
+    onColorSelected: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // Convertir el color inicial a HSV
+    val initialColor = try {
+        android.graphics.Color.parseColor(initialHex)
+    } catch (_: Exception) {
+        android.graphics.Color.parseColor("#2196F3")
+    }
+    val hsv = FloatArray(3)
+    android.graphics.Color.colorToHSV(initialColor, hsv)
+
+    var hue by remember { mutableStateOf(hsv[0]) }
+    var saturation by remember { mutableStateOf(hsv[1] * 100f) }
+    var value by remember { mutableStateOf(hsv[2] * 100f) }
+
+    fun currentColor(): Color {
+        val c = android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation / 100f, value / 100f))
+        return Color(c)
+    }
+
+    fun currentHex(): String {
+        val c = android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation / 100f, value / 100f))
+        return String.format("#%06X", 0xFFFFFF and c)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Color personalizado")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                // Preview del color actual
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(80.dp)
+                        .clip(MaterialTheme.shapes.medium),
+                    color = currentColor(),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = currentHex(),
+                            color = if (currentColor().red * 0.299f + currentColor().green * 0.587f + currentColor().blue * 0.114f > 0.5f) Color.Black else Color.White,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+
+                // Hue Slider
+                Text("Matiz", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                Slider(
+                    value = hue,
+                    onValueChange = { hue = it },
+                    valueRange = 0f..360f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                    ),
+                )
+
+                // Saturation Slider
+                Text("Saturación", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                Slider(
+                    value = saturation,
+                    onValueChange = { saturation = it },
+                    valueRange = 0f..100f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                    ),
+                )
+
+                // Value Slider
+                Text("Brillo", fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                Slider(
+                    value = value,
+                    onValueChange = { value = it },
+                    valueRange = 0f..100f,
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                    ),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onColorSelected(currentHex()) }) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(id = R.string.action_cancel))
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface,
+        textContentColor = MaterialTheme.colorScheme.onSurface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+    )
 }
 
 @Suppress("ktlint:standard:function-naming")
