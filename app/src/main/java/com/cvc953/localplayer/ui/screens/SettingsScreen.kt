@@ -32,11 +32,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -71,7 +66,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
-import com.cvc953.localplayer.ui.theme.computeOnPrimary
 import com.cvc953.localplayer.ui.theme.predefinedThemeColors
 import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import com.cvc953.localplayer.viewmodel.FolderEntry
@@ -101,8 +95,6 @@ fun SettingsScreen(
     val showAudioInfo by viewModel.showAudioInfo.collectAsState()
     val genresTabEnabled by viewModel.genresTabEnabled.collectAsState()
     val defaultStartTab by viewModel.defaultStartTab.collectAsState()
-
-    var hexInput by remember(primaryColorHex) { mutableStateOf(primaryColorHex) }
 
     val themeOptions =
         listOf(
@@ -311,8 +303,8 @@ fun SettingsScreen(
                                     )
                                 }
                             }
+                        }
                     }
-
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 12.dp),
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
@@ -376,61 +368,6 @@ fun SettingsScreen(
                                             )
                                         }
                                     }
-                                }
-                            }
-                        }
-                    }
-                    }
-
-                    // Hex custom input
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OutlinedTextField(
-                            value = hexInput,
-                            onValueChange = { input ->
-                                val sanitized = input.take(9).uppercase().replace("[^0-9A-F#]".toRegex(), "")
-                                hexInput = sanitized
-                                if (sanitized.matches(Regex("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"))) {
-                                    viewModel.setPrimaryColor(sanitized)
-                                }
-                            },
-                            label = { Text("#RRGGBB") },
-                            placeholder = { Text("#2196F3") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f),
-                            colors =
-                                OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                                ),
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    capitalization = KeyboardCapitalization.None,
-                                    keyboardType = KeyboardType.Ascii,
-                                ),
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Surface(
-                            modifier = Modifier.size(40.dp),
-                            shape = CircleShape,
-                            color = parseColorOrDefault(hexInput),
-                            onClick = {
-                                if (hexInput.matches(Regex("^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"))) {
-                                    viewModel.setPrimaryColor(hexInput)
-                                }
-                            },
-                        ) {
-                            if (primaryColorHex.equals(hexInput, ignoreCase = true)) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription = "Custom",
-                                        tint = computeOnPrimary(parseColorOrDefault(hexInput)),
-                                        modifier = Modifier.size(18.dp),
-                                    )
                                 }
                             }
                         }
@@ -1002,14 +939,6 @@ fun SettingsScreen(
                 titleContentColor = MaterialTheme.colorScheme.onSurface,
             )
         }
-    }
-}
-
-private fun parseColorOrDefault(hex: String): Color {
-    return try {
-        Color(android.graphics.Color.parseColor(hex))
-    } catch (_: Exception) {
-        Color.Gray
     }
 }
 

@@ -100,12 +100,7 @@ fun computeOnPrimary(color: Color): Color = if (color.luminance() > 0.3f) Color.
 
 fun resolvePrimaryColor(hex: String): ThemeColor =
     predefinedThemeColors.find { it.hex == hex }
-        ?: try {
-            val color = Color(android.graphics.Color.parseColor(hex))
-            ThemeColor("Personalizado", hex, color, computeOnPrimary(color))
-        } catch (_: Exception) {
-            predefinedThemeColors.first()
-        }
+        ?: predefinedThemeColors.first()
 
 val predefinedThemeColors: List<ThemeColor> =
     listOf(
