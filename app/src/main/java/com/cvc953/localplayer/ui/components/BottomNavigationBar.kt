@@ -25,16 +25,19 @@ import com.cvc953.localplayer.ui.navigation.BottomNavItem
 @Composable
 fun BottomNavigationBar(
     navController: androidx.navigation.NavHostController,
+    genresTabEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val navItems =
-        listOf(
-            BottomNavItem.Songs,
-            BottomNavItem.Albums,
-            BottomNavItem.Artists,
-            BottomNavItem.Playlists,
-            BottomNavItem.Genres,
-        )
+        buildList {
+            add(BottomNavItem.Songs)
+            add(BottomNavItem.Albums)
+            add(BottomNavItem.Artists)
+            add(BottomNavItem.Playlists)
+            if (genresTabEnabled) {
+                add(BottomNavItem.Genres)
+            }
+        }
 
     // Use currentBackStackEntryAsState to ensure recomposition when destination changes
     val navBackStackEntry by navController.currentBackStackEntryAsState()

@@ -151,6 +151,8 @@ class MainViewModel(
     val playPauseStyle: StateFlow<String> = _playPauseStyle
     private val _showAudioInfo = MutableStateFlow(appPrefs.getShowAudioInfo())
     val showAudioInfo: StateFlow<Boolean> = _showAudioInfo
+    private val _genresTabEnabled = MutableStateFlow(appPrefs.isGenresTabEnabled())
+    val genresTabEnabled: StateFlow<Boolean> = _genresTabEnabled
     private val _defaultStartTab = MutableStateFlow(appPrefs.getDefaultStartTab())
     val defaultStartTab: StateFlow<String> = _defaultStartTab
 
@@ -459,6 +461,15 @@ class MainViewModel(
     fun setDefaultStartTab(tab: String) {
         appPrefs.setDefaultStartTab(tab)
         _defaultStartTab.value = appPrefs.getDefaultStartTab()
+    }
+
+    fun setGenresTabEnabled(enabled: Boolean) {
+        appPrefs.setGenresTabEnabled(enabled)
+        _genresTabEnabled.value = enabled
+        // Si el tab de géneros se deshabilita y era el default, cambiar a "songs"
+        if (!enabled && _defaultStartTab.value == "genres") {
+            setDefaultStartTab("songs")
+        }
     }
 
     fun openPlayerScreen() {

@@ -93,6 +93,7 @@ fun SettingsScreen(
     val transportStyleKey by viewModel.transportStyle.collectAsState()
     val playPauseStyleKey by viewModel.playPauseStyle.collectAsState()
     val showAudioInfo by viewModel.showAudioInfo.collectAsState()
+    val genresTabEnabled by viewModel.genresTabEnabled.collectAsState()
     val defaultStartTab by viewModel.defaultStartTab.collectAsState()
 
     val themeOptions =
@@ -782,6 +783,37 @@ fun SettingsScreen(
                                 }
                             }
                         }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(id = R.string.settings_genres_tab_label),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                stringResource(id = R.string.settings_genres_tab_description),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                            )
+                        }
+                        Switch(
+                            checked = genresTabEnabled,
+                            onCheckedChange = { viewModel.setGenresTabEnabled(it) },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    uncheckedTrackColor =
+                                        MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = 0.16f,
+                                        ),
+                                ),
+                        )
                     }
 
                     HorizontalDivider(

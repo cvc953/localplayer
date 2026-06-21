@@ -102,6 +102,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
         val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
         val showAbout by playerViewModel.isAboutVisible.collectAsState()
         val defaultStartTab by mainViewModel.defaultStartTab.collectAsState()
+        val genresTabEnabled by mainViewModel.genresTabEnabled.collectAsState()
         val activity = context as? Activity
         var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -262,6 +263,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
             // Se desliza hacia abajo cuando el sheet se expande
             BottomNavigationBar(
                 navController = navController,
+                genresTabEnabled = genresTabEnabled,
                 modifier =
                     Modifier
                         .align(Alignment.Companion.BottomCenter)

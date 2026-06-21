@@ -214,6 +214,14 @@ class AppPrefs(
         prefs.edit().putBoolean("show_audio_info", show).apply()
     }
 
+    // Whether the Genres tab is visible in the bottom navigation
+    fun isGenresTabEnabled(): Boolean =
+        prefs.getBoolean("genres_tab_enabled", true)
+
+    fun setGenresTabEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("genres_tab_enabled", enabled).apply()
+    }
+
     // Default tab when opening app: "songs", "albums", "artists", "playlists", "genres"
     fun getDefaultStartTab(): String =
         prefs.getString("default_start_tab", "songs") ?: "songs"

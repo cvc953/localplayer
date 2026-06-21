@@ -102,6 +102,8 @@
     <string name="settings_auto_scan_description">Detectar cambios y escanear automáticamente</string>
     <string name="settings_default_tab_label">Pestaña inicial</string>
     <string name="settings_default_tab_description">Elegí qué sección abrir al iniciar la app</string>
+    <string name="settings_genres_tab_label">Pestaña Géneros</string>
+    <string name="settings_genres_tab_description">Mostrar la pestaña de géneros en la barra de navegación</string>
     <string name="action_add_folder">Agregar carpeta</string>
     <string name="settings_folders_configured_title">Carpetas configuradas</string>
     <string name="settings_folders_empty">Ninguna carpeta configurada</string>

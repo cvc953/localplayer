@@ -114,6 +114,8 @@
     <string name="settings_auto_scan_description">Detect changes and scan automatically</string>
     <string name="settings_default_tab_label">Default tab</string>
     <string name="settings_default_tab_description">Choose which section opens when the app starts</string>
+    <string name="settings_genres_tab_label">Genres tab</string>
+    <string name="settings_genres_tab_description">Show the genres tab in the navigation bar</string>
     <string name="action_add_folder">Add folder</string>
     <string name="settings_folders_configured_title">Configured folders</string>
     <string name="settings_folders_empty">No folders configured</string>
