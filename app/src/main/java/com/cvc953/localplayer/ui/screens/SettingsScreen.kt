@@ -1,12 +1,19 @@
 package com.cvc953.localplayer.ui.screens
 
 import android.content.Intent
+import android.provider.DocumentsContract
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,8 +37,16 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -57,11 +72,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,6 +94,10 @@ import com.cvc953.localplayer.viewmodel.EqualizerViewModel
 import com.cvc953.localplayer.viewmodel.FolderEntry
 import com.cvc953.localplayer.viewmodel.FolderViewModel
 import com.cvc953.localplayer.viewmodel.MainViewModel
+import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -83,9 +105,11 @@ fun SettingsScreen(
     viewModel: MainViewModel,
     equalizerViewModel: EqualizerViewModel,
     folderViewModel: FolderViewModel,
+    playlistViewModel: PlaylistViewModel,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val folderEntries by folderViewModel.folderEntries.collectAsState()
     val theme by viewModel.themeMode.collectAsState()
     val language by viewModel.language.collectAsState()
@@ -124,6 +148,7 @@ fun SettingsScreen(
     var languageExpanded by remember { mutableStateOf(false) }
     var defaultTabExpanded by remember { mutableStateOf(false) }
     var folderToDelete by remember { mutableStateOf<FolderEntry?>(null) }
+    var expandedSection by remember { mutableStateOf<String?>("appearance") }
 
     val defaultTabOptions =
         listOf(
@@ -148,6 +173,104 @@ fun SettingsScreen(
                 }
                 folderViewModel.addMusicFolder(uri.toString())
                 Toast.makeText(context, context.getString(R.string.toast_folder_added), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val exportSettingsLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocumentTree(),
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    try {
+                        context.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                        )
+                    } catch (_: Exception) {
+                    }
+                    val filename = "localplayer_settings_${System.currentTimeMillis()}.json"
+                    var docUri =
+                        try {
+                            DocumentsContract.createDocument(
+                                context.contentResolver,
+                                uri, "application/json", filename,
+                            )
+                        } catch (iae: IllegalArgumentException) {
+                            try {
+                                val treeId = DocumentsContract.getTreeDocumentId(uri)
+                                val parent = DocumentsContract.buildDocumentUriUsingTree(uri, treeId)
+                                DocumentsContract.createDocument(
+                                    context.contentResolver,
+                                    parent, "application/json", filename,
+                                )
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } catch (_: Exception) {
+                            null
+                        }
+                    if (docUri != null) {
+                        try {
+                            val prefs = com.cvc953.localplayer.preferences.AppPrefs(context)
+                            val prefsJson = prefs.exportToJson()
+                            val playlistsJson = playlistViewModel.getPlaylistsJson()
+                            val combined = org.json.JSONObject()
+                            combined.put("preferences", org.json.JSONObject(prefsJson))
+                            combined.put("playlists", org.json.JSONArray(playlistsJson))
+                            context.contentResolver.openOutputStream(docUri)?.use { os ->
+                                os.write(combined.toString().toByteArray())
+                                os.flush()
+                            }
+                            Toast.makeText(context, context.getString(R.string.toast_settings_exported), Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        Toast.makeText(context, context.getString(R.string.toast_export_create_failed), Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
+    val importSettingsLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    try {
+                        val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() } ?: ""
+                        if (text.isNotBlank()) {
+                            val root = org.json.JSONObject(text)
+                            // Check if it's the new combined format (has "preferences" key)
+                            if (root.has("preferences")) {
+                                val prefsObj = root.optJSONObject("preferences")
+                                if (prefsObj != null) {
+                                    val prefs = com.cvc953.localplayer.preferences.AppPrefs(context)
+                                    prefs.importFromJson(prefsObj.toString())
+                                }
+                                val playlistsArr = root.optJSONArray("playlists")
+                                if (playlistsArr != null && playlistsArr.length() > 0) {
+                                    val strings = mutableListOf<String>()
+                                    for (i in 0 until playlistsArr.length()) {
+                                        val obj = playlistsArr.getJSONObject(i)
+                                        val wrapper = org.json.JSONArray().put(obj)
+                                        strings.add(wrapper.toString())
+                                    }
+                                    playlistViewModel.importPlaylistsFromJsonStrings(strings)
+                                }
+                            } else {
+                                // Old format: just preferences
+                                val prefs = com.cvc953.localplayer.preferences.AppPrefs(context)
+                                prefs.importFromJson(text)
+                            }
+                            Toast.makeText(context, context.getString(R.string.toast_settings_imported), Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, context.getString(R.string.toast_settings_import_error), Toast.LENGTH_LONG).show()
+                    }
+                }
             }
         }
 
@@ -193,21 +316,15 @@ fun SettingsScreen(
 
             item {
                 SettingsSectionCard(
+                    icon = Icons.Default.Person,
                     title = stringResource(id = R.string.settings_section_language_title),
                     subtitle = stringResource(id = R.string.settings_section_language_subtitle),
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.Person,
+                        title = stringResource(id = R.string.settings_language_label),
+                        description = stringResource(id = R.string.settings_language_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(id = R.string.settings_language_label), color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                stringResource(id = R.string.settings_language_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Box {
                             OutlinedButton(onClick = { languageExpanded = true }) {
                                 Text(
@@ -268,22 +385,19 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSectionCard(
+                ExpandableSettingsSection(
+                    icon = Icons.Default.Tune,
                     title = stringResource(id = R.string.settings_section_appearance_title),
                     subtitle = stringResource(id = R.string.settings_section_appearance_subtitle),
+                    sectionId = "appearance",
+                    expandedSection = expandedSection,
+                    onToggle = { id -> expandedSection = if (expandedSection == id) null else id },
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.Person,
+                        title = stringResource(id = R.string.settings_theme_label),
+                        description = stringResource(id = R.string.settings_theme_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(id = R.string.settings_theme_label), color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                stringResource(id = R.string.settings_theme_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Box {
                             OutlinedButton(onClick = { themeExpanded = true }) {
                                 Text(
@@ -351,7 +465,7 @@ fun SettingsScreen(
                                         .clip(CircleShape)
                                         .then(
                                             if (borderWidth > 0.dp) {
-                                                Modifier.Companion.border(
+                                                Modifier.border(
                                                     borderWidth,
                                                     borderColor,
                                                     CircleShape,
@@ -416,18 +530,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.Palette,
+                        title = stringResource(id = R.string.settings_dynamic_color_label),
+                        description = stringResource(id = R.string.settings_dynamic_color_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(id = R.string.settings_dynamic_color_label), color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                stringResource(id = R.string.settings_dynamic_color_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = dynamicColor,
                             onCheckedChange = { viewModel.toggleDynamicColor(it) },
@@ -443,92 +550,21 @@ fun SettingsScreen(
                                 ),
                         )
                     }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-
-                    // --- Album Art Shape ---
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_album_art_shape_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    val albumArtOptions =
-                        listOf(
-                            "rounded_8" to stringResource(id = R.string.album_art_rounded_8),
-                            "rounded_22" to stringResource(id = R.string.album_art_rounded_22),
-                            "circle" to stringResource(id = R.string.album_art_circle),
-                        )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        albumArtOptions.forEach { (key, label) ->
-                            val isSelected = albumArtShapeKey == key
-                            OutlinedButton(
-                                onClick = { viewModel.setAlbumArtShape(key) },
-                                modifier = Modifier.weight(1f),
-                                colors =
-                                    ButtonDefaults.outlinedButtonColors(
-                                        containerColor =
-                                            if (isSelected) {
-                                                MaterialTheme.colorScheme.primary.copy(
-                                                    alpha = 0.15f,
-                                                )
-                                            } else {
-                                                Color.Transparent
-                                            },
-                                    ),
-                                border =
-                                    if (isSelected) {
-                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                                    } else {
-                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                                    },
-                            ) {
-                                Text(
-                                    label,
-                                    fontSize = 11.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                )
-                            }
-                        }
-                    }
                 }
             }
 
             item {
-                SettingsSectionCard(
+                ExpandableSettingsSection(
+                    icon = Icons.Default.MusicNote,
                     title = stringResource(id = R.string.settings_section_player_title),
                     subtitle = stringResource(id = R.string.settings_section_player_subtitle),
+                    sectionId = "player",
+                    expandedSection = expandedSection,
+                    onToggle = { id -> expandedSection = if (expandedSection == id) null else id },
                 ) {
-                    // --- Progress Bar Style ---
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_progress_bar_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
+                    SettingsSubHeader(stringResource(id = R.string.settings_progress_bar_label))
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     val progressOptions =
                         listOf(
@@ -579,20 +615,9 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    // --- Transport Style ---
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_transport_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
+                    SettingsSubHeader(stringResource(id = R.string.settings_transport_label))
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
                     val transportOptions =
                         listOf(
@@ -712,17 +737,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    // --- Show Audio Info ---
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.Info,
+                        title = stringResource(id = R.string.settings_audio_info_label),
+                        description = "",
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_audio_info_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
                         Switch(
                             checked = showAudioInfo,
                             onCheckedChange = { viewModel.setShowAudioInfo(it) },
@@ -735,26 +754,76 @@ fun SettingsScreen(
                                 ),
                         )
                     }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                    )
+
+                    SettingsSubHeader(stringResource(id = R.string.settings_album_art_shape_label))
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    val albumArtOptions =
+                        listOf(
+                            "rounded_8" to stringResource(id = R.string.album_art_rounded_8),
+                            "rounded_22" to stringResource(id = R.string.album_art_rounded_22),
+                            "circle" to stringResource(id = R.string.album_art_circle),
+                        )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        albumArtOptions.forEach { (key, label) ->
+                            val isSelected = albumArtShapeKey == key
+                            OutlinedButton(
+                                onClick = { viewModel.setAlbumArtShape(key) },
+                                modifier = Modifier.weight(1f),
+                                colors =
+                                    ButtonDefaults.outlinedButtonColors(
+                                        containerColor =
+                                            if (isSelected) {
+                                                MaterialTheme.colorScheme.primary.copy(
+                                                    alpha = 0.15f,
+                                                )
+                                            } else {
+                                                Color.Transparent
+                                            },
+                                    ),
+                                border =
+                                    if (isSelected) {
+                                        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                    } else {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                                    },
+                            ) {
+                                Text(
+                                    label,
+                                    fontSize = 11.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
             item {
-                SettingsSectionCard(
+                ExpandableSettingsSection(
+                    icon = Icons.Default.LibraryMusic,
                     title = stringResource(id = R.string.settings_section_audio_title),
                     subtitle = stringResource(id = R.string.settings_section_audio_subtitle),
+                    sectionId = "audio",
+                    expandedSection = expandedSection,
+                    onToggle = { id -> expandedSection = if (expandedSection == id) null else id },
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.GraphicEq,
+                        title = stringResource(id = R.string.settings_equalizer_enable_label),
+                        description = stringResource(id = R.string.settings_equalizer_enable_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(id = R.string.settings_equalizer_enable_label), color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                stringResource(id = R.string.settings_equalizer_enable_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = eqEnabled,
                             onCheckedChange = { equalizerViewModel.toggleEqualizer(it) },
@@ -784,22 +853,19 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSectionCard(
+                ExpandableSettingsSection(
+                    icon = Icons.Default.Check,
                     title = stringResource(id = R.string.settings_section_navigation_title),
                     subtitle = stringResource(id = R.string.settings_section_navigation_subtitle),
+                    sectionId = "navigation",
+                    expandedSection = expandedSection,
+                    onToggle = { id -> expandedSection = if (expandedSection == id) null else id },
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.MusicNote,
+                        title = stringResource(id = R.string.settings_default_tab_label),
+                        description = stringResource(id = R.string.settings_default_tab_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(id = R.string.settings_default_tab_label), color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                stringResource(id = R.string.settings_default_tab_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Box {
                             OutlinedButton(onClick = { defaultTabExpanded = true }) {
                                 Text(
@@ -830,22 +896,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    // Songs tab toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.MusicNote,
+                        title = stringResource(id = R.string.settings_songs_tab_label),
+                        description = stringResource(id = R.string.settings_songs_tab_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_songs_tab_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                stringResource(id = R.string.settings_songs_tab_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = songsTabEnabled,
                             onCheckedChange = { viewModel.setSongsTabEnabled(it) },
@@ -867,22 +922,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    // Albums tab toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.MusicNote,
+                        title = stringResource(id = R.string.settings_albums_tab_label),
+                        description = stringResource(id = R.string.settings_albums_tab_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_albums_tab_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                stringResource(id = R.string.settings_albums_tab_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = albumsTabEnabled,
                             onCheckedChange = { viewModel.setAlbumsTabEnabled(it) },
@@ -904,22 +948,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    // Artists tab toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.MusicNote,
+                        title = stringResource(id = R.string.settings_artists_tab_label),
+                        description = stringResource(id = R.string.settings_artists_tab_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_artists_tab_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                stringResource(id = R.string.settings_artists_tab_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = artistsTabEnabled,
                             onCheckedChange = { viewModel.setArtistsTabEnabled(it) },
@@ -941,22 +974,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    // Playlists tab toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.MusicNote,
+                        title = stringResource(id = R.string.settings_playlists_tab_label),
+                        description = stringResource(id = R.string.settings_playlists_tab_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_playlists_tab_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                stringResource(id = R.string.settings_playlists_tab_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = playlistsTabEnabled,
                             onCheckedChange = { viewModel.setPlaylistsTabEnabled(it) },
@@ -978,22 +1000,11 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                     )
 
-                    // Genres tab toggle
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.MusicNote,
+                        title = stringResource(id = R.string.settings_genres_tab_label),
+                        description = stringResource(id = R.string.settings_genres_tab_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                stringResource(id = R.string.settings_genres_tab_label),
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                stringResource(id = R.string.settings_genres_tab_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = genresTabEnabled,
                             onCheckedChange = { viewModel.setGenresTabEnabled(it) },
@@ -1013,22 +1024,19 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSectionCard(
+                ExpandableSettingsSection(
+                    icon = Icons.Default.Folder,
                     title = stringResource(id = R.string.settings_section_library_title),
                     subtitle = stringResource(id = R.string.settings_section_library_subtitle),
+                    sectionId = "library",
+                    expandedSection = expandedSection,
+                    onToggle = { id -> expandedSection = if (expandedSection == id) null else id },
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                    SettingsRow(
+                        icon = Icons.Default.Refresh,
+                        title = stringResource(id = R.string.settings_auto_scan_label),
+                        description = stringResource(id = R.string.settings_auto_scan_description),
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(stringResource(id = R.string.settings_auto_scan_label), color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                stringResource(id = R.string.settings_auto_scan_description),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 12.sp,
-                            )
-                        }
                         Switch(
                             checked = autoScan,
                             onCheckedChange = { viewModel.toggleAutoScan(it) },
@@ -1095,6 +1103,44 @@ fun SettingsScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+            }
+
+            item {
+                SettingsSectionCard(
+                    icon = Icons.Default.Download,
+                    title = stringResource(id = R.string.settings_section_backup_title),
+                    subtitle = stringResource(id = R.string.settings_section_backup_subtitle),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilledTonalButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = { exportSettingsLauncher.launch(null) },
+                        ) {
+                            Icon(Icons.Default.Tune, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                stringResource(id = R.string.action_export_settings),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        FilledTonalButton(
+                            modifier = Modifier.weight(1f),
+                            onClick = { importSettingsLauncher.launch(arrayOf("application/json")) },
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                stringResource(id = R.string.action_import_settings),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
                 }
@@ -1259,7 +1305,55 @@ private fun ColorPickerDialog(
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
+private fun SettingsSubHeader(title: String) {
+    Text(
+        text = title,
+        color = MaterialTheme.colorScheme.primary,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+    )
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+private fun SettingsRow(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    control: @Composable () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = description,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        control()
+    }
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
 private fun SettingsSectionCard(
+    icon: ImageVector? = null,
     title: String,
     subtitle: String,
     content: @Composable ColumnScope.() -> Unit,
@@ -1272,14 +1366,109 @@ private fun SettingsSectionCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text(
-                title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(subtitle, color = LocalExtendedColors.current.textSecondary, fontSize = 12.sp)
+            if (icon != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        title,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Text(subtitle, color = LocalExtendedColors.current.textSecondary, fontSize = 12.sp)
+            } else {
+                Text(
+                    title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(subtitle, color = LocalExtendedColors.current.textSecondary, fontSize = 12.sp)
+            }
             Spacer(modifier = Modifier.height(12.dp))
             content()
+        }
+    }
+}
+
+@Suppress("ktlint:standard:function-naming")
+@Composable
+private fun ExpandableSettingsSection(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    sectionId: String,
+    expandedSection: String?,
+    onToggle: (String) -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val isExpanded = expandedSection == sectionId
+    val rotationAngle by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = tween(durationMillis = 250),
+        label = "chevronRotation",
+    )
+
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = LocalExtendedColors.current.surfaceSheet),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onToggle(sectionId) },
+            color = Color.Transparent,
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        subtitle,
+                        color = LocalExtendedColors.current.textSecondary,
+                        fontSize = 12.sp,
+                    )
+                }
+                Icon(
+                    imageVector = Icons.Default.ExpandMore,
+                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .graphicsLayer { rotationZ = rotationAngle },
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = expandVertically(animationSpec = tween(300)),
+            exit = shrinkVertically(animationSpec = tween(300)),
+        ) {
+            Column(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                content()
+            }
         }
     }
 }

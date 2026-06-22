@@ -275,4 +275,13 @@
     <string name="delete_song_final_title">Are you sure?</string>
     <string name="delete_song_final_message">This action cannot be undone.</string>
     <string name="toast_song_deleted">Song deleted</string>
+
+    <!-- Settings Backup -->
+    <string name="settings_section_backup_title">Backup</string>
+    <string name="settings_section_backup_subtitle">Export and import app settings</string>
+    <string name="action_export_settings">Export settings</string>
+    <string name="action_import_settings">Import settings</string>
+    <string name="toast_settings_exported">Settings exported</string>
+    <string name="toast_settings_imported">Settings imported</string>
+    <string name="toast_settings_import_error">Error importing settings</string>
 </resources>

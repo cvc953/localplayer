@@ -276,4 +276,13 @@
     <string name="delete_song_final_title">Sei sicuro?</string>
     <string name="delete_song_final_message">Questa azione non può essere annullata.</string>
     <string name="toast_song_deleted">Canzone eliminata</string>
+
+    <!-- Settings Backup -->
+    <string name="settings_section_backup_title">Backup</string>
+    <string name="settings_section_backup_subtitle">Esporta e importa le impostazioni dell\'app</string>
+    <string name="action_export_settings">Esporta impostazioni</string>
+    <string name="action_import_settings">Importa impostazioni</string>
+    <string name="toast_settings_exported">Impostazioni esportate</string>
+    <string name="toast_settings_imported">Impostazioni importate</string>
+    <string name="toast_settings_import_error">Errore durante l\'importazione</string>
 </resources>

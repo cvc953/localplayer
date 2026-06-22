@@ -303,6 +303,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
                         viewModel = mainViewModel,
                         equalizerViewModel = equalizerViewModel,
                         folderViewModel = folderViewModel,
+                        playlistViewModel = playlistViewModel,
                         onClose = { playerViewModel.closeSettingsScreen() },
                     )
                 }

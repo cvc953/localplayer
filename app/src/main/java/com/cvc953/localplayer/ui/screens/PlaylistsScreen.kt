@@ -441,14 +441,14 @@ fun PlaylistsScreen(
                                 }
 
                                 val filename =
-                                    "localplayer_playlists_${System.currentTimeMillis()}.json"
+                                    "localplayer_playlists_${System.currentTimeMillis()}.m3u"
 
                                 var docUri =
                                     try {
                                         DocumentsContract.createDocument(
                                             resolver,
                                             uri,
-                                            "application/json",
+                                            "audio/x-mpegurl",
                                             filename,
                                         )
                                     } catch (iae: IllegalArgumentException) {
@@ -462,7 +462,7 @@ fun PlaylistsScreen(
                                             DocumentsContract.createDocument(
                                                 resolver,
                                                 parent,
-                                                "application/json",
+                                                "audio/x-mpegurl",
                                                 filename,
                                             )
                                         } catch (e2: Exception) {
@@ -489,19 +489,34 @@ fun PlaylistsScreen(
                                 var exportSuccess = false
                                 try {
                                     resolver.openOutputStream(docUri)?.use { os ->
-                                        val text =
-                                            playlistToExport?.let { p ->
-                                                val array = JSONArray()
-                                                val idsArray = JSONArray()
-                                                p.songIds.forEach { idsArray.put(it) }
-                                                val obj = JSONObject()
-                                                obj.put("name", p.name)
-                                                obj.put("songIds", idsArray)
-                                                array.put(obj)
-                                                array.toString()
-                                            } ?: playlistViewModel.getPlaylistsJson()
-
-                                        os.write(text.toByteArray())
+                                        val m3uContent = buildString {
+                                            appendLine("#EXTM3U")
+                                            if (playlistToExport != null) {
+                                                val p = playlistToExport!!
+                                                appendLine("#PLAYLIST:${p.name}")
+                                                p.songIds.forEach { id ->
+                                                    val song = songs.find { it.id == id }
+                                                    if (song != null) {
+                                                        val durationSec = song.duration / 1000
+                                                        appendLine("#EXTINF:$durationSec,${song.artist} - ${song.title}")
+                                                        appendLine(song.filePath ?: song.uri.toString())
+                                                    }
+                                                }
+                                            } else {
+                                                playlistViewModel.playlists.value.forEach { p ->
+                                                    appendLine("#PLAYLIST:${p.name}")
+                                                    p.songIds.forEach { id ->
+                                                        val song = songs.find { it.id == id }
+                                                        if (song != null) {
+                                                            val durationSec = song.duration / 1000
+                                                            appendLine("#EXTINF:$durationSec,${song.artist} - ${song.title}")
+                                                            appendLine(song.filePath ?: song.uri.toString())
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        os.write(m3uContent.toByteArray())
                                         os.flush()
                                         exportSuccess = true
                                     }

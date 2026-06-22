@@ -333,4 +333,46 @@ class AppPrefs(
         }
         prefs.edit().putString("app_language", language).apply()
     }
+
+    fun exportToJson(): String {
+        val all = prefs.all
+        val json = org.json.JSONObject()
+        all.forEach { (key, value) ->
+            try {
+                when (value) {
+                    is String -> json.put(key, value)
+                    is Int -> json.put(key, value)
+                    is Long -> json.put(key, value)
+                    is Float -> json.put(key, value)
+                    is Boolean -> json.put(key, value)
+                    is Set<*> -> json.put(key, org.json.JSONArray(value.toList()))
+                }
+            } catch (_: Exception) {
+            }
+        }
+        return json.toString()
+    }
+
+    fun importFromJson(json: String) {
+        try {
+            val obj = org.json.JSONObject(json)
+            val editor = prefs.edit()
+            obj.keys().forEach { key ->
+                try {
+                    val value = obj.get(key)
+                    when (value) {
+                        is String -> editor.putString(key, value)
+                        is Int -> editor.putInt(key, value)
+                        is Long -> editor.putLong(key, value)
+                        is Float -> editor.putFloat(key, value)
+                        is Double -> editor.putLong(key, value.toLong())
+                        is Boolean -> editor.putBoolean(key, value)
+                    }
+                } catch (_: Exception) {
+                }
+            }
+            editor.apply()
+        } catch (_: Exception) {
+        }
+    }
 }

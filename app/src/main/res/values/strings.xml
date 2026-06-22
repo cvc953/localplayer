@@ -276,4 +276,13 @@
     <string name="delete_song_final_title">¿Estás seguro?</string>
     <string name="delete_song_final_message">Esta acción no se puede deshacer.</string>
     <string name="toast_song_deleted">Canción eliminada</string>
+
+    <!-- Settings Backup -->
+    <string name="settings_section_backup_title">Copia de seguridad</string>
+    <string name="settings_section_backup_subtitle">Exportá e importá la configuración de la app</string>
+    <string name="action_export_settings">Exportar ajustes</string>
+    <string name="action_import_settings">Importar ajustes</string>
+    <string name="toast_settings_exported">Ajustes exportados</string>
+    <string name="toast_settings_imported">Ajustes importados</string>
+    <string name="toast_settings_import_error">Error al importar ajustes</string>
 </resources>

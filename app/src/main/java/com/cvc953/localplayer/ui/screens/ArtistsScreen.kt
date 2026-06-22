@@ -31,12 +31,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -317,6 +322,91 @@ fun ArtistsScreen(
                     onQueryChange = { searchQuery = it },
                     placeholder = stringResource(R.string.search_artists_placeholder),
                 )
+            }
+
+            // Header: shuffle random artist, play first artist, artist count
+            Card(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Default.LibraryMusic,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.artists_count, sortedArtists.size),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    IconButton(
+                        onClick = {
+                            if (sortedArtists.isNotEmpty()) {
+                                val artist = sortedArtists.random()
+                                val artistSongs = songs.filter { song ->
+                                    normalizeArtistName(song.artist).any {
+                                        it.equals(artist.name.trim(), ignoreCase = true)
+                                    }
+                                }.sortedWith(
+                                    compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                )
+                                if (artistSongs.isNotEmpty()) {
+                                    playbackViewModel.setShuffle(false)
+                                    playbackViewModel.updateDisplayOrder(artistSongs)
+                                    playbackViewModel.play(artistSongs.first())
+                                }
+                            }
+                        },
+                    ) {
+                        Icon(
+                            Icons.Default.Shuffle,
+                            contentDescription = stringResource(R.string.action_shuffle),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            if (sortedArtists.isNotEmpty()) {
+                                val artist = sortedArtists.first()
+                                val artistSongs = songs.filter { song ->
+                                    normalizeArtistName(song.artist).any {
+                                        it.equals(artist.name.trim(), ignoreCase = true)
+                                    }
+                                }.sortedWith(
+                                    compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                )
+                                if (artistSongs.isNotEmpty()) {
+                                    playbackViewModel.setShuffle(false)
+                                    playbackViewModel.updateDisplayOrder(artistSongs)
+                                    playbackViewModel.play(artistSongs.first())
+                                }
+                            }
+                        },
+                    ) {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = stringResource(R.string.action_play_all),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
             }
 
             Box(modifier = Modifier.Companion.fillMaxSize()) {
