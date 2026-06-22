@@ -213,10 +213,22 @@ class PlaybackViewModel(
                 val queue = _queue.value
                 val index = queue.indexOfFirst { it.id == song.id }
                 if (queue.size > 1) {
-                    // Si tenemos una cola establecida con >1 canción, usa playNow
-                    // Si la canción está en la cola, reproduce desde ese índice; si no, desde el principio
-                    val indexToPlay = if (index >= 0) index else 0
-                    playerController.playNow(queue, indexToPlay)
+                    // Si shuffle está activo, reorganizá la queue: tema elegido primero, resto aleatorio
+                    val finalQueue =
+                        if (_isShuffle.value) {
+                            val rest = queue.filter { it.id != song.id }.shuffled()
+                            listOf(song) + rest
+                        } else {
+                            queue
+                        }
+                    if (finalQueue !== queue) {
+                        _queue.value = finalQueue
+                        try {
+                            prefs.savePlaybackQueue(finalQueue.map { it.uri.toString() })
+                        } catch (_: Exception) {
+                        }
+                    }
+                    playerController.playNow(finalQueue, 0)
                 } else if (queue.size == 1) {
                     // Si la cola tiene solo 1 canción, asegúrate de que sea la correcta
                     playerController.playNow(queue, 0)
