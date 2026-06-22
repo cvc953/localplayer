@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.ui.extendedColors
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,6 +50,8 @@ import com.cvc953.localplayer.ui.headers.AlbumHeader
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import com.cvc953.localplayer.viewmodel.SongViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
@@ -55,9 +59,11 @@ fun AlbumDetailScreen(
     albumViewModel: AlbumViewModel,
     playbackViewModel: PlaybackViewModel,
     playlistViewModel: PlaylistViewModel,
+    songViewModel: SongViewModel = viewModel(),
     albumName: String,
     artistName: String,
     onBack: () -> Unit,
+    onNavigateToAlbumEdit: (String, String) -> Unit = { _, _ -> },
 ) {
     val songs by albumViewModel.songs.collectAsState()
     val playerState by playbackViewModel.playerState.collectAsState()
@@ -143,6 +149,17 @@ fun AlbumDetailScreen(
                     textAlign = TextAlign.Companion.Left,
                 )
                 // Text(text = "${albumSongs.size} canciones", color = MaterialTheme.extendedColors.texMeta, fontSize = 12.sp)
+            }
+            IconButton(
+                onClick = {
+                    onNavigateToAlbumEdit(albumName, artistName)
+                },
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = stringResource(R.string.action_edit),
+                    tint = MaterialTheme.colorScheme.onBackground,
+                )
             }
             IconButton(
                 onClick = {
@@ -272,6 +289,17 @@ fun AlbumDetailScreen(
                                     "Añadido a playlist '$playlistName'",
                                     Toast.LENGTH_SHORT,
                                 ).show()
+                        },
+                        onDelete = { song ->
+                            songViewModel.deleteSong(
+                                song,
+                                onSuccess = {
+                                    Toast.makeText(context, context.getString(R.string.toast_song_deleted), Toast.LENGTH_SHORT).show()
+                                },
+                                onError = { msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                },
+                            )
                         },
                     )
                 }

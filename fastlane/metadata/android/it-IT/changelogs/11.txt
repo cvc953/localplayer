@@ -1,0 +1,9 @@
+- Modifica metadati e copertina di brani e album dal player e schermata album
+- Nuova scheda Generi con schermata dettaglio (toggle in Impostazioni)
+- Selettore colore accento personalizzato con input HEX
+- Menu Impostazioni e Informazioni in Album, Artisti e Playlist
+- Ordinamento Artista Z-A e Aggiunto di recente
+- Collegamento a TimeLyr nei testi sincronizzati
+- Eliminazione brani
+- Schede navigazione configurabili
+- Correzioni batteria e archiviazione con ambito su Android 11+

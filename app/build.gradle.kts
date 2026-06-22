@@ -17,8 +17,8 @@ android {
         applicationId = "com.cvc953.localplayer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.0.11"
+        versionCode = 11
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -118,4 +118,7 @@ dependencies {
 
     // Palette para extraer color dominante
     implementation("androidx.palette:palette:1.0.0")
+
+    // Lectura de metadatos de audio (letras embebidas)
+    implementation("net.jthink:jaudiotagger:3.0.1")
 }

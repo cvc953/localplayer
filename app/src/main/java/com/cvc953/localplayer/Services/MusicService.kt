@@ -52,7 +52,6 @@ class MusicService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        Log.e("MusicService", "✓ onCreate() called")
 
         createNotificationChannel()
         initMediaSession()
@@ -118,7 +117,6 @@ class MusicService : Service() {
         val notification = createNotification()
         try {
             startForeground(NOTIF_ID, notification)
-            Log.e("MusicService", "✓ startForeground() successful")
         } catch (e: Exception) {
             Log.e("MusicService", "✗ startForeground() failed: ${e.message}", e)
         }
@@ -159,7 +157,6 @@ class MusicService : Service() {
         flags: Int,
         startId: Int,
     ): Int {
-        Log.e("MusicService", "✓ onStartCommand() - action: ${intent?.action}")
 
         when (intent?.action) {
             ACTION_PLAY_PAUSE -> {
@@ -202,7 +199,6 @@ class MusicService : Service() {
                 isPlaying = requestedIsPlaying
                 currentSongUri = songUri
 
-                Log.e("MusicService", "✓ Song loaded: $title by $artist")
 
                 // Clear previous album art reference (do not recycle — avoid racing with Notification/Framework)
                 albumArt = null
@@ -211,7 +207,6 @@ class MusicService : Service() {
                 updateMediaSession()
                 updateNotification()
             } else {
-                Log.e("MusicService", "✓ Ignored duplicate song/state intent: $title by $artist")
             }
         }
 
@@ -256,7 +251,6 @@ class MusicService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotification(): Notification {
-        Log.e("MusicService", "Creating notification: '$title' by '$artist', playing: $isPlaying")
 
         val artworkBitmap =
             try {
@@ -327,7 +321,6 @@ class MusicService : Service() {
         try {
             val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.notify(NOTIF_ID, createNotification())
-            Log.e("MusicService", "✓ Notification updated")
         } catch (e: Exception) {
             Log.e("MusicService", "✗ updateNotification error: ${e.message}", e)
         }
@@ -342,7 +335,6 @@ class MusicService : Service() {
 
             val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
-            Log.e("MusicService", "✓ Notification channel created")
         } catch (e: Exception) {
             Log.e("MusicService", "✗ createNotificationChannel error: ${e.message}", e)
         }
@@ -353,7 +345,6 @@ class MusicService : Service() {
             try {
                 // Si cambió la canción mientras se estaba cargando, cancela
                 if (currentSongUri != uri) {
-                    Log.e("MusicService", "✓ Song changed, skipping old art load")
                     return@Thread
                 }
 
@@ -364,7 +355,6 @@ class MusicService : Service() {
 
                 // Verificar nuevamente si la canción cambió
                 if (currentSongUri != uri) {
-                    Log.e("MusicService", "✓ Song changed after loading art")
                     return@Thread
                 }
 
@@ -382,12 +372,10 @@ class MusicService : Service() {
                             }
                         }
 
-                        Log.e("MusicService", "✓ Album art loaded and scaled")
                         updateMediaSession()
                         updateNotification()
                     }
                 } else {
-                    Log.e("MusicService", "✓ No embedded picture found")
                     albumArt = null
                 }
             } catch (e: Exception) {

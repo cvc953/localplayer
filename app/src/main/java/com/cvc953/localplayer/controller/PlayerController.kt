@@ -229,7 +229,6 @@ class PlayerController(
                     // Notify audio session id changed immediately after audio starts
                     try {
                         val sid = audioSessionId
-                        Log.d("PlayerController", "MediaPlayer created audioSessionId=$sid")
                         onAudioSessionIdChanged?.invoke(sid)
                     } catch (t: Throwable) {
                         Log.w("PlayerController", "onAudioSessionIdChanged invoke failed", t)
@@ -237,14 +236,9 @@ class PlayerController(
                 }
                 prepareAsync()
                 setOnCompletionListener {
-                    Log.d(
-                        "PlayerController",
-                        "Song completed - repeatMode: $repeatMode, currentIndex: $currentIndex, queue.size: ${queue.size}",
-                    )
                     when (repeatMode) {
                         RepeatMode.ONE -> {
                             // Repeat the same song
-                            Log.d("PlayerController", "RepeatMode.ONE - Repeating current song")
                             playCurrent()
                         }
 
@@ -254,7 +248,6 @@ class PlayerController(
                                 playCurrent()
                             } else {
                                 // Loop back to the beginning
-                                Log.d("PlayerController", "RepeatMode.ALL - Looping to beginning")
                                 currentIndex = 0
                                 playCurrent()
                             }
@@ -266,7 +259,6 @@ class PlayerController(
                                 playCurrent()
                             } else {
                                 // At the end with no repeat - just pause
-                                Log.d("PlayerController", "RepeatMode.NONE - End of queue, pausing")
                                 _state.update { it.copy(isPlaying = false) }
                                 releaseAudioFocus()
                                 progressJob?.cancel()
@@ -285,14 +277,12 @@ class PlayerController(
     fun setOnAudioSessionIdChangedListener(listener: ((Int) -> Unit)?) {
         onAudioSessionIdChanged = listener
         try {
-            Log.d("PlayerController", "setOnAudioSessionIdChangedListener registered")
         } catch (_: Exception) {
         }
     }
 
     fun setRepeatMode(mode: RepeatMode) {
         repeatMode = mode
-        Log.d("PlayerController", "RepeatMode set to: $mode")
     }
 
     private fun startProgressUpdates() {
@@ -406,11 +396,9 @@ class PlayerController(
     }
 
     fun next() {
-        Log.d("PlayerController", "next() called - repeatMode: $repeatMode, currentIndex: $currentIndex, queue.size: ${queue.size}")
 
         // RepeatMode.ONE means repeat the current song
         if (repeatMode == RepeatMode.ONE) {
-            Log.d("PlayerController", "RepeatMode.ONE - Replaying current song")
             playCurrent()
             return
         }
@@ -420,34 +408,28 @@ class PlayerController(
             playCurrent()
         } else {
             // When reaching the end, handle based on repeat mode
-            Log.d("PlayerController", "At end of queue - repeatMode: $repeatMode")
             when (repeatMode) {
                 RepeatMode.ALL -> {
                     // Loop back to the beginning
-                    Log.d("PlayerController", "RepeatMode.ALL - Looping to beginning")
                     currentIndex = 0
                     playCurrent()
                 }
 
                 RepeatMode.NONE -> {
                     // Do nothing - stay at the last song
-                    Log.d("PlayerController", "RepeatMode.NONE - At end, ignoring next button")
                 }
 
                 else -> {
                     // Shouldn't reach here
-                    Log.w("PlayerController", "Unexpected repeat mode at end: $repeatMode")
                 }
             }
         }
     }
 
     fun previous() {
-        Log.d("PlayerController", "previous() called - repeatMode: $repeatMode, currentIndex: $currentIndex")
 
         // RepeatMode.ONE means repeat the current song
         if (repeatMode == RepeatMode.ONE) {
-            Log.d("PlayerController", "RepeatMode.ONE - Replaying current song")
             playCurrent()
             return
         }
@@ -456,7 +438,6 @@ class PlayerController(
             currentIndex--
             playCurrent()
         } else {
-            Log.d("PlayerController", "At beginning - seeking to 0")
             seekTo(0L)
         }
     }
@@ -528,10 +509,6 @@ class PlayerController(
                         .build()
 
                 val result = audioManager.requestAudioFocus(audioFocusRequest!!)
-                Log.d(
-                    "PlayerController",
-                    "Audio focus requested (Android 8+): ${if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) "GRANTED" else "DENIED"}",
-                )
             } else {
                 @Suppress("DEPRECATION")
                 val result =
@@ -540,10 +517,6 @@ class PlayerController(
                         AudioManager.STREAM_MUSIC,
                         AudioManager.AUDIOFOCUS_GAIN,
                     )
-                Log.d(
-                    "PlayerController",
-                    "Audio focus requested (Android <8): ${if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) "GRANTED" else "DENIED"}",
-                )
             }
             pausedByAudioFocus = false
             duckedByAudioFocus = false
@@ -561,12 +534,10 @@ class PlayerController(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 audioFocusRequest?.let {
                     audioManager.abandonAudioFocusRequest(it)
-                    Log.d("PlayerController", "Audio focus released (Android 8+)")
                 }
             } else {
                 @Suppress("DEPRECATION")
                 audioManager.abandonAudioFocus(this)
-                Log.d("PlayerController", "Audio focus released (Android <8)")
             }
             pausedByAudioFocus = false
             duckedByAudioFocus = false
@@ -583,7 +554,6 @@ class PlayerController(
         when (focusChange) {
             AudioManager.AUDIOFOCUS_GAIN -> {
                 // We gained audio focus, resume playback if we paused due to focus loss
-                Log.d("PlayerController", "Audio focus: GAINED")
                 if (duckedByAudioFocus) {
                     try {
                         mediaPlayer?.setVolume(1f, 1f)
@@ -606,7 +576,6 @@ class PlayerController(
 
             AudioManager.AUDIOFOCUS_LOSS -> {
                 // We lost audio focus permanently, pause playback
-                Log.d("PlayerController", "Audio focus: LOST permanently")
                 try {
                     if (mediaPlayer?.isPlaying == true) {
                         mediaPlayer?.pause()
@@ -621,7 +590,6 @@ class PlayerController(
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                 // We lost audio focus temporarily (e.g., incoming call), pause playback
-                Log.d("PlayerController", "Audio focus: LOST (transient)")
                 try {
                     if (mediaPlayer?.isPlaying == true) {
                         mediaPlayer?.pause()
@@ -637,7 +605,6 @@ class PlayerController(
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 // We lost audio focus transiently but can continue playing at lower volume
                 // (e.g., navigation instructions, message notification)
-                Log.d("PlayerController", "Audio focus: LOST (transient, can duck)")
                 try {
                     // Reduce volume to 30% for ducking
                     mediaPlayer?.setVolume(0.3f, 0.3f)

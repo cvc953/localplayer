@@ -80,6 +80,23 @@ sealed class Screen(
     object Settings : Screen("Settings")
 
     object About : Screen("about")
+
+    object SongEdit : Screen("song-edit/{songId}") {
+        const val ARG_SONG_ID = "songId"
+
+        fun createRoute(songId: Long): String = "song-edit/$songId"
+    }
+
+    object AlbumEdit : Screen("album-edit/{albumName}/{artistName}") {
+        const val ARG_ALBUM_NAME = "albumName"
+        const val ARG_ARTIST_NAME = "artistName"
+
+        fun createRoute(albumName: String, artistName: String): String {
+            val encodedAlbum = URLEncoder.encode(albumName, StandardCharsets.UTF_8.toString())
+            val encodedArtist = URLEncoder.encode(artistName, StandardCharsets.UTF_8.toString())
+            return "album-edit/$encodedAlbum/$encodedArtist"
+        }
+    }
 }
 
 /**
@@ -109,6 +126,17 @@ val playlistDetailArguments =
 val genreDetailArguments =
     listOf(
         navArgument(Screen.GenreDetail.ARG_GENRE_NAME) { type = NavType.StringType },
+    )
+
+val songEditArguments =
+    listOf(
+        navArgument(Screen.SongEdit.ARG_SONG_ID) { type = NavType.LongType },
+    )
+
+val albumEditArguments =
+    listOf(
+        navArgument(Screen.AlbumEdit.ARG_ALBUM_NAME) { type = NavType.StringType },
+        navArgument(Screen.AlbumEdit.ARG_ARTIST_NAME) { type = NavType.StringType },
     )
 
 /**

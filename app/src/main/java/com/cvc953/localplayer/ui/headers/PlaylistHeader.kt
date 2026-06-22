@@ -80,8 +80,27 @@ fun PlaylistHeader(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            val totalDurationMs = remember(playlistSongs) {
+                var sum = 0L; for (s in playlistSongs) sum += s.duration; sum
+            }
             Text(
-                text = stringResource(R.string.songs_count, playlistSongs.size),
+                text = buildString {
+                    append(playlistSongs.size)
+                    append(" canciones")
+                    if (totalDurationMs > 0) {
+                        append(" • ")
+                        val totalSec = totalDurationMs / 1000
+                        val h = totalSec / 3600
+                        val m = (totalSec % 3600) / 60
+                        val s = totalSec % 60
+                        if (h > 0) {
+                            append("$h:")
+                            append("%02d:%02d".format(m, s))
+                        } else {
+                            append("%02d:%02d".format(m, s))
+                        }
+                    }
+                },
                 fontSize = 16.sp,
                 color = MaterialTheme.extendedColors.textSecondary,
             )

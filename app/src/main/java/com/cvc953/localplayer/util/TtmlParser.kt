@@ -15,6 +15,7 @@ import org.xmlpull.v1.XmlPullParserFactory
  */
 object TtmlParser {
     private const val NS_ITUNES = "http://music.apple.com/lyric-ttml-internal"
+    private const val NS_TTM = "http://www.w3.org/ns/ttml#metadata"
 
     // Reuse factory to avoid expensive re-instantiation
     private val factory: XmlPullParserFactory = XmlPullParserFactory.newInstance().apply { isNamespaceAware = true }
@@ -59,6 +60,10 @@ object TtmlParser {
                         "tt" -> {
                             // Get timing mode from root element
                             timingMode = parser.getAttributeValue(NS_ITUNES, "timing") ?: "Word"
+                        }
+
+                        "head" -> {
+                            parseHead(parser, metadata)
                         }
 
                         "div" -> {
@@ -121,6 +126,66 @@ object TtmlParser {
             }
         }
         return lines
+    }
+
+    /**
+     * Parsea el <head> del TTML para extraer metadatos.
+     */
+    private fun parseHead(parser: XmlPullParser, metadata: TtmlMetadata) {
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG && parser.name == "metadata") {
+                parseMetadata(parser, metadata)
+                return
+            }
+            if (parser.eventType == XmlPullParser.END_TAG && parser.name == "head") return
+        }
+    }
+
+    /**
+     * Parsea los elementos dentro de <metadata> buscando etiquetas
+     * en el namespace ttm (http://www.w3.org/ns/ttml#metadata):
+     *   <ttm:title>, <ttm:artist>, <ttm:album>,
+     *   <ttm:lang>, <ttm:source>
+     * así como <songwriters> con múltiples <writer> hijos.
+     */
+    private fun parseMetadata(parser: XmlPullParser, metadata: TtmlMetadata) {
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            if (parser.eventType == XmlPullParser.START_TAG) {
+                when (parser.name) {
+                    "title" -> { if (parser.namespace == NS_TTM) metadata.title = parser.nextText().trim() }
+                    "artist" -> { if (parser.namespace == NS_TTM) metadata.artist = parser.nextText().trim() }
+                    "album" -> { if (parser.namespace == NS_TTM) metadata.album = parser.nextText().trim() }
+                    "lang" -> { if (parser.namespace == NS_TTM) metadata.language = parser.nextText().trim() }
+                    "source" -> { if (parser.namespace == NS_TTM) metadata.source = parser.nextText().trim() }
+                    "songwriters" -> parseSongwriters(parser, metadata)
+                }
+            } else if (parser.eventType == XmlPullParser.END_TAG && parser.name == "metadata") {
+                return
+            }
+        }
+    }
+
+    /**
+     * Parsea <songwriters> con múltiples <writer> hijos.
+     */
+    private fun parseSongwriters(parser: XmlPullParser, metadata: TtmlMetadata) {
+        val writers = mutableListOf<String>()
+        while (parser.next() != XmlPullParser.END_DOCUMENT) {
+            when (parser.eventType) {
+                XmlPullParser.START_TAG -> {
+                    if (parser.name == "writer") {
+                        val text = parser.nextText().trim()
+                        if (text.isNotEmpty()) writers.add(text)
+                    }
+                }
+                XmlPullParser.END_TAG -> {
+                    if (parser.name == "songwriters") {
+                        if (writers.isNotEmpty()) metadata.songWriters = writers
+                        return
+                    }
+                }
+            }
+        }
     }
 
     private fun parseParagraph(parser: XmlPullParser): TtmlLine? {

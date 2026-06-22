@@ -4,7 +4,6 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -49,6 +48,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -93,6 +95,7 @@ fun AlbumsScreen(
     playbackViewModel: PlaybackViewModel,
     playerViewModel: PlayerViewModel,
     onAlbumClick: (albumName: String, artistName: String) -> Unit,
+    onEditAlbum: (albumName: String, artistName: String) -> Unit = { _, _ -> },
 ) {
     val songViewModel: SongViewModel =
         viewModel()
@@ -107,6 +110,14 @@ fun AlbumsScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     var lastBackPressTime by remember { mutableStateOf(0L) }
+
+    // Refrescar álbumes desde caché cada vez que la pantalla se muestra
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            albumViewModel.loadAlbums()
+        }
+    }
 
     BackHandler {
         val currentTime = System.currentTimeMillis()
@@ -357,10 +368,6 @@ fun AlbumsScreen(
                                 withContext(Dispatchers.IO) {
                                     try {
                                         val uri = firstSong?.uri ?: return@withContext
-                                        Log.d(
-                                            "AlbumsScreen",
-                                            "Loading art for album='${album.name}' artist='${album.artist}' uri=$uri filePath=${firstSong?.filePath}",
-                                        )
                                         val retriever = MediaMetadataRetriever()
                                         retriever.setDataSource(context, uri)
                                         val embedded = retriever.embeddedPicture
@@ -371,20 +378,11 @@ fun AlbumsScreen(
                                                     0,
                                                     embedded.size,
                                                 )
-                                            Log.d(
-                                                "AlbumsScreen",
-                                                "Embedded art found for uri=$uri size=${embedded.size}",
-                                            )
                                         } else {
-                                            Log.d("AlbumsScreen", "No embedded art for uri=$uri")
                                         }
                                         retriever.release()
 
                                         if (albumArt == null) {
-                                            Log.d(
-                                                "AlbumsScreen",
-                                                "Trying contentResolver fallback for uri=$uri",
-                                            )
                                             try {
                                                 context.contentResolver
                                                     .openInputStream(uri)
@@ -393,18 +391,10 @@ fun AlbumsScreen(
                                                             BitmapFactory.decodeStream(stream)
                                                     }
                                             } catch (e: Exception) {
-                                                Log.d(
-                                                    "AlbumsScreen",
-                                                    "contentResolver fallback failed: ${e.message}",
-                                                )
                                             }
                                         }
 
                                         if (albumArt == null) {
-                                            Log.d(
-                                                "AlbumsScreen",
-                                                "Trying file fallback for filePath=${firstSong?.filePath}",
-                                            )
                                             val path = firstSong?.filePath
                                             if (!path.isNullOrBlank()) {
                                                 try {
@@ -424,10 +414,6 @@ fun AlbumsScreen(
                                                             albumArt =
                                                                 BitmapFactory.decodeFile(f.absolutePath)
                                                             if (albumArt != null) {
-                                                                Log.d(
-                                                                    "AlbumsScreen",
-                                                                    "Found external cover file=${f.absolutePath}",
-                                                                )
                                                                 break
                                                             }
                                                         }
@@ -437,10 +423,6 @@ fun AlbumsScreen(
                                             }
                                         }
                                     } catch (e: Exception) {
-                                        Log.d(
-                                            "AlbumsScreen",
-                                            "Unexpected error loading art: ${e.message}",
-                                        )
                                     }
                                 }
                             }
@@ -572,6 +554,18 @@ contentDescription = stringResource(R.string.action_more_options),
                                                             context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                             Toast.LENGTH_SHORT,
                                                         ).show()
+                                                },
+                                            )
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Text(
+                                                        stringResource(R.string.action_edit),
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                    )
+                                                },
+                                                onClick = {
+                                                    menuExpanded = false
+                                                    onEditAlbum(album.name, album.artist)
                                                 },
                                             )
                                         }
@@ -867,13 +861,25 @@ contentDescription = stringResource(R.string.action_more_options),
                                                 val currentQueue = playbackViewModel.queue.value
                                                 val toAdd =
                                                     albumSongs.filter { song -> currentQueue.none { it.id == song.id } }
-                                                toAdd.forEach { playbackViewModel.addToQueueEnd(it) }
+                                                playbackViewModel.addToQueueEndAll(toAdd)
                                                 Toast
                                                     .makeText(
                                                         context,
                                                         context.getString(R.string.toast_added_queue_end_count, toAdd.size),
                                                         Toast.LENGTH_SHORT,
                                                     ).show()
+                                            },
+                                        )
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    stringResource(R.string.action_edit),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                )
+                                            },
+                                            onClick = {
+                                                menuExpanded = false
+                                                onEditAlbum(album.name, album.artist)
                                             },
                                         )
                                     }

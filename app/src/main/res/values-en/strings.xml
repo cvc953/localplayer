@@ -62,8 +62,8 @@
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Customize app and your library</string>
     <string name="action_close">Close</string>
-    <string name="settings_section_appearance_title">Appearance and behavior</string>
-    <string name="settings_section_appearance_subtitle">Global display and scan options</string>
+    <string name="settings_section_appearance_title">Appearance</string>
+    <string name="settings_section_appearance_subtitle">Customize the visual appearance of the app</string>
     <string name="settings_theme_label">Theme</string>
     <string name="settings_theme_description">Select app theme</string>
     <string name="theme_light">Light</string>
@@ -108,12 +108,25 @@
     <string name="settings_equalizer_enable_description">Use native system equalizer</string>
     <string name="action_open_equalizer">Open advanced equalizer</string>
 
+    <string name="settings_section_navigation_title">Navigation</string>
+    <string name="settings_section_navigation_subtitle">Configure the navigation bar tabs</string>
+    <string name="settings_section_player_title">Player</string>
+    <string name="settings_section_player_subtitle">Customize player behavior</string>
+
     <string name="settings_section_library_title">Library</string>
     <string name="settings_section_library_subtitle">Manage folders included in music</string>
     <string name="settings_auto_scan_label">Auto scan</string>
     <string name="settings_auto_scan_description">Detect changes and scan automatically</string>
     <string name="settings_default_tab_label">Default tab</string>
     <string name="settings_default_tab_description">Choose which section opens when the app starts</string>
+    <string name="settings_songs_tab_label">Songs tab</string>
+    <string name="settings_songs_tab_description">Show the songs tab in the navigation bar</string>
+    <string name="settings_albums_tab_label">Albums tab</string>
+    <string name="settings_albums_tab_description">Show the albums tab in the navigation bar</string>
+    <string name="settings_artists_tab_label">Artists tab</string>
+    <string name="settings_artists_tab_description">Show the artists tab in the navigation bar</string>
+    <string name="settings_playlists_tab_label">Playlists tab</string>
+    <string name="settings_playlists_tab_description">Show the playlists tab in the navigation bar</string>
     <string name="settings_genres_tab_label">Genres tab</string>
     <string name="settings_genres_tab_description">Show the genres tab in the navigation bar</string>
     <string name="action_add_folder">Add folder</string>
@@ -189,6 +202,7 @@
     <string name="toast_removed_from_playlist">Removed from playlist</string>
     <string name="action_play">Play</string>
     <string name="action_shuffle">Shuffle</string>
+    <string name="action_play_all">Play all</string>
     <string name="action_add_to_favorites">Add to favorites</string>
     <string name="action_remove_from_favorites">Remove from favorites</string>
     <string name="action_remove_from_playlist">Remove from playlist</string>
@@ -217,4 +231,48 @@
     <string name="queue_title_upcoming">Upcoming</string>
     <string name="queue_empty_upcoming">No upcoming songs</string>
     <string name="action_reorder">Reorder</string>
+
+    <!-- Color Picker -->
+    <string name="color_picker_title">Custom color</string>
+    <string name="color_picker_hue">Hue</string>
+    <string name="color_picker_saturation">Saturation</string>
+    <string name="color_picker_brightness">Brightness</string>
+    <string name="color_picker_accept">Accept</string>
+
+    <!-- Edit Song / Album -->
+    <string name="edit_song_title">Edit Song</string>
+    <string name="edit_album_title">Edit Album</string>
+    <string name="action_save">Save</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_play_random">Play random</string>
+    <string name="field_title">Title</string>
+    <string name="field_artist">Artist</string>
+    <string name="field_album">Album</string>
+    <string name="field_genre">Genre</string>
+    <string name="field_year">Year</string>
+    <string name="field_track_number">Track #</string>
+    <string name="field_disc_number">Disc #</string>
+    <string name="cover_art_change">Change cover</string>
+    <string name="cover_art_tap_hint">Tap to select an image</string>
+    <string name="validation_title_required">Title cannot be empty</string>
+    <string name="validation_year_invalid">Year must be a valid number</string>
+    <string name="error_save_failed">Save failed — file may be in use</string>
+    <string name="edit_details">Edit details</string>
+    <string name="album_edit_track_count">Applies to %d tracks</string>
+    <string name="album_edit_partial_failure_title">Some tracks failed</string>
+    <string name="album_edit_partial_failure_message">%d tracks updated, %d failed</string>
+    <string name="error_invalid_image">Invalid image</string>
+    <string name="error_file_in_use">File in use — close other apps</string>
+    <string name="error_format_not_writable">This format does not support tag writing</string>
+
+    <string name="albums_count">%d albums</string>
+    <string name="playlists_count">%d playlists</string>
+    <string name="genres_count">%d genres</string>
+    <string name="artists_count">%d artists</string>
+    <string name="action_delete_song">Delete song</string>
+    <string name="delete_song_confirm_title">Delete song?</string>
+    <string name="delete_song_confirm_message">This song will be deleted from the device.</string>
+    <string name="delete_song_final_title">Are you sure?</string>
+    <string name="delete_song_final_message">This action cannot be undone.</string>
+    <string name="toast_song_deleted">Song deleted</string>
 </resources>

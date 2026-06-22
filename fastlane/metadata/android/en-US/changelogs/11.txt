@@ -1,0 +1,9 @@
+- Edit song and album metadata + cover art from player and album screen
+- New Genres tab with genre detail screen (toggle in Settings)
+- Custom accent color picker with hex input
+- Settings and About menu in Albums, Artists, and Playlists
+- Artist Z-A and Recently Added sort options
+- TimeLyr link in synchronized lyrics
+- Delete songs
+- Configurable bottom navigation tabs
+- Fixed battery drain and scoped storage issues on Android 11+

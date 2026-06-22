@@ -9,9 +9,12 @@ import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.media.MediaScannerConnection
 import android.util.Log
-import androidx.compose.material3.MediumTopAppBar
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.util.TagWriteInput
+import com.cvc953.localplayer.util.TagWriteResult
+import com.cvc953.localplayer.util.TagWriter
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -114,18 +117,11 @@ class SongRepository(
      * manualmente la biblioteca.
      */
     fun forceRescanSongs(): List<Song> {
-        Log.d("SongRepository", "Iniciando forceRescanSongs...")
         val songs = scanSongsFromMediaStore()
-        Log.d(
-            "SongRepository",
-            "Escaneo completado: ${songs.size} canciones encontradas",
-        )
         if (songs.isNotEmpty()) {
             saveSongsToCache(songs)
             prefs.setFirstScanDone()
-            Log.d("SongRepository", "Caché actualizado")
         } else {
-            Log.w("SongRepository", "No se encontraron canciones en el escaneo")
         }
         return songs
     }
@@ -170,7 +166,6 @@ class SongRepository(
         }
 
         val selectionInfo = buildSelectionForFolder()
-        Log.d("SongRepository", "scanSongsFromMediaStore: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
 
         val cursor =
             try {
@@ -248,10 +243,6 @@ class SongRepository(
             }
         }
 
-        Log.d(
-            "SongRepository",
-            "Escaneo: Total=$totalScanned, Excluidos=$excluded, Agregados=${list.size}",
-        )
         return list
     }
 
@@ -300,7 +291,6 @@ class SongRepository(
             // Invalidar caché si no tiene el campo genre (cache de versión anterior)
             val first = json.getJSONObject(0)
             if (!first.has("genre")) {
-                Log.d("SongRepository", "Cache version mismatch (missing genre), forcing rescan")
                 return emptyList()
             }
 
@@ -352,7 +342,6 @@ class SongRepository(
             try {
                 val uri = Uri.parse(folderUriString)
                 val treeId = DocumentsContract.getTreeDocumentId(uri)
-                Log.d("SongRepository", "buildSelectionForFolder: folderUri=$folderUriString treeId=$treeId")
                 if (treeId.startsWith("primary:")) {
                     val rel = treeId.removePrefix("primary:").trimStart('/')
                     if (rel.isEmpty()) {
@@ -387,12 +376,10 @@ class SongRepository(
         }
 
         if (clauses.isEmpty()) {
-            Log.d("SongRepository", "buildSelectionForFolder: no valid clauses, using no selection")
             return Pair(base, null)
         }
 
         val selection = "(" + clauses.joinToString(" OR ") + ") AND " + base
-        Log.d("SongRepository", "buildSelectionForFolder: selection=$selection args=${args.joinToString()}")
         return Pair(selection, args.toTypedArray())
     }
 
@@ -431,7 +418,6 @@ class SongRepository(
 
     fun countSongsForFolder(folderUriString: String): Int {
         val sel = buildSelectionForSingleFolder(folderUriString)
-        Log.d("SongRepository", "countSongsForFolder: selection=${sel.first} args=${sel.second?.joinToString()}")
         val cursor =
             context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -447,7 +433,6 @@ class SongRepository(
 
     private fun countSongs(): Int {
         val selectionInfo = buildSelectionForFolder()
-        Log.d("SongRepository", "countSongs: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
         val cursor =
             context.contentResolver.query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -483,7 +468,6 @@ class SongRepository(
         val list = mutableListOf<Song>()
 
         val selectionInfo = buildSelectionForFolder()
-        Log.d("SongRepository", "scanSongs: selection=${selectionInfo.first} args=${selectionInfo.second?.joinToString()}")
 
         val cursor =
             try {
@@ -725,5 +709,90 @@ class SongRepository(
             .groupBy { Pair(it.album.ifBlank { "Desconocido" }, it.artist.ifBlank { "Desconocido" }) }
             .map { (key, songs) -> Album(key.first, key.second, songs.size) }
             .sortedWith(compareBy({ it.name.lowercase() }, { it.artist.lowercase() }))
+    }
+
+    /**
+     * Elimina una canción del dispositivo a través de MediaStore y limpia la caché.
+     * En API 30+, el sistema ya borró el archivo via [MediaStore.createDeleteRequest],
+     * solo invalidamos la caché y refrescamos.
+     */
+    fun deleteSong(song: Song): Boolean {
+        // En API 30+ el sistema ya borró el archivo via createDeleteRequest
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            invalidateCache()
+            return true
+        }
+        return try {
+            val deleted = context.contentResolver.delete(song.uri, null, null)
+            if (deleted > 0) {
+                invalidateCache()
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("SongRepository", "Error deleting song", e)
+            false
+        }
+    }
+
+    /**
+     * Escribe tags en un archivo de audio usando TagWriter.
+     */
+    fun writeTags(
+        uri: android.net.Uri,
+        filePath: String?,
+        input: TagWriteInput,
+    ): Result<TagWriteResult> {
+        return TagWriter.writeTags(context, filePath, uri, input)
+    }
+
+    /**
+     * Actualiza los campos editables en la caché para una canción específica.
+     */
+    fun updateSongInCache(
+        songId: Long,
+        input: TagWriteInput,
+    ) {
+        try {
+            val text =
+                context.openFileInput("songs_cache.json").bufferedReader().use { it.readText() }
+            val json = JSONArray(text)
+            for (i in 0 until json.length()) {
+                val obj = json.getJSONObject(i)
+                if (obj.getLong("id") == songId) {
+                    input.title?.let { obj.put("title", it) }
+                    input.artist?.let { obj.put("artist", it) }
+                    input.album?.let { obj.put("album", it) }
+                    input.genre?.let { obj.put("genre", it) }
+                    input.year?.let { obj.put("year", it.toIntOrNull() ?: obj.getInt("year")) }
+                    break
+                }
+            }
+            context.openFileOutput("songs_cache.json", Context.MODE_PRIVATE).use {
+                it.write(json.toString().toByteArray())
+            }
+        } catch (_: Exception) {
+            // Si falla la actualización de caché, no es crítico
+        }
+    }
+
+    /**
+     * Solicita al MediaScanner que re-escanee un archivo específico.
+     */
+    fun scanSingleFile(filePath: String) {
+        try {
+            MediaScannerConnection.scanFile(context, arrayOf(filePath), null, null)
+        } catch (e: Exception) {
+            Log.e("SongRepository", "Error scanning file: $filePath", e)
+        }
+    }
+
+    /**
+     * Invalida la caché forzando un re-escaneo en la próxima carga.
+     */
+    private fun invalidateCache() {
+        context.deleteFile("songs_cache.json")
+        prefs.setFirstScanDone()
     }
 }

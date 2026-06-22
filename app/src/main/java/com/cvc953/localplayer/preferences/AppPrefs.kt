@@ -214,7 +214,35 @@ class AppPrefs(
         prefs.edit().putBoolean("show_audio_info", show).apply()
     }
 
-    // Whether the Genres tab is visible in the bottom navigation
+    // Tab visibility in the bottom navigation
+    fun isSongsTabEnabled(): Boolean =
+        prefs.getBoolean("songs_tab_enabled", true)
+
+    fun setSongsTabEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("songs_tab_enabled", enabled).apply()
+    }
+
+    fun isAlbumsTabEnabled(): Boolean =
+        prefs.getBoolean("albums_tab_enabled", true)
+
+    fun setAlbumsTabEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("albums_tab_enabled", enabled).apply()
+    }
+
+    fun isArtistsTabEnabled(): Boolean =
+        prefs.getBoolean("artists_tab_enabled", true)
+
+    fun setArtistsTabEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("artists_tab_enabled", enabled).apply()
+    }
+
+    fun isPlaylistsTabEnabled(): Boolean =
+        prefs.getBoolean("playlists_tab_enabled", true)
+
+    fun setPlaylistsTabEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean("playlists_tab_enabled", enabled).apply()
+    }
+
     fun isGenresTabEnabled(): Boolean =
         prefs.getBoolean("genres_tab_enabled", true)
 
@@ -296,17 +324,13 @@ class AppPrefs(
     // Language preference: "sistema", "es", "en", "it"
     fun getLanguage(): String {
         val lang = prefs.getString("app_language", "sistema") ?: "sistema"
-        android.util.Log.d("AppPrefs", "getLanguage() = $lang")
         return lang
     }
 
     fun setLanguage(language: String) {
-        android.util.Log.d("AppPrefs", "setLanguage($language)")
         if (language != "sistema" && language != "es" && language != "en" && language != "it") {
-            android.util.Log.w("AppPrefs", "Invalid language code: $language, rejecting")
             return
         }
         prefs.edit().putString("app_language", language).apply()
-        android.util.Log.d("AppPrefs", "Language saved: $language")
     }
 }

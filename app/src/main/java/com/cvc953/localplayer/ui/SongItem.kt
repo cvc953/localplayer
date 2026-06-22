@@ -1,9 +1,16 @@
 package com.cvc953.localplayer.ui
 
+import android.app.Activity
+import android.content.IntentSender
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
+import android.os.Build
+import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -92,6 +99,8 @@ fun SongItem(
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
     onLongClick: (() -> Unit)? = null,
+    onEdit: ((Song) -> Unit)? = null,
+    onDelete: ((Song) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
@@ -207,6 +216,18 @@ fun SongItem(
         var showPlaylistDialog by remember { mutableStateOf(false) }
         var showCreatePlaylistDialog by remember { mutableStateOf(false) }
         var newPlaylistName by remember { mutableStateOf("") }
+        var pendingDeleteSong by remember { mutableStateOf<Song?>(null) }
+
+        val deleteLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartIntentSenderForResult(),
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                pendingDeleteSong?.let { song ->
+                    onDelete?.invoke(song)
+                }
+            }
+            pendingDeleteSong = null
+        }
 
         Box {
             IconButton(onClick = { menuExpanded = true }) {
@@ -295,6 +316,39 @@ fun SongItem(
                         }
                     },
                 )
+                if (onEdit != null) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_edit), color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            menuExpanded = false
+                            onEdit(song)
+                        },
+                    )
+                }
+                if (onDelete != null) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_delete_song), color = MaterialTheme.colorScheme.error) },
+                        onClick = {
+                            menuExpanded = false
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                                pendingDeleteSong = song
+                                try {
+                                    val pendingIntent = MediaStore.createDeleteRequest(
+                                        context.contentResolver,
+                                        listOf(song.uri),
+                                    )
+                                    deleteLauncher.launch(
+                                        IntentSenderRequest.Builder(pendingIntent).build(),
+                                    )
+                                } catch (_: Exception) {
+                                    onDelete?.invoke(song)
+                                }
+                            } else {
+                                onDelete?.invoke(song)
+                            }
+                        },
+                    )
+                }
             }
         }
 

@@ -31,7 +31,6 @@ class EqualizerController(
                     this.enabled = enabled
                 }
                 savedEnabledState = enabled
-                Log.d("EqualizerController", "Equalizer reused for session $sessionId")
                 return
             }
 
@@ -58,10 +57,6 @@ class EqualizerController(
             // Save the enabled state before reinitializing to prevent transient audio pops
             // savedEnabledState = equalizer?.enabled ?: false
             savedEnabledState = enabled
-            Log.d(
-                "EqualizerController",
-                "Equalizer initialized with session $sessionId, bands=${equalizer?.numberOfBands}, restoring enabled=$savedEnabledState",
-            )
         } catch (e: Exception) {
             Log.e("EqualizerController", "Error initializing equalizer", e)
         }
@@ -71,7 +66,6 @@ class EqualizerController(
         try {
             if (savedEnabledState && equalizer != null) {
                 equalizer?.enabled = true
-                Log.d("EqualizerController", "Restored equalizer enabled state: true")
             }
         } catch (e: Exception) {
             Log.e("EqualizerController", "Error restoring enabled state", e)

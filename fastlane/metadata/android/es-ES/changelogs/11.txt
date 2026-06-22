@@ -1,0 +1,9 @@
+- Edita metadatos y carátula de canciones y álbumes desde el reproductor y detalle de álbum
+- Nueva pestaña de Géneros con pantalla de detalle (toggle en Ajustes)
+- Selector de color de acento personalizado con entrada HEX
+- Menú de Ajustes y Acerca de en Álbumes, Artistas y Listas
+- Ordenamiento Artista Z-A y Agregado recientemente
+- Enlace a TimeLyr en letras sincronizadas
+- Eliminación de canciones
+- Pestañas de navegación configurables
+- Correcciones de batería y almacenamiento con ámbito en Android 11+

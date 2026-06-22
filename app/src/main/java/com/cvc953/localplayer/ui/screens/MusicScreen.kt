@@ -102,6 +102,10 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
         val showEqualizer by equalizerViewModel.isEqualizerVisible.collectAsState()
         val showAbout by playerViewModel.isAboutVisible.collectAsState()
         val defaultStartTab by mainViewModel.defaultStartTab.collectAsState()
+        val songsTabEnabled by mainViewModel.songsTabEnabled.collectAsState()
+        val albumsTabEnabled by mainViewModel.albumsTabEnabled.collectAsState()
+        val artistsTabEnabled by mainViewModel.artistsTabEnabled.collectAsState()
+        val playlistsTabEnabled by mainViewModel.playlistsTabEnabled.collectAsState()
         val genresTabEnabled by mainViewModel.genresTabEnabled.collectAsState()
         val activity = context as? Activity
         var lastBackPressTime by remember { mutableLongStateOf(0L) }
@@ -263,6 +267,10 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
             // Se desliza hacia abajo cuando el sheet se expande
             BottomNavigationBar(
                 navController = navController,
+                songsTabEnabled = songsTabEnabled,
+                albumsTabEnabled = albumsTabEnabled,
+                artistsTabEnabled = artistsTabEnabled,
+                playlistsTabEnabled = playlistsTabEnabled,
                 genresTabEnabled = genresTabEnabled,
                 modifier =
                     Modifier
@@ -313,17 +321,27 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
         }
 
         BackHandler {
-            val currentTime = System.currentTimeMillis()
-            if (currentTime - lastBackPressTime < 1000) {
-                activity?.finish()
-            } else {
-                lastBackPressTime = currentTime
-                Toast
-                    .makeText(
-                        context,
-                        toastPressBackAgain,
-                        Toast.LENGTH_SHORT,
-                    ).show()
+            // 1. Si el PlayerScreen está expandido, colapsarlo
+            if (sheetState.currentValue == SheetValue.Expanded) {
+                scope.launch { sheetState.partialExpand() }
+                return@BackHandler
+            }
+
+            // 2. Si el NavHost puede navegar hacia atrás, hacerlo
+            if (navController.popBackStack().not()) {
+                // 3. No hay más pantallas atrás — mostrar "presiona de nuevo para salir"
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastBackPressTime < 1000) {
+                    activity?.finish()
+                } else {
+                    lastBackPressTime = currentTime
+                    Toast
+                        .makeText(
+                            context,
+                            toastPressBackAgain,
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                }
             }
         }
     }

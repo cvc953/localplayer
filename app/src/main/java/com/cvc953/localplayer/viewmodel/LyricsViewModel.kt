@@ -7,6 +7,7 @@ import com.cvc953.localplayer.controller.LyricsController
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.util.LrcLine
+import com.cvc953.localplayer.util.isInstrumentalContent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,11 +25,13 @@ class LyricsViewModel(
     val isLoading: StateFlow<Boolean> = _isLoading
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
+    private val _isInstrumental = MutableStateFlow(false)
+    val isInstrumental: StateFlow<Boolean> = _isInstrumental
 
     fun loadLyricsForSong(song: Song) {
-        // Only load from cache to avoid expensive file IO / parsing on UI open.
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
+            _isInstrumental.value = false
             _error.value = null
             try {
                 var audioFilePath = song.filePath
@@ -62,12 +65,9 @@ class LyricsViewModel(
                                 return@launch
                             }
 
-                            // If there's a TTML file but no cache, parse it now (still on IO dispatcher)
                             try {
                                 val text = ttmlFile.readText()
                                 val parsed = com.cvc953.localplayer.util.TtmlParser.parseTtml(text)
-                                
-                                // Solo usar TTML si tiene líneas
                                 if (parsed.lines.isNotEmpty()) {
                                     _ttmlLyrics.value = parsed
                                     _lyrics.value = parsed.lines.map { com.cvc953.localplayer.util.LrcLine(it.timeMs, it.text) }
@@ -76,18 +76,29 @@ class LyricsViewModel(
                                     } catch (_: Exception) {}
                                     _isLoading.value = false
                                     return@launch
-                                } else {
-                                    android.util.Log.w("LyricsDebug", "TTML parseado pero vacío, intentando con LRC")
                                 }
-                            } catch (e: Exception) {
-                                android.util.Log.e("LyricsDebug", "Error parseando TTML, intentando con LRC como fallback: ${e.message}")
+                            } catch (_: Exception) {
                             }
                         }
-                        // Si no hay TTML o falló el parsing, intentar con LRC
+
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
                         if (lrcFile.exists()) {
                             val text = lrcFile.readText()
+
+                            // Detectar [Instrumental] en el texto crudo
+                            _isInstrumental.value = isInstrumentalContent(text)
+
                             val (lrcLines, ttml) = LyricsController.parseLyrics(text)
+
+                            // THE FIX: si no hay líneas con timestamp y no es instrumental → "sin letra"
+                            val hasTimed = lrcLines.any { !it.isMetadata }
+                            if (!hasTimed && !_isInstrumental.value) {
+                                _ttmlLyrics.value = null
+                                _lyrics.value = emptyList()
+                                _isLoading.value = false
+                                return@launch
+                            }
+
                             _ttmlLyrics.value = ttml
                             _lyrics.value = lrcLines
                             _isLoading.value = false
@@ -98,10 +109,12 @@ class LyricsViewModel(
 
                 _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
+                _isInstrumental.value = false
                 _error.value = "No se encontraron letras para la canción."
             } catch (e: Exception) {
                 _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
+                _isInstrumental.value = false
                 _error.value = "Error cargando letras: ${e.message}"
             } finally {
                 _isLoading.value = false
@@ -109,9 +122,6 @@ class LyricsViewModel(
         }
     }
 
-    /**
-     * Prefetch TTML parsing and save to disk cache. Heavy IO and parsing; call on song start.
-     */
     fun prefetchTtml(song: Song) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -135,7 +145,6 @@ class LyricsViewModel(
                 val audioDir = audioFile.parentFile ?: return@launch
                 val audioNameWithoutExt = audioFile.nameWithoutExtension
 
-                // Try explicit .ttml next to audio
                 val ttmlFile = File(audioDir, "$audioNameWithoutExt.ttml")
                 if (ttmlFile.exists()) {
                     try {
@@ -148,7 +157,6 @@ class LyricsViewModel(
                     }
                 }
 
-                // Otherwise scan directory for matching TTML file
                 val ttmlFiles = audioDir.listFiles { _, name -> name.endsWith(".ttml", ignoreCase = true) } ?: return@launch
                 ttmlFiles.forEach { file ->
                     val ttmlNameWithoutExt = file.nameWithoutExtension
@@ -173,6 +181,7 @@ class LyricsViewModel(
     fun clearLyrics() {
         _ttmlLyrics.value = null
         _lyrics.value = emptyList()
+        _isInstrumental.value = false
         _error.value = null
     }
 }

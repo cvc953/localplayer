@@ -6,6 +6,34 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 
+## [1.1.0]
+
+### Añadido
+- ✏️ Edición de metadatos y carátula de canciones (título, artista, álbum, género, año, pista, disco, imagen) desde el reproductor
+- ✏️ Edición de metadatos y carátula de álbumes completos desde la pantalla de detalle de álbum
+- 🏷️ Nueva pestaña de Géneros con vista configurable y pantalla de detalle
+- 🎨 Selector de color de acento personalizado con entrada de código HEX
+- ⚙️ Menú de Ajustes y Acerca de en pantallas de Álbumes, Artistas y Listas
+- 🔤 Nuevas opciones de ordenamiento: Artista Z-A y Agregado recientemente
+- 🔗 Enlace a TimeLyr en letras sincronizadas
+- ❌ Eliminación de canciones
+- 🎤 Detección de pistas instrumentales en letras
+
+### Cambiado
+- 🔄 Pestañas de navegación configurables (mostrar/ocultar cada una desde Ajustes)
+- 🔀 Botones de reproducción aleatoria y secuencial ahora operan sobre la pantalla actual (Álbumes, Listas, Géneros) en vez de toda la biblioteca
+- 🎨 Limpieza general de logs de depuración para reducir uso de batería
+
+### Corregido
+- 🔋 Reducción del consumo de batería — corregido polling de progreso, fugas de corrutinas y observadores duplicados
+- 📋 Corregido el conflicto entre drag-to-reorder y selección múltiple en detalle de lista
+- 🐛 Corregido el selector de color que no aplicaba el valor HEX personalizado
+- 🔄 Corregido el manejo de columna GENRE nula en todos los métodos de escaneo
+- 🗑️ Corregida la eliminación de canciones en Android 11+ (almacenamiento con ámbito)
+- 🖼️ Corregida la edición de carátula en Android 11+ (almacenamiento con ámbito)
+- 📝 Corregida la detección de letras en texto plano (ya no se muestran como letras sincronizadas)
+- 🧹 Eliminadas referencias a sistema de skins inexistente en los changelogs
+
 ## [1.0.11]
 
 ### Cambiado
@@ -205,7 +233,9 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `Corregido` para correcciones de bugs
 - `Seguridad` para vulnerabilidades corregidas
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/cvc953/localplayer/compare/v1.0.11...v1.1.0
+[1.0.11]: https://github.com/cvc953/localplayer/compare/v1.0.10...v1.0.11
 [1.0.7]: https://github.com/cvc953/localplayer/compare/v1.0.5...v1.0.7
 [1.0.4]: https://github.com/cvc953/localplayer/compare/v1.0.0...v1.0.4
 [1.0.0]: https://github.com/cvc953/localplayer/releases/tag/v1.0.0

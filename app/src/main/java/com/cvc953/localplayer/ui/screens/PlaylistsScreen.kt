@@ -32,10 +32,15 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -555,8 +560,81 @@ fun PlaylistsScreen(
                             end = 4.dp,
                         ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(sortedPlaylists) { playlist ->
+                    ) {
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(end = 12.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.PlaylistPlay,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.playlists_count, sortedPlaylists.size),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 13.sp,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            if (sortedPlaylists.isNotEmpty()) {
+                                                val playlist = sortedPlaylists.random()
+                                                val playlistSongs = playlist.songIds.mapNotNull { id ->
+                                                    songs.find { it.id == id }
+                                                }
+                                                if (playlistSongs.isNotEmpty()) {
+                                                    playbackViewModel.updateDisplayOrder(playlistSongs)
+                                                    playbackViewModel.play(playlistSongs.first())
+                                                }
+                                            }
+                                        },
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Shuffle,
+                                            contentDescription = stringResource(R.string.action_shuffle),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            if (sortedPlaylists.isNotEmpty()) {
+                                                val playlist = sortedPlaylists.first()
+                                                val playlistSongs = playlist.songIds.mapNotNull { id ->
+                                                    songs.find { it.id == id }
+                                                }
+                                                if (playlistSongs.isNotEmpty()) {
+                                                    playbackViewModel.updateDisplayOrder(playlistSongs)
+                                                    playbackViewModel.play(playlistSongs.first())
+                                                }
+                                            }
+                                        },
+                                    ) {
+                                        Icon(
+                                            Icons.Default.PlayArrow,
+                                            contentDescription = stringResource(R.string.action_play_all),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        items(sortedPlaylists) { playlist ->
                         Row(
                             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,

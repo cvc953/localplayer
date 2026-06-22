@@ -57,7 +57,6 @@ class MainActivity : ComponentActivity() {
     private fun applyLanguagePreference() {
         val appPrefs = AppPrefs(this)
         val languageCode = appPrefs.getLanguage()
-        android.util.Log.d("MainActivity", "applyLanguagePreference: languageCode = $languageCode")
 
         if (languageCode != "sistema") {
             val locale =
@@ -67,7 +66,6 @@ class MainActivity : ComponentActivity() {
                     "it" -> Locale("it")
                     else -> Locale.getDefault()
                 }
-            android.util.Log.d("MainActivity", "Applying locale: $locale")
 
             // Apply locale to this activity's resources
             val config = Configuration(resources.configuration)
@@ -78,7 +76,6 @@ class MainActivity : ComponentActivity() {
                 config.locale = locale
             }
             resources.updateConfiguration(config, resources.displayMetrics)
-            android.util.Log.d("MainActivity", "Locale applied to resources")
         }
     }
 }

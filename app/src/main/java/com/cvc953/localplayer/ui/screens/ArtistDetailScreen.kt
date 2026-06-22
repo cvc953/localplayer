@@ -64,6 +64,8 @@ import com.cvc953.localplayer.ui.headers.ArtistHeader
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import com.cvc953.localplayer.viewmodel.SongViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -73,6 +75,7 @@ fun ArtistDetailScreen(
     artistViewModel: ArtistViewModel,
     playbackViewModel: PlaybackViewModel,
     playlistViewModel: PlaylistViewModel,
+    songViewModel: SongViewModel = viewModel(),
     artistName: String,
     onAlbumClick: (albumName: String, artistName: String) -> Unit,
     onViewAllSongs: () -> Unit,
@@ -272,6 +275,17 @@ fun ArtistDetailScreen(
                         onAddToPlaylist = { playlistName, songId ->
                             playlistViewModel.addSongToPlaylist(playlistName, songId)
                             Toast.makeText(context, context.getString(R.string.toast_added_to_playlist, playlistName), Toast.LENGTH_SHORT).show()
+                        },
+                        onDelete = { song ->
+                            songViewModel.deleteSong(
+                                song,
+                                onSuccess = {
+                                    Toast.makeText(context, context.getString(R.string.toast_song_deleted), Toast.LENGTH_SHORT).show()
+                                },
+                                onError = { msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                },
+                            )
                         },
                     )
                 }

@@ -58,9 +58,18 @@ fun LyricsView(
 		}*/
     val inactiveLyricColor = Color.Companion.White.copy(alpha = 0.4f)
 
+    val timedLyrics = lyrics.filter { !it.isMetadata }
+    val metadataPairs = remember(lyrics) {
+        lyrics.filter { it.isMetadata }.mapNotNull { line ->
+            val colon = line.text.indexOf(": ")
+            if (colon > 0) Pair(line.text.substring(0, colon), line.text.substring(colon + 2))
+            else null
+        }.distinctBy { it.first }
+    }
+
     val currentIndex =
-        remember(lyrics, currentPosition) {
-            lyrics.indexOfLast { it.timeMs <= currentPosition }
+        remember(timedLyrics, currentPosition) {
+            timedLyrics.indexOfLast { it.timeMs <= currentPosition }
         }
 
     LaunchedEffect(currentIndex) {
@@ -127,8 +136,8 @@ fun LyricsView(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.Companion.fillMaxSize(),
         ) {
-            if (lyrics.isNotEmpty()) {
-                val firstLineStart = lyrics.first().timeMs
+            if (timedLyrics.isNotEmpty()) {
+                val firstLineStart = timedLyrics.first().timeMs
                 if (firstLineStart > gapThreshold) {
                     val isIntroGapActive = currentPosition in 0 until firstLineStart
                     if (isIntroGapActive) {
@@ -152,7 +161,7 @@ fun LyricsView(
                 }
             }
 
-            itemsIndexed(lyrics) { index, line ->
+            itemsIndexed(timedLyrics) { index, line ->
                 val distance = abs(index - currentIndex)
                 val itemAlpha by animateFloatAsState(
                     targetValue =
@@ -176,15 +185,15 @@ fun LyricsView(
                     LyricLine(
                         text = line.text,
                         active = index == currentIndex,
-                        isSecondaryVoice = false,
+                        isSecondaryVoice = line.isSecondaryVoice,
                         activeColor = activeLyricColor,
                         inactiveColor = inactiveLyricColor,
                     )
                 }
 
-                if (index < lyrics.size - 1) {
+                if (index < timedLyrics.size - 1) {
                     val currentLineStart = line.timeMs
-                    val nextLineStart = lyrics[index + 1].timeMs
+                    val nextLineStart = timedLyrics[index + 1].timeMs
                     val gapDuration = nextLineStart - currentLineStart
                     if (gapDuration > gapThreshold) {
                         val isGapActive =
@@ -206,6 +215,15 @@ fun LyricsView(
                             }
                         }
                     }
+                }
+            }
+
+            if (metadataPairs.isNotEmpty()) {
+                item {
+                    MetadataSection(
+                        items = metadataPairs,
+                        textColor = activeLyricColor,
+                    )
                 }
             }
         }

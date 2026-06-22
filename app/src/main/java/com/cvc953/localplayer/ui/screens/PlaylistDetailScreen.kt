@@ -67,6 +67,8 @@ import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.headers.PlaylistHeader
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import com.cvc953.localplayer.viewmodel.SongViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -75,6 +77,7 @@ import kotlinx.coroutines.launch
 fun PlaylistDetailScreen(
     playlistViewModel: PlaylistViewModel,
     playbackViewModel: PlaybackViewModel,
+    songViewModel: SongViewModel = viewModel(),
     playlistName: String,
     onBack: () -> Unit,
 ) {
@@ -396,6 +399,17 @@ fun PlaylistDetailScreen(
                                         playlistViewModel.removeSongFromPlaylist(playlistName, song.id)
                                         Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
                                     },
+                                    onDelete = { song ->
+                                        songViewModel.deleteSong(
+                                            song,
+                                            onSuccess = {
+                                                Toast.makeText(context, context.getString(R.string.toast_song_deleted), Toast.LENGTH_SHORT).show()
+                                            },
+                                            onError = { msg ->
+                                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                            },
+                                        )
+                                    },
                                 )
                             }
                             Spacer(modifier = Modifier.width(24.dp))
@@ -459,6 +473,17 @@ fun PlaylistDetailScreen(
                                     onRemoveFromPlaylist = {
                                         playlistViewModel.removeSongFromPlaylist(playlistName, song.id)
                                         Toast.makeText(context, removedFromPlaylistMsg, Toast.LENGTH_SHORT).show()
+                                    },
+                                    onDelete = { song ->
+                                        songViewModel.deleteSong(
+                                            song,
+                                            onSuccess = {
+                                                Toast.makeText(context, context.getString(R.string.toast_song_deleted), Toast.LENGTH_SHORT).show()
+                                            },
+                                            onError = { msg ->
+                                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                            },
+                                        )
                                     },
                                 )
                             }

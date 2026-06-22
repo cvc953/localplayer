@@ -48,6 +48,7 @@ fun TtmlLyricsView(
     dominantColor: Color = Color.Companion.Black,
     useDynamicBackground: Boolean = true,
     onLineClick: (Long) -> Unit = {},
+    metadata: List<Pair<String, String>> = emptyList(),
 ) {
     val listState = rememberLazyListState()
     val forceLightForeground =
@@ -233,6 +234,15 @@ fun TtmlLyricsView(
                             }
                         }
                     }
+                }
+            }
+
+            if (metadata.isNotEmpty()) {
+                item {
+                    MetadataSection(
+                        items = metadata,
+                        textColor = activeLyricColor,
+                    )
                 }
             }
         }

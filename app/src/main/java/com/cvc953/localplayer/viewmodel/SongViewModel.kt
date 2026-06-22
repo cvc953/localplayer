@@ -49,7 +49,6 @@ class SongViewModel(
             _error.value = null
             try {
                 val result = if (forceRescan) controller.forceRescan() else controller.getAllSongs()
-                android.util.Log.d("SongViewModel", "loadSongs: Loaded ${result.size} songs, forceRescan=$forceRescan")
                 _songs.value = result
             } catch (e: Exception) {
                 android.util.Log.e("SongViewModel", "loadSongs: Error", e)
@@ -83,6 +82,26 @@ class SongViewModel(
 
     fun clearSelection() {
         _selectedSong.value = null
+    }
+
+    /**
+     * Elimina una canción del dispositivo: archivo físico, MediaStore y caché.
+     * Actualiza la lista local y fuerza un refresco del repositorio.
+     */
+    fun deleteSong(song: Song, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val result = controller.deleteSong(song)
+            if (result.isSuccess) {
+                // Remover de la lista local
+                _songs.value = _songs.value.filter { it.id != song.id }
+                // Forzar recarga completa para refrescar playlists y demás
+                loadSongs(forceRescan = true)
+                launch(Dispatchers.Main) { onSuccess() }
+            } else {
+                val msg = result.exceptionOrNull()?.message ?: "Error desconocido al eliminar"
+                launch(Dispatchers.Main) { onError(msg) }
+            }
+        }
     }
 
     override fun onCleared() {

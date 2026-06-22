@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.ui.screens
 
 import android.app.Application
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -42,12 +43,15 @@ import com.cvc953.localplayer.ui.components.DraggableSwipeRow
 import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
+import com.cvc953.localplayer.viewmodel.SongViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Suppress("ktlint:standard:function-naming")
 @Composable
 fun ArtistSongsScreen(
     artistViewModel: ArtistViewModel,
     playbackViewModel: PlaybackViewModel,
+    songViewModel: SongViewModel = viewModel(),
     artistName: String,
     onBack: () -> Unit,
 ) {
@@ -156,6 +160,17 @@ fun ArtistSongsScreen(
                         onQueueEnd = { playbackViewModel.addToQueueEnd(song) },
                         playlists = emptyList(),
                         onAddToPlaylist = { _, _ -> },
+                        onDelete = { song ->
+                            songViewModel.deleteSong(
+                                song,
+                                onSuccess = {
+                                    Toast.makeText(context, context.getString(R.string.toast_song_deleted), Toast.LENGTH_SHORT).show()
+                                },
+                                onError = { msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                },
+                            )
+                        },
                     )
                 }
             }

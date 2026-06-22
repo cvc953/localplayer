@@ -1,5 +1,6 @@
 package com.cvc953.localplayer.model
 
+import com.cvc953.localplayer.util.LrcLine
 import kotlinx.serialization.Serializable
 
 /**
@@ -67,11 +68,41 @@ data class TtmlLine(
  */
 @Serializable
 data class TtmlMetadata(
-    val source: String = "TTML",
-    val title: String = "",
-    val language: String = "",
-    val songWriters: List<String> = emptyList(),
-)
+    var source: String = "TTML",
+    var title: String = "",
+    var language: String = "",
+    var songWriters: List<String> = emptyList(),
+    var artist: String = "",
+    var album: String = "",
+) {
+    /**
+     * Convierte los metadatos a pares (label, valor) para mostrar en MetadataSection.
+     */
+    fun toMetadataPairs(): List<Pair<String, String>> {
+        val pairs = mutableListOf<Pair<String, String>>()
+        if (artist.isNotBlank()) pairs.add("Artista" to artist)
+        if (album.isNotBlank()) pairs.add("Álbum" to album)
+        if (title.isNotBlank()) pairs.add("Canción" to title)
+        if (source.isNotBlank() && source != "TTML") pairs.add("Fuente" to source)
+        if (songWriters.isNotEmpty()) pairs.add("Compositores" to songWriters.joinToString(", "))
+        return pairs
+    }
+
+    /**
+     * Convierte los metadatos a líneas LrcLine (isMetadata=true) para el fallback LRC.
+     */
+    fun toLrcMetadataLines(lastTimeMs: Long): List<LrcLine> {
+        val pairs = toMetadataPairs()
+        if (pairs.isEmpty()) return emptyList()
+        return pairs.mapIndexed { i, (label, value) ->
+            LrcLine(
+                timeMs = lastTimeMs + (i + 1) * 100L,
+                text = "$label: $value",
+                isMetadata = true,
+            )
+        }
+    }
+}
 
 /**
  * Estructura completa de letras TTML
@@ -81,4 +112,22 @@ data class TtmlLyrics(
     val type: String = "Word", // Word, Line, Syllable
     val metadata: TtmlMetadata = TtmlMetadata(),
     val lines: List<TtmlLine> = emptyList(),
-)
+) {
+    /**
+     * Convierte las líneas TTML a LrcLine para el fallback de letras,
+     * incluyendo metadatos al final.
+     */
+    fun toLrcLines(): List<LrcLine> {
+        val timed = lines.filter { it.text.isNotBlank() }.map { line ->
+            LrcLine(
+                timeMs = line.timeMs,
+                text = line.text,
+                isSecondaryVoice = line.agent?.let { alignmentFromAgent(it) == TtmlAlignment.RIGHT } ?: false,
+            )
+        }
+        if (timed.isEmpty()) return timed
+
+        val lastTimeMs = timed.last().timeMs
+        return timed + metadata.toLrcMetadataLines(lastTimeMs)
+    }
+}

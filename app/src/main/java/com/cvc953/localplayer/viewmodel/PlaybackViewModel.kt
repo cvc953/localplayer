@@ -252,6 +252,62 @@ class PlaybackViewModel(
         }
     }
 
+    fun playRandom() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val repo =
+                    com.cvc953.localplayer.model
+                        .SongRepository(getApplication())
+                val allSongs = repo.loadSongs()
+                if (allSongs.isNotEmpty()) {
+                    val shuffled = allSongs.shuffled()
+                    _pendingFullQueue = null
+                    _queue.value = shuffled
+                    _isShuffle.value = true
+                    try {
+                        prefs.saveShuffleEnabled(true)
+                        prefs.savePlaybackQueue(shuffled.map { it.uri.toString() })
+                    } catch (_: Exception) {
+                    }
+                    play(shuffled.first())
+                } else {
+                    _error.value = "No hay canciones en la biblioteca"
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlaybackViewModel", "Error in playRandom", e)
+                _error.value = "Error al reproducir aleatoriamente"
+            }
+        }
+    }
+
+    fun playAll() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val repo =
+                    com.cvc953.localplayer.model
+                        .SongRepository(getApplication())
+                val allSongs = repo.loadSongs()
+                if (allSongs.isNotEmpty()) {
+                    val sorted = allSongs.sortedBy { it.title.lowercase() }
+                    _pendingFullQueue = null
+                    _queue.value = sorted
+                    _isShuffle.value = false
+                    try {
+                        prefs.saveShuffleEnabled(false)
+                        prefs.savePlaybackQueue(sorted.map { it.uri.toString() })
+                    } catch (_: Exception) {
+                    }
+                    play(sorted.first())
+                } else {
+                    _error.value = "No hay canciones en la biblioteca"
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("PlaybackViewModel", "Error in playAll", e)
+                _error.value = "Error al reproducir"
+            }
+        }
+    }
+
     fun pause() {
         playerController.pause()
         _currentPosition.value = playerController.getCurrentPosition()
@@ -355,7 +411,6 @@ class PlaybackViewModel(
                 val (fullQueue, nextAlbum) = prepareAlbumQueueFromSongs(allSongsForQueue, albumName, artistName)
                 if (fullQueue.isNotEmpty()) {
                     _pendingFullQueue = fullQueue
-                    android.util.Log.d("PlaybackViewModel", "playAlbum - Prepared immediate queue with ${fullQueue.size} songs")
                 }
 
                 if (nextAlbum != null) {
@@ -381,7 +436,6 @@ class PlaybackViewModel(
 
                     if (fullQueue.isNotEmpty()) {
                         _pendingFullQueue = fullQueue
-                        android.util.Log.d("PlaybackViewModel", "playAlbum - Prepared async queue with ${fullQueue.size} songs")
                     }
 
                     if (nextAlbum != null) {
@@ -459,7 +513,6 @@ class PlaybackViewModel(
                 val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(allSongsForQueue, artistName)
                 if (fullQueue.isNotEmpty()) {
                     _pendingFullQueue = fullQueue
-                    android.util.Log.d("PlaybackViewModel", "playArtist - Prepared immediate queue with ${fullQueue.size} songs")
                 }
                 _nextArtistName = nextArtist
             } catch (e: Exception) {
@@ -477,7 +530,6 @@ class PlaybackViewModel(
                     val (fullQueue, nextArtist) = prepareArtistQueueFromSongs(sourceSongs, artistName)
                     if (fullQueue.isNotEmpty()) {
                         _pendingFullQueue = fullQueue
-                        android.util.Log.d("PlaybackViewModel", "playArtist - Prepared async queue with ${fullQueue.size} songs")
                     }
                     _nextArtistName = nextArtist
                 } catch (e: Exception) {

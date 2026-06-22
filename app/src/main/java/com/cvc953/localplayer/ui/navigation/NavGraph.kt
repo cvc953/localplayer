@@ -2,6 +2,8 @@ package com.cvc953.localplayer.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -9,6 +11,7 @@ import androidx.navigation.compose.composable
 import com.cvc953.localplayer.ui.components.SongsContent
 import com.cvc953.localplayer.ui.navigation.Screen
 import com.cvc953.localplayer.ui.screens.AlbumDetailScreen
+import com.cvc953.localplayer.ui.screens.AlbumEditScreen
 import com.cvc953.localplayer.ui.screens.AlbumsScreen
 import com.cvc953.localplayer.ui.screens.ArtistDetailScreen
 import com.cvc953.localplayer.ui.screens.ArtistSongsScreen
@@ -17,12 +20,15 @@ import com.cvc953.localplayer.ui.screens.GenreDetailScreen
 import com.cvc953.localplayer.ui.screens.GenresScreen
 import com.cvc953.localplayer.ui.screens.PlaylistDetailScreen
 import com.cvc953.localplayer.ui.screens.PlaylistsScreen
+import com.cvc953.localplayer.ui.screens.SongEditScreen
+import com.cvc953.localplayer.viewmodel.AlbumEditViewModel
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.GenreViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.PlaylistViewModel
+import com.cvc953.localplayer.viewmodel.SongEditViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
 
 @Suppress("ktlint:standard:function-naming")
@@ -54,6 +60,9 @@ fun AppNavigation(
                 playbackViewModel = playbackViewModel,
                 playlistViewModel = playlistViewModel,
                 playerViewModel = playerViewModel,
+                onEditSong = { song ->
+                    navController.navigateSongEdit(song.id)
+                },
             )
         }
 
@@ -65,6 +74,9 @@ fun AppNavigation(
                 playerViewModel = playerViewModel,
                 onAlbumClick = { albumName, artistName ->
                     navController.navigateAlbumDetail(albumName, artistName)
+                },
+                onEditAlbum = { albumName, artistName ->
+                    navController.navigateAlbumEdit(albumName, artistName)
                 },
             )
         }
@@ -85,6 +97,9 @@ fun AppNavigation(
                 albumName = albumName,
                 artistName = artistName,
                 onBack = { navController.navigateBack() },
+                onNavigateToAlbumEdit = { aN, aN2 ->
+                    navController.navigateAlbumEdit(aN, aN2)
+                },
             )
         }
 
@@ -144,6 +159,7 @@ fun AppNavigation(
                 genreViewModel = genreViewModel,
                 playbackViewModel = playbackViewModel,
                 playerViewModel = playerViewModel,
+                songViewModel = songViewModel,
                 onGenreClick = { genreName ->
                     navController.navigateGenreDetail(genreName)
                 },
@@ -189,6 +205,45 @@ fun AppNavigation(
                 playlistName = playlistName,
                 onBack = { navController.navigateBack() },
                 playbackViewModel = playbackViewModel,
+            )
+        }
+
+        // Editar canción
+        composable(
+            route = Screen.SongEdit.route,
+            arguments = songEditArguments,
+        ) { backStackEntry ->
+            val songId = backStackEntry.arguments?.getLong(Screen.SongEdit.ARG_SONG_ID) ?: return@composable
+
+            SongEditScreen(
+                viewModel = viewModel(
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                            SongEditViewModel(songViewModel.getApplication(), songId) as T
+                    },
+                ),
+                onNavigateBack = { navController.navigateBack() },
+            )
+        }
+
+        // Editar álbum
+        composable(
+            route = Screen.AlbumEdit.route,
+            arguments = albumEditArguments,
+        ) { backStackEntry ->
+            val albumName = RouteParams.decode(backStackEntry.arguments?.getString(Screen.AlbumEdit.ARG_ALBUM_NAME))
+            val artistName = RouteParams.decode(backStackEntry.arguments?.getString(Screen.AlbumEdit.ARG_ARTIST_NAME))
+
+            AlbumEditScreen(
+                viewModel = viewModel(
+                    factory = object : ViewModelProvider.Factory {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                            AlbumEditViewModel(songViewModel.getApplication(), albumName, artistName) as T
+                    },
+                ),
+                onNavigateBack = { navController.navigateBack() },
             )
         }
     }

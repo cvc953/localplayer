@@ -49,8 +49,8 @@
     <string name="settings_title">Impostazioni</string>
     <string name="settings_subtitle">Personalizza l\'app e la tua libreria</string>
     <string name="action_close">Chiudi</string>
-    <string name="settings_section_appearance_title">Aspetto e comportamento</string>
-    <string name="settings_section_appearance_subtitle">Opzioni globali di visualizzazione e scansione</string>
+    <string name="settings_section_appearance_title">Aspetto</string>
+    <string name="settings_section_appearance_subtitle">Personalizza l\'aspetto visivo dell\'app</string>
     <string name="settings_theme_label">Tema</string>
     <string name="settings_theme_description">Seleziona il tema dell\'app</string>
     <string name="theme_light">Chiaro</string>
@@ -96,12 +96,25 @@
     <string name="settings_equalizer_enable_description">Usa l\'equalizzatore nativo del sistema</string>
     <string name="action_open_equalizer">Apri equalizzatore avanzato</string>
 
+    <string name="settings_section_player_title">Riproduttore</string>
+    <string name="settings_section_player_subtitle">Personalizza il comportamento del riproduttore</string>
+    <string name="settings_section_navigation_title">Navigazione</string>
+    <string name="settings_section_navigation_subtitle">Configura le schede della barra di navigazione</string>
+
     <string name="settings_section_library_title">Libreria</string>
     <string name="settings_section_library_subtitle">Gestisci le cartelle incluse nella musica</string>
     <string name="settings_auto_scan_label">Scansione automatica</string>
     <string name="settings_auto_scan_description">Rileva modifiche e scansiona automaticamente</string>
     <string name="settings_default_tab_label">Scheda predefinita</string>
     <string name="settings_default_tab_description">Scegli quale sezione aprire all\'avvio dell\'app</string>
+    <string name="settings_songs_tab_label">Scheda Canzoni</string>
+    <string name="settings_songs_tab_description">Mostra la scheda delle canzoni nella barra di navigazione</string>
+    <string name="settings_albums_tab_label">Scheda Album</string>
+    <string name="settings_albums_tab_description">Mostra la scheda degli album nella barra di navigazione</string>
+    <string name="settings_artists_tab_label">Scheda Artisti</string>
+    <string name="settings_artists_tab_description">Mostra la scheda degli artisti nella barra di navigazione</string>
+    <string name="settings_playlists_tab_label">Scheda Playlist</string>
+    <string name="settings_playlists_tab_description">Mostra la scheda delle playlist nella barra di navigazione</string>
     <string name="settings_genres_tab_label">Scheda Generi</string>
     <string name="settings_genres_tab_description">Mostra la scheda dei generi nella barra di navigazione</string>
     <string name="action_add_folder">Aggiungi cartella</string>
@@ -190,6 +203,7 @@
     <string name="toast_removed_from_playlist">Rimosso dalla playlist</string>
     <string name="action_play">Riproduci</string>
     <string name="action_shuffle">Casuale</string>
+    <string name="action_play_all">Riproduci tutto</string>
     <string name="action_add_to_favorites">Aggiungi ai preferiti</string>
     <string name="action_remove_from_favorites">Rimuovi dai preferiti</string>
     <string name="action_remove_from_playlist">Rimuovi dalla lista</string>
@@ -218,4 +232,48 @@
     <string name="queue_title_upcoming">Prossimi brani</string>
     <string name="queue_empty_upcoming">Nessun prossimo brano</string>
     <string name="action_reorder">Riordina</string>
+
+    <!-- Color Picker -->
+    <string name="color_picker_title">Colore personalizzato</string>
+    <string name="color_picker_hue">Tonalità</string>
+    <string name="color_picker_saturation">Saturazione</string>
+    <string name="color_picker_brightness">Luminosità</string>
+    <string name="color_picker_accept">Accetta</string>
+
+    <!-- Edit Song / Album -->
+    <string name="edit_song_title">Modifica brano</string>
+    <string name="edit_album_title">Modifica album</string>
+    <string name="action_save">Salva</string>
+    <string name="action_edit">Modifica</string>
+    <string name="action_play_random">Riproduci casualmente</string>
+    <string name="field_title">Titolo</string>
+    <string name="field_artist">Artista</string>
+    <string name="field_album">Album</string>
+    <string name="field_genre">Genere</string>
+    <string name="field_year">Anno</string>
+    <string name="field_track_number">N° traccia</string>
+    <string name="field_disc_number">N° disco</string>
+    <string name="cover_art_change">Cambia copertina</string>
+    <string name="cover_art_tap_hint">Tocca per selezionare un\'immagine</string>
+    <string name="validation_title_required">Il titolo non può essere vuoto</string>
+    <string name="validation_year_invalid">L\'anno deve essere un numero valido</string>
+    <string name="error_save_failed">Salvataggio fallito — il file potrebbe essere in uso</string>
+    <string name="edit_details">Modifica dettagli</string>
+    <string name="album_edit_track_count">Si applica a %d brani</string>
+    <string name="album_edit_partial_failure_title">Alcuni brani non sono stati modificati</string>
+    <string name="album_edit_partial_failure_message">%d brani aggiornati, %d falliti</string>
+    <string name="error_invalid_image">Immagine non valida</string>
+    <string name="error_file_in_use">File in uso — chiudi altre app</string>
+    <string name="error_format_not_writable">Questo formato non supporta la scrittura dei tag</string>
+
+    <string name="albums_count">%d album</string>
+    <string name="playlists_count">%d playlist</string>
+    <string name="genres_count">%d generi</string>
+    <string name="artists_count">%d artisti</string>
+    <string name="action_delete_song">Elimina canzone</string>
+    <string name="delete_song_confirm_title">Eliminare canzone?</string>
+    <string name="delete_song_confirm_message">Questa canzone verrà eliminata dal dispositivo.</string>
+    <string name="delete_song_final_title">Sei sicuro?</string>
+    <string name="delete_song_final_message">Questa azione non può essere annullata.</string>
+    <string name="toast_song_deleted">Canzone eliminata</string>
 </resources>

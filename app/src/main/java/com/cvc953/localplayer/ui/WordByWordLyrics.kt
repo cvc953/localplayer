@@ -54,7 +54,8 @@ fun SyllableLyric(
         if (syllable.durationMs > 0) {
             ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
         } else {
-            0f
+            // durationMs == 0 → instante sin duración: se colorea full al llegar
+            1f
         }
     // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress
@@ -95,7 +96,7 @@ fun BackgroundSyllableLyric(
         if (syllable.durationMs > 0) {
             ((currentPosition - syllable.timeMs).toFloat() / syllable.durationMs.toFloat()).coerceIn(0f, 1f)
         } else {
-            0f
+            1f
         }
     // Para sílabas sostenidas, clampear el progreso a 1.0 si ya llegó ahí
     val clampedProgress = if (syllable.isSustained && rawProgress >= 1f) 1f else rawProgress

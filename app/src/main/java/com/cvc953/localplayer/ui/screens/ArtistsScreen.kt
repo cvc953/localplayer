@@ -4,7 +4,6 @@ import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -348,10 +347,6 @@ fun ArtistsScreen(
                                 withContext(Dispatchers.IO) {
                                     try {
                                         val uri = firstSong?.uri ?: return@withContext
-                                        Log.d(
-                                            "ArtistsScreen",
-                                            "Loading art for artist='${artist.name}' uri=$uri filePath=${firstSong?.filePath}",
-                                        )
                                         val retriever = MediaMetadataRetriever()
                                         retriever.setDataSource(context, uri)
                                         val embedded = retriever.embeddedPicture
@@ -362,20 +357,11 @@ fun ArtistsScreen(
                                                     0,
                                                     embedded.size,
                                                 )
-                                            Log.d(
-                                                "ArtistsScreen",
-                                                "Embedded art found for uri=$uri size=${embedded.size}",
-                                            )
                                         } else {
-                                            Log.d("ArtistsScreen", "No embedded art for uri=$uri")
                                         }
                                         retriever.release()
 
                                         if (artistArt == null) {
-                                            Log.d(
-                                                "ArtistsScreen",
-                                                "Trying contentResolver fallback for uri=$uri",
-                                            )
                                             try {
                                                 context.contentResolver
                                                     .openInputStream(uri)
@@ -384,18 +370,10 @@ fun ArtistsScreen(
                                                             BitmapFactory.decodeStream(stream)
                                                     }
                                             } catch (e: Exception) {
-                                                Log.d(
-                                                    "ArtistsScreen",
-                                                    "contentResolver fallback failed: ${e.message}",
-                                                )
                                             }
                                         }
 
                                         if (artistArt == null) {
-                                            Log.d(
-                                                "ArtistsScreen",
-                                                "Trying file fallback for filePath=${firstSong?.filePath}",
-                                            )
                                             val path = firstSong?.filePath
                                             if (!path.isNullOrBlank()) {
                                                 try {
@@ -415,10 +393,6 @@ fun ArtistsScreen(
                                                             artistArt =
                                                                 BitmapFactory.decodeFile(f.absolutePath)
                                                             if (artistArt != null) {
-                                                                Log.d(
-                                                                    "ArtistsScreen",
-                                                                    "Found external cover file=${f.absolutePath}",
-                                                                )
                                                                 break
                                                             }
                                                         }
@@ -428,10 +402,6 @@ fun ArtistsScreen(
                                             }
                                         }
                                     } catch (e: Exception) {
-                                        Log.d(
-                                            "ArtistsScreen",
-                                            "Unexpected error loading art: ${e.message}",
-                                        )
                                     }
                                 }
                             }

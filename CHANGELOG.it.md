@@ -6,6 +6,34 @@ Il formato si basa su [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
 
+## [1.1.0]
+
+### Aggiunto
+- ✏️ Modifica metadati e copertina dei brani (titolo, artista, album, genere, anno, traccia, disco, immagine) dal player
+- ✏️ Modifica metadati e copertina di album completi dalla schermata dettaglio album
+- 🏷️ Nuova scheda Generi con vista configurabile e schermata di dettaglio
+- 🎨 Selettore colore accento personalizzato con input codice HEX
+- ⚙️ Menu Impostazioni e Informazioni nelle schermate Album, Artisti e Playlist
+- 🔤 Nuove opzioni di ordinamento: Artista Z-A e Aggiunto di recente
+- 🔗 Collegamento a TimeLyr nei testi sincronizzati
+- ❌ Eliminazione brani
+- 🎤 Rilevamento tracce strumentali nei testi
+
+### Modificato
+- 🔄 Schede di navigazione ora configurabili (mostra/nascondi ogni scheda dalle Impostazioni)
+- 🔀 Pulsanti riproduzione casuale e sequenziale ora operano sulla schermata corrente (Album, Playlist, Generi) invece che sull'intera libreria
+- 🎨 Pulizia dei log di debug per ridurre il consumo batteria
+
+### Corretto
+- 🔋 Ridotto il consumo batteria — corretto polling del progresso, coroutine leak e osservatori duplicati
+- 📋 Corretto il conflitto tra drag-to-reorder e selezione multipla nel dettaglio playlist
+- 🐛 Corretto il selettore colore che non applicava il valore HEX personalizzato
+- 🔄 Corretta la gestione della colonna GENERE nulla in tutti i metodi di scansione
+- 🗑️ Correzione eliminazione brani su Android 11+ (archiviazione con ambito)
+- 🖼️ Correzione modifica copertina su Android 11+ (archiviazione con ambito)
+- 📝 Corretta la rilevazione testi in testo semplice (non più mostrati come sincronizzati)
+- 🧹 Rimossi riferimenti a sistema skin inesistente dai changelog
+
 ## [1.0.11]
 
 ### Modificato
@@ -205,7 +233,9 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - `Corretto` per correzioni di bug
 - `Sicurezza` per correzioni di vulnerabilità
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/cvc953/localplayer/compare/v1.0.11...v1.1.0
+[1.0.11]: https://github.com/cvc953/localplayer/compare/v1.0.10...v1.0.11
 [1.0.7]: https://github.com/cvc953/localplayer/compare/v1.0.5...v1.0.7
 [1.0.5]: https://github.com/cvc953/localplayer/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/cvc953/localplayer/compare/v1.0.0...v1.0.4

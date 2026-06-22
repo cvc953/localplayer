@@ -151,6 +151,14 @@ class MainViewModel(
     val playPauseStyle: StateFlow<String> = _playPauseStyle
     private val _showAudioInfo = MutableStateFlow(appPrefs.getShowAudioInfo())
     val showAudioInfo: StateFlow<Boolean> = _showAudioInfo
+    private val _songsTabEnabled = MutableStateFlow(appPrefs.isSongsTabEnabled())
+    val songsTabEnabled: StateFlow<Boolean> = _songsTabEnabled
+    private val _albumsTabEnabled = MutableStateFlow(appPrefs.isAlbumsTabEnabled())
+    val albumsTabEnabled: StateFlow<Boolean> = _albumsTabEnabled
+    private val _artistsTabEnabled = MutableStateFlow(appPrefs.isArtistsTabEnabled())
+    val artistsTabEnabled: StateFlow<Boolean> = _artistsTabEnabled
+    private val _playlistsTabEnabled = MutableStateFlow(appPrefs.isPlaylistsTabEnabled())
+    val playlistsTabEnabled: StateFlow<Boolean> = _playlistsTabEnabled
     private val _genresTabEnabled = MutableStateFlow(appPrefs.isGenresTabEnabled())
     val genresTabEnabled: StateFlow<Boolean> = _genresTabEnabled
     private val _defaultStartTab = MutableStateFlow(appPrefs.getDefaultStartTab())
@@ -188,14 +196,11 @@ class MainViewModel(
         object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 super.onChange(selfChange)
-                android.util.Log.d("MainViewModel", "MediaStore onChange detected, selfChange=$selfChange")
 
                 // Detectar cambios en la biblioteca y refrescar (si está activado)
                 if (appPrefs.isAutoScanEnabled()) {
-                    android.util.Log.d("MainViewModel", "Auto-scan enabled, scheduling library refresh")
                     scheduleLibraryRefresh()
                 } else {
-                    android.util.Log.d("MainViewModel", "Auto-scan disabled, skipping refresh")
                 }
             }
         }
@@ -208,9 +213,7 @@ class MainViewModel(
         autoScanJob =
             viewModelScope.launch(Dispatchers.IO) {
                 try {
-                    android.util.Log.d("MainViewModel", "Debouncing auto-scan for 2 seconds...")
                     delay(2000) // Esperar 2 segundos para agrupar múltiples cambios
-                    android.util.Log.d("MainViewModel", "Starting auto-scan library refresh")
                     refreshMusicLibrary()
                 } catch (e: Exception) {
                     android.util.Log.e("MainViewModel", "Error in auto-scan", e)
@@ -221,12 +224,10 @@ class MainViewModel(
     private fun refreshMusicLibrary() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                android.util.Log.d("MainViewModel", "refreshMusicLibrary: Starting scan")
                 // When auto-scan is enabled we must force a full rescan to detect newly added files
                 val newSongs = if (appPrefs.isAutoScanEnabled()) repository.loadSongs() else repository.loadSongs()
                 val currentSongs = _songs.value
 
-                android.util.Log.d("MainViewModel", "refreshMusicLibrary: Found ${newSongs.size} songs, current has ${currentSongs.size}")
 
                 // Actualizar si hay cambios en el número de canciones o en los IDs
                 val currentIds = currentSongs.map { it.id }.toSet()
@@ -234,10 +235,8 @@ class MainViewModel(
                 val hasChanges = currentIds != newIds
 
                 if (hasChanges) {
-                    android.util.Log.d("MainViewModel", "refreshMusicLibrary: Changes detected, updating library")
                     _songs.value = newSongs.sortedBy { it.title }
                 } else {
-                    android.util.Log.d("MainViewModel", "refreshMusicLibrary: No changes detected")
                 }
             } catch (e: Exception) {
                 android.util.Log.e("MainViewModel", "Error refreshing library", e)
@@ -249,27 +248,17 @@ class MainViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _isScanning.value = true
-                android.util.Log.d("MainViewModel", "Iniciando re-escaneo manual...")
 
                 // Forzar re-escaneo completo ignorando el caché
                 val newSongs = repository.forceRescanSongs()
 
-                android.util.Log.d(
-                    "MainViewModel",
-                    "Re-escaneo completo: ${newSongs.size} canciones",
-                )
 
                 // Actualizar la lista con las nuevas canciones
                 withContext(Dispatchers.Main) {
                     _songs.value = newSongs.sortedBy { it.title }
-                    android.util.Log.d(
-                        "MainViewModel",
-                        "Lista actualizada en UI: ${_songs.value.size} canciones",
-                    )
                 }
 
                 _isScanning.value = false
-                android.util.Log.d("MainViewModel", "Re-escaneo completado exitosamente")
             } catch (e: Exception) {
                 android.util.Log.e("MainViewModel", "Error en re-escaneo manual", e)
                 _isScanning.value = false
@@ -391,13 +380,11 @@ class MainViewModel(
     }
 
     fun toggleAutoScan(enabled: Boolean) {
-        android.util.Log.d("MainViewModel", "toggleAutoScan: $enabled")
         appPrefs.setAutoScanEnabled(enabled)
         _autoScanEnabled.value = enabled
 
         if (enabled) {
             // If enabling auto-scan, trigger an immediate refresh so new files are picked up
-            android.util.Log.d("MainViewModel", "Auto-scan enabled, triggering immediate refresh")
             try {
                 refreshMusicLibrary()
             } catch (e: Exception) {
@@ -405,7 +392,6 @@ class MainViewModel(
             }
         } else {
             // If disabling, cancel any pending scan
-            android.util.Log.d("MainViewModel", "Auto-scan disabled, cancelling pending scans")
             autoScanJob?.cancel()
         }
     }
@@ -416,11 +402,9 @@ class MainViewModel(
     }
 
     fun setLanguage(language: String) {
-        android.util.Log.d("MainViewModel", "setLanguage called with: $language")
         appPrefs.setLanguage(language)
         _language.value = language
         _languageChangeVersion.value += 1
-        android.util.Log.d("MainViewModel", "Language state updated to: $language, version: ${_languageChangeVersion.value}")
     }
 
     fun toggleDynamicColor(enabled: Boolean) {
@@ -463,10 +447,41 @@ class MainViewModel(
         _defaultStartTab.value = appPrefs.getDefaultStartTab()
     }
 
+    fun setSongsTabEnabled(enabled: Boolean) {
+        appPrefs.setSongsTabEnabled(enabled)
+        _songsTabEnabled.value = enabled
+        if (!enabled && _defaultStartTab.value == "songs") {
+            setDefaultStartTab("albums")
+        }
+    }
+
+    fun setAlbumsTabEnabled(enabled: Boolean) {
+        appPrefs.setAlbumsTabEnabled(enabled)
+        _albumsTabEnabled.value = enabled
+        if (!enabled && _defaultStartTab.value == "albums") {
+            setDefaultStartTab("songs")
+        }
+    }
+
+    fun setArtistsTabEnabled(enabled: Boolean) {
+        appPrefs.setArtistsTabEnabled(enabled)
+        _artistsTabEnabled.value = enabled
+        if (!enabled && _defaultStartTab.value == "artists") {
+            setDefaultStartTab("songs")
+        }
+    }
+
+    fun setPlaylistsTabEnabled(enabled: Boolean) {
+        appPrefs.setPlaylistsTabEnabled(enabled)
+        _playlistsTabEnabled.value = enabled
+        if (!enabled && _defaultStartTab.value == "playlists") {
+            setDefaultStartTab("songs")
+        }
+    }
+
     fun setGenresTabEnabled(enabled: Boolean) {
         appPrefs.setGenresTabEnabled(enabled)
         _genresTabEnabled.value = enabled
-        // Si el tab de géneros se deshabilita y era el default, cambiar a "songs"
         if (!enabled && _defaultStartTab.value == "genres") {
             setDefaultStartTab("songs")
         }
@@ -495,13 +510,11 @@ class MainViewModel(
     fun loadLyricsForSong(song: Song) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                android.util.Log.d("LyricsDebug", "Cargando lyrics para: ${song.title}")
 
                 // Obtener la ruta del archivo (desde song.filePath o desde ContentResolver)
                 var audioFilePath = song.filePath
 
                 if (audioFilePath.isNullOrEmpty()) {
-                    android.util.Log.d("LyricsDebug", "FilePath vacío, consultando ContentResolver")
                     // Si no tenemos filePath, obtenerlo del ContentResolver
                     val resolver = getApplication<Application>().contentResolver
                     val projection = arrayOf(MediaStore.Audio.Media.DATA)
@@ -510,16 +523,11 @@ class MainViewModel(
                             val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
                             if (dataCol >= 0) {
                                 audioFilePath = cursor.getString(dataCol)
-                                android.util.Log.d(
-                                    "LyricsDebug",
-                                    "FilePath obtenido: $audioFilePath",
-                                )
                             }
                         }
                     }
                 }
 
-                android.util.Log.d("LyricsDebug", "FilePath final: $audioFilePath")
 
                 // Si tenemos la ruta del archivo, buscar .lrc en el mismo directorio
                 if (!audioFilePath.isNullOrEmpty()) {
@@ -527,75 +535,42 @@ class MainViewModel(
                     val audioDir = audioFile.parentFile
                     val audioNameWithoutExt = audioFile.nameWithoutExtension
 
-                    android.util.Log.d("LyricsDebug", "Archivo: ${audioFile.absolutePath}")
-                    android.util.Log.d("LyricsDebug", "Directorio: ${audioDir?.absolutePath}")
-                    android.util.Log.d("LyricsDebug", "Nombre sin ext: $audioNameWithoutExt")
 
                     if (audioDir != null && audioDir.exists()) {
-                        android.util.Log.d("LyricsDebug", "Listando archivos en directorio...")
 
                         // Primero intentar con TTML para letras palabra por palabra
                         val ttmlFile = File(audioDir, "$audioNameWithoutExt.ttml")
-                        android.util.Log.d("LyricsDebug", "Buscando TTML: ${ttmlFile.name}")
 
                         var ttmlParsedSuccessfully = false
                         if (ttmlFile.exists()) {
                             try {
                                 val text = ttmlFile.readText()
-                                android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ Archivo TTML encontrado: ${ttmlFile.name}, ${text.length} chars",
-                                )
                                 val parsed = TtmlParser.parseTtml(text)
-                                android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ TTML parseado: ${parsed.lines.size} líneas, type=${parsed.type}",
-                                )
 
                                 // Solo usar TTML si tiene líneas
                                 if (parsed.lines.isNotEmpty()) {
                                     parsed.lines.forEachIndexed { i, line ->
-                                        android.util.Log.d(
-                                            "LyricsDebug",
-                                            "  Línea $i: '${line.text}' (${line.syllabus.size} sílabas)",
-                                        )
                                     }
                                     _ttmlLyrics.value = parsed
                                     _lyrics.value = emptyList() // Limpiar letras LRC
-                                    android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ StateFlow actualizado con TTML",
-                                    )
                                     ttmlParsedSuccessfully = true
                                     return@launch
                                 } else {
-                                    android.util.Log.w("LyricsDebug", "TTML parseado pero vacío, intentando con LRC")
                                 }
                             } catch (e: Exception) {
-                                android.util.Log.e("LyricsDebug", "Error parseando TTML, intentando con LRC como fallback", e)
                             }
                         }
 
                         // Si no hay TTML o falló el parsing, intentar con LRC
                         val lrcFile = File(audioDir, "$audioNameWithoutExt.lrc")
-                        android.util.Log.d("LyricsDebug", "Buscando LRC: ${lrcFile.name}")
 
                         if (lrcFile.exists()) {
                             try {
                                 val text = lrcFile.readText()
-                                android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ Archivo LRC encontrado: ${lrcFile.name}, ${text.length} chars",
-                                )
                                 _ttmlLyrics.value = null // Limpiar TTML
                                 _lyrics.value = parseLrc(text)
-                                android.util.Log.d(
-                                    "LyricsDebug",
-                                    "✓ Lyrics LRC parseadas: ${_lyrics.value.size} líneas",
-                                )
                                 return@launch
                             } catch (e: Exception) {
-                                android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                             }
                         }
 
@@ -608,7 +583,6 @@ class MainViewModel(
                         // Intentar con TTML primero
                         var ttmlFoundAndParsed = false
                         ttmlFiles?.forEach { file ->
-                            android.util.Log.d("LyricsDebug", "Evaluando TTML: ${file.name}")
                             val ttmlNameWithoutExt = file.nameWithoutExtension
 
                             val audioClean =
@@ -625,27 +599,17 @@ class MainViewModel(
                             if (audioClean == ttmlClean) {
                                 try {
                                     val text = file.readText()
-                                    android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ Match TTML encontrado: ${file.name}",
-                                    )
                                     val parsed = TtmlParser.parseTtml(text)
 
                                     // Solo usar TTML si tiene líneas
                                     if (parsed.lines.isNotEmpty()) {
                                         _ttmlLyrics.value = parsed
                                         _lyrics.value = emptyList()
-                                        android.util.Log.d(
-                                            "LyricsDebug",
-                                            "✓ TTML cargado: ${parsed.lines.size} líneas",
-                                        )
                                         ttmlFoundAndParsed = true
                                         return@launch
                                     } else {
-                                        android.util.Log.w("LyricsDebug", "TTML parseado pero vacío, intentando con LRC")
                                     }
                                 } catch (e: Exception) {
-                                    android.util.Log.e("LyricsDebug", "Error parseando TTML, intentando con LRC como fallback", e)
                                 }
                             }
                         }
@@ -655,13 +619,8 @@ class MainViewModel(
                             audioDir.listFiles { _, name ->
                                 name.endsWith(".lrc", ignoreCase = true)
                             }
-                        android.util.Log.d(
-                            "LyricsDebug",
-                            "Archivos .lrc encontrados: ${lrcFiles?.size ?: 0}",
-                        )
 
                         lrcFiles?.forEach { file ->
-                            android.util.Log.d("LyricsDebug", "Evaluando: ${file.name}")
                             val lrcNameWithoutExt = file.nameWithoutExtension
 
                             // Comparar ignorando caracteres problemáticos
@@ -676,40 +635,25 @@ class MainViewModel(
                                     .lowercase()
                                     .trim()
 
-                            android.util.Log.d("LyricsDebug", "  Audio clean: '$audioClean'")
-                            android.util.Log.d("LyricsDebug", "  LRC clean: '$lrcClean'")
 
                             if (audioClean == lrcClean) {
                                 try {
                                     val text = file.readText()
-                                    android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ Match LRC encontrado: ${file.name}",
-                                    )
                                     _ttmlLyrics.value = null
                                     _lyrics.value = parseLrc(text)
-                                    android.util.Log.d(
-                                        "LyricsDebug",
-                                        "✓ Lyrics LRC cargadas: ${_lyrics.value.size} líneas",
-                                    )
                                     return@launch
                                 } catch (e: Exception) {
-                                    android.util.Log.e("LyricsDebug", "Error leyendo archivo", e)
                                 }
                             }
                         }
 
-                        android.util.Log.d("LyricsDebug", "✗ No se encontró .lrc coincidente")
                     } else {
-                        android.util.Log.d("LyricsDebug", "✗ Directorio no existe o es null")
                     }
                 }
 
-                android.util.Log.d("LyricsDebug", "✗ No se encontraron letras")
                 _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
             } catch (e: Exception) {
-                android.util.Log.e("LyricsDebug", "✗ Excepción general", e)
                 _ttmlLyrics.value = null
                 _lyrics.value = emptyList()
             }

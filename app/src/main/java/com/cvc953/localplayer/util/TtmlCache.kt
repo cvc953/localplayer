@@ -11,7 +11,7 @@ import org.json.JSONObject
 import java.io.File
 
 object TtmlCache {
-    private const val CACHE_SCHEMA_VERSION = 4 // Incremented for agent/alignment support
+    private const val CACHE_SCHEMA_VERSION = 5 // Incremented for isSustained support
 
     private fun cacheDir(context: Context): File {
         val dir = File(context.cacheDir, "ttml_cache")
@@ -56,6 +56,7 @@ object TtmlCache {
                             durationMs = s.optLong("durationMs", 0L),
                             isBackground = s.optBoolean("isBackground", false),
                             continuesWord = s.optBoolean("continuesWord", false),
+                            isSustained = s.optBoolean("isSustained", false),
                         ),
                     )
                 }
@@ -127,6 +128,7 @@ object TtmlCache {
                     sObj.put("durationMs", s.durationMs)
                     sObj.put("isBackground", s.isBackground)
                     sObj.put("continuesWord", s.continuesWord)
+                    sObj.put("isSustained", s.isSustained)
                     sylArr.put(sObj)
                 }
                 lnObj.put("syllabus", sylArr)

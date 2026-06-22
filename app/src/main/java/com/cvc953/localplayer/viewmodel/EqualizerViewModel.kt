@@ -59,7 +59,6 @@ class EqualizerViewModel(
            /* pc.setOnAudioSessionIdChangedListener { sessionId ->
                 if (sessionId != 0 && sessionId != lastEqSessionId) {
                     lastEqSessionId = sessionId
-                    android.util.Log.d("EqualizerViewModel", "Audio session changed: $sessionId")
                     viewModelScope.launch {
                         safelyReinitializeEqualizer(sessionId)
                     }
@@ -101,7 +100,6 @@ class EqualizerViewModel(
             val currentSessionId = pc.getAudioSessionId()
             if (currentSessionId != 0 && currentSessionId != lastEqSessionId) {
                 lastEqSessionId = currentSessionId
-                android.util.Log.d("EqualizerViewModel", "Using current audio session: $currentSessionId")
                 viewModelScope.launch {
                     safelyReinitializeEqualizer(currentSessionId)
                 }

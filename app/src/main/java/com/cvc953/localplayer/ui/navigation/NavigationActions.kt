@@ -64,9 +64,19 @@ fun NavController.navigateAbout() {
     navigate(Screen.About.route)
 }
 
+fun NavController.navigateSongEdit(songId: Long) {
+    navigate(Screen.SongEdit.createRoute(songId))
+}
+
+fun NavController.navigateAlbumEdit(albumName: String, artistName: String) {
+    navigate(Screen.AlbumEdit.createRoute(albumName, artistName))
+}
+
 /**
  * Navegación hacia atrás
  */
 fun NavController.navigateBack() {
-    popBackStack()
+    if (!navigateUp()) {
+        popBackStack()
+    }
 }

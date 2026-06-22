@@ -59,8 +59,8 @@ fun <T> BoxScope.AlphabetScrollerContent(
     val alphabet = listOf("#") + ('A'..'Z').map { it.toString() }
     var columnHeight = remember { 0f }
 
-    fun findIndexForLetter(letter: String): Int {
-        return if (letter == "#") {
+    fun findIndexForLetter(letter: String): Int =
+        if (letter == "#") {
             items.indexOfFirst { item ->
                 val firstChar = getItemName(item).firstOrNull()?.uppercaseChar()
                 firstChar == null || !firstChar.isLetter()
@@ -70,13 +70,12 @@ fun <T> BoxScope.AlphabetScrollerContent(
                 getItemName(item).firstOrNull()?.uppercaseChar() == letter[0]
             }
         }
-    }
 
     fun scrollToLetter(letter: String) {
         onLetterSelected(letter)
         scope.launch {
             delay(800)
-            onLetterSelected(null)  // Reset the current letter after detection
+            onLetterSelected(null) // Reset the current letter after detection
         }
         val index = findIndexForLetter(letter)
         if (index >= 0) {
@@ -166,7 +165,7 @@ fun BoxScope.ScrollLetterDisplay(letter: String) {
     ) {
         Text(
             text = letter,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.primary,
             fontSize = 48.sp,
             fontWeight = FontWeight.Bold,
         )

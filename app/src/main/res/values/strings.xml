@@ -49,8 +49,8 @@
     <string name="settings_title">Configuración</string>
     <string name="settings_subtitle">Personalizar app y tu biblioteca</string>
     <string name="action_close">Cerrar</string>
-    <string name="settings_section_appearance_title">Apariencia y comportamiento</string>
-    <string name="settings_section_appearance_subtitle">Opciones globales de visualización y escaneo</string>
+    <string name="settings_section_appearance_title">Apariencia</string>
+    <string name="settings_section_appearance_subtitle">Personalizá el aspecto visual de la app</string>
     <string name="settings_theme_label">Tema</string>
     <string name="settings_theme_description">Seleccionar tema de la app</string>
     <string name="theme_light">Claro</string>
@@ -96,12 +96,25 @@
     <string name="settings_equalizer_enable_description">Usar ecualizador nativo del sistema</string>
     <string name="action_open_equalizer">Abrir ecualizador avanzado</string>
 
+    <string name="settings_section_navigation_title">Navegación</string>
+    <string name="settings_section_navigation_subtitle">Configurá las pestañas de la barra de navegación</string>
+    <string name="settings_section_player_title">Reproductor</string>
+    <string name="settings_section_player_subtitle">Personalizá el comportamiento del reproductor</string>
+
     <string name="settings_section_library_title">Biblioteca</string>
     <string name="settings_section_library_subtitle">Gestiona las carpetas que se incluyen en la música</string>
     <string name="settings_auto_scan_label">Escaneo automático</string>
     <string name="settings_auto_scan_description">Detectar cambios y escanear automáticamente</string>
     <string name="settings_default_tab_label">Pestaña inicial</string>
     <string name="settings_default_tab_description">Elegí qué sección abrir al iniciar la app</string>
+    <string name="settings_songs_tab_label">Pestaña Canciones</string>
+    <string name="settings_songs_tab_description">Mostrar la pestaña de canciones en la barra de navegación</string>
+    <string name="settings_albums_tab_label">Pestaña Álbumes</string>
+    <string name="settings_albums_tab_description">Mostrar la pestaña de álbumes en la barra de navegación</string>
+    <string name="settings_artists_tab_label">Pestaña Artistas</string>
+    <string name="settings_artists_tab_description">Mostrar la pestaña de artistas en la barra de navegación</string>
+    <string name="settings_playlists_tab_label">Pestaña Listas</string>
+    <string name="settings_playlists_tab_description">Mostrar la pestaña de listas en la barra de navegación</string>
     <string name="settings_genres_tab_label">Pestaña Géneros</string>
     <string name="settings_genres_tab_description">Mostrar la pestaña de géneros en la barra de navegación</string>
     <string name="action_add_folder">Agregar carpeta</string>
@@ -190,6 +203,7 @@
     <string name="toast_removed_from_playlist">Eliminado de la lista</string>
     <string name="action_play">Reproducir</string>
     <string name="action_shuffle">Aleatorio</string>
+    <string name="action_play_all">Reproducir todo</string>
     <string name="action_add_to_favorites">Añadir a favoritos</string>
     <string name="action_remove_from_favorites">Eliminar de favoritos</string>
     <string name="action_remove_from_playlist">Quitar de la lista</string>
@@ -218,4 +232,48 @@
     <string name="queue_title_upcoming">Próximas canciones</string>
     <string name="queue_empty_upcoming">No hay próximas canciones</string>
     <string name="action_reorder">Reordenar</string>
+
+    <!-- Color Picker -->
+    <string name="color_picker_title">Color personalizado</string>
+    <string name="color_picker_hue">Matiz</string>
+    <string name="color_picker_saturation">Saturación</string>
+    <string name="color_picker_brightness">Brillo</string>
+    <string name="color_picker_accept">Aceptar</string>
+
+    <!-- Edit Song / Album -->
+    <string name="edit_song_title">Editar canción</string>
+    <string name="edit_album_title">Editar álbum</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_play_random">Reproducir aleatorio</string>
+    <string name="field_title">Título</string>
+    <string name="field_artist">Artista</string>
+    <string name="field_album">Álbum</string>
+    <string name="field_genre">Género</string>
+    <string name="field_year">Año</string>
+    <string name="field_track_number">N° pista</string>
+    <string name="field_disc_number">N° disco</string>
+    <string name="cover_art_change">Cambiar carátula</string>
+    <string name="cover_art_tap_hint">Toca para seleccionar una imagen</string>
+    <string name="validation_title_required">El título no puede estar vacío</string>
+    <string name="validation_year_invalid">El año debe ser un número válido</string>
+    <string name="error_save_failed">Error al guardar — el archivo puede estar en uso</string>
+    <string name="edit_details">Editar detalles</string>
+    <string name="album_edit_track_count">Se aplica a %d canciones</string>
+    <string name="album_edit_partial_failure_title">Algunas canciones fallaron</string>
+    <string name="album_edit_partial_failure_message">%d canciones actualizadas, %d fallaron</string>
+    <string name="error_invalid_image">Imagen inválida</string>
+    <string name="error_file_in_use">Archivo en uso — cerrá otras apps</string>
+    <string name="error_format_not_writable">Este formato no soporta escritura de tags</string>
+
+    <string name="albums_count">%d álbumes</string>
+    <string name="playlists_count">%d listas</string>
+    <string name="genres_count">%d géneros</string>
+    <string name="artists_count">%d artistas</string>
+    <string name="action_delete_song">Eliminar canción</string>
+    <string name="delete_song_confirm_title">¿Eliminar canción?</string>
+    <string name="delete_song_confirm_message">Se eliminará esta canción del dispositivo.</string>
+    <string name="delete_song_final_title">¿Estás seguro?</string>
+    <string name="delete_song_final_message">Esta acción no se puede deshacer.</string>
+    <string name="toast_song_deleted">Canción eliminada</string>
 </resources>

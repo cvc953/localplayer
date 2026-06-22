@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [1.1.0]
+
+### Added
+- ✏️ Edit song metadata and cover art (title, artist, album, genre, year, track, disc, image) from the player screen
+- ✏️ Edit full album metadata and cover art from the album detail screen
+- 🏷️ New Genres tab with configurable view and genre detail screen
+- 🎨 Custom accent color picker with hex code input
+- ⚙️ Settings and About menu in Albums, Artists, and Playlists screens
+- 🔤 New sort options: Artist Z-A and Recently Added
+- 🔗 TimeLyr link in synchronized lyrics
+- ❌ Delete songs
+- 🎤 Instrumental track detection in lyrics
+
+### Changed
+- 🔄 Navigation tabs are now configurable (show/hide each tab from Settings)
+- 🔀 Shuffle and sequential play buttons now operate on the current screen (Albums, Playlists, Genres) instead of the whole library
+- 🎨 Cleaned up debug logs to reduce battery usage
+
+### Fixed
+- 🔋 Reduced battery drain — fixed progress polling, coroutine leaks, and duplicate observers
+- 📋 Fixed drag-to-reorder conflict with multi-song selection in playlist detail
+- 🐛 Fixed color picker not applying custom hex value
+- 🔄 Fixed null GENRE column handling in all scan methods
+- 🗑️ Fixed song deletion on Android 11+ (scoped storage)
+- 🖼️ Fixed cover art editing on Android 11+ (scoped storage)
+- 📝 Fixed plain text lyrics detection (no longer shown as synced lyrics)
+- 🧹 Removed non-existent skin system references from changelogs
+
 ## [1.0.11]
 
 ### Changed
@@ -206,7 +234,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `Fixed` for bug fixes
 - `Security` for vulnerability fixes
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.0.7...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/cvc953/localplayer/compare/v1.0.11...v1.1.0
+[1.0.11]: https://github.com/cvc953/localplayer/compare/v1.0.10...v1.0.11
 [1.0.7]: https://github.com/cvc953/localplayer/compare/v1.0.5...v1.0.7
 [1.0.5]: https://github.com/cvc953/localplayer/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/cvc953/localplayer/compare/v1.0.0...v1.0.4

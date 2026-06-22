@@ -97,6 +97,7 @@ import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.MiniPlayer
 import com.cvc953.localplayer.ui.components.LyricsView
+import com.cvc953.localplayer.ui.components.MetadataSection
 import com.cvc953.localplayer.ui.components.PlayerConfig
 import com.cvc953.localplayer.ui.components.PlayerControlActions
 import com.cvc953.localplayer.ui.components.PlayerControlState
@@ -108,6 +109,7 @@ import com.cvc953.localplayer.ui.components.parsePlayPauseStyle
 import com.cvc953.localplayer.ui.components.parseProgressBarStyle
 import com.cvc953.localplayer.ui.components.parseTransportStyle
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
+import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.util.darken
 import com.cvc953.localplayer.util.getDominantColor
 import com.cvc953.localplayer.viewmodel.LyricsViewModel
@@ -163,6 +165,7 @@ fun PlayerScreen(
     val context = LocalContext.current
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val ttmlLyrics by lyricsViewModel.ttmlLyrics.collectAsState()
+    val isInstrumental by lyricsViewModel.isInstrumental.collectAsState()
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
     var dominantColor by remember { mutableStateOf(Color.Black) }
     var showQueue by remember { mutableStateOf(false) }
@@ -381,8 +384,17 @@ fun PlayerScreen(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                     contentAlignment = Alignment.Center,
                 ) {
-                    // Priorizar TTML sobre LRC
+                    // Priorizar instrumental sobre TTML y LRC
                     when {
+                        isInstrumental -> {
+                            InstrumentalView(
+                                metadataLines = lyrics.filter { it.isMetadata },
+                                dominantColor = dominantColor,
+                                useDynamicBackground = dynamicColorEnabled,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+
                         ttmlLyrics != null &&
                             ttmlLyrics!!.lines.isNotEmpty() -> {
                             // Mostrar letras palabra por palabra
@@ -1272,6 +1284,67 @@ fun PlayerScreen(
                         Spacer(Modifier.height(12.dp))
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun InstrumentalView(
+    metadataLines: List<LrcLine>,
+    dominantColor: Color,
+    useDynamicBackground: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val activeLyricColor =
+        if (useDynamicBackground) {
+            val luminance = dominantColor.luminance()
+            if (luminance > 0.3f) Color.Black else Color.White
+        } else {
+            Color.White
+        }
+    val inactiveLyricColor = activeLyricColor.copy(alpha = 0.5f)
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = 32.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.MusicNote,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = activeLyricColor,
+            )
+            Text(
+                text = "Instrumental",
+                color = activeLyricColor,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                text = "Esta canción no tiene letra",
+                color = inactiveLyricColor,
+                fontSize = 14.sp,
+            )
+
+            if (metadataLines.isNotEmpty()) {
+                val pairs = remember(metadataLines) {
+                    metadataLines.mapNotNull { line ->
+                        val colon = line.text.indexOf(": ")
+                        if (colon > 0) Pair(line.text.substring(0, colon), line.text.substring(colon + 2))
+                        else null
+                    }.distinctBy { it.first }
+                }
+                Spacer(Modifier.height(12.dp))
+                MetadataSection(
+                    items = pairs,
+                    textColor = activeLyricColor,
+                )
             }
         }
     }

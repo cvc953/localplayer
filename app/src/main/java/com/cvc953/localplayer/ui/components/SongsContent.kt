@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,9 +28,12 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Sort
@@ -45,6 +49,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.cvc953.localplayer.R
+import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.ui.SongItem
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.screens.AboutScreen
@@ -81,6 +87,7 @@ fun SongsContent(
     playbackViewModel: PlaybackViewModel,
     playlistViewModel: PlaylistViewModel,
     playerViewModel: PlayerViewModel,
+    onEditSong: ((Song) -> Unit)? = null,
 ) {
     val songs by songViewModel.songs.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
@@ -399,6 +406,67 @@ fun SongsContent(
                             ),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        // Header: play random, play sequential, song count
+                        item {
+                            Card(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(end = 12.dp),
+                                colors =
+                                    CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    ),
+                                shape = RoundedCornerShape(12.dp),
+                            ) {
+                                Row(
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(
+                                        Icons.Default.MusicNote,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.songs_count, songs.size),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 13.sp,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    IconButton(
+                                        onClick = { playbackViewModel.playRandom() },
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Shuffle,
+                                            contentDescription = stringResource(R.string.action_shuffle),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            playbackViewModel.setShuffle(false)
+                                            playbackViewModel.updateDisplayOrder(sortedSongs)
+                                            if (sortedSongs.isNotEmpty()) {
+                                                playbackViewModel.play(sortedSongs.first())
+                                            }
+                                        },
+                                    ) {
+                                        Icon(
+                                            Icons.Default.PlayArrow,
+                                            contentDescription = stringResource(R.string.action_play_all),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
                         items(sortedSongs) { song ->
                             val isCurrent =
                                 playerState.currentSong?.id == song.id
@@ -483,6 +551,18 @@ fun SongsContent(
                                                 context.getString(R.string.toast_added_to_playlist, playlistName),
                                                 Toast.LENGTH_SHORT,
                                             ).show()
+                                    },
+                                    onEdit = onEditSong,
+                                    onDelete = { song ->
+                                        songViewModel.deleteSong(
+                                            song,
+                                            onSuccess = {
+                                                Toast.makeText(context, context.getString(R.string.toast_song_deleted), Toast.LENGTH_SHORT).show()
+                                            },
+                                            onError = { msg ->
+                                                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                            },
+                                        )
                                     },
                                 )
                             }
