@@ -609,6 +609,8 @@ class PlaybackViewModel(
         _currentPosition.value = pos
     }
 
+    fun getCurrentPosition(): Long = playerController.getCurrentPosition()
+
     fun addToQueueNext(song: Song) {
         val currentQueue = _queue.value.toMutableList()
         val currentIndex = playerState.value.currentSong?.let { currentQueue.indexOf(it) } ?: -1

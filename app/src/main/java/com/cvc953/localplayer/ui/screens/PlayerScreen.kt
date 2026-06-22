@@ -65,11 +65,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -166,6 +168,23 @@ fun PlayerScreen(
     val lyrics by lyricsViewModel.lyrics.collectAsState()
     val ttmlLyrics by lyricsViewModel.ttmlLyrics.collectAsState()
     val isInstrumental by lyricsViewModel.isInstrumental.collectAsState()
+
+    // High-frequency position reads for syllable-level lyrics.
+    // PlayerController only polls at 1Hz (battery-friendly), but syllables
+    // last 100-800ms — too fast for 1Hz updates. We read MediaPlayer directly
+    // at ~50ms when lyrics are visible and playing. When paused, the real
+    // position stays frozen, so there's zero drift.
+    val hasLyrics = ttmlLyrics?.lines?.isNotEmpty() == true || (lyrics.isNotEmpty() && !isInstrumental)
+    var lyricsPosition by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(playerState.isPlaying, hasLyrics) {
+        if (!playerState.isPlaying || !hasLyrics) return@LaunchedEffect
+        while (true) {
+            withFrameNanos { }
+            lyricsPosition = playbackViewModel.getCurrentPosition()
+        }
+    }
+
     var albumArt by remember { mutableStateOf<Bitmap?>(null) }
     var dominantColor by remember { mutableStateOf(Color.Black) }
     var showQueue by remember { mutableStateOf(false) }
@@ -400,8 +419,7 @@ fun PlayerScreen(
                             // Mostrar letras palabra por palabra
                             TtmlLyricsView(
                                 lines = ttmlLyrics!!.lines,
-                                currentPosition =
-                                    playerState.position,
+                                currentPosition = lyricsPosition,
                                 modifier = Modifier.fillMaxSize(),
                                 dominantColor = dominantColor,
                                 useDynamicBackground = dynamicColorEnabled,
@@ -413,8 +431,7 @@ fun PlayerScreen(
                             // Fallback a letras línea por línea
                             LyricsView(
                                 lyrics = lyrics,
-                                currentPosition =
-                                    playerState.position,
+                                currentPosition = lyricsPosition,
                                 modifier = Modifier.fillMaxSize(),
                                 dominantColor = dominantColor,
                                 useDynamicBackground = dynamicColorEnabled,
