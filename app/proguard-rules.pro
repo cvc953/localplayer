@@ -29,3 +29,9 @@
 
 # Lifecycle
 -keep class androidx.lifecycle.** { *; }
+
+# jaudiotagger — tag reading/writing
+-keep class org.jaudiotagger.** { *; }
+-dontwarn org.jaudiotagger.**
+-dontwarn java.awt.**
+-dontwarn javax.imageio.**
