@@ -20,7 +20,7 @@ import com.cvc953.localplayer.model.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Simple LRU-like cache for playlist album art, keyed by playlist song IDs. */
+/** LRU cache for combined playlist album art, keyed by playlist song IDs hash. */
 private val albumArtCache =
     object : LinkedHashMap<Int, Bitmap>(64, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, Bitmap>): Boolean =
@@ -36,7 +36,7 @@ fun PlaylistAlbumArt(
     modifier: Modifier = Modifier,
     customImageUri: String? = null,
 ) {
-    var albumBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var combinedBitmap by remember { mutableStateOf<Bitmap?>(null) }
     val cacheKey = remember(playlistSongIds, customImageUri) {
         if (customImageUri != null) customImageUri.hashCode() else playlistSongIds.hashCode()
     }
@@ -45,7 +45,7 @@ fun PlaylistAlbumArt(
         // Check cache first
         synchronized(albumArtCache) {
             albumArtCache[cacheKey]?.let { cached ->
-                albumBitmap = cached
+                combinedBitmap = cached
                 return@LaunchedEffect
             }
         }
@@ -56,18 +56,18 @@ fun PlaylistAlbumArt(
             } else if (playlistSongIds.isEmpty()) {
                 null
             } else {
-                loadFirstSongArt(context, playlistSongIds, songMap)
+                loadCombinedArt(context, playlistSongIds, songMap)
             }
 
         if (bitmap != null) {
             synchronized(albumArtCache) { albumArtCache[cacheKey] = bitmap }
         }
-        albumBitmap = bitmap
+        combinedBitmap = bitmap
     }
 
-    if (albumBitmap != null) {
+    if (combinedBitmap != null) {
         Image(
-            painter = BitmapPainter(albumBitmap!!.asImageBitmap()),
+            painter = BitmapPainter(combinedBitmap!!.asImageBitmap()),
             contentDescription = "Carátula de la playlist",
             modifier = modifier,
             contentScale = ContentScale.Crop,
@@ -94,26 +94,38 @@ private suspend fun loadCustomImage(
     }
 }
 
-private suspend fun loadFirstSongArt(
+private suspend fun loadCombinedArt(
     context: android.content.Context,
     playlistSongIds: List<Long>,
     songMap: Map<Long, Song>,
 ): Bitmap? = withContext(Dispatchers.IO) {
-    val firstSong =
-        playlistSongIds.firstNotNullOfOrNull { id -> songMap[id] }
-            ?: return@withContext null
+    val firstFourSongs =
+        playlistSongIds.take(4).mapNotNull { id -> songMap[id] }
 
-    try {
-        val retriever = MediaMetadataRetriever()
-        retriever.setDataSource(context, firstSong.uri)
-        val data = retriever.embeddedPicture
-        retriever.release()
-        if (data != null) {
-            BitmapFactory.decodeByteArray(data, 0, data.size)
-        } else {
-            null
+    val bitmaps = mutableListOf<Bitmap?>()
+    for (song in firstFourSongs) {
+        try {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(context, song.uri)
+            val data = retriever.embeddedPicture
+            retriever.release()
+            if (data != null) {
+                bitmaps.add(BitmapFactory.decodeByteArray(data, 0, data.size))
+            } else {
+                bitmaps.add(null)
+            }
+        } catch (_: Exception) {
+            bitmaps.add(null)
         }
-    } catch (_: Exception) {
+    }
+    // Rellenar con nulls si hay menos canciones de las esperadas
+    while (bitmaps.size < firstFourSongs.size) {
+        bitmaps.add(null)
+    }
+
+    if (bitmaps.isNotEmpty()) {
+        createCombinedAlbumArt(bitmaps)
+    } else {
         null
     }
 }
