@@ -324,87 +324,80 @@ fun ArtistsScreen(
                 )
             }
 
-            // Header: shuffle random artist, play first artist, artist count
-            Card(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            @Composable
+            fun ArtistsHeaderCard(sortedArtists: List<Artist>) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(12.dp),
                 ) {
-                    Icon(
-                        Icons.Default.LibraryMusic,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.artists_count, sortedArtists.size),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(
-                        onClick = {
-                            if (sortedArtists.isNotEmpty()) {
-                                val artist = sortedArtists.random()
-                                val artistSongs = songs.filter { song ->
-                                    normalizeArtistName(song.artist).any {
-                                        it.equals(artist.name.trim(), ignoreCase = true)
-                                    }
-                                }.sortedWith(
-                                    compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
-                                )
-                                if (artistSongs.isNotEmpty()) {
-                                    playbackViewModel.setShuffle(false)
-                                    playbackViewModel.updateDisplayOrder(artistSongs)
-                                    playbackViewModel.play(artistSongs.first())
-                                }
-                            }
-                        },
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            Icons.Default.Shuffle,
-                            contentDescription = stringResource(R.string.action_shuffle),
+                            Icons.Default.LibraryMusic,
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
                         )
-                    }
-                    IconButton(
-                        onClick = {
-                            if (sortedArtists.isNotEmpty()) {
-                                val artist = sortedArtists.first()
-                                val artistSongs = songs.filter { song ->
-                                    normalizeArtistName(song.artist).any {
-                                        it.equals(artist.name.trim(), ignoreCase = true)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.artists_count, sortedArtists.size),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(
+                            onClick = {
+                                if (sortedArtists.isNotEmpty()) {
+                                    val artist = sortedArtists.random()
+                                    val artistSongs = songs.filter { song ->
+                                        normalizeArtistName(song.artist).any {
+                                            it.equals(artist.name.trim(), ignoreCase = true)
+                                        }
+                                    }.sortedWith(
+                                        compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                    )
+                                    if (artistSongs.isNotEmpty()) {
+                                        playbackViewModel.setShuffle(false)
+                                        playbackViewModel.updateDisplayOrder(artistSongs)
+                                        playbackViewModel.play(artistSongs.first())
                                     }
-                                }.sortedWith(
-                                    compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
-                                )
-                                if (artistSongs.isNotEmpty()) {
-                                    playbackViewModel.setShuffle(false)
-                                    playbackViewModel.updateDisplayOrder(artistSongs)
-                                    playbackViewModel.play(artistSongs.first())
                                 }
-                            }
-                        },
-                    ) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = stringResource(R.string.action_play_all),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
+                            },
+                        ) {
+                            Icon(
+                                Icons.Default.Shuffle,
+                                contentDescription = stringResource(R.string.action_shuffle),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                if (sortedArtists.isNotEmpty()) {
+                                    val artist = sortedArtists.first()
+                                    val artistSongs = songs.filter { song ->
+                                        normalizeArtistName(song.artist).any {
+                                            it.equals(artist.name.trim(), ignoreCase = true)
+                                        }
+                                    }.sortedWith(
+                                        compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                    )
+                                    if (artistSongs.isNotEmpty()) {
+                                        playbackViewModel.setShuffle(false)
+                                        playbackViewModel.updateDisplayOrder(artistSongs)
+                                        playbackViewModel.play(artistSongs.first())
+                                    }
+                                }
+                            },
+                        ) {
+                            Icon(
+                                Icons.Default.PlayArrow,
+                                contentDescription = stringResource(R.string.action_play_all),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }
@@ -419,6 +412,9 @@ fun ArtistsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        item {
+                            ArtistsHeaderCard(sortedArtists = sortedArtists)
+                        }
                         items(sortedArtists) { artist ->
                             val context = LocalContext.current
                             // Buscar cualquier canción donde el artista normalizado coincida
@@ -655,6 +651,9 @@ fun ArtistsScreen(
                             ),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        item {
+                            ArtistsHeaderCard(sortedArtists = sortedArtists)
+                        }
                         items(sortedArtists) { artist ->
                             val context = LocalContext.current
                             val firstSong =

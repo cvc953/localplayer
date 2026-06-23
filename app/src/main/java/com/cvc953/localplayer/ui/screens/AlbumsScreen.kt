@@ -339,81 +339,74 @@ fun AlbumsScreen(
                 )
             }
 
-            // Header: shuffle random album, play first album, album count
-            Card(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    ),
-                shape = RoundedCornerShape(12.dp),
-            ) {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+            @Composable
+            fun AlbumsHeaderCard(sortedAlbums: List<Album>) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(12.dp),
                 ) {
-                    Icon(
-                        Icons.Default.LibraryMusic,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.albums_count, sortedAlbums.size),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(
-                        onClick = {
-                            if (sortedAlbums.isNotEmpty()) {
-                                val album = sortedAlbums.random()
-                                val albumSongs = songs.filter { song ->
-                                    song.album.trim().equals(album.name.trim(), ignoreCase = true) &&
-                                        song.artist.trim().equals(album.artist.trim(), ignoreCase = true)
-                                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
-                                if (albumSongs.isNotEmpty()) {
-                                    playbackViewModel.setShuffle(false)
-                                    playbackViewModel.updateDisplayOrder(albumSongs)
-                                    playbackViewModel.play(albumSongs.first())
-                                }
-                            }
-                        },
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            Icons.Default.Shuffle,
-                            contentDescription = stringResource(R.string.action_shuffle),
+                            Icons.Default.LibraryMusic,
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
                         )
-                    }
-                    IconButton(
-                        onClick = {
-                            if (sortedAlbums.isNotEmpty()) {
-                                val album = sortedAlbums.first()
-                                val albumSongs = songs.filter { song ->
-                                    song.album.trim().equals(album.name.trim(), ignoreCase = true) &&
-                                        song.artist.trim().equals(album.artist.trim(), ignoreCase = true)
-                                }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
-                                if (albumSongs.isNotEmpty()) {
-                                    playbackViewModel.setShuffle(false)
-                                    playbackViewModel.updateDisplayOrder(albumSongs)
-                                    playbackViewModel.play(albumSongs.first())
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.albums_count, sortedAlbums.size),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f),
+                        )
+                        IconButton(
+                            onClick = {
+                                if (sortedAlbums.isNotEmpty()) {
+                                    val album = sortedAlbums.random()
+                                    val albumSongs = songs.filter { song ->
+                                        song.album.trim().equals(album.name.trim(), ignoreCase = true) &&
+                                            song.artist.trim().equals(album.artist.trim(), ignoreCase = true)
+                                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                    if (albumSongs.isNotEmpty()) {
+                                        playbackViewModel.setShuffle(false)
+                                        playbackViewModel.updateDisplayOrder(albumSongs)
+                                        playbackViewModel.play(albumSongs.first())
+                                    }
                                 }
-                            }
-                        },
-                    ) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = stringResource(R.string.action_play_all),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
+                            },
+                        ) {
+                            Icon(
+                                Icons.Default.Shuffle,
+                                contentDescription = stringResource(R.string.action_shuffle),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                if (sortedAlbums.isNotEmpty()) {
+                                    val album = sortedAlbums.first()
+                                    val albumSongs = songs.filter { song ->
+                                        song.album.trim().equals(album.name.trim(), ignoreCase = true) &&
+                                            song.artist.trim().equals(album.artist.trim(), ignoreCase = true)
+                                    }.sortedWith(compareBy<Song>({ it.discNumber }, { it.trackNumber }))
+                                    if (albumSongs.isNotEmpty()) {
+                                        playbackViewModel.setShuffle(false)
+                                        playbackViewModel.updateDisplayOrder(albumSongs)
+                                        playbackViewModel.play(albumSongs.first())
+                                    }
+                                }
+                            },
+                        ) {
+                            Icon(
+                                Icons.Default.PlayArrow,
+                                contentDescription = stringResource(R.string.action_play_all),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     }
                 }
             }
@@ -428,6 +421,9 @@ fun AlbumsScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        item {
+                            AlbumsHeaderCard(sortedAlbums = sortedAlbums)
+                        }
                         items(sortedAlbums) { album ->
                             val context = LocalContext.current
                             // Buscar la primera canción usando normalización para coincidencia real
@@ -700,6 +696,9 @@ contentDescription = stringResource(R.string.action_more_options),
                             ),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        item {
+                            AlbumsHeaderCard(sortedAlbums = sortedAlbums)
+                        }
                         items(sortedAlbums) { album ->
                             val context = LocalContext.current
                             val firstSong =
