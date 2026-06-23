@@ -94,6 +94,7 @@ fun PlaylistsScreen(
     val isScanning by playlistViewModel.isScanning.collectAsState()
     val playlists by playlistViewModel.playlists.collectAsState()
     val songs by playlistViewModel.songs.collectAsState()
+    val songMap = remember(songs) { songs.associateBy { it.id } }
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var showSearchBar by rememberSaveable { mutableStateOf(false) }
     var sortMenuExpanded by remember { mutableStateOf(false) }
@@ -656,7 +657,7 @@ fun PlaylistsScreen(
                         ) {
                             PlaylistAlbumArt(
                                 playlistSongIds = playlist.songIds,
-                                songs = songs,
+                                songMap = songMap,
                                 context = LocalContext.current,
                                 customImageUri = playlist.imageUri,
                                 modifier =

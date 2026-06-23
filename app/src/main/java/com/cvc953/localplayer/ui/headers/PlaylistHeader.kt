@@ -57,11 +57,12 @@ fun PlaylistHeader(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.screenWidthDp > configuration.screenHeightDp
+    val songMap = remember(songs) { songs.associateBy { it.id } }
 
     val albumArtComponent: @Composable () -> Unit = {
         PlaylistAlbumArt(
             playlistSongIds = playlist?.songIds ?: emptyList(),
-            songs = songs,
+            songMap = songMap,
             context = context,
             customImageUri = playlist?.imageUri,
             modifier = Modifier.fillMaxWidth(1f).aspectRatio(1f).clip(RoundedCornerShape(8.dp)),
