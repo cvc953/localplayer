@@ -681,7 +681,7 @@ fun PlaylistsScreen(
                                     fontSize = 16.sp,
                                 )
                                 Text(
-                                    text = stringResource(R.string.songs_count, playlist.songIds.size),
+                                    text = stringResource(R.string.songs_count, playlist.songIds.count { id -> songMap.containsKey(id) }),
                                     color = MaterialTheme.extendedColors.textSecondary,
                                     fontSize = 12.sp,
                                 )

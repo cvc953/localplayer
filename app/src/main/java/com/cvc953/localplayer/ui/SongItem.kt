@@ -478,7 +478,7 @@ fun SongItem(
                                                 fontSize = 14.sp,
                                             )
                                             Text(
-                                                text = stringResource(R.string.songs_count, playlist.songIds.size),
+                                                text = stringResource(R.string.songs_count, playlist.songIds.count { id -> playlistViewModel.songs.value.any { it.id == id } }),
                                                 color = LocalExtendedColors.current.textSecondarySoft,
                                                 fontSize = 12.sp,
                                             )

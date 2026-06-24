@@ -306,7 +306,7 @@ fun MultiSongSelectionBar(
                                             fontSize = 14.sp,
                                         )
                                         Text(
-                                            text = stringResource(R.string.songs_count, playlist.songIds.size),
+                                            text = stringResource(R.string.songs_count, playlist.songIds.count { id -> songs.any { it.id == id } }),
                                             color = MaterialTheme.extendedColors.textSecondarySoft,
                                             fontSize = 12.sp,
                                         )

@@ -840,7 +840,7 @@ fun PlayerScreen(
                                                 )
                                                 Text(
                                                     text =
-                                                        "${playlist.songIds.size} canciones",
+                                                        "${playlist.songIds.count { id -> songs.any { it.id == id } }} canciones",
                                                     color =
                                                         LocalExtendedColors.current.textSecondarySoft,
                                                     fontSize =
