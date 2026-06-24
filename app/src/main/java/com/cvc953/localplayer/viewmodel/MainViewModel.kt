@@ -226,7 +226,7 @@ class MainViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // When auto-scan is enabled we must force a full rescan to detect newly added files
-                val newSongs = if (appPrefs.isAutoScanEnabled()) repository.loadSongs() else repository.loadSongs()
+                val newSongs = if (appPrefs.isAutoScanEnabled()) repository.forceRescanSongs() else repository.loadSongs()
                 val currentSongs = _songs.value
 
 
