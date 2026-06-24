@@ -213,22 +213,21 @@ class PlaybackViewModel(
                 val queue = _queue.value
                 val index = queue.indexOfFirst { it.id == song.id }
                 if (queue.size > 1) {
-                    // Si shuffle está activo, reorganizá la queue: tema elegido primero, resto aleatorio
-                    val finalQueue =
-                        if (_isShuffle.value) {
-                            val rest = queue.filter { it.id != song.id }.shuffled()
-                            listOf(song) + rest
-                        } else {
-                            queue
-                        }
-                    if (finalQueue !== queue) {
+                    if (_isShuffle.value) {
+                        // Shuffle ON: reorganizá la queue — tema elegido primero, resto aleatorio
+                        val rest = queue.filter { it.id != song.id }.shuffled()
+                        val finalQueue = listOf(song) + rest
                         _queue.value = finalQueue
                         try {
                             prefs.savePlaybackQueue(finalQueue.map { it.uri.toString() })
                         } catch (_: Exception) {
                         }
+                        playerController.playNow(finalQueue, 0)
+                    } else {
+                        // Shuffle OFF: reproducí desde la posición de la canción elegida
+                        val indexToPlay = if (index >= 0) index else 0
+                        playerController.playNow(queue, indexToPlay)
                     }
-                    playerController.playNow(finalQueue, 0)
                 } else if (queue.size == 1) {
                     // Si la cola tiene solo 1 canción, asegúrate de que sea la correcta
                     playerController.playNow(queue, 0)
