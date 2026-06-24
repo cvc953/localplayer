@@ -42,6 +42,7 @@ class EqualizerViewModel(
     private val _isEqualizerVisible = MutableStateFlow(false)
     val isEqualizerVisible: StateFlow<Boolean> = _isEqualizerVisible
 
+    // SYNC WITH refreshFromPrefs()
     private val _equalizerEnabled = MutableStateFlow(appPrefs.isEqualizerEnabled())
     val equalizerEnabled: StateFlow<Boolean> = _equalizerEnabled
 
@@ -52,6 +53,7 @@ class EqualizerViewModel(
     val bandLevelRange: StateFlow<Pair<Int, Int>> = _bandLevelRange
 
     init {
+        // SYNC WITH refreshFromPrefs()
         _userPresets.value = appPrefs.getUserPresets()
         try {
             val pc = PlayerController.getInstance(getApplication(), viewModelScope)
@@ -235,6 +237,13 @@ class EqualizerViewModel(
         if (_selectedPresetName.value == name) {
             _selectedPresetName.value = null
         }
+    }
+
+    fun refreshFromPrefs() {
+        // SYNC WITH init
+        _equalizerEnabled.value = appPrefs.isEqualizerEnabled()
+        // SYNC WITH init
+        _userPresets.value = appPrefs.getUserPresets()
     }
 
     private fun sanitizePresetName(raw: String): String {

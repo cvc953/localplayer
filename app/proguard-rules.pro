@@ -35,3 +35,4 @@
 -dontwarn org.jaudiotagger.**
 -dontwarn java.awt.**
 -dontwarn javax.imageio.**
+-ignorewarnings

@@ -123,6 +123,7 @@ class MainViewModel(
         }
     }
 
+    // SYNC WITH refreshAllFromPrefs() — when adding a new preference, update both places
     private val _autoScanEnabled = MutableStateFlow(appPrefs.isAutoScanEnabled())
     val autoScanEnabled: StateFlow<Boolean> = _autoScanEnabled
 
@@ -484,6 +485,52 @@ class MainViewModel(
         _genresTabEnabled.value = enabled
         if (!enabled && _defaultStartTab.value == "genres") {
             setDefaultStartTab("songs")
+        }
+    }
+
+    fun refreshAllFromPrefs() {
+        // SYNC WITH init — when adding a new preference, update both places
+        _autoScanEnabled.value = appPrefs.isAutoScanEnabled()
+        _themeMode.value = appPrefs.getThemeMode()
+        val newLanguage = appPrefs.getLanguage()
+        if (newLanguage != _language.value) {
+            _language.value = newLanguage
+            _languageChangeVersion.value += 1
+            // Apply locale imperatively so language takes effect immediately
+            applyImportedLanguage(newLanguage)
+        }
+        _dynamicColorEnabled.value = appPrefs.isDynamicColorEnabled()
+        _primaryColorHex.value = appPrefs.getPrimaryColor()
+        _albumArtShape.value = appPrefs.getAlbumArtShape()
+        _progressBarStyle.value = appPrefs.getProgressBarStyle()
+        _transportStyle.value = appPrefs.getTransportStyle()
+        _playPauseStyle.value = appPrefs.getPlayPauseStyle()
+        _showAudioInfo.value = appPrefs.getShowAudioInfo()
+        _songsTabEnabled.value = appPrefs.isSongsTabEnabled()
+        _albumsTabEnabled.value = appPrefs.isAlbumsTabEnabled()
+        _artistsTabEnabled.value = appPrefs.isArtistsTabEnabled()
+        _playlistsTabEnabled.value = appPrefs.isPlaylistsTabEnabled()
+        _genresTabEnabled.value = appPrefs.isGenresTabEnabled()
+        _defaultStartTab.value = appPrefs.getDefaultStartTab()
+    }
+
+    private fun applyImportedLanguage(languageCode: String) {
+        if (languageCode != "sistema") {
+            val locale = when (languageCode) {
+                "es" -> java.util.Locale("es")
+                "en" -> java.util.Locale("en")
+                "it" -> java.util.Locale("it")
+                else -> java.util.Locale.getDefault()
+            }
+            val app = getApplication<android.app.Application>()
+            val config = android.content.res.Configuration(app.resources.configuration)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                config.setLocale(locale)
+            } else {
+                @Suppress("DEPRECATION")
+                config.locale = locale
+            }
+            app.resources.updateConfiguration(config, app.resources.displayMetrics)
         }
     }
 

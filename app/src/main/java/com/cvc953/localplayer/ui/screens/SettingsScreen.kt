@@ -249,6 +249,8 @@ fun SettingsScreen(
                                 if (prefsObj != null) {
                                     val prefs = com.cvc953.localplayer.preferences.AppPrefs(context)
                                     prefs.importFromJson(prefsObj.toString())
+                                    viewModel.refreshAllFromPrefs()
+                                    equalizerViewModel.refreshFromPrefs()
                                 }
                                 val playlistsArr = root.optJSONArray("playlists")
                                 if (playlistsArr != null && playlistsArr.length() > 0) {
@@ -264,6 +266,8 @@ fun SettingsScreen(
                                 // Old format: just preferences
                                 val prefs = com.cvc953.localplayer.preferences.AppPrefs(context)
                                 prefs.importFromJson(text)
+                                viewModel.refreshAllFromPrefs()
+                                equalizerViewModel.refreshFromPrefs()
                             }
                             Toast.makeText(context, context.getString(R.string.toast_settings_imported), Toast.LENGTH_SHORT).show()
                         }
