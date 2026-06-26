@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.cvc953.localplayer.controller.LyricsController
 import com.cvc953.localplayer.model.Song
 import com.cvc953.localplayer.model.TtmlLyrics
+import com.cvc953.localplayer.util.EmbeddedLyricsExtractor
 import com.cvc953.localplayer.util.LrcLine
 import com.cvc953.localplayer.util.isInstrumentalContent
 import kotlinx.coroutines.Dispatchers
@@ -104,6 +105,19 @@ class LyricsViewModel(
                             _isLoading.value = false
                             return@launch
                         }
+                    }
+                }
+
+                // 3. Si no hay archivos externos, probar letras embedidas en los tags del audio
+                if (!audioFilePath.isNullOrEmpty()) {
+                    val embedded = EmbeddedLyricsExtractor.extract(audioFilePath, song.duration)
+                    if (embedded != null) {
+                        val rawText = embedded.lrcLines.joinToString("\n") { it.text }
+                        _isInstrumental.value = isInstrumentalContent(rawText)
+                        _lyrics.value = embedded.lrcLines
+                        _ttmlLyrics.value = embedded.ttmlLyrics
+                        _isLoading.value = false
+                        return@launch
                     }
                 }
 
