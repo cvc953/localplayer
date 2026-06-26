@@ -810,58 +810,27 @@ class PlaybackViewModel(
     }
 
     fun playNextSong() {
-        val current = playerState.value.currentSong ?: return
-        val queue = _queue.value
-        if (queue.isEmpty()) return
-
-        // Find the current song's position in the queue
-        val currentIndex = queue.indexOf(current)
-        if (currentIndex == -1) return
-
-        // Get the next song and SKIP duplicates (songs with same ID as current)
-        var nextIndex = currentIndex + 1
-        val currentId = current.id
-        
-        // Loop to find next different song
-        while (nextIndex < queue.size && queue[nextIndex].id == currentId) {
-            nextIndex++
-        }
-        
-        if (nextIndex < queue.size) {
-            // Play the next different song in the queue
-            play(queue[nextIndex])
-        } else if (_repeatMode.value == RepeatMode.ALL) {
-            // If we hit end, loop back to beginning AND skip duplicates from start
-            var newStart = 0
-            while (newStart < queue.size && queue[newStart].id == currentId) {
-                newStart++
-            }
-            if (newStart < queue.size) {
-                play(queue[newStart])
-            } else if (queue.isNotEmpty()) {
-                // If all songs have same ID, just play first
-                play(queue[0])
-            }
-        }
-        // If RepeatMode.NONE and we're at the end, don't play anything
+        playerController.next()
+        syncAfterTrackChange()
     }
 
     fun playPreviousSong() {
-        val current = playerState.value.currentSong ?: return
-        val queue = _queue.value
-        if (queue.isEmpty()) return
+        playerController.previous()
+        syncAfterTrackChange()
+    }
 
-        // For previous, go back in the queue (don't randomize even if shuffle is on)
-        val currentIndex = queue.indexOf(current)
-        if (currentIndex == -1) return
-
-        val prevIndex = currentIndex - 1
-        if (prevIndex >= 0) {
-            play(queue[prevIndex])
-        } else if (_repeatMode.value == RepeatMode.ALL) {
-            play(queue[queue.size - 1])
+    /**
+     * Persist state and update notification after a track change via next/previous.
+     * Matches the side effects that notification buttons (using PlayerController directly) already handle.
+     */
+    private fun syncAfterTrackChange() {
+        val song = playerState.value.currentSong ?: return
+        try {
+            prefs.saveLastSongUri(song.uri.toString())
+            prefs.savePlaybackPosition(0L)
+            prefs.saveIsPlaying(playerState.value.isPlaying)
+        } catch (_: Exception) {
         }
-        // If RepeatMode.NONE and we're at the beginning, don't play anything
     }
 
     fun togglePlayPause() {
