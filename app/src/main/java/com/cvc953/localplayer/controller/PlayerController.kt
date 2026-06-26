@@ -368,6 +368,7 @@ class PlayerController(
             }
         }
         _state.update { it.copy(isPlaying = true) }
+        startProgressUpdates()
     }
 
     fun stop() {
