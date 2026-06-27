@@ -291,6 +291,7 @@ class MusicService : Service() {
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setLargeIcon(artworkBitmap)
             .setContentIntent(contentPendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
             .setStyle(
                 androidx.media.app.NotificationCompat
                     .MediaStyle()
