@@ -731,6 +731,11 @@ class PlaybackViewModel(
             prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
         } catch (_: Exception) {
         }
+        // Sync the controller's internal queue so next/prev follow the new order
+        try {
+            playerController.replaceQueue(finalQueue, keepCurrentSong = true)
+        } catch (_: Exception) {
+        }
     }
 
     fun toggleShuffle() {
