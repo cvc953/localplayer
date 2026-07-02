@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [1.1.1]
+
+### Added
+- 📂 Open audio files from file managers (ACTION_VIEW intent)
+- 💾 Export and import full app configuration
+- 📋 Export playlists to M3U format
+- 🎨 Play/Pause button "Icon only" style (no border or background)
+- 🔔 Transport category in media notifications
+
+### Changed
+- 📐 Album and artist header cards moved inside LazyLayout as grid items
+- ⚙️ Expandable sections in settings screen
+
+### Fixed
+- 🔄 Fixed auto-scan reading from cache instead of MediaStore
+- 📊 Fixed playlist song count including orphaned IDs from deleted songs
+- ▶️ Fixed play(song) with shuffle ON — selected song now plays first
+- ▶️ Fixed play(song) with shuffle OFF — wrong song position in queue
+- ⏭️ Fixed Next/Previous re-shuffling the queue on every skip
+- 📈 Fixed progress bar freezing after pause/resume
+- 🎤 Restored embedded lyrics extraction from audio file tags
+- 🔀 Fixed drag-to-reorder only updating UI but not the player
+- 🎵 Fixed playback buttons on album and artist screens
+- 🔄 Fixed UI preference refresh after backup import
+- 🐛 Added ProGuard rules for jaudiotagger (missing awt/imageio classes on Android)
+
+### Performance
+- ⚡ Optimized PlaylistsScreen opening speed
+- ⚡ Optimized combined album art cache with LRU cache
+
 ## [1.1.0]
 
 ### Added
@@ -234,7 +264,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `Fixed` for bug fixes
 - `Security` for vulnerability fixes
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/cvc953/localplayer/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/cvc953/localplayer/compare/v1.0.11...v1.1.0
 [1.0.11]: https://github.com/cvc953/localplayer/compare/v1.0.10...v1.0.11
 [1.0.7]: https://github.com/cvc953/localplayer/compare/v1.0.5...v1.0.7

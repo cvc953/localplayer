@@ -6,6 +6,36 @@ Il formato si basa su [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
 
+## [1.1.1]
+
+### Aggiunto
+- 📂 Aprire file audio da gestori file (ACTION_VIEW)
+- 💾 Esportare e importare configurazione completa dell'app
+- 📋 Esportare playlist in formato M3U
+- 🎨 Stile pulsante Play/Pause "Solo icona" (senza bordo né sfondo)
+- 🔔 Categoria trasporto nelle notifiche multimediali
+
+### Modificato
+- 📐 Intestazioni album e artisti spostate dentro LazyLayout come elementi griglia
+- ⚙️ Sezioni espandibili nella schermata Impostazioni
+
+### Corretto
+- 🔄 Corretta la scansione automatica che leggeva dalla cache invece che da MediaStore
+- 📊 Corretto il conteggio brani nelle playlist (includeva ID orfani di brani eliminati)
+- ▶️ Corretta riproduzione con shuffle ON — il brano selezionato ora viene prima
+- ▶️ Corretta riproduzione con shuffle OFF — posizione errata nella coda
+- ⏭️ Corretto Successivo/Precedente che riordinava la coda casualmente ad ogni salto
+- 📈 Corretta la barra di progressione che si bloccava dopo pausa/riproduzione
+- 🎤 Ripristinata estrazione testi incorporati da file audio
+- 🔀 Corretto drag-to-reorder che aggiornava solo l'interfaccia ma non il lettore
+- 🎵 Corretti pulsanti riproduzione nelle schermate album e artisti
+- 🔄 Corretto aggiornamento preferenze UI dopo importazione backup
+- 🐛 Aggiunte regole ProGuard per jaudiotagger (classi awt/imageio mancanti su Android)
+
+### Prestazioni
+- ⚡ Ottimizzata apertura schermata Playlist
+- ⚡ Ottimizzata cache copertine combinate con LRU cache
+
 ## [1.1.0]
 
 ### Aggiunto
@@ -233,7 +263,8 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - `Corretto` per correzioni di bug
 - `Sicurezza` per correzioni di vulnerabilità
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/cvc953/localplayer/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/cvc953/localplayer/compare/v1.0.11...v1.1.0
 [1.0.11]: https://github.com/cvc953/localplayer/compare/v1.0.10...v1.0.11
 [1.0.7]: https://github.com/cvc953/localplayer/compare/v1.0.5...v1.0.7

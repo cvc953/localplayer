@@ -1,0 +1,10 @@
+- Open audio files from file managers
+- Export/import app configuration and M3U playlists
+- New "Icon only" Play/Pause button style
+- Fixed auto-scan reading from cache instead of MediaStore
+- Fixed playlist song count including deleted songs
+- Fixed playback buttons on album and artist screens
+- Fixed shuffle mode and Next/Previous queue behavior
+- Fixed progress bar freeze on pause/resume
+- Restored embedded lyrics extraction from audio files
+- Performance improvements for playlists and album art cache
