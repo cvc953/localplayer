@@ -1,6 +1,8 @@
 package com.cvc953.localplayer.ui.screens
 
 import android.app.Activity
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
@@ -66,7 +68,7 @@ import kotlinx.coroutines.launch
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MusicScreen(onOpenPlayer: () -> Unit) {
+fun MusicScreen(audioFileUri: String? = null, onOpenPlayer: () -> Unit) {
     val context = LocalContext.current
     val appPrefs = AppPrefs(context)
     val songViewModel: SongViewModel = viewModel()
@@ -79,6 +81,52 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
     val mainViewModel: MainViewModel = viewModel()
     val equalizerViewModel: EqualizerViewModel = viewModel()
     val folderViewModel: FolderViewModel = viewModel()
+
+    // Handle audio file opened from external file manager
+    LaunchedEffect(audioFileUri) {
+        if (audioFileUri != null) {
+            try {
+                val uri = android.net.Uri.parse(audioFileUri)
+
+                // --- Strategy 1: resolve to file path and match against loaded songs ---
+                val filePath = resolveAudioFilePath(context, uri)
+                var song =
+                    filePath?.let { path ->
+                        songViewModel.songs.value.find { it.filePath == path }
+                    }
+
+                // --- Strategy 2: direct MediaStore query (works for content://media URIs) ---
+                if (song == null) {
+                    song = querySongFromMediaStore(context, uri)
+                }
+
+                // --- Strategy 3: fallback — minimal Song from URI, ExoPlayer can play it anyway ---
+                if (song == null) {
+                    val title =
+                        uri.lastPathSegment
+                            ?.substringAfterLast('/')
+                            ?.substringBeforeLast('.')
+                            ?: uri.toString().substringAfterLast('/').substringBeforeLast('.')
+                    song =
+                        com.cvc953.localplayer.model.Song(
+                            id = -1L,
+                            title = title,
+                            artist = "",
+                            album = "",
+                            uri = uri,
+                            duration = 0L,
+                            filePath = filePath,
+                            year = null,
+                            trackNumber = 0,
+                            discNumber = 0,
+                        )
+                }
+
+                playbackViewModel.play(song)
+            } catch (_: Exception) {
+            }
+        }
+    }
 
     StoragePermissionHandler(
         isFolderConfiguredInitially = appPrefs.hasMusicFolderUri(),
@@ -346,4 +394,89 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
             }
         }
     }
+}
+
+/**
+ * Resolve a content/file URI to an absolute file path, or null if it can't be resolved.
+ * Handles DocumentsProvider URIs (Google Files, etc.), file:// URIs, and MediaStore content URIs.
+ */
+private fun resolveAudioFilePath(context: android.content.Context, uri: android.net.Uri): String? {
+    // DocumentsProvider URIs (e.g. from Google Files)
+    if (DocumentsContract.isDocumentUri(context, uri) &&
+        "com.android.externalstorage.documents" == uri.authority
+    ) {
+        val docId = DocumentsContract.getDocumentId(uri)
+        val split = docId.split(":")
+        if (split.size >= 2) {
+            val type = split[0] // "primary", "XXXX-XXXX" (SD card)
+            val path = split[1]
+            return "/storage/$type/$path"
+        }
+    }
+    // file:// URIs
+    if (uri.scheme == "file") {
+        return uri.path
+    }
+    // content:// — try querying the DATA column directly
+    if (uri.scheme == "content") {
+        try {
+            val cursor =
+                context.contentResolver.query(uri, arrayOf(MediaStore.Audio.Media.DATA), null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    return it.getString(0)
+                }
+            }
+        } catch (_: Exception) {
+        }
+    }
+    return null
+}
+
+/**
+ * Query a Song from MediaStore by URI. Returns null if the URI is not a MediaStore audio URI
+ * or the query fails.
+ */
+private fun querySongFromMediaStore(
+    context: android.content.Context,
+    uri: android.net.Uri,
+): com.cvc953.localplayer.model.Song? {
+    val projection =
+        arrayOf(
+            MediaStore.Audio.Media._ID,
+            MediaStore.Audio.Media.TITLE,
+            MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.ALBUM,
+            MediaStore.Audio.Media.DURATION,
+            MediaStore.Audio.Media.DATA,
+        )
+    val cursor =
+        try {
+            context.contentResolver.query(uri, projection, null, null, null)
+        } catch (_: Exception) {
+            null
+        }
+    cursor?.use {
+        if (it.moveToFirst()) {
+            val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID))
+            val title = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)) ?: ""
+            val artist = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)) ?: ""
+            val album = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)) ?: ""
+            val duration = it.getLong(it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION))
+            val filePath = it.getString(it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA))
+            return com.cvc953.localplayer.model.Song(
+                id = id,
+                title = title,
+                artist = artist,
+                album = album,
+                uri = uri,
+                duration = duration,
+                filePath = filePath,
+                year = null,
+                trackNumber = 0,
+                discNumber = 0,
+            )
+        }
+    }
+    return null
 }
