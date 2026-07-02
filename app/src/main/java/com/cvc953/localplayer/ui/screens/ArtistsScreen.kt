@@ -36,8 +36,8 @@ import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
@@ -353,13 +353,15 @@ fun ArtistsScreen(
                             onClick = {
                                 if (sortedArtists.isNotEmpty()) {
                                     val artist = sortedArtists.random()
-                                    val artistSongs = songs.filter { song ->
-                                        normalizeArtistName(song.artist).any {
-                                            it.equals(artist.name.trim(), ignoreCase = true)
-                                        }
-                                    }.sortedWith(
-                                        compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
-                                    )
+                                    val artistSongs =
+                                        songs
+                                            .filter { song ->
+                                                normalizeArtistName(song.artist).any {
+                                                    it.equals(artist.name.trim(), ignoreCase = true)
+                                                }
+                                            }.sortedWith(
+                                                compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                            )
                                     if (artistSongs.isNotEmpty()) {
                                         playbackViewModel.setShuffle(false)
                                         playbackViewModel.updateDisplayOrder(artistSongs)
@@ -378,13 +380,15 @@ fun ArtistsScreen(
                             onClick = {
                                 if (sortedArtists.isNotEmpty()) {
                                     val artist = sortedArtists.first()
-                                    val artistSongs = songs.filter { song ->
-                                        normalizeArtistName(song.artist).any {
-                                            it.equals(artist.name.trim(), ignoreCase = true)
-                                        }
-                                    }.sortedWith(
-                                        compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
-                                    )
+                                    val artistSongs =
+                                        songs
+                                            .filter { song ->
+                                                normalizeArtistName(song.artist).any {
+                                                    it.equals(artist.name.trim(), ignoreCase = true)
+                                                }
+                                            }.sortedWith(
+                                                compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                            )
                                     if (artistSongs.isNotEmpty()) {
                                         playbackViewModel.setShuffle(false)
                                         playbackViewModel.updateDisplayOrder(artistSongs)
@@ -403,10 +407,10 @@ fun ArtistsScreen(
                 }
             }
 
-            Box(modifier = Modifier.Companion.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 if (viewAsGrid) {
                     LazyVerticalGrid(
-                        modifier = Modifier.Companion.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         columns = GridCells.Adaptive(140.dp),
                         state = gridState,
                         contentPadding = PaddingValues(12.dp),
