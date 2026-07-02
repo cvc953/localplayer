@@ -77,6 +77,7 @@
     <string name="settings_playpause_label">Estilo Play/Pause</string>
     <string name="playpause_filled">Relleno</string>
     <string name="playpause_outlined">Contorneado</string>
+    <string name="playpause_icon_only">Solo ícono</string>
 
     <string name="settings_audio_info_label">Info de audio</string>
 

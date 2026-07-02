@@ -304,6 +304,10 @@ private fun DefaultTransportRow(
                             shape = CircleShape,
                         )
                 }
+
+                PlayPauseStyle.ICON_ONLY -> {
+                    Modifier.size(buttonSize)
+                }
             }
 
         IconButton(

@@ -696,6 +696,7 @@ fun SettingsScreen(
                         listOf(
                             "filled_circle" to stringResource(id = R.string.playpause_filled),
                             "outlined_circle" to stringResource(id = R.string.playpause_outlined),
+                            "icon_only" to stringResource(id = R.string.playpause_icon_only),
                         )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
