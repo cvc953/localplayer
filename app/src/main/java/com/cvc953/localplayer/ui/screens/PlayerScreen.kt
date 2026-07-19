@@ -500,6 +500,7 @@ fun PlayerScreen(
                     onPlayPause = { playbackViewModel.togglePlayPause() },
                     onClick = { playerViewModel.toggleLyrics() },
                     onNext = { playbackViewModel.playNextSong() },
+                    onPrevious = { playbackViewModel.playPreviousSong() },
                     modifier = Modifier.navigationBarsPadding(),
                 )
             }

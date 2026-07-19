@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +55,7 @@ fun MiniPlayer(
     onPlayPause: () -> Unit,
     onClick: () -> Unit,
     onNext: () -> Unit,
+    onPrevious: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundBrush: Brush? = null,
     contentAlpha: Float = 1f,
@@ -110,6 +112,14 @@ fun MiniPlayer(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = song.title, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, fontWeight = FontWeight.SemiBold)
                 Text(text = song.artist, color = LocalExtendedColors.current.textSecondarySoft, fontSize = 12.sp, maxLines = 1)
+            }
+
+            IconButton(onClick = onPrevious) {
+                Icon(
+                    imageVector = Icons.Default.SkipPrevious,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
             }
 
             IconButton(onClick = onPlayPause) {
