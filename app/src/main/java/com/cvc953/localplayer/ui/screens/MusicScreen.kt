@@ -256,6 +256,7 @@ fun MusicScreen(audioFileUri: String? = null, onOpenPlayer: () -> Unit) {
                                     }
                                 },
                                 onNext = { if (sheetState.currentValue != SheetValue.Expanded) playbackViewModel.playNextSong() else null },
+                                onPrevious = { if (sheetState.currentValue != SheetValue.Expanded) playbackViewModel.playPreviousSong() else null },
                                 backgroundBrush = miniPlayerBrush,
                                 contentAlpha = miniPlayerAlpha,
                             )
