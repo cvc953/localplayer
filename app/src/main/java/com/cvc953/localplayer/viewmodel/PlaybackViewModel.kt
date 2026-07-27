@@ -731,15 +731,9 @@ class PlaybackViewModel(
             prefs.savePlaybackQueue(_queue.value.map { it.uri.toString() })
         } catch (_: Exception) {
         }
-    }
-
-    /**
-     * Sync the controller's internal queue with the ViewModel's queue.
-     * Needed after drag-to-reorder (where play() is NOT called afterward).
-     */
-    fun syncControllerQueue() {
+        // Sync the controller's internal queue so next/prev follow the new order
         try {
-            playerController.replaceQueue(_queue.value, keepCurrentSong = true)
+            playerController.replaceQueue(finalQueue, keepCurrentSong = true)
         } catch (_: Exception) {
         }
     }

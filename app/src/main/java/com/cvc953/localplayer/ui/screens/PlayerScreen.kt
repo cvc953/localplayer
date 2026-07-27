@@ -1019,7 +1019,6 @@ fun PlayerScreen(
                                                             dragList.toList()
                                                         }
                                                     playbackViewModel.updateDisplayOrder(newOrder)
-                                                    playbackViewModel.syncControllerQueue()
                                                 },
                                                 onDragCancel = {
                                                     draggingIndex =
