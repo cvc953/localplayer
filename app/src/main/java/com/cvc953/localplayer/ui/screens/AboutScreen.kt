@@ -101,7 +101,7 @@ fun AboutScreen(onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "v1.1.1",
+                text = "v1.1.0",
                 fontSize = 14.sp,
                 color = LocalExtendedColors.current.textSecondarySoft,
                 textAlign = TextAlign.Center,
