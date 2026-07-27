@@ -1,7 +1,6 @@
 package com.cvc953.localplayer
 
 import LocalPlayerTheme
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -25,10 +24,6 @@ class MainActivity : ComponentActivity() {
 
         // Apply language preference by updating resources configuration
         applyLanguagePreference()
-
-        // Handle audio file opening (ACTION_VIEW from file manager, etc.)
-        val audioFileUri = intent?.data?.toString()
-            ?.takeIf { intent?.action == Intent.ACTION_VIEW }
 
         setContent {
             val viewModel: MainViewModel by viewModels()
@@ -54,7 +49,7 @@ class MainActivity : ComponentActivity() {
                         .getInsetsController(window!!, view)
                         ?.isAppearanceLightStatusBars = !darkTheme
                 }
-                MusicScreen(audioFileUri = audioFileUri) { }
+                MusicScreen { }
             }
         }
     }
