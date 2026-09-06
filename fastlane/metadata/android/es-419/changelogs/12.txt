@@ -1,0 +1,10 @@
+- Abre archivos de audio desde gestores de archivos
+- Exporta/importa configuración y playlists M3U
+- Nuevo estilo "Solo ícono" para botón Play/Pause
+- Corregido escaneo automático que leía de caché
+- Corregido contador de playlists (incluía temas eliminados)
+- Corregidos botones de reproducción en álbumes y artistas
+- Corregido shuffle y cola en Siguiente/Anterior
+- Corregida barra de progreso al pausar/reanudar
+- Restaurada extracción de letras embebidas
+- Mejoras de rendimiento en playlists y carátulas
