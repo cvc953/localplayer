@@ -42,6 +42,9 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
@@ -128,6 +131,7 @@ fun SettingsScreen(
     val playlistsTabEnabled by viewModel.playlistsTabEnabled.collectAsState()
     val genresTabEnabled by viewModel.genresTabEnabled.collectAsState()
     val defaultStartTab by viewModel.defaultStartTab.collectAsState()
+    val tabOrder by viewModel.tabOrder.collectAsState()
 
     var showColorPicker by remember { mutableStateOf(false) }
 
@@ -320,12 +324,12 @@ fun SettingsScreen(
 
             item {
                 SettingsSectionCard(
-                    icon = Icons.Default.Person,
+                    icon = Icons.Default.Language,
                     title = stringResource(id = R.string.settings_section_language_title),
                     subtitle = stringResource(id = R.string.settings_section_language_subtitle),
                 ) {
                     SettingsRow(
-                        icon = Icons.Default.Person,
+                        icon = Icons.Default.Language,
                         title = stringResource(id = R.string.settings_language_label),
                         description = stringResource(id = R.string.settings_language_description),
                     ) {
@@ -398,7 +402,7 @@ fun SettingsScreen(
                     onToggle = { id -> expandedSection = if (expandedSection == id) null else id },
                 ) {
                     SettingsRow(
-                        icon = Icons.Default.Person,
+                        icon = Icons.Default.Palette,
                         title = stringResource(id = R.string.settings_theme_label),
                         description = stringResource(id = R.string.settings_theme_description),
                     ) {
@@ -895,134 +899,95 @@ fun SettingsScreen(
                         }
                     }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_songs_tab_label),
-                        description = stringResource(id = R.string.settings_songs_tab_description),
-                    ) {
-                        Switch(
-                            checked = songsTabEnabled,
-                            onCheckedChange = { viewModel.setSongsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
+                    tabOrder.forEachIndexed { index, tabId ->
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                         )
-                    }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
+                        val title =
+                            when (tabId) {
+                                "songs" -> stringResource(id = R.string.settings_songs_tab_label)
+                                "albums" -> stringResource(id = R.string.settings_albums_tab_label)
+                                "artists" -> stringResource(id = R.string.settings_artists_tab_label)
+                                "playlists" -> stringResource(id = R.string.settings_playlists_tab_label)
+                                "genres" -> stringResource(id = R.string.settings_genres_tab_label)
+                                else -> tabId
+                            }
+                        val description =
+                            when (tabId) {
+                                "songs" -> stringResource(id = R.string.settings_songs_tab_description)
+                                "albums" -> stringResource(id = R.string.settings_albums_tab_description)
+                                "artists" -> stringResource(id = R.string.settings_artists_tab_description)
+                                "playlists" -> stringResource(id = R.string.settings_playlists_tab_description)
+                                "genres" -> stringResource(id = R.string.settings_genres_tab_description)
+                                else -> ""
+                            }
+                        val isChecked =
+                            when (tabId) {
+                                "songs" -> songsTabEnabled
+                                "albums" -> albumsTabEnabled
+                                "artists" -> artistsTabEnabled
+                                "playlists" -> playlistsTabEnabled
+                                "genres" -> genresTabEnabled
+                                else -> true
+                            }
+                        val onCheckedChange: (Boolean) -> Unit =
+                            when (tabId) {
+                                "songs" -> { { viewModel.setSongsTabEnabled(it) } }
+                                "albums" -> { { viewModel.setAlbumsTabEnabled(it) } }
+                                "artists" -> { { viewModel.setArtistsTabEnabled(it) } }
+                                "playlists" -> { { viewModel.setPlaylistsTabEnabled(it) } }
+                                "genres" -> { { viewModel.setGenresTabEnabled(it) } }
+                                else -> { {} }
+                            }
 
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_albums_tab_label),
-                        description = stringResource(id = R.string.settings_albums_tab_description),
-                    ) {
-                        Switch(
-                            checked = albumsTabEnabled,
-                            onCheckedChange = { viewModel.setAlbumsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
+                        SettingsRow(
+                            icon = Icons.Default.MusicNote,
+                            title = title,
+                            description = description,
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (index > 0) {
+                                    IconButton(
+                                        onClick = { viewModel.moveTabUp(tabId) },
+                                        modifier = Modifier.size(36.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Default.KeyboardArrowUp,
+                                            contentDescription = stringResource(id = R.string.action_move_up),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                                if (index < tabOrder.size - 1) {
+                                    IconButton(
+                                        onClick = { viewModel.moveTabDown(tabId) },
+                                        modifier = Modifier.size(36.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Default.KeyboardArrowDown,
+                                            contentDescription = stringResource(id = R.string.action_move_down),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                }
+                                Switch(
+                                    checked = isChecked,
+                                    onCheckedChange = onCheckedChange,
+                                    colors =
+                                        SwitchDefaults.colors(
+                                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                            checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                            uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            uncheckedTrackColor =
+                                                MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = 0.16f,
+                                                ),
                                         ),
-                                ),
-                        )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_artists_tab_label),
-                        description = stringResource(id = R.string.settings_artists_tab_description),
-                    ) {
-                        Switch(
-                            checked = artistsTabEnabled,
-                            onCheckedChange = { viewModel.setArtistsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_playlists_tab_label),
-                        description = stringResource(id = R.string.settings_playlists_tab_description),
-                    ) {
-                        Switch(
-                            checked = playlistsTabEnabled,
-                            onCheckedChange = { viewModel.setPlaylistsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
-
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_genres_tab_label),
-                        description = stringResource(id = R.string.settings_genres_tab_description),
-                    ) {
-                        Switch(
-                            checked = genresTabEnabled,
-                            onCheckedChange = { viewModel.setGenresTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
+                                )
+                            }
+                        }
                     }
                 }
             }
