@@ -131,6 +131,8 @@
     <string name="settings_genres_tab_description">Show the genres tab in the navigation bar</string>
     <string name="action_move_up">Move up</string>
     <string name="action_move_down">Move down</string>
+    <string name="settings_tab_order_title">Tab order</string>
+    <string name="settings_tab_order_description">Drag tabs from the right to change their order in the bottom navigation bar</string>
     <string name="action_add_folder">Add folder</string>
     <string name="settings_folders_configured_title">Configured folders</string>
     <string name="settings_folders_empty">No folders configured</string>
