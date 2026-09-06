@@ -5,22 +5,32 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.util.LruCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
-/**
- * Utility object for safely decoding and loading album artwork with proper downsampling
- * and exception handling to prevent OutOfMemoryErrors and native resource leaks.
- */
 object ArtworkLoader {
+    private val maxMemory = (Runtime.getRuntime().maxMemory() / 1024).toInt()
+    private val cacheSize = (maxMemory / 16).coerceAtLeast(2048)
 
-    fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
-        val height = options.outHeight
-        val width = options.outWidth
+    private val thumbnailCache = object : LruCache<String, Bitmap>(cacheSize) {
+        override fun sizeOf(key: String, value: Bitmap): Int {
+            return value.byteCount / 1024
+        }
+    }
+
+    private fun calculateInSampleSize(
+        options: BitmapFactory.Options,
+        reqWidth: Int,
+        reqHeight: Int,
+    ): Int {
+        val (height: Int, width: Int) = options.outHeight to options.outWidth
         var inSampleSize = 1
 
         if (height > reqHeight || width > reqWidth) {
-            val halfHeight = height / 2
-            val halfWidth = width / 2
+            val halfHeight: Int = height / 2
+            val halfWidth: Int = width / 2
             while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
                 inSampleSize *= 2
             }
@@ -28,105 +38,77 @@ object ArtworkLoader {
         return inSampleSize
     }
 
-    fun decodeSampledBitmapFromByteArray(data: ByteArray, targetSizePx: Int): Bitmap? {
-        if (data.isEmpty()) return null
-        return try {
-            val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
-            BitmapFactory.decodeByteArray(data, 0, data.size, options)
-            if (options.outWidth <= 0 || options.outHeight <= 0) return null
-
-            options.inSampleSize = calculateInSampleSize(options, targetSizePx, targetSizePx)
-            options.inJustDecodeBounds = false
-            BitmapFactory.decodeByteArray(data, 0, data.size, options)
-        } catch (_: OutOfMemoryError) {
-            try {
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = 4
-                }
-                BitmapFactory.decodeByteArray(data, 0, data.size, options)
-            } catch (_: Throwable) {
-                null
-            }
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    fun decodeSampledBitmapFromFile(filePath: String, targetSizePx: Int): Bitmap? {
-        return try {
-            val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
-            BitmapFactory.decodeFile(filePath, options)
-            if (options.outWidth <= 0 || options.outHeight <= 0) return null
-
-            options.inSampleSize = calculateInSampleSize(options, targetSizePx, targetSizePx)
-            options.inJustDecodeBounds = false
-            BitmapFactory.decodeFile(filePath, options)
-        } catch (_: OutOfMemoryError) {
-            try {
-                val options = BitmapFactory.Options().apply {
-                    inSampleSize = 4
-                }
-                BitmapFactory.decodeFile(filePath, options)
-            } catch (_: Throwable) {
-                null
-            }
-        } catch (_: Exception) {
-            null
-        }
-    }
-
-    fun loadBitmapFromUri(context: Context, uri: Uri, targetSizePx: Int = 256): Bitmap? {
-        var retriever: MediaMetadataRetriever? = null
-        return try {
-            retriever = MediaMetadataRetriever()
-            retriever.setDataSource(context, uri)
-            val embedded = retriever.embeddedPicture
-            if (embedded != null && embedded.isNotEmpty()) {
-                decodeSampledBitmapFromByteArray(embedded, targetSizePx)
-            } else {
-                null
-            }
-        } catch (_: Exception) {
-            null
-        } finally {
-            try {
-                retriever?.release()
-            } catch (_: Exception) {
-            }
-        }
-    }
-
-    fun loadArtworkForSong(
+    suspend fun loadThumbnail(
         context: Context,
-        songUri: Uri?,
-        filePath: String?,
+        uri: Uri?,
+        filePath: String? = null,
         targetSizePx: Int = 256,
-    ): Bitmap? {
-        if (songUri != null) {
-            val bitmap = loadBitmapFromUri(context, songUri, targetSizePx)
-            if (bitmap != null) return bitmap
+    ): Bitmap? = withContext(Dispatchers.IO) {
+        if (uri == null && filePath.isNullOrBlank()) return@withContext null
+
+        val cacheKey = "${uri?.toString() ?: filePath}_$targetSizePx"
+        synchronized(thumbnailCache) {
+            thumbnailCache.get(cacheKey)?.let { return@withContext it }
         }
-        if (!filePath.isNullOrBlank()) {
+
+        var bitmap: Bitmap? = null
+
+        // 1. Extract embedded artwork safely using MediaMetadataRetriever
+        if (uri != null) {
+            val retriever = MediaMetadataRetriever()
             try {
-                val file = File(filePath)
-                val dir = file.parentFile
-                if (dir != null && dir.exists() && dir.isDirectory) {
+                retriever.setDataSource(context, uri)
+                val picture = retriever.embeddedPicture
+                if (picture != null && picture.isNotEmpty()) {
+                    val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    BitmapFactory.decodeByteArray(picture, 0, picture.size, opts)
+                    opts.inSampleSize = calculateInSampleSize(opts, targetSizePx, targetSizePx)
+                    opts.inJustDecodeBounds = false
+                    bitmap = BitmapFactory.decodeByteArray(picture, 0, picture.size, opts)
+                }
+            } catch (_: Exception) {
+            } finally {
+                try {
+                    retriever.release()
+                } catch (_: Exception) {
+                }
+            }
+        }
+
+        // 2. If no embedded artwork, check folder for cover image files
+        if (bitmap == null && !filePath.isNullOrBlank()) {
+            try {
+                val dir = File(filePath).parentFile
+                if (dir != null && dir.exists()) {
                     val candidates = listOf("cover.jpg", "folder.jpg", "album.jpg", "front.jpg", "cover.png", "folder.png")
                     for (name in candidates) {
-                        val candidate = File(dir, name)
-                        if (candidate.exists() && candidate.length() > 0) {
-                            val bmp = decodeSampledBitmapFromFile(candidate.absolutePath, targetSizePx)
-                            if (bmp != null) return bmp
+                        val imgFile = File(dir, name)
+                        if (imgFile.exists() && imgFile.length() > 0) {
+                            val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            BitmapFactory.decodeFile(imgFile.absolutePath, opts)
+                            opts.inSampleSize = calculateInSampleSize(opts, targetSizePx, targetSizePx)
+                            opts.inJustDecodeBounds = false
+                            bitmap = BitmapFactory.decodeFile(imgFile.absolutePath, opts)
+                            if (bitmap != null) break
                         }
                     }
                 }
             } catch (_: Exception) {
             }
         }
-        return null
+
+        if (bitmap != null) {
+            synchronized(thumbnailCache) {
+                thumbnailCache.put(cacheKey, bitmap)
+            }
+        }
+
+        bitmap
+    }
+
+    fun clearCache() {
+        synchronized(thumbnailCache) {
+            thumbnailCache.evictAll()
+        }
     }
 }
