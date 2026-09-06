@@ -90,6 +90,7 @@
     <string name="settings_playpause_label">Play/Pause style</string>
     <string name="playpause_filled">Filled</string>
     <string name="playpause_outlined">Outlined</string>
+    <string name="playpause_icon_only">Icon only</string>
 
     <string name="settings_audio_info_label">Audio info</string>
 
