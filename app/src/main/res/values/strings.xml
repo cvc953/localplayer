@@ -117,6 +117,8 @@
     <string name="settings_playlists_tab_description">Mostrar la pestaña de listas en la barra de navegación</string>
     <string name="settings_genres_tab_label">Pestaña Géneros</string>
     <string name="settings_genres_tab_description">Mostrar la pestaña de géneros en la barra de navegación</string>
+    <string name="action_move_up">Mover arriba</string>
+    <string name="action_move_down">Mover abajo</string>
     <string name="action_add_folder">Agregar carpeta</string>
     <string name="settings_folders_configured_title">Carpetas configuradas</string>
     <string name="settings_folders_empty">Ninguna carpeta configurada</string>
