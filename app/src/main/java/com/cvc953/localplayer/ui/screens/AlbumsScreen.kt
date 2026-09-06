@@ -85,11 +85,11 @@ import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.theme.md_textSecondary
+import com.cvc953.localplayer.util.ArtworkLoader
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
 import com.cvc953.localplayer.viewmodel.SongViewModel
-import com.cvc953.localplayer.util.ArtworkLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -447,14 +447,7 @@ fun AlbumsScreen(
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-                                withContext(Dispatchers.IO) {
-                                    albumArt = ArtworkLoader.loadArtworkForSong(
-                                        context = context,
-                                        songUri = firstSong?.uri,
-                                        filePath = firstSong?.filePath,
-                                        targetSizePx = 256,
-                                    )
-                                }
+                                albumArt = ArtworkLoader.loadThumbnail(context, firstSong?.uri, firstSong?.filePath, 256)
                             }
 
                             Column(
@@ -661,14 +654,7 @@ contentDescription = stringResource(R.string.action_more_options),
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-                                withContext(Dispatchers.IO) {
-                                    albumArt = ArtworkLoader.loadArtworkForSong(
-                                        context = context,
-                                        songUri = firstSong?.uri,
-                                        filePath = firstSong?.filePath,
-                                        targetSizePx = 256,
-                                    )
-                                }
+                                albumArt = ArtworkLoader.loadThumbnail(context, firstSong?.uri, firstSong?.filePath, 256)
                             }
 
                             Row(
