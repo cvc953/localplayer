@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import com.cvc953.localplayer.util.ArtworkLoader
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -129,6 +130,7 @@ import kotlin.text.toInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
+    isExpanded: Boolean = true,
     playbackViewModel: PlaybackViewModel = viewModel(),
     playerViewModel: PlayerViewModel = viewModel(),
     playlistViewModel: PlaylistViewModel = viewModel(),
@@ -214,11 +216,10 @@ fun PlayerScreen(
 
     LaunchedEffect(song.uri) {
         withContext(Dispatchers.IO) {
+            val retriever = MediaMetadataRetriever()
             try {
-                val retriever = MediaMetadataRetriever()
                 retriever.setDataSource(context, song.uri)
 
-                // Obtener mime type para el formato
                 val mimeType =
                     retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE)
                 audioFormat =
@@ -230,7 +231,6 @@ fun PlayerScreen(
                         else -> mimeType?.substringAfterLast("/")?.uppercase() ?: "Unknown"
                     }
 
-                // Obtener bitrate
                 val bitrate = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
                 audioBitrate =
                     if (bitrate != null) {
@@ -240,7 +240,6 @@ fun PlayerScreen(
                         ""
                     }
 
-                // Obtener sample rate (Hz)
                 val sampleRate =
                     retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_SAMPLERATE)
                 audioSampleRate =
@@ -250,43 +249,26 @@ fun PlayerScreen(
                     } else {
                         ""
                     }
-
-                retriever.release()
             } catch (_: Exception) {
                 audioFormat = ""
                 audioBitrate = ""
                 audioSampleRate = ""
+            } finally {
+                try { retriever.release() } catch (_: Exception) {}
             }
         }
     }
 
     LaunchedEffect(showQueue, queue) {
-        // Only initialize/update the draggable list when the sheet is opened
-        // or when the explicit queue changes. This prevents frequent updates
-        // caused by shuffle reordering the upcoming list every second.
         if (showQueue && draggingIndex == null) {
             dragList.clear()
-            // Show only upcoming songs (exclude currently playing), in true playback order
             dragList.addAll(upcoming)
         }
     }
 
     // Cargar carátula del álbum
     LaunchedEffect(song.uri) {
-        albumArt =
-            withContext(Dispatchers.IO) {
-                try {
-                    val retriever = MediaMetadataRetriever()
-                    retriever.setDataSource(context, song.uri)
-                    val picture = retriever.embeddedPicture
-                    retriever.release()
-                    picture?.let {
-                        BitmapFactory.decodeByteArray(it, 0, it.size)
-                    }
-                } catch (_: Exception) {
-                    null
-                }
-            }
+        albumArt = ArtworkLoader.loadThumbnail(context, song.uri, song.filePath, 512)
     }
 
     // Calcular color dominante basado en la carátula
@@ -308,8 +290,15 @@ fun PlayerScreen(
         isFavorite = playlistViewModel.isSongInPlaylist("Favoritos", song.id)
     }
 
-    BackHandler(enabled = showLyrics) { playerViewModel.toggleLyrics() }
-    BackHandler(enabled = !showLyrics) { onCollapse() }
+    if (isExpanded) {
+        BackHandler {
+            if (showLyrics) {
+                playerViewModel.toggleLyrics()
+            } else {
+                onCollapse()
+            }
+        }
+    }
 
     LaunchedEffect(song) { lyricsViewModel.loadLyricsForSong(song) }
 
@@ -1086,40 +1075,7 @@ fun PlayerScreen(
                                             )
                                         }
                                     LaunchedEffect(queuedSong.uri) {
-                                        albumArtBitmap =
-                                            withContext(
-                                                Dispatchers
-                                                    .IO,
-                                            ) {
-                                                try {
-                                                    val retriever =
-                                                        MediaMetadataRetriever()
-                                                    retriever
-                                                        .setDataSource(
-                                                            context,
-                                                            queuedSong
-                                                                .uri,
-                                                        )
-                                                    val picture =
-                                                        retriever
-                                                            .embeddedPicture
-                                                    retriever
-                                                        .release()
-                                                    picture
-                                                        ?.let {
-                                                            BitmapFactory
-                                                                .decodeByteArray(
-                                                                    it,
-                                                                    0,
-                                                                    it.size,
-                                                                )
-                                                        }
-                                                } catch (
-                                                    _: Exception,
-                                                ) {
-                                                    null
-                                                }
-                                            }
+                                        albumArtBitmap = ArtworkLoader.loadThumbnail(context, queuedSong.uri, queuedSong.filePath, 128)
                                     }
 
                                     Row(
