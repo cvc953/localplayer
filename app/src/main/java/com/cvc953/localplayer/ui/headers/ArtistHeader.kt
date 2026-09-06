@@ -2,7 +2,7 @@ package com.cvc953.localplayer.ui.headers
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
+import com.cvc953.localplayer.util.ArtworkLoader
 import android.media.MediaMetadataRetriever
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -88,50 +88,7 @@ fun ArtistHeader(
     val context = LocalContext.current
 
     LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-        withContext(Dispatchers.IO) {
-            try {
-                val uri = firstSong?.uri ?: return@withContext
-                val retriever = MediaMetadataRetriever()
-                retriever.setDataSource(context, uri)
-                val picture = retriever.embeddedPicture
-                retriever.release()
-                if (picture != null && picture.isNotEmpty()) {
-                    artistArt = BitmapFactory.decodeByteArray(picture, 0, picture.size)
-                }
-
-                if (artistArt == null) {
-                    try {
-                        context.contentResolver.openInputStream(uri)?.use { stream ->
-                            val bmp = BitmapFactory.decodeStream(stream)
-                            if (bmp != null) artistArt = bmp
-                        }
-                    } catch (_: Exception) {
-                    }
-                }
-
-                if (artistArt == null) {
-                    val path = firstSong?.filePath
-                    if (!path.isNullOrBlank()) {
-                        try {
-                            val dir = java.io.File(path).parentFile
-                            val candidates = listOf("cover.jpg", "folder.jpg", "album.jpg", "front.jpg", "cover.png", "folder.png")
-                            for (name in candidates) {
-                                val f = java.io.File(dir, name)
-                                if (f.exists() && f.length() > 0) {
-                                    val bmp = BitmapFactory.decodeFile(f.absolutePath)
-                                    if (bmp != null) {
-                                        artistArt = bmp
-                                        break
-                                    }
-                                }
-                            }
-                        } catch (_: Exception) {
-                        }
-                    }
-                }
-            } catch (_: Exception) {
-            }
-        }
+        artistArt = ArtworkLoader.loadThumbnail(context, firstSong?.uri, firstSong?.filePath, 512)
     }
 
     val artistArtImage: @Composable () -> Unit = {
