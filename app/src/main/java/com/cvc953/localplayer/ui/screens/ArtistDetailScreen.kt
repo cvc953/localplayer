@@ -2,8 +2,7 @@ package com.cvc953.localplayer.ui.screens
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
+import com.cvc953.localplayer.util.ArtworkLoader
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
@@ -323,19 +322,8 @@ fun ArtistDetailScreen(
                                 var albumArt by remember(representativeSong?.uri) {
                                     mutableStateOf<Bitmap?>(null)
                                 }
-                                LaunchedEffect(representativeSong?.uri) {
-                                    withContext(Dispatchers.IO) {
-                                        try {
-                                            val uri = representativeSong?.uri ?: return@withContext
-                                            val retriever = MediaMetadataRetriever()
-                                            retriever.setDataSource(context, uri)
-                                            retriever.embeddedPicture?.let {
-                                                albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
-                                            }
-                                            retriever.release()
-                                        } catch (_: Exception) {
-                                        }
-                                    }
+                                LaunchedEffect(representativeSong?.uri, representativeSong?.filePath) {
+                                    albumArt = ArtworkLoader.loadThumbnail(context, representativeSong?.uri, representativeSong?.filePath, 256)
                                 }
                                 Column(
                                     modifier =
