@@ -85,6 +85,7 @@ import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.theme.md_textSecondary
+import com.cvc953.localplayer.util.ArtworkLoader
 import com.cvc953.localplayer.viewmodel.AlbumViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
@@ -446,66 +447,7 @@ fun AlbumsScreen(
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-                                withContext(Dispatchers.IO) {
-                                    try {
-                                        val uri = firstSong?.uri ?: return@withContext
-                                        val retriever = MediaMetadataRetriever()
-                                        retriever.setDataSource(context, uri)
-                                        val embedded = retriever.embeddedPicture
-                                        if (embedded != null && embedded.isNotEmpty()) {
-                                            albumArt =
-                                                BitmapFactory.decodeByteArray(
-                                                    embedded,
-                                                    0,
-                                                    embedded.size,
-                                                )
-                                        } else {
-                                        }
-                                        retriever.release()
-
-                                        if (albumArt == null) {
-                                            try {
-                                                context.contentResolver
-                                                    .openInputStream(uri)
-                                                    ?.use { stream ->
-                                                        albumArt =
-                                                            BitmapFactory.decodeStream(stream)
-                                                    }
-                                            } catch (e: Exception) {
-                                            }
-                                        }
-
-                                        if (albumArt == null) {
-                                            val path = firstSong?.filePath
-                                            if (!path.isNullOrBlank()) {
-                                                try {
-                                                    val dir = File(path).parentFile
-                                                    val candidates =
-                                                        listOf(
-                                                            "cover.jpg",
-                                                            "folder.jpg",
-                                                            "album.jpg",
-                                                            "front.jpg",
-                                                            "cover.png",
-                                                            "folder.png",
-                                                        )
-                                                    for (name in candidates) {
-                                                        val f = File(dir, name)
-                                                        if (f.exists() && f.length() > 0) {
-                                                            albumArt =
-                                                                BitmapFactory.decodeFile(f.absolutePath)
-                                                            if (albumArt != null) {
-                                                                break
-                                                            }
-                                                        }
-                                                    }
-                                                } catch (_: Exception) {
-                                                }
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                    }
-                                }
+                                albumArt = ArtworkLoader.loadThumbnail(context, firstSong?.uri, firstSong?.filePath, 256)
                             }
 
                             Column(
@@ -712,65 +654,7 @@ contentDescription = stringResource(R.string.action_more_options),
                             var albumArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-                                withContext(Dispatchers.IO) {
-                                    try {
-                                        val uri = firstSong?.uri ?: return@withContext
-                                        val retriever = MediaMetadataRetriever()
-                                        retriever.setDataSource(context, uri)
-                                        val embedded = retriever.embeddedPicture
-                                        if (embedded != null && embedded.isNotEmpty()) {
-                                            albumArt =
-                                                BitmapFactory.decodeByteArray(
-                                                    embedded,
-                                                    0,
-                                                    embedded.size,
-                                                )
-                                        }
-                                        retriever.release()
-
-                                        // Fallback: try content resolver stream (some providers expose album art this way)
-                                        if (albumArt == null) {
-                                            try {
-                                                context.contentResolver
-                                                    .openInputStream(uri)
-                                                    ?.use { stream ->
-                                                        albumArt =
-                                                            BitmapFactory.decodeStream(stream)
-                                                    }
-                                            } catch (_: Exception) {
-                                            }
-                                        }
-
-                                        // Fallback: check for common cover files next to the audio file
-                                        if (albumArt == null) {
-                                            val path = firstSong.filePath
-                                            if (!path.isNullOrBlank()) {
-                                                try {
-                                                    val dir = File(path).parentFile
-                                                    val candidates =
-                                                        listOf(
-                                                            "cover.jpg",
-                                                            "folder.jpg",
-                                                            "album.jpg",
-                                                            "front.jpg",
-                                                            "cover.png",
-                                                            "folder.png",
-                                                        )
-                                                    for (name in candidates) {
-                                                        val f = File(dir, name)
-                                                        if (f.exists() && f.length() > 0) {
-                                                            albumArt =
-                                                                BitmapFactory.decodeFile(f.absolutePath)
-                                                            if (albumArt != null) break
-                                                        }
-                                                    }
-                                                } catch (_: Exception) {
-                                                }
-                                            }
-                                        }
-                                    } catch (_: Exception) {
-                                    }
-                                }
+                                albumArt = ArtworkLoader.loadThumbnail(context, firstSong?.uri, firstSong?.filePath, 256)
                             }
 
                             Row(

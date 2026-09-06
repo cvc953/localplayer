@@ -1,8 +1,7 @@
 package com.cvc953.localplayer.ui
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
+import com.cvc953.localplayer.util.ArtworkLoader
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -65,15 +64,7 @@ fun MiniPlayer(
 
     // Cargar la carátula de forma segura
     LaunchedEffect(song.uri) {
-        try {
-            val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(context, song.uri)
-            retriever.embeddedPicture?.let {
-                albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
-            }
-            retriever.release()
-        } catch (_: Exception) {
-        }
+        albumArt = ArtworkLoader.loadThumbnail(context, song.uri, song.filePath, 256)
     }
 
     Column(

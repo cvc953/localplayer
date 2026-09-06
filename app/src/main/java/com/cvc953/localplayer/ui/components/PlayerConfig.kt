@@ -37,7 +37,8 @@ enum class TransportStyle(val key: String, val displayNameRes: Int) {
 
 enum class PlayPauseStyle(val key: String, val displayNameRes: Int) {
     FILLED_CIRCLE("filled_circle", R.string.playpause_filled),
-    OUTLINED_CIRCLE("outlined_circle", R.string.playpause_outlined);
+    OUTLINED_CIRCLE("outlined_circle", R.string.playpause_outlined),
+    ICON_ONLY("icon_only", R.string.playpause_icon_only);
 }
 
 data class ProgressBarState(

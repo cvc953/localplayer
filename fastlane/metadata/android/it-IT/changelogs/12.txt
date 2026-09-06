@@ -1,0 +1,10 @@
+- Apri file audio da gestori file
+- Esporta/importa configurazione app e playlist M3U
+- Nuovo stile "Solo icona" per pulsante Play/Pause
+- Corretta scansione automatica che leggeva dalla cache
+- Corretto conteggio playlist (includeva brani eliminati)
+- Corretti pulsanti riproduzione in album e artisti
+- Corretto shuffle e coda in Successivo/Precedente
+- Corretta barra progressione in pausa/riproduzione
+- Ripristinata estrazione testi incorporati
+- Miglioramenti prestazioni playlist e copertine

@@ -79,6 +79,8 @@ import com.cvc953.localplayer.viewmodel.PlaylistViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import com.cvc953.localplayer.util.ArtworkLoader
+
 val MaterialTheme.extendedColors: ExtendedColors
     @Composable
     get() = LocalExtendedColors.current
@@ -112,21 +114,20 @@ fun SongItem(
     val actionCancelMsg = stringResource(R.string.action_cancel)
 
     LaunchedEffect(song.uri) {
-        withContext(Dispatchers.IO) {
-            try {
+        albumArt = ArtworkLoader.loadThumbnail(context, song.uri, song.filePath, 256)
+        if (effectiveBitrateKbps == 0) {
+            withContext(Dispatchers.IO) {
                 val retriever = MediaMetadataRetriever()
-                retriever.setDataSource(context, song.uri)
-                retriever.embeddedPicture?.let {
-                    albumArt = BitmapFactory.decodeByteArray(it, 0, it.size)
-                }
-                if (effectiveBitrateKbps == 0) {
+                try {
+                    retriever.setDataSource(context, song.uri)
                     val br = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE)
                     if (br != null) {
                         effectiveBitrateKbps = (br.toIntOrNull() ?: 0) / 1000
                     }
+                } catch (_: Exception) {
+                } finally {
+                    try { retriever.release() } catch (_: Exception) {}
                 }
-                retriever.release()
-            } catch (_: Exception) {
             }
         }
     }

@@ -164,6 +164,8 @@ class MainViewModel(
     val genresTabEnabled: StateFlow<Boolean> = _genresTabEnabled
     private val _defaultStartTab = MutableStateFlow(appPrefs.getDefaultStartTab())
     val defaultStartTab: StateFlow<String> = _defaultStartTab
+    private val _tabOrder = MutableStateFlow(appPrefs.getTabOrder())
+    val tabOrder: StateFlow<List<String>> = _tabOrder
 
     private val _isPlayerScreenVisible = MutableStateFlow(false)
     val isPlayerScreenVisible: StateFlow<Boolean> = _isPlayerScreenVisible
@@ -488,6 +490,31 @@ class MainViewModel(
         }
     }
 
+    fun setTabOrder(order: List<String>) {
+        appPrefs.setTabOrder(order)
+        _tabOrder.value = appPrefs.getTabOrder()
+    }
+
+    fun moveTabUp(tabId: String) {
+        val current = _tabOrder.value.toMutableList()
+        val index = current.indexOf(tabId)
+        if (index > 0) {
+            val item = current.removeAt(index)
+            current.add(index - 1, item)
+            setTabOrder(current)
+        }
+    }
+
+    fun moveTabDown(tabId: String) {
+        val current = _tabOrder.value.toMutableList()
+        val index = current.indexOf(tabId)
+        if (index >= 0 && index < current.size - 1) {
+            val item = current.removeAt(index)
+            current.add(index + 1, item)
+            setTabOrder(current)
+        }
+    }
+
     fun refreshAllFromPrefs() {
         // SYNC WITH init — when adding a new preference, update both places
         _autoScanEnabled.value = appPrefs.isAutoScanEnabled()
@@ -512,6 +539,7 @@ class MainViewModel(
         _playlistsTabEnabled.value = appPrefs.isPlaylistsTabEnabled()
         _genresTabEnabled.value = appPrefs.isGenresTabEnabled()
         _defaultStartTab.value = appPrefs.getDefaultStartTab()
+        _tabOrder.value = appPrefs.getTabOrder()
     }
 
     private fun applyImportedLanguage(languageCode: String) {

@@ -36,8 +36,8 @@ import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.filled.ViewModule
@@ -83,6 +83,7 @@ import com.cvc953.localplayer.ui.components.NativeSearchBar
 import com.cvc953.localplayer.ui.components.ScrollLetterDisplay
 import com.cvc953.localplayer.ui.extendedColors
 import com.cvc953.localplayer.ui.theme.md_textSecondary
+import com.cvc953.localplayer.util.ArtworkLoader
 import com.cvc953.localplayer.viewmodel.ArtistViewModel
 import com.cvc953.localplayer.viewmodel.PlaybackViewModel
 import com.cvc953.localplayer.viewmodel.PlayerViewModel
@@ -353,13 +354,15 @@ fun ArtistsScreen(
                             onClick = {
                                 if (sortedArtists.isNotEmpty()) {
                                     val artist = sortedArtists.random()
-                                    val artistSongs = songs.filter { song ->
-                                        normalizeArtistName(song.artist).any {
-                                            it.equals(artist.name.trim(), ignoreCase = true)
-                                        }
-                                    }.sortedWith(
-                                        compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
-                                    )
+                                    val artistSongs =
+                                        songs
+                                            .filter { song ->
+                                                normalizeArtistName(song.artist).any {
+                                                    it.equals(artist.name.trim(), ignoreCase = true)
+                                                }
+                                            }.sortedWith(
+                                                compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                            )
                                     if (artistSongs.isNotEmpty()) {
                                         playbackViewModel.setShuffle(false)
                                         playbackViewModel.updateDisplayOrder(artistSongs)
@@ -378,13 +381,15 @@ fun ArtistsScreen(
                             onClick = {
                                 if (sortedArtists.isNotEmpty()) {
                                     val artist = sortedArtists.first()
-                                    val artistSongs = songs.filter { song ->
-                                        normalizeArtistName(song.artist).any {
-                                            it.equals(artist.name.trim(), ignoreCase = true)
-                                        }
-                                    }.sortedWith(
-                                        compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
-                                    )
+                                    val artistSongs =
+                                        songs
+                                            .filter { song ->
+                                                normalizeArtistName(song.artist).any {
+                                                    it.equals(artist.name.trim(), ignoreCase = true)
+                                                }
+                                            }.sortedWith(
+                                                compareBy<Song>({ it.album }, { it.discNumber }, { it.trackNumber }),
+                                            )
                                     if (artistSongs.isNotEmpty()) {
                                         playbackViewModel.setShuffle(false)
                                         playbackViewModel.updateDisplayOrder(artistSongs)
@@ -403,10 +408,10 @@ fun ArtistsScreen(
                 }
             }
 
-            Box(modifier = Modifier.Companion.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 if (viewAsGrid) {
                     LazyVerticalGrid(
-                        modifier = Modifier.Companion.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         columns = GridCells.Adaptive(140.dp),
                         state = gridState,
                         contentPadding = PaddingValues(12.dp),
@@ -431,66 +436,7 @@ fun ArtistsScreen(
                             var artistArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-                                withContext(Dispatchers.IO) {
-                                    try {
-                                        val uri = firstSong?.uri ?: return@withContext
-                                        val retriever = MediaMetadataRetriever()
-                                        retriever.setDataSource(context, uri)
-                                        val embedded = retriever.embeddedPicture
-                                        if (embedded != null && embedded.isNotEmpty()) {
-                                            artistArt =
-                                                BitmapFactory.decodeByteArray(
-                                                    embedded,
-                                                    0,
-                                                    embedded.size,
-                                                )
-                                        } else {
-                                        }
-                                        retriever.release()
-
-                                        if (artistArt == null) {
-                                            try {
-                                                context.contentResolver
-                                                    .openInputStream(uri)
-                                                    ?.use { stream ->
-                                                        artistArt =
-                                                            BitmapFactory.decodeStream(stream)
-                                                    }
-                                            } catch (e: Exception) {
-                                            }
-                                        }
-
-                                        if (artistArt == null) {
-                                            val path = firstSong?.filePath
-                                            if (!path.isNullOrBlank()) {
-                                                try {
-                                                    val dir = File(path).parentFile
-                                                    val candidates =
-                                                        listOf(
-                                                            "cover.jpg",
-                                                            "folder.jpg",
-                                                            "album.jpg",
-                                                            "front.jpg",
-                                                            "cover.png",
-                                                            "folder.png",
-                                                        )
-                                                    for (name in candidates) {
-                                                        val f = File(dir, name)
-                                                        if (f.exists() && f.length() > 0) {
-                                                            artistArt =
-                                                                BitmapFactory.decodeFile(f.absolutePath)
-                                                            if (artistArt != null) {
-                                                                break
-                                                            }
-                                                        }
-                                                    }
-                                                } catch (_: Exception) {
-                                                }
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                    }
-                                }
+                                artistArt = ArtworkLoader.loadThumbnail(context, firstSong?.uri, firstSong?.filePath, 256)
                             }
 
                             Column(
@@ -664,63 +610,7 @@ fun ArtistsScreen(
                             var artistArt by remember(firstSong?.uri) { mutableStateOf<Bitmap?>(null) }
 
                             LaunchedEffect(firstSong?.uri, firstSong?.filePath) {
-                                withContext(Dispatchers.IO) {
-                                    try {
-                                        val uri = firstSong?.uri ?: return@withContext
-                                        val retriever = MediaMetadataRetriever()
-                                        retriever.setDataSource(context, uri)
-                                        val embedded = retriever.embeddedPicture
-                                        if (embedded != null && embedded.isNotEmpty()) {
-                                            artistArt =
-                                                BitmapFactory.decodeByteArray(
-                                                    embedded,
-                                                    0,
-                                                    embedded.size,
-                                                )
-                                        }
-                                        retriever.release()
-
-                                        if (artistArt == null) {
-                                            try {
-                                                context.contentResolver
-                                                    .openInputStream(uri)
-                                                    ?.use { stream ->
-                                                        artistArt =
-                                                            BitmapFactory.decodeStream(stream)
-                                                    }
-                                            } catch (_: Exception) {
-                                            }
-                                        }
-
-                                        if (artistArt == null) {
-                                            val path = firstSong.filePath
-                                            if (!path.isNullOrBlank()) {
-                                                try {
-                                                    val dir = File(path).parentFile
-                                                    val candidates =
-                                                        listOf(
-                                                            "cover.jpg",
-                                                            "folder.jpg",
-                                                            "album.jpg",
-                                                            "front.jpg",
-                                                            "cover.png",
-                                                            "folder.png",
-                                                        )
-                                                    for (name in candidates) {
-                                                        val f = File(dir, name)
-                                                        if (f.exists() && f.length() > 0) {
-                                                            artistArt =
-                                                                BitmapFactory.decodeFile(f.absolutePath)
-                                                            if (artistArt != null) break
-                                                        }
-                                                    }
-                                                } catch (_: Exception) {
-                                                }
-                                            }
-                                        }
-                                    } catch (_: Exception) {
-                                    }
-                                }
+                                artistArt = ArtworkLoader.loadThumbnail(context, firstSong?.uri, firstSong?.filePath, 256)
                             }
 
                             Row(

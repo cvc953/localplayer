@@ -77,6 +77,7 @@
     <string name="settings_playpause_label">Stile Play/Pausa</string>
     <string name="playpause_filled">Pieno</string>
     <string name="playpause_outlined">Contornato</string>
+    <string name="playpause_icon_only">Solo icona</string>
 
     <string name="settings_audio_info_label">Info audio</string>
 
@@ -117,6 +118,10 @@
     <string name="settings_playlists_tab_description">Mostra la scheda delle playlist nella barra di navigazione</string>
     <string name="settings_genres_tab_label">Scheda Generi</string>
     <string name="settings_genres_tab_description">Mostra la scheda dei generi nella barra di navigazione</string>
+    <string name="action_move_up">Sposta su</string>
+    <string name="action_move_down">Sposta giù</string>
+    <string name="settings_tab_order_title">Ordine delle schede</string>
+    <string name="settings_tab_order_description">Trascina le schede da destra per modificarne l\'ordine nella barra inferiore</string>
     <string name="action_add_folder">Aggiungi cartella</string>
     <string name="settings_folders_configured_title">Cartelle configurate</string>
     <string name="settings_folders_empty">Nessuna cartella configurata</string>

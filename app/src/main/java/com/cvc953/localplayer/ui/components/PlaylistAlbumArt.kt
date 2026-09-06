@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.model.Song
+import com.cvc953.localplayer.util.ArtworkLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -87,8 +88,7 @@ private suspend fun loadCustomImage(
     uri: String,
 ): Bitmap? = withContext(Dispatchers.IO) {
     try {
-        val inputStream = context.contentResolver.openInputStream(android.net.Uri.parse(uri))
-        inputStream?.use { BitmapFactory.decodeStream(it) }
+        ArtworkLoader.loadThumbnail(context, android.net.Uri.parse(uri), null, 256)
     } catch (_: Exception) {
         null
     }
@@ -105,20 +105,12 @@ private suspend fun loadCombinedArt(
     val bitmaps = mutableListOf<Bitmap?>()
     for (song in firstFourSongs) {
         try {
-            val retriever = MediaMetadataRetriever()
-            retriever.setDataSource(context, song.uri)
-            val data = retriever.embeddedPicture
-            retriever.release()
-            if (data != null) {
-                bitmaps.add(BitmapFactory.decodeByteArray(data, 0, data.size))
-            } else {
-                bitmaps.add(null)
-            }
+            val bmp = ArtworkLoader.loadThumbnail(context, song.uri, song.filePath, 128)
+            bitmaps.add(bmp)
         } catch (_: Exception) {
             bitmaps.add(null)
         }
     }
-    // Rellenar con nulls si hay menos canciones de las esperadas
     while (bitmaps.size < firstFourSongs.size) {
         bitmaps.add(null)
     }

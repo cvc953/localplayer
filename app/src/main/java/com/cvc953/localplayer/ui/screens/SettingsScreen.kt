@@ -39,9 +39,15 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Palette
@@ -70,6 +76,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -79,6 +86,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -128,6 +137,7 @@ fun SettingsScreen(
     val playlistsTabEnabled by viewModel.playlistsTabEnabled.collectAsState()
     val genresTabEnabled by viewModel.genresTabEnabled.collectAsState()
     val defaultStartTab by viewModel.defaultStartTab.collectAsState()
+    val tabOrder by viewModel.tabOrder.collectAsState()
 
     var showColorPicker by remember { mutableStateOf(false) }
 
@@ -320,12 +330,12 @@ fun SettingsScreen(
 
             item {
                 SettingsSectionCard(
-                    icon = Icons.Default.Person,
+                    icon = Icons.Default.Language,
                     title = stringResource(id = R.string.settings_section_language_title),
                     subtitle = stringResource(id = R.string.settings_section_language_subtitle),
                 ) {
                     SettingsRow(
-                        icon = Icons.Default.Person,
+                        icon = Icons.Default.Language,
                         title = stringResource(id = R.string.settings_language_label),
                         description = stringResource(id = R.string.settings_language_description),
                     ) {
@@ -398,7 +408,7 @@ fun SettingsScreen(
                     onToggle = { id -> expandedSection = if (expandedSection == id) null else id },
                 ) {
                     SettingsRow(
-                        icon = Icons.Default.Person,
+                        icon = Icons.Default.Palette,
                         title = stringResource(id = R.string.settings_theme_label),
                         description = stringResource(id = R.string.settings_theme_description),
                     ) {
@@ -696,6 +706,7 @@ fun SettingsScreen(
                         listOf(
                             "filled_circle" to stringResource(id = R.string.playpause_filled),
                             "outlined_circle" to stringResource(id = R.string.playpause_outlined),
+                            "icon_only" to stringResource(id = R.string.playpause_icon_only),
                         )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -895,134 +906,162 @@ fun SettingsScreen(
                         }
                     }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
+                    listOf(
+                        "songs" to (stringResource(id = R.string.settings_songs_tab_label) to stringResource(id = R.string.settings_songs_tab_description) to (songsTabEnabled to { enabled: Boolean -> viewModel.setSongsTabEnabled(enabled) })),
+                        "albums" to (stringResource(id = R.string.settings_albums_tab_label) to stringResource(id = R.string.settings_albums_tab_description) to (albumsTabEnabled to { enabled: Boolean -> viewModel.setAlbumsTabEnabled(enabled) })),
+                        "artists" to (stringResource(id = R.string.settings_artists_tab_label) to stringResource(id = R.string.settings_artists_tab_description) to (artistsTabEnabled to { enabled: Boolean -> viewModel.setArtistsTabEnabled(enabled) })),
+                        "playlists" to (stringResource(id = R.string.settings_playlists_tab_label) to stringResource(id = R.string.settings_playlists_tab_description) to (playlistsTabEnabled to { enabled: Boolean -> viewModel.setPlaylistsTabEnabled(enabled) })),
+                        "genres" to (stringResource(id = R.string.settings_genres_tab_label) to stringResource(id = R.string.settings_genres_tab_description) to (genresTabEnabled to { enabled: Boolean -> viewModel.setGenresTabEnabled(enabled) })),
+                    ).forEach { (_, data) ->
+                        val (info, toggleData) = data
+                        val (title, description) = info
+                        val (isChecked, onToggle) = toggleData
 
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_songs_tab_label),
-                        description = stringResource(id = R.string.settings_songs_tab_description),
-                    ) {
-                        Switch(
-                            checked = songsTabEnabled,
-                            onCheckedChange = { viewModel.setSongsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
                         )
+
+                        SettingsRow(
+                            icon = Icons.Default.MusicNote,
+                            title = title,
+                            description = description,
+                        ) {
+                            Switch(
+                                checked = isChecked,
+                                onCheckedChange = onToggle,
+                                colors =
+                                    SwitchDefaults.colors(
+                                        checkedThumbColor = MaterialTheme.colorScheme.primary,
+                                        checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                                        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        uncheckedTrackColor =
+                                            MaterialTheme.colorScheme.onSurface.copy(
+                                                alpha = 0.16f,
+                                            ),
+                                    ),
+                            )
+                        }
                     }
 
                     HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                        modifier = Modifier.padding(vertical = 16.dp),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                     )
 
                     SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_albums_tab_label),
-                        description = stringResource(id = R.string.settings_albums_tab_description),
-                    ) {
-                        Switch(
-                            checked = albumsTabEnabled,
-                            onCheckedChange = { viewModel.setAlbumsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
+                        icon = Icons.Default.DragHandle,
+                        title = stringResource(id = R.string.settings_tab_order_title),
+                        description = stringResource(id = R.string.settings_tab_order_description),
+                    ) {}
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_artists_tab_label),
-                        description = stringResource(id = R.string.settings_artists_tab_description),
-                    ) {
-                        Switch(
-                            checked = artistsTabEnabled,
-                            onCheckedChange = { viewModel.setArtistsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
+                    val density = LocalDensity.current
+                    val dragThresholdPx = with(density) { 36.dp.toPx() }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        tabOrder.forEachIndexed { index, tabId ->
+                            val title =
+                                when (tabId) {
+                                    "songs" -> stringResource(id = R.string.settings_songs_tab_label)
+                                    "albums" -> stringResource(id = R.string.settings_albums_tab_label)
+                                    "artists" -> stringResource(id = R.string.settings_artists_tab_label)
+                                    "playlists" -> stringResource(id = R.string.settings_playlists_tab_label)
+                                    "genres" -> stringResource(id = R.string.settings_genres_tab_label)
+                                    else -> tabId
+                                }
 
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_playlists_tab_label),
-                        description = stringResource(id = R.string.settings_playlists_tab_description),
-                    ) {
-                        Switch(
-                            checked = playlistsTabEnabled,
-                            onCheckedChange = { viewModel.setPlaylistsTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
-                    }
+                            var dragAccumulated by remember { mutableFloatStateOf(0f) }
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    )
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 3.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MusicNote,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Text(
+                                            text = title,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    }
 
-                    SettingsRow(
-                        icon = Icons.Default.MusicNote,
-                        title = stringResource(id = R.string.settings_genres_tab_label),
-                        description = stringResource(id = R.string.settings_genres_tab_description),
-                    ) {
-                        Switch(
-                            checked = genresTabEnabled,
-                            onCheckedChange = { viewModel.setGenresTabEnabled(it) },
-                            colors =
-                                SwitchDefaults.colors(
-                                    checkedThumbColor = MaterialTheme.colorScheme.primary,
-                                    checkedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    uncheckedTrackColor =
-                                        MaterialTheme.colorScheme.onSurface.copy(
-                                            alpha = 0.16f,
-                                        ),
-                                ),
-                        )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (index > 0) {
+                                            IconButton(
+                                                onClick = { viewModel.moveTabUp(tabId) },
+                                                modifier = Modifier.size(32.dp),
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.KeyboardArrowUp,
+                                                    contentDescription = stringResource(id = R.string.action_move_up),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                        if (index < tabOrder.size - 1) {
+                                            IconButton(
+                                                onClick = { viewModel.moveTabDown(tabId) },
+                                                modifier = Modifier.size(32.dp),
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                                    contentDescription = stringResource(id = R.string.action_move_down),
+                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                )
+                                            }
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(start = 4.dp)
+                                                .pointerInput(tabId) {
+                                                    detectVerticalDragGestures(
+                                                        onDragEnd = { dragAccumulated = 0f },
+                                                        onDragCancel = { dragAccumulated = 0f },
+                                                    ) { change, dragAmount ->
+                                                        change.consume()
+                                                        dragAccumulated += dragAmount
+                                                        if (dragAccumulated < -dragThresholdPx) {
+                                                            viewModel.moveTabUp(tabId)
+                                                            dragAccumulated = 0f
+                                                        } else if (dragAccumulated > dragThresholdPx) {
+                                                            viewModel.moveTabDown(tabId)
+                                                            dragAccumulated = 0f
+                                                        }
+                                                    }
+                                                }
+                                                .padding(6.dp),
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.DragHandle,
+                                                contentDescription = stringResource(id = R.string.settings_tab_order_title),
+                                                tint = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

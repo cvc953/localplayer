@@ -135,7 +135,8 @@ fun PlaylistsScreen(
 
     val sortedPlaylists =
         remember(filteredPlaylists, sortModeName) {
-            when (PlaylistSortMode.valueOf(sortModeName)) {
+            val mode = try { PlaylistSortMode.valueOf(sortModeName) } catch (_: Exception) { PlaylistSortMode.TITLE_ASC }
+            when (mode) {
                 PlaylistSortMode.TITLE_ASC -> {
                     filteredPlaylists.sortedBy { it.name.lowercase() }
                 }
