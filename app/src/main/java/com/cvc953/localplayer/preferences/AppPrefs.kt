@@ -250,6 +250,19 @@ class AppPrefs(
         prefs.edit().putBoolean("genres_tab_enabled", enabled).apply()
     }
 
+    // Tab order in bottom navigation
+    fun getTabOrder(): List<String> {
+        val allTabs = listOf("songs", "albums", "artists", "playlists", "genres")
+        val raw = prefs.getString("tab_order", "songs,albums,artists,playlists,genres") ?: "songs,albums,artists,playlists,genres"
+        val savedList = raw.split(",").map { it.trim() }.filter { it in allTabs }
+        val missing = allTabs.filter { it !in savedList }
+        return savedList + missing
+    }
+
+    fun setTabOrder(order: List<String>) {
+        prefs.edit().putString("tab_order", order.joinToString(",")).apply()
+    }
+
     // Default tab when opening app: "songs", "albums", "artists", "playlists", "genres"
     fun getDefaultStartTab(): String =
         prefs.getString("default_start_tab", "songs") ?: "songs"
