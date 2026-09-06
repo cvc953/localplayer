@@ -107,6 +107,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
         val artistsTabEnabled by mainViewModel.artistsTabEnabled.collectAsState()
         val playlistsTabEnabled by mainViewModel.playlistsTabEnabled.collectAsState()
         val genresTabEnabled by mainViewModel.genresTabEnabled.collectAsState()
+        val tabOrder by mainViewModel.tabOrder.collectAsState()
         val activity = context as? Activity
         var lastBackPressTime by remember { mutableLongStateOf(0L) }
 
@@ -216,7 +217,11 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
 
                         // PlayerScreen — visible cuando se expande
                         if (playerState.currentSong != null) {
+                            val isPlayerExpanded =
+                                sheetState.currentValue == SheetValue.Expanded ||
+                                sheetState.targetValue == SheetValue.Expanded
                             PlayerScreen(
+                                isExpanded = isPlayerExpanded,
                                 mainViewModel = mainViewModel,
                                 onCollapse = {
                                     scope.launch { sheetState.partialExpand() }
@@ -273,6 +278,7 @@ fun MusicScreen(onOpenPlayer: () -> Unit) {
                 artistsTabEnabled = artistsTabEnabled,
                 playlistsTabEnabled = playlistsTabEnabled,
                 genresTabEnabled = genresTabEnabled,
+                tabOrder = tabOrder,
                 modifier =
                     Modifier
                         .align(Alignment.Companion.BottomCenter)

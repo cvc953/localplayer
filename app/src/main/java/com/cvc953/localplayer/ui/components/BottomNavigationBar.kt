@@ -30,15 +30,20 @@ fun BottomNavigationBar(
     artistsTabEnabled: Boolean,
     playlistsTabEnabled: Boolean,
     genresTabEnabled: Boolean,
+    tabOrder: List<String> = listOf("songs", "albums", "artists", "playlists", "genres"),
     modifier: Modifier = Modifier,
 ) {
     val navItems =
         buildList {
-            if (songsTabEnabled) add(BottomNavItem.Songs)
-            if (albumsTabEnabled) add(BottomNavItem.Albums)
-            if (artistsTabEnabled) add(BottomNavItem.Artists)
-            if (playlistsTabEnabled) add(BottomNavItem.Playlists)
-            if (genresTabEnabled) add(BottomNavItem.Genres)
+            tabOrder.forEach { tabId ->
+                when (tabId) {
+                    "songs" -> if (songsTabEnabled) add(BottomNavItem.Songs)
+                    "albums" -> if (albumsTabEnabled) add(BottomNavItem.Albums)
+                    "artists" -> if (artistsTabEnabled) add(BottomNavItem.Artists)
+                    "playlists" -> if (playlistsTabEnabled) add(BottomNavItem.Playlists)
+                    "genres" -> if (genresTabEnabled) add(BottomNavItem.Genres)
+                }
+            }
         }
 
     // Use currentBackStackEntryAsState to ensure recomposition when destination changes
