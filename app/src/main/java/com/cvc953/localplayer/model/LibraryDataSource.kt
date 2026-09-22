@@ -66,7 +66,7 @@ class MediaStoreDataSource(
                     selectionInfo.second,
                     null,
                 )
-            } ?: return emptyList()
+            } ?: throw IllegalStateException("MediaStore query returned no cursor")
 
         cursor.use {
             val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
@@ -131,22 +131,22 @@ class MediaStoreDataSource(
                     ),
                     selectionInfo.first,
                     selectionInfo.second,
-                    MediaStore.Audio.Media._ID + " DESC",
+                    null,
                 )
 
             cursor?.use {
-                if (!it.moveToFirst()) {
-                    return LibrarySignature.EMPTY
-                }
                 val idCol = it.getColumnIndex(MediaStore.Audio.Media._ID)
                 val dateAddedCol = it.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
                 val dateModifiedCol = it.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
-                LibrarySignature(
-                    songCount = it.count,
-                    maxId = if (idCol >= 0) it.getLong(idCol) else 0L,
-                    maxDateAdded = if (dateAddedCol >= 0) it.getLong(dateAddedCol) else 0L,
-                    maxDateModified = if (dateModifiedCol >= 0) it.getLong(dateModifiedCol) else 0L,
-                )
+                var maxId = 0L
+                var maxDateAdded = 0L
+                var maxDateModified = 0L
+                while (it.moveToNext()) {
+                    if (idCol >= 0) maxId = maxOf(maxId, it.getLong(idCol))
+                    if (dateAddedCol >= 0) maxDateAdded = maxOf(maxDateAdded, it.getLong(dateAddedCol))
+                    if (dateModifiedCol >= 0) maxDateModified = maxOf(maxDateModified, it.getLong(dateModifiedCol))
+                }
+                LibrarySignature(it.count, maxId, maxDateAdded, maxDateModified)
             }
         } catch (e: Exception) {
             Log.w("MediaStoreDataSource", "currentSignature failed", e)
