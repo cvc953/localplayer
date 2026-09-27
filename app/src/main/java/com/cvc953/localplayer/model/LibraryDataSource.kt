@@ -177,7 +177,7 @@ class MediaStoreDataSource(
     private fun buildSelectionForFolder(): Pair<String?, Array<String>?> {
         val folders = folderUris()
         val base = MediaStore.Audio.Media.IS_MUSIC + "!= 0"
-        if (folders.isEmpty()) return Pair(base, null)
+        if (folders.isEmpty()) return Pair("0 = 1", null)
 
         val useRelative = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
         val clauses = mutableListOf<String>()
@@ -212,7 +212,7 @@ class MediaStoreDataSource(
         }
 
         if (clauses.isEmpty()) {
-            return Pair(base, null)
+            return Pair("0 = 1", null)
         }
 
         return Pair("(" + clauses.joinToString(" OR ") + ") AND " + base, args.toTypedArray())
