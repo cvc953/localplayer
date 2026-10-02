@@ -5,12 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-
 ## [Unreleased]
 
 ## [1.1.2] - 2026-10-02
 
 ### Added
+
 - 🎵 Player widget with playback controls, current song, and album art
 - ⏱️ Sleep timer to stop playback automatically
 - ↕️ Configurable navigation tab reordering
@@ -21,23 +21,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 👁️ MediaStore change detection while the app is open (debounced) plus automatic validation when returning to the foreground (covers files copied over USB/MTP)
 
 ### Changed
+
 - 🗂️ The library is now a single reactive source of truth shared by every category (each screen used to keep its own copy)
 - 💾 The song cache is validated against MediaStore before being used (library signature) and now keeps sample rate, MIME type and modification date
 - ⏱️ Uniform minimum-duration filter (30 s): first scan, automatic refresh and manual refresh return the same song set (tracks shorter than 30 s are no longer listed)
 - 🔕 Background refreshes no longer show the full-screen scanning indicator
 
 ### Fixed
+
 - 🐛 Songs from folders removed in Settings disappear from the library (the cache was not invalidated before)
 - 🐛 Audio info (sample rate and MIME type) is no longer lost when the cache is reloaded
 - 🧹 Removed the duplicated library observer and rescan logic in `MainViewModel`
 
 ### Acknowledgments
+
 - 🙏 Thanks to [RGBearMD](https://github.com/RGBearMD) for sponsoring the project
 - 🙏 Thanks to [LuisL16-ui](https://github.com/LuisL16-ui) for contributing through a pull request
 
 ## [1.1.0]
 
 ### Added
+
 - ✏️ Edit song metadata and cover art (title, artist, album, genre, year, track, disc, image) from the player screen
 - ✏️ Edit full album metadata and cover art from the album detail screen
 - 🏷️ New Genres tab with configurable view and genre detail screen
@@ -49,11 +53,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🎤 Instrumental track detection in lyrics
 
 ### Changed
+
 - 🔄 Navigation tabs are now configurable (show/hide each tab from Settings)
 - 🔀 Shuffle and sequential play buttons now operate on the current screen (Albums, Playlists, Genres) instead of the whole library
 - 🎨 Cleaned up debug logs to reduce battery usage
 
 ### Fixed
+
 - 🔋 Reduced battery drain — fixed progress polling, coroutine leaks, and duplicate observers
 - 📋 Fixed drag-to-reorder conflict with multi-song selection in playlist detail
 - 🐛 Fixed color picker not applying custom hex value
@@ -66,18 +72,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [1.0.11]
 
 ### Changed
+
 - 🔎 Migrated list search bars to native Material2 SearchBar (with keyboard auto-open)
 - 🧩 Extracted and reused multi-song selection component across detail screens
 - 🏁 Added a new Settings option to choose the default startup tab (Songs/Albums/Artists/Playlists)
 - 🎛️ Updated interface defaults: squiggly progress bar, rounded album art, and Material2 buttons
 
 ### Fixed
+
 - 🐛 Fixed manual queue reorder while shuffle is enabled (no more unwanted reshuffle)
 - 🐛 Edge-to-edge fixes for bottom nav and mini player with both gesture and 2-button navigation
 
 ## [1.0.10]
 
 ### Added
+
 - 🔄 Song reordering in playlists via drag-to-reorder
 - 🔊 Sample rate and MIME type display in song info
 - 🎛️ Player customization options: progress bar styles (classic, linear, squiggly) and play button styles
@@ -85,33 +94,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 📸 Additional phone screenshots for Play Store metadata
 
 ### Changed
+
 - ♻️ LyricScreen full refactor for better maintainability
 - ⚙️ Settings screen expanded with new customization options
 
 ### Fixed
+
 - 🐛 Various UI interaction fixes in album and playlist headers
-
-
 
 ## [1.0.9]
 
 ### Added
+
 - 📱 PlayerScreen tablet adaptation: responsive landscape/portrait layout
 - 🖼️ In landscape: album art on the left, controls on the right
 - 📏 BottomSheetScaffold now fills full width on tablets (sheetMaxWidth)
 - 🔍 Tablet detection with scaling of fonts, buttons, and spacing
 
 ### Changed
+
 - 📐 Landscape threshold reduced from >1.6 to >1.5 to detect 1280x800 tablets
 - 🔘 Button sizing based on minOf(width, height) instead of screenWidth
 - 🎨 Font and spacing adjustments in SongTitleSection and PlayerControls for tablets
 
 ### Fixed
+
 - 🐛 Playlists with multi-word names not showing songs (URL decoding in navigation)
 
 ## [1.0.8]
 
 ### Added
+
 - 🌐 Full localization in Spanish, English, and Italian across the app
 - 🗣️ Global language preference management applied from MainActivity and SettingsScreen
 - 📂 Storage permission flow and folder selection adapted for i18n
@@ -119,21 +132,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 📋 Expanded queue operations to add all tracks without duplicates and preserve next-up playback
 
 ### Changed
+
 - ⚙️ Refactored MainActivity, SettingsScreen, and several core screens to support i18n
 - 🎨 Cleaned up hardcoded strings in albums, artists, playlists, lyrics, equalizer, and detail screens
 - 📱 Navigation and UI component adjustments for a consistent experience across languages
 
 ### Fixed
+
 - 🐛 Remaining toasts, song counters, and action labels localized
 - 🐛 Duplicates prevented when playing the next song in the queue
 
 ### Technical
+
 - Implemented `LocaleUtil` and language persistence in `AppPrefs`
 - Improved queue logic tests in `PlaybackQueueLogicTest`
 
 ## [1.0.7] - 2026-05-03
 
 ### Added
+
 - 🇪🇸🇺🇸 Full localization in English and Spanish with metadata and images
 - 📲 Updated app icons for English and Spanish
 - 🍞 Toast notifications for queue actions in Albums, Artists, Playlists, and MusicScreen
@@ -142,10 +159,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 📋 Fastlane moved to the repository root for compatibility with F-Droid maintainers
 
 ### Changed
+
 - ⚙️ Refactored MusicScreen and PlaylistsScreen with advanced functionality
 - 🎨 Improved screen UI with additional features
 
 ### Fixed
+
 - 🐛 Dependency metadata inclusion disabled in APK and bundle
 - 🐛 Updated toast messages for consistent queue insertion
 - 🐛 Optimized progress updates and lyrics position synchronization
@@ -155,28 +174,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🐛 Fixed a bug that caused Japanese lyrics to collapse into each other
 
 ### Technical
+
 - 🏗️ Dedicated ViewModels for enhanced screen functionality
 
 ## [1.0.5] - 2026-03-25
 
 ### Added
+
 - 🎨 Dynamic accent color selection in the settings screen
 - 📱 Play Store screenshots for the app (album, library, lyrics, player) in English and Spanish
 - 📄 Fastlane metadata for Play Store publishing (EN and ES)
 
 ### Changed
+
 - 🎨 Refactored theme handling to support custom accent colors
 - 💾 Persisted the selected accent color in preferences
 
 ### Fixed
+
 - 🐛 TTML parser treated multiple words separated by `-` as a single word
 
 ### Technical
+
 - Openspec documentation for bottom-sheet integration (planning)
 
 ## [1.0.4] - 2026-03-23
 
 ### Added
+
 - 🎵 TTML lyric support (syllables, word-by-word sync, dot animations for instrumental gaps)
 - 🎛️ Built-in equalizer with user preset management and state persistence
 - 📂 Music folder management through FolderViewModel
@@ -197,6 +222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🎵 Track number and disc number in the song data model
 
 ### Changed
+
 - 🧭 Navigation architecture refactored to Navigation Compose
 - 🖥️ Player UI completely redesigned
 - 📊 Playback logic delegated to PlaybackViewModel for cleaner architecture
@@ -207,6 +233,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 📱 Status bar handling refactored in MainActivity
 
 ### Fixed
+
 - 🐛 Gap duration calculation in the lyric dot animation
 - 🐛 Kotlin compilation errors and UI responsiveness improvements
 - 🐛 Aspect ratio handling on the player screen
@@ -215,10 +242,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🐛 Album name normalization for better matching
 
 ### Removed
+
 - 🗑️ Unused Firebase Crashlytics and ExoPlayer dependencies
 - 🗑️ Commented-out code and unnecessary Spacer components
 
 ### Technical
+
 - Dedicated ViewModels: Artist, Equalizer, Folder, Lyrics, Playback, Player, Playlist, Settings
 - TTML parser with continuous syllable support and line-join handling
 - Library auto-scan in ViewModels with debounce
@@ -227,6 +256,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [1.0.0] - 2026-01-25
 
 ### Added
+
 - 🎵 Local music playback
 - 📝 Synchronized lyrics support (LRC format)
 - 📋 Playback queue management with reordering
@@ -244,6 +274,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 📱 Support for Android 7.0 (API 24)
 
 ### Technical
+
 - MVVM architecture
 - Jetpack Compose for UI
 - Kotlin Coroutines for asynchronous operations
@@ -256,6 +287,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## Changelog Format
 
 ### Change Types
+
 - `Added` for new features
 - `Changed` for changes in existing functionality
 - `Deprecated` for soon-to-be removed features

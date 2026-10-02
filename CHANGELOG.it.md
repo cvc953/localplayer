@@ -5,12 +5,12 @@ Tutte le modifiche rilevanti di questo progetto saranno documentate in questo fi
 Il formato si basa su [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
-
 ## [Non pubblicato]
 
 ## [1.1.2] - 2026-10-02
 
 ### Aggiunto
+
 - 🎵 Widget del player con controlli di riproduzione, brano corrente e copertina
 - ⏱️ Timer di spegnimento per interrompere automaticamente la riproduzione
 - ↕️ Riordinamento configurabile delle schede di navigazione
@@ -21,23 +21,27 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 👁️ Rilevamento delle modifiche di MediaStore mentre l'app è aperta (con debounce) e validazione automatica al ritorno in primo piano (copre i file copiati via USB/MTP)
 
 ### Cambiato
+
 - 🗂️ La libreria è ora un'unica fonte di verità reattiva condivisa da tutte le categorie (prima ogni schermata manteneva la propria copia)
 - 💾 La cache dei brani viene validata rispetto a MediaStore prima dell'uso (firma della libreria) e ora conserva frequenza di campionamento, tipo MIME e data di modifica
 - ⏱️ Filtro uniforme di durata minima (30 s): prima scansione, aggiornamento automatico e manuale restituiscono lo stesso insieme di brani (le tracce sotto i 30 s non vengono più elencate)
 - 🔕 Gli aggiornamenti in background non mostrano più l'indicatore di scansione a schermo intero
 
 ### Corretto
+
 - 🐛 I brani delle cartelle rimosse nelle Impostazioni scompaiono dalla libreria (prima la cache non veniva invalidata)
 - 🐛 Le informazioni audio (frequenza di campionamento e tipo MIME) non vengono più perse al ricaricamento della cache
 - 🧹 Rimossi l'observer e la logica di ri-scansione duplicata in `MainViewModel`
 
 ### Ringraziamenti
+
 - 🙏 Grazie a [RGBearMD](https://github.com/RGBearMD) per essere sponsor del progetto
 - 🙏 Grazie a [LuisL16-ui](https://github.com/LuisL16-ui) per il contributo tramite una pull request
 
 ## [1.1.0]
 
 ### Aggiunto
+
 - ✏️ Modifica metadati e copertina dei brani (titolo, artista, album, genere, anno, traccia, disco, immagine) dal player
 - ✏️ Modifica metadati e copertina di album completi dalla schermata dettaglio album
 - 🏷️ Nuova scheda Generi con vista configurabile e schermata di dettaglio
@@ -49,11 +53,13 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 🎤 Rilevamento tracce strumentali nei testi
 
 ### Modificato
+
 - 🔄 Schede di navigazione ora configurabili (mostra/nascondi ogni scheda dalle Impostazioni)
 - 🔀 Pulsanti riproduzione casuale e sequenziale ora operano sulla schermata corrente (Album, Playlist, Generi) invece che sull'intera libreria
 - 🎨 Pulizia dei log di debug per ridurre il consumo batteria
 
 ### Corretto
+
 - 🔋 Ridotto il consumo batteria — corretto polling del progresso, coroutine leak e osservatori duplicati
 - 📋 Corretto il conflitto tra drag-to-reorder e selezione multipla nel dettaglio playlist
 - 🐛 Corretto il selettore colore che non applicava il valore HEX personalizzato
@@ -66,18 +72,21 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 ## [1.0.11]
 
 ### Modificato
+
 - 🔎 Migrazione delle barre di ricerca alla SearchBar nativa Material3 (con apertura automatica della tastiera)
 - 🧩 Estrazione e riuso del componente di selezione multipla brani nelle schermate di dettaglio
 - 🏁 Nuova opzione nelle Impostazioni per scegliere la scheda iniziale (Brani/Album/Artisti/Playlist)
 - 🎛️ Valori predefiniti interfaccia aggiornati: barra serpentina, copertina arrotondata e pulsanti Material3
 
 ### Corretto
+
 - 🐛 Corretto il riordinamento manuale della coda con shuffle attivo (niente reshuffle indesiderato)
 - 🐛 Correzioni edge-to-edge per barra inferiore e mini player con navigazione gestuale e a 3 pulsanti
 
 ## [1.0.10]
 
 ### Aggiunto
+
 - 🔄 Riordinamento dei brani nelle playlist tramite trascinamento (drag-to-reorder)
 - 🔊 Visualizzazione della frequenza di campionamento e del tipo MIME nelle info del brano
 - 🎛️ Opzioni di personalizzazione del player: stili della barra di progresso (classico, lineare, serpentino) e stili del pulsante di riproduzione
@@ -85,32 +94,37 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 📸 Screenshot aggiuntivi per i metadati del Play Store
 
 ### Modificato
+
 - ♻️ Refactoring completo di LyricScreen per una migliore manutenibilità
 - ⚙️ Schermata impostazioni ampliata con nuove opzioni di personalizzazione
 
 ### Corretto
-- 🐛 Varie correzioni alle interazioni UI nelle intestazioni di album e playlist
 
+- 🐛 Varie correzioni alle interazioni UI nelle intestazioni di album e playlist
 
 ## [1.0.9]
 
 ### Aggiunto
+
 - 📱 Adattamento del PlayerScreen per tablet: layout reattivo landscape/portrait
 - 🖼️ In landscape: copertina a sinistra, controlli a destra
 - 📏 BottomSheetScaffold ora occupa tutta la larghezza su tablet (sheetMaxWidth)
 - 🔍 Rilevamento tablet con ridimensionamento di font, pulsanti e spaziature
 
 ### Modificato
+
 - 📐 Soglia landscape ridotta da >1.6 a >1.5 per rilevare tablet 1280x800
 - 🔘 Dimensione pulsanti basata su minOf(larghezza, altezza) invece di screenWidth
 - 🎨 Regolazione font e spazi in SongTitleSection e PlayerControls per tablet
 
 ### Corretto
+
 - 🐛 Playlist con nomi di più parole non mostravano i brani (decodifica URL nella navigazione)
 
 ## [1.0.8]
 
 ### Aggiunto
+
 - 🌐 Localizzazione completa in spagnolo, inglese e italiano in tutta l'app
 - 🗣️ Gestione globale della preferenza della lingua da MainActivity e SettingsScreen
 - 📂 Flusso dei permessi di archiviazione e selezione cartella adattati per l'i18n
@@ -118,21 +132,25 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 📋 Operazioni di coda estese per aggiungere tutti i brani senza duplicati e mantenere la riproduzione successiva
 
 ### Modificato
+
 - ⚙️ Refactor di MainActivity, SettingsScreen e varie schermate principali per supportare l'i18n
 - 🎨 Pulizia delle stringhe hardcoded in album, artisti, playlist, testi, equalizzatore e schermate di dettaglio
 - 📱 Aggiustamenti alla navigazione e ai componenti UI per un'esperienza coerente tra le lingue
 
 ### Corretto
+
 - 🐛 Correzione dei toast, dei conteggi dei brani e delle etichette delle azioni ancora da localizzare
 - 🐛 Prevenzione dei duplicati quando si riproduce il brano successivo in coda
 
 ### Tecnico
+
 - Implementazione di `LocaleUtil` e persistenza della lingua in `AppPrefs`
 - Migliorati i test della logica di coda in `PlaybackQueueLogicTest`
 
 ## [1.0.7] - 2026-05-03
 
 ### Aggiunto
+
 - 🇪🇸🇺🇸 Localizzazione completa in inglese e spagnolo con metadati e immagini
 - 📲 Icone dell'app aggiornate per inglese e spagnolo
 - 🍞 Toast per le azioni di coda in Albums, Artists, Playlists e MusicScreen
@@ -141,10 +159,12 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 📋 Fastlane spostato nella root del repository per compatibilità con i manutentori di F-Droid
 
 ### Modificato
+
 - ⚙️ Refactor di MusicScreen e PlaylistsScreen con funzionalità avanzate
 - 🎨 UI delle schermate migliorata con funzionalità aggiuntive
 
 ### Corretto
+
 - 🐛 Inclusione dei metadati delle dipendenze disabilitata in APK e bundle
 - 🐛 Aggiornati i messaggi toast per una coerenza nell'aggiunta alla coda
 - 🐛 Ottimizzati gli aggiornamenti di progresso e la sincronizzazione della posizione dei testi
@@ -154,28 +174,34 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 🐛 Corretto un bug che faceva collassare tra loro i testi giapponesi
 
 ### Tecnico
+
 - 🏗️ ViewModel dedicati per le funzionalità avanzate delle schermate
 
 ## [1.0.5] - 2026-03-25
 
 ### Aggiunto
+
 - 🎨 Selezione dinamica del colore di accento nella schermata impostazioni
 - 📱 Screenshot dell'app per Play Store (album, libreria, testi, player) in inglese e spagnolo
 - 📄 Metadati Fastlane per la pubblicazione su Play Store (EN e ES)
 
 ### Modificato
+
 - 🎨 Refactor della gestione dei temi per supportare colori di accento personalizzati
 - 💾 Persistenza del colore di accento selezionato nelle preferenze
 
 ### Corretto
+
 - 🐛 Il parser TTML considerava come una sola parola più parole separate da `-`
 
 ### Tecnico
+
 - Documentazione Openspec per l'integrazione bottom-sheet (pianificazione)
 
 ## [1.0.4] - 2026-03-23
 
 ### Aggiunto
+
 - 🎵 Supporto ai testi TTML (sillabe sincronizzate, word-by-word, animazioni a punti per i gap strumentali)
 - 🎛️ Equalizzatore integrato con gestione dei preset utente e persistenza dello stato
 - 📂 Gestione delle cartelle musicali tramite FolderViewModel
@@ -196,6 +222,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 🎵 Track number e disc number nel modello dati dei brani
 
 ### Modificato
+
 - 🧭 Architettura di navigazione refactorizzata a Navigation Compose
 - 🖥️ UI del player completamente ridisegnata
 - 📊 Logica di riproduzione delegata a PlaybackViewModel per un'architettura più pulita
@@ -206,6 +233,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 📱 Gestione della status bar refactorizzata in MainActivity
 
 ### Corretto
+
 - 🐛 Calcolo della durata dei gap nell'animazione a punti dei testi
 - 🐛 Errori di compilazione Kotlin e miglioramenti della reattività della UI
 - 🐛 Gestione del rapporto d'aspetto nella schermata del player
@@ -214,10 +242,12 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 🐛 Normalizzazione dei nomi degli album per un matching migliore
 
 ### Eliminato
+
 - 🗑️ Dipendenze non utilizzate di Firebase Crashlytics ed ExoPlayer
 - 🗑️ Codice commentato e componenti Spacer non necessari
 
 ### Tecnico
+
 - ViewModel dedicati: Artist, Equalizer, Folder, Lyrics, Playback, Player, Playlist, Settings
 - Parser TTML con supporto alle sillabe continue e unione delle parole tra righe
 - Auto-scan della libreria nei ViewModel con debounce
@@ -226,6 +256,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 ## [1.0.0] - 2026-01-25
 
 ### Aggiunto
+
 - 🎵 Riproduzione musicale locale
 - 📝 Supporto ai testi sincronizzati (formato LRC)
 - 📋 Gestione della coda di riproduzione con riordino
@@ -243,6 +274,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 📱 Supporto da Android 7.0 (API 24)
 
 ### Tecnico
+
 - Architettura MVVM
 - Jetpack Compose per la UI
 - Kotlin Coroutines per le operazioni asincrone
@@ -255,6 +287,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 ## Formato del Changelog
 
 ### Tipi di modifica
+
 - `Aggiunto` per nuove funzionalità
 - `Modificato` per cambiamenti a funzionalità esistenti
 - `Deprecato` per funzionalità che saranno rimosse
