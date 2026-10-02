@@ -8,7 +8,15 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.1.2] - 2026-10-02
+
 ### Añadido
+- 🎵 Widget del reproductor con controles de reproducción, canción actual y carátula
+- ⏱️ Temporizador de apagado para detener la reproducción automáticamente
+- ↕️ Reordenamiento configurable de las pestañas de navegación
+- 📂 Apertura de archivos de audio desde gestores de archivos
+- 🎛️ Nuevo estilo "Solo ícono" para el botón de reproducción/pausa
+- 🧠 Carga de carátulas con caché y reducción de tamaño para un menor uso de memoria
 - 🔄 Sincronización de la biblioteca en tiempo real: las canciones agregadas, eliminadas o editadas se reflejan al instante en Canciones, Álbumes, Artistas, Géneros y Listas, sin reiniciar la app ni refrescar manualmente
 - 👁️ Detección de cambios de MediaStore mientras la app está abierta (con debounce) y validación automática al volver a primer plano (cubre archivos copiados por USB/MTP)
 
@@ -22,6 +30,10 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - 🐛 Las canciones de carpetas eliminadas en Ajustes desaparecen de la biblioteca (antes la caché no se invalidaba)
 - 🐛 La información de audio (frecuencia de muestreo y tipo MIME) ya no se pierde al recargar la caché
 - 🧹 Eliminados el observer y el re-escaneo duplicado de la biblioteca en `MainViewModel`
+
+### Agradecimientos
+- 🙏 Gracias a [RGBearMD](https://github.com/RGBearMD) por ser sponsor del proyecto
+- 🙏 Gracias a [LuisL16-ui](https://github.com/LuisL16-ui) por su contribución mediante un pull request
 
 ## [1.1.0]
 

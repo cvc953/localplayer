@@ -1,0 +1,9 @@
+- Player widget with playback controls, current song, and album art
+- Sleep timer to stop playback automatically
+- Configurable navigation tab reordering
+- Open audio files from file managers
+- New "Icon only" play/pause button style
+- Real-time library synchronization and improved cache validation
+- Memory-aware album art loading with caching and downsampling
+- Thanks to RGBearMD (https://github.com/RGBearMD) for sponsoring the project
+- Thanks to LuisL16-ui (https://github.com/LuisL16-ui) for contributing through a pull request

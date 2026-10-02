@@ -1,0 +1,9 @@
+- Widget del player con controlli di riproduzione, brano corrente e copertina
+- Timer di spegnimento per interrompere automaticamente la riproduzione
+- Riordinamento configurabile delle schede di navigazione
+- Apertura dei file audio dai gestori file
+- Nuovo stile "Solo icona" per il pulsante riproduzione/pausa
+- Sincronizzazione della libreria in tempo reale e migliore validazione della cache
+- Caricamento delle copertine con cache e ridimensionamento per ridurre l'uso della memoria
+- Grazie a RGBearMD (https://github.com/RGBearMD) per essere sponsor del progetto
+- Grazie a LuisL16-ui (https://github.com/LuisL16-ui) per il contributo tramite una pull request

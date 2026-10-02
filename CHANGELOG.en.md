@@ -8,7 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-02
+
 ### Added
+- 🎵 Player widget with playback controls, current song, and album art
+- ⏱️ Sleep timer to stop playback automatically
+- ↕️ Configurable navigation tab reordering
+- 📂 Open audio files from file managers
+- 🎛️ New "Icon only" play/pause button style
+- 🧠 Memory-aware album art loading with caching and downsampling
 - 🔄 Real-time library synchronization: added, removed or edited songs appear immediately in Songs, Albums, Artists, Genres and Playlists, with no app restart or manual refresh
 - 👁️ MediaStore change detection while the app is open (debounced) plus automatic validation when returning to the foreground (covers files copied over USB/MTP)
 
@@ -22,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - 🐛 Songs from folders removed in Settings disappear from the library (the cache was not invalidated before)
 - 🐛 Audio info (sample rate and MIME type) is no longer lost when the cache is reloaded
 - 🧹 Removed the duplicated library observer and rescan logic in `MainViewModel`
+
+### Acknowledgments
+- 🙏 Thanks to [RGBearMD](https://github.com/RGBearMD) for sponsoring the project
+- 🙏 Thanks to [LuisL16-ui](https://github.com/LuisL16-ui) for contributing through a pull request
 
 ## [1.1.0]
 

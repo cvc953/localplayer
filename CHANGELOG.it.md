@@ -8,7 +8,15 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
 ## [Non pubblicato]
 
+## [1.1.2] - 2026-10-02
+
 ### Aggiunto
+- 🎵 Widget del player con controlli di riproduzione, brano corrente e copertina
+- ⏱️ Timer di spegnimento per interrompere automaticamente la riproduzione
+- ↕️ Riordinamento configurabile delle schede di navigazione
+- 📂 Apertura dei file audio dai gestori file
+- 🎛️ Nuovo stile "Solo icona" per il pulsante riproduzione/pausa
+- 🧠 Caricamento delle copertine con cache e ridimensionamento per ridurre l'uso della memoria
 - 🔄 Sincronizzazione della libreria in tempo reale: i brani aggiunti, rimossi o modificati compaiono subito in Brani, Album, Artisti, Generi e Playlist, senza riavviare l'app né aggiornare manualmente
 - 👁️ Rilevamento delle modifiche di MediaStore mentre l'app è aperta (con debounce) e validazione automatica al ritorno in primo piano (copre i file copiati via USB/MTP)
 
@@ -22,6 +30,10 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 - 🐛 I brani delle cartelle rimosse nelle Impostazioni scompaiono dalla libreria (prima la cache non veniva invalidata)
 - 🐛 Le informazioni audio (frequenza di campionamento e tipo MIME) non vengono più perse al ricaricamento della cache
 - 🧹 Rimossi l'observer e la logica di ri-scansione duplicata in `MainViewModel`
+
+### Ringraziamenti
+- 🙏 Grazie a [RGBearMD](https://github.com/RGBearMD) per essere sponsor del progetto
+- 🙏 Grazie a [LuisL16-ui](https://github.com/LuisL16-ui) per il contributo tramite una pull request
 
 ## [1.1.0]
 
