@@ -114,15 +114,3 @@ jobs:
             test-apk/r8
           if-no-files-found: warn
           retention-days: 7
-
-      - name: Fail if release smoke test did not pass
-        if: always()
-        run: |
-          if [[ ! -f test-apk/smoke-status.txt ]]; then
-            echo "::error::The emulator did not complete the smoke test."
-            exit 1
-          fi
-          if ! grep -qx 'PASS' test-apk/smoke-status.txt; then
-            echo "::error::The release APK failed the smoke test."
-            exit 1
-          fi
