@@ -95,14 +95,7 @@ jobs:
               printf 'FAIL\n' > test-apk/smoke-status.txt
               exit 1
             fi
-            printf 'PASS\n' > test-apk/smoke-status.txt
-
-      - name: Collect R8 diagnostics
-        if: always()
-        run: |
-          mkdir -p test-apk/r8
-          cp -R app/build/outputs/mapping/release/. test-apk/r8/ 2>/dev/null || true
-          cp -R app/build/outputs/logs/. test-apk/r8/ 2>/dev/null || true
+            printf 'PASS\n' > test-apk/smoke-status.txt 
 
       - name: Upload test APK artifact
         uses: actions/upload-artifact@v4
