@@ -531,6 +531,12 @@ class PlayerController(
             false
         }
 
+    /**
+     * Snapshot inmutable de la cola actual. Permite que la UI (p. ej. tras recrear la
+     * Activity) adopte el orden de reproducción real sin tener que re-arrancar el player.
+     */
+    fun getQueueSnapshot(): List<Song> = queue.toList()
+
     fun setOnQueueEndedListener(listener: (() -> Unit)?) {
         onQueueEnded = listener
     }

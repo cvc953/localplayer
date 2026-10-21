@@ -114,49 +114,59 @@ class PlaybackViewModel(
                         queueToUse = listOf(currentSong) + rest
                         startIndex = 0
                     }
-                    _queue.value = queueToUse
-                    if (startIndex >= 0) {
-                        try {
-                            val wasPlaying = prefs.loadIsPlaying()
-                            val pos = prefs.loadPlaybackPosition()
-                            if (wasPlaying) {
-                                playerController.playNow(
-                                    queueToUse,
-                                    startIndex,
-                                    startPaused = false,
-                                    seekToPosition = if (pos > 0L) pos else null,
-                                    resumeAfterSeek = true,
-                                )
-                            } else {
-                                // En reinicio en pausa, restaurar estado sin preparar MediaPlayer.
-                                playerController.restoreQueueState(
-                                    queueToUse,
-                                    startIndex,
-                                    position = pos,
-                                )
-                            }
-                            _currentPosition.value = pos
-                            // Lanzar MusicService para mostrar la notificación aunque esté en pausa
-                            val song = queueToUse.getOrNull(startIndex)
-                            if (song != null) {
-                                val intent =
-                                    Intent(getApplication<Application>(), MusicService::class.java).apply {
-                                        action = MusicService.ACTION_UPDATE_STATE
-                                        putExtra("IS_PLAYING", wasPlaying)
-                                        putExtra("POSITION", pos)
-                                        putExtra("SONG_URI", song.uri.toString())
-                                        putExtra("TITLE", song.title)
-                                        putExtra("ARTIST", song.artist)
-                                    }
-                                ContextCompat.startForegroundService(getApplication(), intent)
-                            }
-                        } catch (_: Exception) {
-                        }
+                    val controllerAlive = playerController.state.value.currentSong != null
+                    if (controllerAlive) {
+                        // El proceso sigue vivo tras recrear la Activity y la música ya suena.
+                        // Restaurar aquí sería contraproducente: playNow() re-mezclaría la cola
+                        // (shuffle) y, al no coincidir el orden con el que ya se está reproduciendo,
+                        // liberaría y recrearía el MediaPlayer activo, provocando un microcorte.
+                        // Adoptamos el estado en vivo del controller en su lugar.
+                        _queue.value = playerController.getQueueSnapshot()
                     } else {
-                        // no last song, keep controller queue in sync without starting playback
-                        try {
-                            playerController.queueEnd(queueToUse)
-                        } catch (_: Exception) {
+                        _queue.value = queueToUse
+                        if (startIndex >= 0) {
+                            try {
+                                val wasPlaying = prefs.loadIsPlaying()
+                                val pos = prefs.loadPlaybackPosition()
+                                if (wasPlaying) {
+                                    playerController.playNow(
+                                        queueToUse,
+                                        startIndex,
+                                        startPaused = false,
+                                        seekToPosition = if (pos > 0L) pos else null,
+                                        resumeAfterSeek = true,
+                                    )
+                                } else {
+                                    // En reinicio en pausa, restaurar estado sin preparar MediaPlayer.
+                                    playerController.restoreQueueState(
+                                        queueToUse,
+                                        startIndex,
+                                        position = pos,
+                                    )
+                                }
+                                _currentPosition.value = pos
+                                // Lanzar MusicService para mostrar la notificación aunque esté en pausa
+                                val song = queueToUse.getOrNull(startIndex)
+                                if (song != null) {
+                                    val intent =
+                                        Intent(getApplication<Application>(), MusicService::class.java).apply {
+                                            action = MusicService.ACTION_UPDATE_STATE
+                                            putExtra("IS_PLAYING", wasPlaying)
+                                            putExtra("POSITION", pos)
+                                            putExtra("SONG_URI", song.uri.toString())
+                                            putExtra("TITLE", song.title)
+                                            putExtra("ARTIST", song.artist)
+                                        }
+                                    ContextCompat.startForegroundService(getApplication(), intent)
+                                }
+                            } catch (_: Exception) {
+                            }
+                        } else {
+                            // no last song, keep controller queue in sync without starting playback
+                            try {
+                                playerController.queueEnd(queueToUse)
+                            } catch (_: Exception) {
+                            }
                         }
                     }
                 }
