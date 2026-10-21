@@ -1,11 +1,11 @@
-arguments=--init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.54.0/config_linux/org.eclipse.osgi/58/0/.cp/gradle/init/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.54.0/config_linux/org.eclipse.osgi/58/0/.cp/gradle/protobuf/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.54.0/config_linux/org.eclipse.osgi/58/0/.cp/gradle/kotlin/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.54.0/config_linux/org.eclipse.osgi/58/0/.cp/gradle/groovy/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.54.0/config_linux/org.eclipse.osgi/58/0/.cp/gradle/scala/init.gradle
+arguments=--init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.58.2026101608/config_linux/org.eclipse.osgi/57/0/.cp/gradle/init/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.58.2026101608/config_linux/org.eclipse.osgi/57/0/.cp/gradle/protobuf/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.58.2026101608/config_linux/org.eclipse.osgi/57/0/.cp/gradle/kotlin/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.58.2026101608/config_linux/org.eclipse.osgi/57/0/.cp/gradle/groovy/init.gradle --init-script /home/christian/.config/Code/User/globalStorage/redhat.java/1.58.2026101608/config_linux/org.eclipse.osgi/57/0/.cp/gradle/scala/init.gradle
 auto.sync=false
 build.scans.enabled=false
 connection.gradle.distribution=GRADLE_DISTRIBUTION(WRAPPER)
 connection.project.dir=
 eclipse.preferences.version=1
 gradle.user.home=
-java.home=/usr/lib/jvm/java-21-openjdk
+java.home=/home/christian/.vscode/extensions/redhat.java-1.58.2026101608-linux-x64/jre/25.0.4.1-linux-x86_64
 jvm.arguments=
 offline.mode=false
 override.workspace.settings=true

@@ -157,11 +157,11 @@ Si encuentras algún bug o tienes una sugerencia, por favor abre un [issue](http
 
 - [x] Ecualizador integrado
 - [x] Soporte para playlists
-- [ ] Widgets para la pantalla de inicio
+- [x] Widgets para la pantalla de inicio
 - [x] Temas personalizables
 - [x] Escaneo de carpetas específicas
-- [ ] Importar/Exportar configuración
-- [ ] Sleep timer
+- [x] Importar/Exportar configuración
+- [x] Sleep timer
 
 ## 📄 Licencia
 

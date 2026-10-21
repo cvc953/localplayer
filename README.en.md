@@ -153,11 +153,11 @@ If you find a bug or have a suggestion, please open an [issue](https://github.co
 
 - [x] Built-in equalizer
 - [x] Playlist support
-- [ ] Home screen widgets
+- [x] Home screen widgets
 - [x] Customizable themes
 - [x] Specific folder scanning
-- [ ] Import/Export settings
-- [ ] Sleep timer
+- [x] Import/Export settings
+- [x] Sleep timer
 
 ## 📄 License
 

@@ -153,11 +153,11 @@ Se trovi un bug o hai un suggerimento, apri una [issue](https://github.com/cvc95
 
 - [x] Equalizzatore integrato
 - [x] Supporto alle playlist
-- [ ] Widget per la schermata Home
+- [x] Widget per la schermata Home
 - [x] Temi personalizzabili
 - [x] Scansione di cartelle specifiche
-- [ ] Importazione/Esportazione impostazioni
-- [ ] Sleep timer
+- [x] Importazione/Esportazione impostazioni
+- [x] Sleep timer
 
 ## 📄 Licenza
 
