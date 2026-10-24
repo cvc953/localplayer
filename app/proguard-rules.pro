@@ -18,9 +18,6 @@
     public static ** valueOf(java.lang.String);
 }
 
--keep class androidx.glance.** { *; }
--dontwarn androidx.glance.**
-
 -keep class androidx.media.** { *; }
 -dontwarn androidx.media.**
 
@@ -45,14 +42,8 @@
 # Lifecycle
 -keep class androidx.lifecycle.** { *; }
 
-# WorkManager is initialized by AndroidX Startup before MainActivity and builds
-# WorkDatabase through reflective Room/protobuf code in release builds.
+# AndroidX Startup initializes app components declared in the manifest
 -keep class androidx.startup.** { *; }
--keep class androidx.work.** { *; }
--keep class androidx.room.** { *; }
--keep class androidx.sqlite.** { *; }
--keep class androidx.datastore.preferences.protobuf.** { *; }
--keep class androidx.datastore.** { *; }
 -keepattributes RuntimeVisibleAnnotations,RuntimeInvisibleAnnotations
 -keepattributes RuntimeVisibleParameterAnnotations,RuntimeInvisibleParameterAnnotations
 -keepattributes AnnotationDefault

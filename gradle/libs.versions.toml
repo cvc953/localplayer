@@ -15,7 +15,6 @@ uiText = "1.8.2"
 navigationCompose = "2.7.7"
 animationCore = "1.8.2"
 appcompat = "1.7.1"
-glanceVersion = "1.1.1"
 kotlinCompilerExtensionVersion = "1.5.15"
 mockk = "1.13.8"
 mockk-android = "1.13.8"
@@ -43,10 +42,6 @@ androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", ve
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glanceVersion" }
-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glanceVersion" }
-glance-testing = { group = "androidx.glance", name = "glance-testing", version.ref = "glanceVersion" }
-glance-compiler = { group = "androidx.glance", name = "glance-compiler", version.ref = "kotlinCompilerExtensionVersion" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 mockkandroid = { group = "io.mockk", name = "mockk-android", version.ref = "mockk-android" }
 org-json = { group = "org.json", name = "json", version.ref = "orgJson" }

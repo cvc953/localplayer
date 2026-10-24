@@ -1,5 +1,8 @@
 # Delta for Widget Integration
 
+> **STATUS: OBSOLETE (2026-10-23).** This delta was never applied. The shipping widget
+> uses classic `android.widget.RemoteViews`, not Glance. See `../state.yaml`.
+
 ## Purpose
 
 Home-screen Glance AppWidget with playback state rendering, transport commands, and ±10s seek interaction.

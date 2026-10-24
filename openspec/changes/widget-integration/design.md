@@ -1,5 +1,9 @@
 # Design: Widget Integration
 
+> **STATUS: OBSOLETE (2026-10-23).** This design was never implemented. The shipping
+> widget uses classic `android.widget.RemoteViews`, not Glance, and the Glance
+> dependencies were removed. See `state.yaml`.
+
 ## Technical Approach
 
 Add a Glance AppWidget that renders playback state and accepts transport commands. The widget is a **pure consumer** of `PlayerController.state` — it never owns state, only observes it. Commands flow back through `ActionCallback` → `MusicService.onStartCommand` → `PlayerController`, reusing all existing intent constants. Cold-start reads from `AppPrefs`; hot updates push via `PlayerWidget().updateAll(this)` from `MusicService`.

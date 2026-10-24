@@ -1,5 +1,12 @@
 # Tasks: Widget Integration
 
+> **STATUS: OBSOLETE (2026-10-23).** The checked tasks below are a historical record of a
+> migration that was **not** completed, not a description of the current code. The Glance
+> dependencies they add (tasks 1.1-1.4) were subsequently removed, as were
+> `PlayerWidgetActions.kt` and `PlayerWidgetActionsTest.kt`. The live widget uses classic
+> `android.widget.RemoteViews`, not Glance. Do not resume from these checkboxes without
+> re-adding the dependencies first. See `state.yaml`.
+
 ## Review Workload Forecast
 
 | Field | Value |

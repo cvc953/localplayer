@@ -116,7 +116,6 @@ class MusicService : Service() {
                         if (now - lastUpdateTimeMs >= 1000L) {
                             updateMediaSession()
                             updateNotification()
-                            // Widget state update via GlanceAppWidgetManager (internal API)
                             lastUpdateTimeMs = now
                         }
                     }

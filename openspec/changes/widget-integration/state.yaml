@@ -1,0 +1,39 @@
+# SDD State: widget-integration
+project: localplayer
+change: widget-integration
+artifact_store:
+  mode: openspec
+  backend: openspec
+current_phase: sdd-archive
+started_at: 2026-09-13T15:52:32Z
+dependencies: []
+status: obsolete
+
+# Phase progression
+# sdd-explore -> sdd-propose -> sdd-spec -> sdd-design -> sdd-tasks -> sdd-apply -> sdd-verify -> sdd-archive
+
+# Artifacts created
+artifacts:
+  - proposal.md
+  - spec.md
+  - specs/glance-widget/spec.md
+  - specs/widget-seek/spec.md
+  - design.md
+  - tasks.md
+
+# Why this change is obsolete (2026-10-23)
+# The Glance migration never completed. Phases 4.3, 4.4, 6.2, 7.5 and 7.6 remain
+# unresolved because `provideContent` / `GlanceAppWidgetManager` could not be driven
+# from `provideGlance`. The live widget instead renders with classic
+# `android.widget.RemoteViews` (PlayerWidget.kt) via `AppWidgetProvider`
+# (PlayerWidgetReceiver / PlayerWidgetSquareReceiver), and it works.
+#
+# The Glance dependency scaffolding was removed as dead code: androidx.glance,
+# androidx.work, androidx.room and androidx.datastore were the ONLY sources of
+# ACCESS_NETWORK_STATE, WAKE_LOCK and RECEIVE_BOOT_COMPLETED in the merged manifest.
+# Those dependencies are gone from build.gradle.kts and libs.versions.toml, and
+# PlayerWidgetActions.kt plus PlayerWidgetActionsTest.kt were deleted.
+#
+# Treat every Glance API assumption recorded in these artifacts as NOT applied.
+# Resuming requires re-adding the dependencies first; nothing here is a statement
+# about the current code.
