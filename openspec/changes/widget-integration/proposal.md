@@ -1,5 +1,14 @@
 # Proposal: Widget Integration
 
+> **STATUS: OBSOLETE (2026-10-23).** This change never landed. The Glance-based widget
+> was abandoned mid-migration; the shipping widget renders with classic
+> `android.widget.RemoteViews` (`PlayerWidget.kt` + `AppWidgetProvider` receivers) and
+> works. The `androidx.glance`, `androidx.work`, `androidx.room` and `androidx.datastore`
+> dependencies below were removed as dead code, which also removed the unused
+> `ACCESS_NETWORK_STATE`, `WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED` permissions from the
+> merged manifest. Nothing in this document describes the current code.
+> See `state.yaml` for the full rationale.
+
 ## Intent
 
 Add home-screen app widgets so users can control music playback without opening the app. The user needs quick access to play/pause, next/previous, progress, and album artwork on the home screen. This extends the existing MediaSession infrastructure to a Glance-based AppWidget, leveraging already-persisted state in `AppPrefs`.

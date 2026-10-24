@@ -1,5 +1,8 @@
 # Delta for Glance Widget
 
+> **STATUS: OBSOLETE (2026-10-23).** Never applied. The shipping widget uses classic
+> `android.widget.RemoteViews`, not Glance. See `../../state.yaml`.
+
 ## Purpose
 
 Home-screen Glance AppWidget rendering current playback state and accepting transport commands. Widget reads cold-start data from `AppPrefs` and receives live updates via `PlayerWidget().updateAll(this)` throttled to 1s.

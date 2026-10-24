@@ -1,5 +1,9 @@
 # Delta for Widget Seek
 
+> **STATUS: OBSOLETE (2026-10-23).** Never applied. The shipping widget seeks through
+> `MusicService` intents dispatched by `RemoteViews` PendingIntents; there is no Glance
+> `LinearProgressIndicator` in the app. See `../../state.yaml`.
+
 ## Purpose
 
 Seek interaction in the Glance widget. Because `LinearProgressIndicator` is non-interactive in Glance, seek is implemented via ±10s forward/backward buttons instead of tap-to-seek.
