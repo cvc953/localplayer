@@ -16,6 +16,13 @@
     <!-- Android 12 o menor -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
+    <!-- Rejected: declared only by androidx.media3:media3-common (adaptive-streaming
+         bandwidth estimation, irrelevant for a local-file player). media3 catches
+         SecurityException here by design and degrades to NETWORK_TYPE_UNKNOWN. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
+
     <application android:allowBackup="false" android:appCategory="audio" android:dataExtractionRules="@xml/data_extraction_rules" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:roundIcon="@mipmap/ic_launcher_round" android:supportsRtl="true" android:theme="@style/Theme.Localplayer" android:name=".LocalPlayerApp">
         <activity android:name=".MainActivity" android:exported="true" android:label="@string/app_name" android:theme="@style/Theme.Localplayer">
             <intent-filter>

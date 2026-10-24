@@ -95,13 +95,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // Glance AppWidget
-    implementation(libs.glance.appwidget)
-    implementation(libs.glance.material3)
-
-    // Glance testing
-    androidTestImplementation(libs.glance.testing)
-
     // Mocking for unit tests
     testImplementation(libs.mockk)
     testImplementation(libs.mockkandroid)
