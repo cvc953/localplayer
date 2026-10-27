@@ -7,6 +7,17 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
 ## [Non pubblicato]
 
+## [1.1.3] - 2026-10-26
+
+### Corretto
+
+- 🐛 I brani su una scheda SD vengono ora rilevati correttamente: l'app interrogava solo il volume di memoria interna, quindi le cartelle configurate su una SD restituivano una libreria vuota e un conteggio errato dei brani in Impostazioni
+- 🐛 Rimosso il breve stacco audio quando l'Activity viene ricreata durante la riproduzione (avveniva con la casualità attivata: la coda veniva rimescolata e il player riavviato)
+
+### Modificato
+
+- 🔒 Ridotti i permessi dell'app da 8 a 4: rimossi `ACCESS_NETWORK_STATE`, `WAKE_LOCK` e `RECEIVE_BOOT_COMPLETED`, aggiunti da una dipendenza inutilizzata. L'app non dichiara più permessi di rete
+
 ## [1.1.2] - 2026-10-02
 
 ### Aggiunto

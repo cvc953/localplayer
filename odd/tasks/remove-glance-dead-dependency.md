@@ -92,3 +92,6 @@ Delegated direct (writer trigger: 3 edited files + 2 deletions with a proguard d
 7 files changed: 8 insertions, 93 deletions. No commit (user has not asked for one).
 
 ## Acceptance criteria — all met
+
+## Release
+Shipped in v1.1.3 (versionCode 14). The permission cleanup (8 → 4) is noted in the changelogs for that release.

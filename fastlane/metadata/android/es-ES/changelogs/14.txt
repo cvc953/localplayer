@@ -1,0 +1,3 @@
+- Las canciones de una tarjeta SD ahora se detectan correctamente: las carpetas en una SD ya no muestran una biblioteca vacía ni un recuento de canciones incorrecto en Ajustes
+- Corregido un corte breve de audio al recrearse la pantalla con la música en reproducción
+- Reducidos los permisos de 8 a 4: la app ya no solicita acceso a la red

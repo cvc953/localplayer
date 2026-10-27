@@ -1,0 +1,3 @@
+- I brani su una scheda SD vengono ora rilevati correttamente: le cartelle su una SD non mostrano più una libreria vuota o un conteggio errato dei brani in Impostazioni
+- Corretto un breve stacco audio quando la schermata viene ricreata durante la riproduzione
+- Ridotti i permessi da 8 a 4: l'app non richiede più l'accesso alla rete

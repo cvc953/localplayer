@@ -7,6 +7,17 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.1.3] - 2026-10-26
+
+### Corregido
+
+- 🐛 Las canciones de una tarjeta SD ahora se detectan correctamente: la app consultaba únicamente el volumen de almacenamiento interno, por lo que las carpetas configuradas en una SD devolvían una biblioteca vacía y un recuento de canciones incorrecto en Ajustes
+- 🐛 Eliminado el corte breve de audio al recrearse la Activity mientras la música suena (ocurría con la aleatorización activada: la cola se volvía a randomizar y el reproductor se reiniciaba)
+
+### Cambiado
+
+- 🔒 Reducidos los permisos de la app de 8 a 4: eliminados `ACCESS_NETWORK_STATE`, `WAKE_LOCK` y `RECEIVE_BOOT_COMPLETED`, que se añadían por una dependencia sin usar. La app ya no declara permisos de red
+
 ## [1.1.2] - 2026-10-02
 
 ### Añadido

@@ -1,0 +1,3 @@
+- Songs on an SD card are now detected correctly; folders on an SD card no longer show an empty library or a wrong song count in Settings
+- Fixed a brief audio cut when the screen is recreated while music is playing
+- Reduced permissions from 8 to 4; the app no longer requests network access

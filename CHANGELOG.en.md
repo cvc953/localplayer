@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-26
+
+### Fixed
+
+- 🐛 Songs on an SD card are now detected correctly: the app only queried the internal storage volume, so folders configured on an SD card returned an empty library and a wrong song count in Settings
+- 🐛 Removed the brief audio cut when the Activity is recreated while music is playing (it occurred with shuffle enabled: the queue was re-randomized and the player restarted)
+
+### Changed
+
+- 🔒 Reduced app permissions from 8 to 4: removed `ACCESS_NETWORK_STATE`, `WAKE_LOCK` and `RECEIVE_BOOT_COMPLETED`, which were added by an unused dependency. The app no longer declares network permissions
+
 ## [1.1.2] - 2026-10-02
 
 ### Added
