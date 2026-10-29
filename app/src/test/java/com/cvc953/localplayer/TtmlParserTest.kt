@@ -132,6 +132,51 @@ class TtmlParserTest {
     }
 
     @Test
+    fun testAppleBareSecondTimestamps() {
+        // Apple Music emite los tiempos anteriores al primer minuto como segundos
+        // sin métrica ("20.333") y, a partir del minuto, como MM:SS.mmm ("1:04.896").
+        // Ambos formatos deben resolverse a milisegundos absolutos.
+        val ttml =
+            """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <tt xmlns="http://www.w3.org/ns/ttml"
+                xmlns:itunes="http://music.apple.com/lyric-ttml-internal"
+                xmlns:ttm="http://www.w3.org/ns/ttml#metadata"
+                itunes:timing="Word">
+              <body dur="3:51.000">
+                <div begin="20.333" end="49.692" itunes:songPart="Verse">
+                  <p begin="20.333" end="21.719" itunes:key="L1" ttm:agent="v1" xml:space="preserve">
+                    <span begin="20.333" end="21.719" xml:space="preserve">Midnight</span>
+                  </p>
+                  <p begin="59.818" end="1:04.896" itunes:key="L10" ttm:agent="v1" xml:space="preserve">
+                    <span begin="59.818" end="1:00.182" xml:space="preserve">You </span><span begin="1:00.182" end="1:00.433" xml:space="preserve">got </span>
+                  </p>
+                </div>
+              </body>
+            </tt>
+            """.trimIndent()
+
+        val result = TtmlParser.parseTtml(ttml)
+
+        assertEquals(2, result.lines.size)
+
+        // Segundos sin métrica: 20.333 s = 20333 ms (redondeado, no truncado)
+        assertEquals(20333L, result.lines[0].timeMs)
+        assertEquals(1386L, result.lines[0].durationMs)
+
+        // Línea que cruza el minuto: inicio en segundos, fin en MM:SS.mmm
+        assertEquals(59818L, result.lines[1].timeMs)
+        assertEquals(5078L, result.lines[1].durationMs)
+
+        val syllables = result.lines[1].syllabus
+        assertEquals(2, syllables.size)
+        assertEquals(59818L, syllables[0].timeMs)
+        assertEquals(364L, syllables[0].durationMs)
+        assertEquals(60182L, syllables[1].timeMs)
+        assertEquals(251L, syllables[1].durationMs)
+    }
+
+    @Test
     fun testNoAgentAlignment() {
         // TTML sin ttm:agent debe tener alineación LEFT (por defecto)
         val ttml =

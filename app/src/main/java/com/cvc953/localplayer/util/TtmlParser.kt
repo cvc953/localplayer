@@ -6,6 +6,7 @@ import com.cvc953.localplayer.model.TtmlLyrics
 import com.cvc953.localplayer.model.TtmlMetadata
 import com.cvc953.localplayer.model.TtmlSyllable
 import com.cvc953.localplayer.model.alignmentFromAgent
+import kotlin.math.roundToLong
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
 
@@ -504,10 +505,16 @@ object TtmlParser {
     }
 
     /**
-     * Convierte un tiempo TTML (formato: HH:MM:SS.mmm o MM:SS.mmm) a milisegundos
+     * Convierte un tiempo TTML a milisegundos.
+     *
+     * Formatos aceptados:
+     *  - HH:MM:SS.mmm
+     *  - MM:SS.mmm
+     *  - SS.mmm (segundos sin métrica: Apple Music los usa para todo tiempo
+     *    anterior al primer minuto, p. ej. "20.333")
      */
     private fun parseTime(timeStr: String): Long {
-        val parts = timeStr.split(":")
+        val parts = timeStr.trim().split(":")
 
         return when (parts.size) {
             3 -> {
@@ -516,7 +523,7 @@ object TtmlParser {
                 val minutes = parts[1].toLongOrNull() ?: 0
                 val seconds = parts[2].toDoubleOrNull() ?: 0.0
 
-                (hours * 3600_000 + minutes * 60_000 + (seconds * 1000).toLong())
+                (hours * 3600_000 + minutes * 60_000 + (seconds * 1000.0).roundToLong())
             }
 
             2 -> {
@@ -524,7 +531,14 @@ object TtmlParser {
                 val minutes = parts[0].toLongOrNull() ?: 0
                 val seconds = parts[1].toDoubleOrNull() ?: 0.0
 
-                (minutes * 60_000 + (seconds * 1000).toLong())
+                (minutes * 60_000 + (seconds * 1000.0).roundToLong())
+            }
+
+            1 -> {
+                // SS.mmm (segundos sin métrica)
+                val seconds = parts[0].toDoubleOrNull() ?: 0.0
+
+                (seconds * 1000.0).roundToLong()
             }
 
             else -> {
