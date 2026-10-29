@@ -3,6 +3,28 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// La versión la define el tag del release mediante -PappVersionName. El fallback permite
+// compilar localmente sin propiedades; CI siempre lo sobreescribe.
+val appVersionName: String =
+    (findProperty("appVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() } ?: "1.1.3"
+
+// versionCode se deriva de la versión para que nunca se desincronice del tag:
+// 1.1.4 -> 10104, 2.0.0 -> 20000. Una pre-release comparte el código de su versión base,
+// así que el release estable se instala encima sin pedir desinstalación.
+fun deriveVersionCode(version: String): Int {
+    val parts = version.substringBefore('-').split('.')
+    require(parts.size == 3 && parts.all { it.toIntOrNull() != null }) {
+        "Versión inválida '$version'. Se espera MAJOR.MINOR.PATCH con sufijo opcional, ej. 1.1.4-beta.1."
+    }
+    val (major, minor, patch) = parts.map { it.toInt() }
+    require(minor in 0..99 && patch in 0..99) {
+        "Versión inválida '$version': minor y patch deben estar entre 0 y 99."
+    }
+    return major * 10_000 + minor * 100 + patch
+}
+
+val appVersionCode: Int = deriveVersionCode(appVersionName)
+
 android {
     namespace = "com.cvc953.localplayer"
     compileSdk = 36
@@ -20,8 +42,8 @@ android {
         applicationId = "com.cvc953.localplayer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 14
-        versionName = "1.1.3"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
