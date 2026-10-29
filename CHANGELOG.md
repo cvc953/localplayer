@@ -7,6 +7,12 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.1.4] - 2026-10-29
+
+### Corregido
+
+- 🐛 Las letras de archivos TTML con marcas de tiempo en segundos sueltos (`20.333` en lugar de `0:20.333`) ya no quedan congeladas: el parser las interpretaba como tiempo cero, así que la vista se detenía en la última línea hasta la primera marca de tiempo completa
+
 ## [1.1.3] - 2026-10-26
 
 ### Corregido

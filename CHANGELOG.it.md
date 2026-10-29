@@ -7,6 +7,12 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 
 ## [Non pubblicato]
 
+## [1.1.4] - 2026-10-29
+
+### Corretto
+
+- 🐛 I testi dei file TTML con timestamp in secondi puri (`20.333` invece di `0:20.333`) non restano più bloccati: il parser li interpretava come tempo zero, quindi la vista si fermava sull'ultima riga fino al primo timestamp completo
+
 ## [1.1.3] - 2026-10-26
 
 ### Corretto

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-10-29
+
+### Fixed
+
+- 🐛 Lyrics from TTML files with bare-second timestamps (`20.333` instead of `0:20.333`) are no longer frozen: the parser read them as zero, so the view stayed on the last affected line until the first fully formed timestamp
+
 ## [1.1.3] - 2026-10-26
 
 ### Fixed
