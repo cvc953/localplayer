@@ -101,6 +101,9 @@ dependencies {
 
     // Implementación real de org.json para los unit tests (el stub de android.jar lanza excepciones)
     testImplementation(libs.org.json)
+    // Implementación real de XmlPullParser para los unit tests: el stub de android.jar
+    // lanza "Method newInstance in org.xmlpull.v1.XmlPullParserFactory not mocked".
+    testImplementation(libs.kxml2)
     androidTestImplementation(libs.mockk)
     androidTestImplementation(libs.mockkandroid)
 
