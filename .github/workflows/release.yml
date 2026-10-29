@@ -46,14 +46,34 @@ jobs:
         id: extract_version
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
+            VERSION="${GITHUB_REF#refs/tags/v}"
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]] && [[ -n "${{ github.event.inputs.version }}" ]]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION="dev-$(date +%Y%m%d%H%M%S)"
+            echo "::error::No version provided. Push a vX.Y.Z tag or fill the version input."
+            exit 1
           fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $VERSION"
+
+          # MAJOR.MINOR.PATCH with an optional SemVer pre-release suffix: 1.1.4, 1.1.4-beta.1, 2.0.0-rc.2
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$ ]]; then
+            echo "::error::Invalid version '$VERSION'. Expected MAJOR.MINOR.PATCH with an optional pre-release suffix, e.g. 1.1.4-beta.1."
+            exit 1
+          fi
+
+          BASE_VERSION="${VERSION%%-*}"
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE="true"
+          else
+            PRERELEASE="false"
+          fi
+
+          {
+            echo "VERSION=$VERSION"
+            echo "BASE_VERSION=$BASE_VERSION"
+            echo "PRERELEASE=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Building version: $VERSION (base: $BASE_VERSION, pre-release: $PRERELEASE)"
       
       - name: Build Release APK
         env:
@@ -66,7 +86,7 @@ jobs:
             echo "::error::Signing secrets are incomplete. Cannot build release APK."
             exit 1
           fi
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease -PappVersionName="${{ steps.extract_version.outputs.VERSION }}"
         
       - name: Collect APK and checksums
         run: |
@@ -83,6 +103,8 @@ jobs:
         id: changelog
         run: |
           VERSION="${{ steps.extract_version.outputs.VERSION }}"
+          BASE_VERSION="${{ steps.extract_version.outputs.BASE_VERSION }}"
+          PRERELEASE="${{ steps.extract_version.outputs.PRERELEASE }}"
           
           extract_changelog() {
             local file="$1"
@@ -90,17 +112,30 @@ jobs:
               echo ""
               return
             fi
-            awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" "$file"
+            local content
+            content=$(awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" "$file")
+            # Una pre-release sin sección propia usa la sección de su versión base
+            if [[ -z "$content" && "$VERSION" != "$BASE_VERSION" ]]; then
+              content=$(awk "/^## \[$BASE_VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" "$file")
+            fi
+            echo "$content"
           }
           
           ES_CONTENT=$(extract_changelog "CHANGELOG.md")
           EN_CONTENT=$(extract_changelog "CHANGELOG.en.md")
           IT_CONTENT=$(extract_changelog "CHANGELOG.it.md")
           
-          if [[ -z "$ES_CONTENT" && -z "$EN_CONTENT" && -z "$IT_CONTENT" ]]; then
-            echo "CHANGELOG_CONTENT=No se encontraron cambios documentados para la versión $VERSION." >> $GITHUB_OUTPUT
-          else
-            {
+          {
+            if [[ "$PRERELEASE" == "true" ]]; then
+              echo "> ⚠️ **Pre-release** — \`$VERSION\` es una versión de prueba publicada antes de \`$BASE_VERSION\`. Puede contener fallos; informa cualquier problema encontrado."
+              echo ""
+              echo "---"
+              echo ""
+            fi
+
+            if [[ -z "$ES_CONTENT" && -z "$EN_CONTENT" && -z "$IT_CONTENT" ]]; then
+              echo "No se encontraron cambios documentados para la versión $VERSION."
+            else
               echo "### 🇪🇸 Español"
               echo ""
               echo "$ES_CONTENT"
@@ -116,11 +151,14 @@ jobs:
               echo "### 🇮🇹 Italiano"
               echo ""
               echo "$IT_CONTENT"
-            } > release/changelog_content.txt
-            echo "CHANGELOG_CONTENT<<EOF" >> $GITHUB_OUTPUT
-            cat release/changelog_content.txt >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          fi
+            fi
+          } > release/changelog_content.txt
+
+          {
+            echo "CHANGELOG_CONTENT<<EOF"
+            cat release/changelog_content.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
        
       
       - name: Upload APK artifact
@@ -181,6 +219,6 @@ jobs:
             
             **Instalación completa**: [Ver README](https://github.com/cvc953/localplayer/blob/master/README.md)
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.extract_version.outputs.PRERELEASE }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
