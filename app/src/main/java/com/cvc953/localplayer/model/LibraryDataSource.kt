@@ -1,6 +1,7 @@
 package com.cvc953.localplayer.model
 
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -172,72 +173,105 @@ class MediaStoreDataSource(
         if (byVolume.isEmpty()) return emptyList()
 
         val list = mutableListOf<Song>()
+        var failedVolumes = 0
         for ((volumeName, volumeTargets) in byVolume) {
             val contentUri = contentUriFor(volumeName)
             val (selection, args) = buildSelection(volumeTargets)
-            queryInto(list, contentUri, selection, args)
+            if (!queryInto(list, contentUri, selection, args)) failedVolumes++
+        }
+
+        // Si ningún volumen respondió, es un fallo de lectura y no una biblioteca vacía:
+        // el llamador tiene que poder distinguirlos para no borrar la lista anterior.
+        if (failedVolumes == byVolume.size) {
+            throw IllegalStateException("No se pudo leer ningún volumen de MediaStore")
         }
         return list
     }
 
+    private fun queryWithFallback(
+        contentUri: Uri,
+        columns: Array<String>,
+        selection: String?,
+        args: Array<String>?,
+    ): Cursor? =
+        try {
+            context.contentResolver.query(contentUri, columns, selection, args, null)
+        } catch (e: Exception) {
+            Log.w("MediaStoreDataSource", "consulta con la proyección completa falló; reintentando con la reducida", e)
+            try {
+                context.contentResolver.query(contentUri, baseProjection, selection, args, null)
+            } catch (fallbackError: Exception) {
+                Log.e("MediaStoreDataSource", "la consulta reducida también falló para $contentUri", fallbackError)
+                null
+            }
+        }
+
+    /**
+     * Vuelca las filas de un volumen en [out]. Devuelve `false` cuando no se pudo leer el
+     * cursor, para que [querySongs] pueda distinguir un fallo de una lista vacía.
+     */
     private fun queryInto(
         out: MutableList<Song>,
         contentUri: Uri,
         selection: String?,
         args: Array<String>?,
-    ) {
-        val cursor =
-            try {
-                context.contentResolver.query(contentUri, projection, selection, args, null)
-            } catch (_: IllegalArgumentException) {
-                context.contentResolver.query(contentUri, baseProjection, selection, args, null)
-            } ?: return
+    ): Boolean {
+        val cursor = queryWithFallback(contentUri, projection, selection, args) ?: return false
 
         cursor.use {
             val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-            val titleCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
-            val artistCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-            val albumCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
-            val yearCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.YEAR)
-            val durCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
-            val dataCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
-            val trackNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.CD_TRACK_NUMBER)
-            val discNumberCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
-            val mimeTypeCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
-            val dateAddedCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
-            val genreCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)
+            val titleCol = it.getColumnIndex(MediaStore.Audio.Media.TITLE)
+            val artistCol = it.getColumnIndex(MediaStore.Audio.Media.ARTIST)
+            val albumCol = it.getColumnIndex(MediaStore.Audio.Media.ALBUM)
+            val yearCol = it.getColumnIndex(MediaStore.Audio.Media.YEAR)
+            val durCol = it.getColumnIndex(MediaStore.Audio.Media.DURATION)
+            val dataCol = it.getColumnIndex(MediaStore.Audio.Media.DATA)
+            val trackNumberCol = it.getColumnIndex(MediaStore.Audio.Media.CD_TRACK_NUMBER)
+            val discNumberCol = it.getColumnIndex(MediaStore.Audio.Media.DISC_NUMBER)
+            val mimeTypeCol = it.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE)
+            val dateAddedCol = it.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
+            val genreCol = it.getColumnIndex(MediaStore.Audio.Media.GENRE)
             val sampleRateCol = it.getColumnIndex("sample_rate")
             val dateModifiedCol = it.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
 
             while (it.moveToNext()) {
                 val id = it.getLong(idCol)
-                // El URI debe apuntar al volumen donde vive la canción (interno o SD).
-                val uri = Uri.withAppendedPath(contentUri, id.toString())
-
-                out.add(
-                    Song(
-                        id = id,
-                        title = it.getString(titleCol),
-                        artist = it.getString(artistCol),
-                        album = it.getString(albumCol),
-                        year = it.getInt(yearCol),
-                        uri = uri,
-                        duration = it.getLong(durCol),
-                        albumArt = null,
-                        filePath = it.getString(dataCol),
-                        trackNumber = it.getInt(trackNumberCol),
-                        discNumber = it.getInt(discNumberCol),
-                        sampleRate = if (sampleRateCol >= 0) it.getInt(sampleRateCol).takeIf { v -> v > 0 } else null,
-                        mimeType = it.getString(mimeTypeCol),
-                        dateAdded = it.getLong(dateAddedCol),
-                        dateModified = if (dateModifiedCol >= 0) it.getLong(dateModifiedCol) else 0L,
-                        genre = it.getString(genreCol) ?: "",
-                    ),
-                )
+                // Una fila con datos inválidos se descarta: perder una canción es preferible
+                // a perder la biblioteca entera.
+                try {
+                    out.add(
+                        songFromRow(
+                            id = id,
+                            title = it.stringOrNull(titleCol),
+                            artist = it.stringOrNull(artistCol),
+                            album = it.stringOrNull(albumCol),
+                            year = it.intOrZero(yearCol),
+                            // El URI debe apuntar al volumen donde vive la canción (interno o SD).
+                            uri = Uri.withAppendedPath(contentUri, id.toString()),
+                            duration = it.longOrZero(durCol),
+                            filePath = it.stringOrNull(dataCol),
+                            trackNumber = it.intOrZero(trackNumberCol),
+                            discNumber = it.intOrZero(discNumberCol),
+                            sampleRate = if (sampleRateCol >= 0) it.getInt(sampleRateCol).takeIf { value -> value > 0 } else null,
+                            mimeType = it.stringOrNull(mimeTypeCol),
+                            dateAdded = it.longOrZero(dateAddedCol),
+                            dateModified = it.longOrZero(dateModifiedCol),
+                            genre = it.stringOrNull(genreCol),
+                        ),
+                    )
+                } catch (e: Exception) {
+                    Log.w("MediaStoreDataSource", "fila $id descartada por datos inválidos", e)
+                }
             }
         }
+        return true
     }
 
+    /**
+     * Firma de la biblioteca para detectar cambios. Devuelve `null` cuando algún volumen no
+     * se pudo consultar, para que el llamador conserve la lista anterior en vez de asumir
+     * que la biblioteca quedó vacía.
+     */
     override fun currentSignature(): LibrarySignature? {
         val byVolume = resolvedTargets().groupBy { it.volumeName }
         if (byVolume.isEmpty()) return LibrarySignature.EMPTY
@@ -247,13 +281,14 @@ class MediaStoreDataSource(
         var maxDateAdded = 0L
         var maxDateModified = 0L
         var hasRows = false
+        var failed = false
 
         for ((volumeName, volumeTargets) in byVolume) {
             val contentUri = contentUriFor(volumeName)
             val (selection, args) = buildSelection(volumeTargets)
-            try {
-                context.contentResolver
-                    .query(
+            val cursor =
+                try {
+                    context.contentResolver.query(
                         contentUri,
                         arrayOf(
                             MediaStore.Audio.Media._ID,
@@ -263,22 +298,32 @@ class MediaStoreDataSource(
                         selection,
                         args,
                         MediaStore.Audio.Media._ID + " DESC",
-                    )?.use { c ->
-                        if (c.moveToFirst()) {
-                            hasRows = true
-                            songCount += c.count
-                            val idCol = c.getColumnIndex(MediaStore.Audio.Media._ID)
-                            val dateAddedCol = c.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
-                            val dateModifiedCol = c.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
-                            if (idCol >= 0) maxId = maxOf(maxId, c.getLong(idCol))
-                            if (dateAddedCol >= 0) maxDateAdded = maxOf(maxDateAdded, c.getLong(dateAddedCol))
-                            if (dateModifiedCol >= 0) maxDateModified = maxOf(maxDateModified, c.getLong(dateModifiedCol))
-                        }
-                    }
-            } catch (e: Exception) {
-                Log.w("MediaStoreDataSource", "currentSignature failed for volume $volumeName", e)
+                    )
+                } catch (e: Exception) {
+                    Log.w("MediaStoreDataSource", "currentSignature failed for volume $volumeName", e)
+                    null
+                }
+
+            if (cursor == null) {
+                failed = true
+                continue
+            }
+
+            cursor.use { c ->
+                if (c.moveToFirst()) {
+                    hasRows = true
+                    songCount += c.count
+                    val idCol = c.getColumnIndex(MediaStore.Audio.Media._ID)
+                    val dateAddedCol = c.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
+                    val dateModifiedCol = c.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
+                    if (idCol >= 0) maxId = maxOf(maxId, c.getLong(idCol))
+                    if (dateAddedCol >= 0) maxDateAdded = maxOf(maxDateAdded, c.getLong(dateAddedCol))
+                    if (dateModifiedCol >= 0) maxDateModified = maxOf(maxDateModified, c.getLong(dateModifiedCol))
+                }
             }
         }
+
+        if (failed) return null
 
         return if (!hasRows) {
             LibrarySignature.EMPTY
@@ -306,3 +351,53 @@ class MediaStoreDataSource(
         }
     }
 }
+
+/**
+ * Construye un [Song] a partir de una fila de MediaStore.
+ *
+ * Las columnas de texto pueden llegar en NULL según el proveedor del dispositivo.
+ * `Cursor.getString` devuelve un tipo de plataforma, así que asignarlo a un campo no nulo de
+ * [Song] lanzaba NPE y abortaba el escaneo completo, dejando la biblioteca vacía. Este es el
+ * único punto donde entran datos del proveedor, así que acá se normalizan.
+ */
+internal fun songFromRow(
+    id: Long,
+    title: String?,
+    artist: String?,
+    album: String?,
+    year: Int,
+    uri: Uri,
+    duration: Long,
+    filePath: String?,
+    trackNumber: Int,
+    discNumber: Int,
+    sampleRate: Int?,
+    mimeType: String?,
+    dateAdded: Long,
+    dateModified: Long,
+    genre: String?,
+): Song =
+    Song(
+        id = id,
+        title = title ?: "",
+        artist = artist ?: "",
+        album = album ?: "",
+        year = year,
+        uri = uri,
+        duration = duration,
+        filePath = filePath,
+        trackNumber = trackNumber,
+        discNumber = discNumber,
+        sampleRate = sampleRate,
+        mimeType = mimeType,
+        dateAdded = dateAdded,
+        dateModified = dateModified,
+        genre = genre ?: "",
+    )
+
+/** Lectura tolerante a columnas que el proveedor no expone (`-1`). */
+private fun Cursor.stringOrNull(column: Int): String? = if (column >= 0) getString(column) else null
+
+private fun Cursor.intOrZero(column: Int): Int = if (column >= 0) getInt(column) else 0
+
+private fun Cursor.longOrZero(column: Int): Long = if (column >= 0) getLong(column) else 0L

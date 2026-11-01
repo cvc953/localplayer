@@ -160,7 +160,11 @@ class SongRepository internal constructor(
                             .filter { isPlayableMusic(it.filePath, it.duration) }
 
                     val previous = _songs.value
-                    if (scanned.isEmpty() && previous.isNotEmpty() && sourceSignature == null) {
+                    // Un escaneo que no pudo leer la fuente no es una biblioteca vacía: se
+                    // conserva lo anterior y no se persiste nada. Antes esta guarda era
+                    // inalcanzable porque currentSignature() nunca devolvía null.
+                    if (scanned.isEmpty() && sourceSignature == null) {
+                        Log.w(TAG, "refresh: MediaStore no respondió; se conserva la biblioteca actual (${previous.size})")
                         return@withLock previous
                     }
 
