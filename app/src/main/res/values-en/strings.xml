@@ -297,4 +297,9 @@
     <string name="toast_settings_exported">Settings exported</string>
     <string name="toast_settings_imported">Settings imported</string>
     <string name="toast_settings_import_error">Error importing settings</string>
+    <string name="crash_report_title">The app closed unexpectedly</string>
+    <string name="crash_report_body">Copy this report and paste it into the issue. It helps find the cause and nothing is sent anywhere.</string>
+    <string name="crash_report_copy">Copy</string>
+    <string name="crash_report_discard">Discard</string>
+    <string name="crash_report_copied">Report copied to the clipboard</string>
 </resources>

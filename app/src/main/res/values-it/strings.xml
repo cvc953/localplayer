@@ -298,4 +298,9 @@
     <string name="toast_settings_exported">Impostazioni esportate</string>
     <string name="toast_settings_imported">Impostazioni importate</string>
     <string name="toast_settings_import_error">Errore durante l\'importazione</string>
+    <string name="crash_report_title">L\'app si è chiusa inaspettatamente</string>
+    <string name="crash_report_body">Copia questo report e incollalo nella issue. Aiuta a trovare la causa e non viene inviato da nessuna parte.</string>
+    <string name="crash_report_copy">Copia</string>
+    <string name="crash_report_discard">Scarta</string>
+    <string name="crash_report_copied">Report copiato negli appunti</string>
 </resources>

@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cvc953.localplayer.model.SongRepository
 import com.cvc953.localplayer.preferences.AppPrefs
+import com.cvc953.localplayer.ui.components.CrashReportDialog
 import com.cvc953.localplayer.ui.screens.MusicScreen
 import com.cvc953.localplayer.ui.theme.resolvePrimaryColor
 import com.cvc953.localplayer.viewmodel.MainViewModel
@@ -57,6 +58,8 @@ class MainActivity : ComponentActivity() {
                         ?.isAppearanceLightStatusBars = !darkTheme
                 }
                 MusicScreen(audioFileUri = audioFileUri) { }
+                // Si el arranque anterior terminó en crash, el reporte queda acá.
+                CrashReportDialog()
             }
         }
     }
