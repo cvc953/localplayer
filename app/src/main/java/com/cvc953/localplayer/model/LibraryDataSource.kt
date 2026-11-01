@@ -217,53 +217,7 @@ class MediaStoreDataSource(
         args: Array<String>?,
     ): Boolean {
         val cursor = queryWithFallback(contentUri, projection, selection, args) ?: return false
-
-        cursor.use {
-            val idCol = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-            val titleCol = it.getColumnIndex(MediaStore.Audio.Media.TITLE)
-            val artistCol = it.getColumnIndex(MediaStore.Audio.Media.ARTIST)
-            val albumCol = it.getColumnIndex(MediaStore.Audio.Media.ALBUM)
-            val yearCol = it.getColumnIndex(MediaStore.Audio.Media.YEAR)
-            val durCol = it.getColumnIndex(MediaStore.Audio.Media.DURATION)
-            val dataCol = it.getColumnIndex(MediaStore.Audio.Media.DATA)
-            val trackNumberCol = it.getColumnIndex(MediaStore.Audio.Media.CD_TRACK_NUMBER)
-            val discNumberCol = it.getColumnIndex(MediaStore.Audio.Media.DISC_NUMBER)
-            val mimeTypeCol = it.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE)
-            val dateAddedCol = it.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
-            val genreCol = it.getColumnIndex(MediaStore.Audio.Media.GENRE)
-            val sampleRateCol = it.getColumnIndex("sample_rate")
-            val dateModifiedCol = it.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
-
-            while (it.moveToNext()) {
-                val id = it.getLong(idCol)
-                // Una fila con datos inválidos se descarta: perder una canción es preferible
-                // a perder la biblioteca entera.
-                try {
-                    out.add(
-                        songFromRow(
-                            id = id,
-                            title = it.stringOrNull(titleCol),
-                            artist = it.stringOrNull(artistCol),
-                            album = it.stringOrNull(albumCol),
-                            year = it.intOrZero(yearCol),
-                            // El URI debe apuntar al volumen donde vive la canción (interno o SD).
-                            uri = Uri.withAppendedPath(contentUri, id.toString()),
-                            duration = it.longOrZero(durCol),
-                            filePath = it.stringOrNull(dataCol),
-                            trackNumber = it.intOrZero(trackNumberCol),
-                            discNumber = it.intOrZero(discNumberCol),
-                            sampleRate = if (sampleRateCol >= 0) it.getInt(sampleRateCol).takeIf { value -> value > 0 } else null,
-                            mimeType = it.stringOrNull(mimeTypeCol),
-                            dateAdded = it.longOrZero(dateAddedCol),
-                            dateModified = it.longOrZero(dateModifiedCol),
-                            genre = it.stringOrNull(genreCol),
-                        ),
-                    )
-                } catch (e: Exception) {
-                    Log.w("MediaStoreDataSource", "fila $id descartada por datos inválidos", e)
-                }
-            }
-        }
+        cursor.use { readSongsFromCursor(it, contentUri, out) }
         return true
     }
 
@@ -394,6 +348,64 @@ internal fun songFromRow(
         dateModified = dateModified,
         genre = genre ?: "",
     )
+
+/**
+ * Vuelca las filas de [cursor] en [out].
+ *
+ * Aislado del [Context] y del [android.content.ContentResolver] a propósito: así se puede
+ * ejercitar con un cursor falso en un test JVM y reproducir lo que devuelve un proveedor
+ * real sin necesidad de un dispositivo.
+ */
+internal fun readSongsFromCursor(
+    cursor: Cursor,
+    contentUri: Uri,
+    out: MutableList<Song>,
+) {
+    val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+    val titleCol = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE)
+    val artistCol = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST)
+    val albumCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM)
+    val yearCol = cursor.getColumnIndex(MediaStore.Audio.Media.YEAR)
+    val durCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)
+    val dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA)
+    val trackNumberCol = cursor.getColumnIndex(MediaStore.Audio.Media.CD_TRACK_NUMBER)
+    val discNumberCol = cursor.getColumnIndex(MediaStore.Audio.Media.DISC_NUMBER)
+    val mimeTypeCol = cursor.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE)
+    val dateAddedCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED)
+    val genreCol = cursor.getColumnIndex(MediaStore.Audio.Media.GENRE)
+    val sampleRateCol = cursor.getColumnIndex("sample_rate")
+    val dateModifiedCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_MODIFIED)
+
+    while (cursor.moveToNext()) {
+        val id = cursor.getLong(idCol)
+        // Una fila con datos inválidos se descarta: perder una canción es preferible
+        // a perder la biblioteca entera.
+        try {
+            out.add(
+                songFromRow(
+                    id = id,
+                    title = cursor.stringOrNull(titleCol),
+                    artist = cursor.stringOrNull(artistCol),
+                    album = cursor.stringOrNull(albumCol),
+                    year = cursor.intOrZero(yearCol),
+                    // El URI debe apuntar al volumen donde vive la canción (interno o SD).
+                    uri = Uri.withAppendedPath(contentUri, id.toString()),
+                    duration = cursor.longOrZero(durCol),
+                    filePath = cursor.stringOrNull(dataCol),
+                    trackNumber = cursor.intOrZero(trackNumberCol),
+                    discNumber = cursor.intOrZero(discNumberCol),
+                    sampleRate = if (sampleRateCol >= 0) cursor.getInt(sampleRateCol).takeIf { value -> value > 0 } else null,
+                    mimeType = cursor.stringOrNull(mimeTypeCol),
+                    dateAdded = cursor.longOrZero(dateAddedCol),
+                    dateModified = cursor.longOrZero(dateModifiedCol),
+                    genre = cursor.stringOrNull(genreCol),
+                ),
+            )
+        } catch (e: Exception) {
+            Log.w("MediaStoreDataSource", "fila $id descartada por datos inválidos", e)
+        }
+    }
+}
 
 /** Lectura tolerante a columnas que el proveedor no expone (`-1`). */
 private fun Cursor.stringOrNull(column: Int): String? = if (column >= 0) getString(column) else null
