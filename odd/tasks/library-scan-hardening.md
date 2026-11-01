@@ -83,6 +83,8 @@ Out of scope:
 - [x] T3 Tests: null columns, preserve on failure, preserve on exception, clear on a genuine
       empty scan.
 - [x] T4 Verification: new tests, full `testDebugUnitTest`, review of the diff.
+- [x] T5 `MediaStoreCursorTest.kt`: extract `readSongsFromCursor` so a fake cursor can
+      reproduce the provider behavior on the JVM, without a device.
 
 ## Checks
 
@@ -106,3 +108,15 @@ Implementation evidence:
 - Diff reviewed: cursor loop reads every column through `getColumnIndex` plus a tolerant
   reader, so a provider that hides a column no longer aborts the scan; only `_ID` still
   throws when absent, which MediaStore never does.
+
+Reproduction without a device (`581fa2e`):
+
+- `readSongsFromCursor(cursor, contentUri, out)` is a standalone function over `Cursor`.
+- `MediaStoreCursorTest` drives it with a fake cursor that returns NULL metadata and with a
+  projection that hides a column.
+- Restoring the previous row mapping makes all three tests fail (the rows with NULL tags are
+  dropped); with the hardened mapping they pass. The failure mode is therefore reproducible
+  on the JVM, even though the reporter's device is not available.
+
+Not proven: that the reporter's Huawei P20 Pro returns NULL in those columns. The fix removes
+the failure mode, but only a logcat or a database dump from that device can confirm the cause.
