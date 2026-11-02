@@ -299,4 +299,9 @@
     <string name="toast_settings_exported">Ajustes exportados</string>
     <string name="toast_settings_imported">Ajustes importados</string>
     <string name="toast_settings_import_error">Error al importar ajustes</string>
+    <string name="crash_report_title">La app se cerró inesperadamente</string>
+    <string name="crash_report_body">Copia este reporte y pégalo en el issue. Ayuda a encontrar la causa y no se envía a ningún lado.</string>
+    <string name="crash_report_copy">Copiar</string>
+    <string name="crash_report_discard">Descartar</string>
+    <string name="crash_report_copied">Reporte copiado al portapapeles</string>
 </resources>
