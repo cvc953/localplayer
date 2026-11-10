@@ -3,10 +3,33 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// La versión la define el tag del release mediante -PappVersionName. El fallback permite
-// compilar localmente sin propiedades; CI siempre lo sobreescribe.
-val appVersionName: String =
-    (findProperty("appVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() } ?: "1.1.3"
+// La versión sale del tag del release. Orden de resolución:
+// 1. -PappVersionName, que es lo que pasa el workflow de GitHub.
+// 2. El tag exacto del commit actual: F-Droid clona el tag y corre ./gradlew sin propiedades.
+//    Sin este paso el APK declara la versión del fallback y F-Droid no ve la actualización.
+// 3. El tag más cercano, para builds de desarrollo sobre una rama.
+// 4. Un literal, sólo si no hay git disponible.
+private val versionPattern = Regex("""^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$""")
+
+val appVersionName: String = resolveVersionName()
+
+fun resolveVersionName(): String =
+    (findProperty("appVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() }
+        ?: versionFromGit("--exact-match")
+        ?: versionFromGit("--abbrev=0")
+        ?: "1.1.3"
+
+fun versionFromGit(selector: String): String? =
+    runCatching {
+        val process =
+            ProcessBuilder("git", "describe", "--tags", selector, "--match", "v[0-9]*")
+                .directory(rootDir)
+                .redirectErrorStream(true)
+                .start()
+        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+        val exit = process.waitFor()
+        if (exit == 0) output.removePrefix("v").takeIf { versionPattern.matches(it) } else null
+    }.getOrNull()
 
 // versionCode se deriva de la versión para que nunca se desincronice del tag:
 // 1.1.4 -> 10104, 2.0.0 -> 20000. Una pre-release comparte el código de su versión base,
