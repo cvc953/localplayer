@@ -1,5 +1,6 @@
 package com.cvc953.localplayer.ui.screens
 
+import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,8 +24,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -33,6 +36,18 @@ import androidx.compose.ui.unit.sp
 import com.cvc953.localplayer.R
 import com.cvc953.localplayer.ui.theme.LocalExtendedColors
 
+/**
+ * Versión real del APK instalado.
+ *
+ * El `versionName` del manifest lo resuelve `build.gradle.kts` a partir del tag, así que
+ * leerlo del `PackageManager` mantiene esta pantalla en sincronía sin duplicar el número.
+ */
+@Suppress("DEPRECATION")
+private fun installedVersionName(context: Context): String? =
+    runCatching {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    }.getOrNull()
+
 @Suppress("ktlint:standard:function-naming")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +55,9 @@ fun AboutScreen(onBack: () -> Unit) {
     BackHandler {
         onBack()
     }
+
+    val context = LocalContext.current
+    val versionName = remember(context) { installedVersionName(context) }
 
     Column(
         modifier =
@@ -100,12 +118,14 @@ fun AboutScreen(onBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "v1.1.0",
-                fontSize = 14.sp,
-                color = LocalExtendedColors.current.textSecondarySoft,
-                textAlign = TextAlign.Center,
-            )
+            versionName?.let { version ->
+                Text(
+                    text = "v$version",
+                    fontSize = 14.sp,
+                    color = LocalExtendedColors.current.textSecondarySoft,
+                    textAlign = TextAlign.Center,
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
