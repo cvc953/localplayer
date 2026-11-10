@@ -1,0 +1,4 @@
+- Añadido un reporte de errores: si la app se cierra inesperadamente, el detalle se muestra en el siguiente inicio y se puede copiar
+- La biblioteca ya no queda vacía cuando el sistema devuelve datos incompletos del almacenamiento; un escaneo fallido conserva la biblioteca anterior
+- Las actualizaciones de F-Droid vuelven a detectarse: la versión ahora sale del tag de git
+- La pestaña Acerca de muestra la versión real instalada

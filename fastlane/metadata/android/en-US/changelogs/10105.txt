@@ -1,0 +1,4 @@
+- Added a crash report screen: if the app closes unexpectedly, the details are shown on the next launch and can be copied
+- The library no longer empties when the system returns incomplete storage data; a failed scan keeps the previous library
+- F-Droid updates are detected again: the version now comes from the git tag
+- The About tab shows the real installed version
