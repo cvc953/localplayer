@@ -7,6 +7,19 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.1.5] - 2026-11-09
+
+### Añadido
+
+- 🛡️ Reporte de errores: cuando la app se cierra por una excepción no controlada, guarda el detalle y lo muestra en el siguiente inicio con una opción para copiarlo, para poder reportar el problema sin herramientas de desarrollo
+- 🔍 Análisis estático con CodeQL en cada pull request y en cada push a `master`, para detectar problemas de seguridad antes de fusionar
+
+### Corregido
+
+- 🐛 La biblioteca ya no queda vacía cuando el sistema devuelve columnas nulas al leer el almacenamiento: cada fila se procesa de forma independiente, la consulta prueba todos los volúmenes disponibles y un escaneo fallido conserva la biblioteca anterior en lugar de borrarla (issue #59)
+- 🐛 Las actualizaciones vuelven a detectarse en F-Droid: la versión del APK ahora se deriva del tag de git cuando el build no recibe la propiedad `appVersionName`, en lugar de caer en un valor fijo desactualizado
+- 🐛 La pestaña Acerca de muestra la versión real instalada en lugar de un número fijo
+
 ## [1.1.4] - 2026-10-29
 
 ### Corregido
@@ -312,7 +325,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `Corregido` para correcciones de bugs
 - `Seguridad` para vulnerabilidades corregidas
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.5...HEAD
+[1.1.5]: https://github.com/cvc953/localplayer/compare/v1.1.4...v1.1.5
 [1.1.0]: https://github.com/cvc953/localplayer/compare/v1.0.11...v1.1.0
 [1.0.11]: https://github.com/cvc953/localplayer/compare/v1.0.10...v1.0.11
 [1.0.7]: https://github.com/cvc953/localplayer/compare/v1.0.5...v1.0.7
