@@ -35,9 +35,10 @@ El workflow crea el tag y el release con esa versión.
 
 ## 🏷️ El tag es la única fuente de verdad
 
-No hace falta editar `app/build.gradle.kts` para publicar. El workflow extrae la versión
-del tag y la inyecta en el build con `-PappVersionName`, así que el `versionName` que
-queda dentro del APK siempre coincide con el release publicado.
+No hace falta editar `app/build.gradle.kts` para publicar. La versión se resuelve del tag por
+dos caminos: el workflow la inyecta con `-PappVersionName`, y cualquier otro build —F-Droid,
+IzzyOnDroid, un clon local parado sobre el tag— la lee con `git describe`. Así el `versionName`
+que queda dentro del APK coincide con el tag sin importar quién compile.
 
 ### Formato aceptado
 
