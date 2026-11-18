@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - 🐛 F-Droid detects updates again: the APK version is now written as a literal value its checker can read, instead of an expression it cannot evaluate
+- 🐛 Dragging in the play queue changes the actual order of the following songs again: the new order now reaches the player, not just the displayed list
 
 ## [1.1.5] - 2026-11-09
 

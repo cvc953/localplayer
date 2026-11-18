@@ -12,6 +12,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/).
 ### Corretto
 
 - 🐛 F-Droid torna a rilevare gli aggiornamenti: la versione dell'APK è ora scritta come un valore letterale che il suo verificatore può leggere, invece di un'espressione che non può valutare
+- 🐛 Il trascinamento nella coda di riproduzione torna a cambiare davvero l'ordine dei brani successivi: il nuovo ordine ora arriva anche al lettore, non solo alla lista mostrata
 
 ## [1.1.5] - 2026-11-09
 

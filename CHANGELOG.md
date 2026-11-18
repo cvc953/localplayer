@@ -12,6 +12,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### Corregido
 
 - 🐛 F-Droid vuelve a detectar las actualizaciones: la versión del APK ahora se escribe como un valor literal que su verificador puede leer, en lugar de una expresión que no puede evaluar
+- 🐛 Arrastrar en la cola de reproducción vuelve a cambiar el orden real de las canciones siguientes: el nuevo orden se aplica también al reproductor, no solo a la lista que se muestra
 
 ## [1.1.5] - 2026-11-09
 

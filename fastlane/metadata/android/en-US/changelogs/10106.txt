@@ -1,1 +1,2 @@
 - F-Droid detects updates again: the version metadata is now readable by its checker, so this release brings the 1.1.4 and 1.1.5 fixes to the store
+- Dragging the play queue now applies the new order to the player, so the next track follows it
