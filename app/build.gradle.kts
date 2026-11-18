@@ -8,9 +8,21 @@ plugins {
 // No evalúa variables, tags ni propiedades de Gradle; si esos valores son expresiones, no
 // encuentra nada y nunca detecta la actualización. Mantener los literales y actualizarlos en
 // el PR de release: el workflow verifica que coincidan con el tag antes de construir.
-val overrideVersionCode = (findProperty("appVersionCode") as String?)?.toIntOrNull()
+// Las propiedades de CI no se aceptan a ciegas: un valor mal formado aborta el build en lugar
+// de caer en silencio al literal de `defaultConfig` y publicar una versión equivocada.
+private val versionPattern = Regex("""^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$""")
+
+val overrideVersionCode =
+    (findProperty("appVersionCode") as String?)?.let { raw ->
+        raw.toIntOrNull() ?: error("appVersionCode debe ser numérico; se recibió '$raw'.")
+    }
+
 val overrideVersionName =
-    (findProperty("appVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() }
+    (findProperty("appVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() }?.also {
+        require(versionPattern.matches(it)) {
+            "appVersionName inválido '$it'. Se espera MAJOR.MINOR.PATCH con sufijo opcional."
+        }
+    }
 
 android {
     namespace = "com.cvc953.localplayer"
