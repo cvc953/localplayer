@@ -545,7 +545,7 @@ private fun LuneBottomRow(
                 active = false,
                 onClick = actions.onShowQueue,
                 pillRadius = pillRadius,
-                roundLeft = true,
+                roundLeft = false,
                 roundRight = false,
                 modifier = Modifier.weight(1f).fillMaxHeight(),
             )
