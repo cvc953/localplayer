@@ -72,6 +72,9 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Permite ejercitar clases que tocan APIs de Android en tests de JVM: los métodos del
+        // stub devuelven valores por defecto en lugar de lanzar "not mocked".
+        unitTests.isReturnDefaultValues = true
     }
 
     // Signing config for Release using environment variables provided by CI
