@@ -80,7 +80,19 @@ jobs:
           BASE_VERSION="${{ steps.extract_version.outputs.BASE_VERSION }}"
           NAME=$(grep -oP '^\s*versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -n1)
           CODE=$(grep -oP '^\s*versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -n1)
-          EXPECTED_CODE=$(awk -F. '{printf "%d", $1*10000 + $2*100 + $3}' <<< "$BASE_VERSION")
+
+          # Misma regla que aplicaba deriveVersionCode: tres partes numéricas y minor/patch
+          # entre 0 y 99. Sin esto, 1.1.100 y 1.2.0 comparten versionCode.
+          if [[ ! "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Versión inválida '$BASE_VERSION'. Se espera MAJOR.MINOR.PATCH."
+            exit 1
+          fi
+          IFS=. read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+          if (( MINOR > 99 || PATCH > 99 )); then
+            echo "::error::Versión inválida '$BASE_VERSION': minor y patch deben estar entre 0 y 99."
+            exit 1
+          fi
+          EXPECTED_CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
 
           if [[ "$NAME" != "$BASE_VERSION" || "$CODE" != "$EXPECTED_CODE" ]]; then
             echo "::error::Versiones desactualizadas en app/build.gradle.kts: versionName=$NAME versionCode=$CODE, esperado $BASE_VERSION / $EXPECTED_CODE. Actualízalas en el PR de release: el checker de F-Droid lee esos literales."
