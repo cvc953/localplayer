@@ -7,6 +7,13 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ## [Sin publicar]
 
+## [1.1.6] - 2026-11-18
+
+### Corregido
+
+- 🐛 F-Droid vuelve a detectar las actualizaciones: la versión del APK ahora se escribe como un valor literal que su verificador puede leer, en lugar de una expresión que no puede evaluar
+- 🐛 Arrastrar en la cola de reproducción vuelve a cambiar el orden real de las canciones siguientes: el nuevo orden se aplica también al reproductor, no solo a la lista que se muestra
+
 ## [1.1.5] - 2026-11-09
 
 ### Añadido
@@ -325,7 +332,8 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - `Corregido` para correcciones de bugs
 - `Seguridad` para vulnerabilidades corregidas
 
-[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.5...HEAD
+[Unreleased]: https://github.com/cvc953/localplayer/compare/v1.1.6...HEAD
+[1.1.6]: https://github.com/cvc953/localplayer/compare/v1.1.5...v1.1.6
 [1.1.5]: https://github.com/cvc953/localplayer/compare/v1.1.4...v1.1.5
 [1.1.0]: https://github.com/cvc953/localplayer/compare/v1.0.11...v1.1.0
 [1.0.11]: https://github.com/cvc953/localplayer/compare/v1.0.10...v1.0.11

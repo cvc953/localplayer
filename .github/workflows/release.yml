@@ -74,7 +74,63 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           echo "Building version: $VERSION (base: $BASE_VERSION, pre-release: $PRERELEASE)"
-      
+
+      - name: Verify version literals for F-Droid
+        run: |
+          BASE_VERSION="${{ steps.extract_version.outputs.BASE_VERSION }}"
+          NAME=$(grep -oP '^\s*versionName\s*=\s*"\K[^"]+' app/build.gradle.kts | head -n1)
+          CODE=$(grep -oP '^\s*versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -n1)
+
+          # Misma regla que aplicaba deriveVersionCode: tres partes numéricas y minor/patch
+          # entre 0 y 99. Sin esto, 1.1.100 y 1.2.0 comparten versionCode.
+          if [[ ! "$BASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Versión inválida '$BASE_VERSION'. Se espera MAJOR.MINOR.PATCH."
+            exit 1
+          fi
+          IFS=. read -r MAJOR MINOR PATCH <<< "$BASE_VERSION"
+          if (( MINOR > 99 || PATCH > 99 )); then
+            echo "::error::Versión inválida '$BASE_VERSION': minor y patch deben estar entre 0 y 99."
+            exit 1
+          fi
+          EXPECTED_CODE=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+
+          if [[ -z "$NAME" || -z "$CODE" ]]; then
+            echo "::error::No se encontraron versionName/versionCode literales en app/build.gradle.kts. El checker de F-Droid necesita un número y una cadena entre comillas dentro de defaultConfig."
+            exit 1
+          fi
+
+          if [[ "$NAME" != "$BASE_VERSION" || "$CODE" != "$EXPECTED_CODE" ]]; then
+            echo "::error::Versiones desactualizadas en app/build.gradle.kts: versionName=$NAME versionCode=$CODE, esperado $BASE_VERSION / $EXPECTED_CODE. Actualízalas en el PR de release: el checker de F-Droid lee esos literales."
+            exit 1
+          fi
+
+          echo "Version literals OK: $NAME / $CODE"
+
+      - name: Verify release notes exist
+        run: |
+          BASE_VERSION="${{ steps.extract_version.outputs.BASE_VERSION }}"
+          CODE=$(grep -oP '^\s*versionCode\s*=\s*\K[0-9]+' app/build.gradle.kts | head -n1)
+
+          for changelog in CHANGELOG.md CHANGELOG.en.md CHANGELOG.it.md; do
+            if ! grep -q "^## \[$BASE_VERSION\]" "$changelog"; then
+              echo "::error::Falta la sección '## [$BASE_VERSION]' en $changelog."
+              exit 1
+            fi
+          done
+
+          MISSING=0
+          for dir in fastlane/metadata/android/*/changelogs; do
+            if [[ ! -f "$dir/$CODE.txt" ]]; then
+              echo "::error::Falta $dir/$CODE.txt con las notas de la versión."
+              MISSING=1
+            fi
+          done
+          if [[ $MISSING -ne 0 ]]; then
+            exit 1
+          fi
+
+          echo "Release notes OK for $BASE_VERSION / $CODE"
+
       - name: Build Release APK
         env:
           ANDROID_SIGNING_STORE_FILE: release.keystore

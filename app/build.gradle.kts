@@ -3,50 +3,26 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-// La versión sale del tag del release. Orden de resolución:
-// 1. -PappVersionName, que es lo que pasa el workflow de GitHub.
-// 2. El tag exacto del commit actual: F-Droid clona el tag y corre ./gradlew sin propiedades.
-//    Sin este paso el APK declara la versión del fallback y F-Droid no ve la actualización.
-// 3. El tag más cercano, para builds de desarrollo sobre una rama.
-// 4. Un literal, sólo si no hay git disponible.
+// El checker de actualizaciones de F-Droid parsea este archivo con regex estáticos: necesita
+// un versionCode numérico y un nombre de versión entre comillas dentro de `defaultConfig`.
+// No evalúa variables, tags ni propiedades de Gradle; si esos valores son expresiones, no
+// encuentra nada y nunca detecta la actualización. Mantener los literales y actualizarlos en
+// el PR de release: el workflow verifica que coincidan con el tag antes de construir.
+// Las propiedades de CI no se aceptan a ciegas: un valor mal formado aborta el build en lugar
+// de caer en silencio al literal de `defaultConfig` y publicar una versión equivocada.
 private val versionPattern = Regex("""^\d+\.\d+\.\d+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$""")
 
-val appVersionName: String = resolveVersionName()
-
-fun resolveVersionName(): String =
-    (findProperty("appVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() }
-        ?: versionFromGit("--exact-match")
-        ?: versionFromGit("--abbrev=0")
-        ?: "1.1.3"
-
-fun versionFromGit(selector: String): String? =
-    runCatching {
-        val process =
-            ProcessBuilder("git", "describe", "--tags", selector, "--match", "v[0-9]*")
-                .directory(rootDir)
-                .redirectErrorStream(true)
-                .start()
-        val output = process.inputStream.bufferedReader().use { it.readText() }.trim()
-        val exit = process.waitFor()
-        if (exit == 0) output.removePrefix("v").takeIf { versionPattern.matches(it) } else null
-    }.getOrNull()
-
-// versionCode se deriva de la versión para que nunca se desincronice del tag:
-// 1.1.4 -> 10104, 2.0.0 -> 20000. Una pre-release comparte el código de su versión base,
-// así que el release estable se instala encima sin pedir desinstalación.
-fun deriveVersionCode(version: String): Int {
-    val parts = version.substringBefore('-').split('.')
-    require(parts.size == 3 && parts.all { it.toIntOrNull() != null }) {
-        "Versión inválida '$version'. Se espera MAJOR.MINOR.PATCH con sufijo opcional, ej. 1.1.4-beta.1."
+val overrideVersionCode =
+    (findProperty("appVersionCode") as String?)?.let { raw ->
+        raw.toIntOrNull() ?: error("appVersionCode debe ser numérico; se recibió '$raw'.")
     }
-    val (major, minor, patch) = parts.map { it.toInt() }
-    require(minor in 0..99 && patch in 0..99) {
-        "Versión inválida '$version': minor y patch deben estar entre 0 y 99."
-    }
-    return major * 10_000 + minor * 100 + patch
-}
 
-val appVersionCode: Int = deriveVersionCode(appVersionName)
+val overrideVersionName =
+    (findProperty("appVersionName") as String?)?.trim()?.takeIf { it.isNotEmpty() }?.also {
+        require(versionPattern.matches(it)) {
+            "appVersionName inválido '$it'. Se espera MAJOR.MINOR.PATCH con sufijo opcional."
+        }
+    }
 
 android {
     namespace = "com.cvc953.localplayer"
@@ -65,8 +41,14 @@ android {
         applicationId = "com.cvc953.localplayer"
         minSdk = 24
         targetSdk = 36
-        versionCode = appVersionCode
-        versionName = appVersionName
+
+        // Leídos por el checker de F-Droid. No convertir en expresiones.
+        versionCode = 10106
+        versionName = "1.1.6"
+
+        // Overrides de CI. Se aplican después de los literales a propósito.
+        overrideVersionCode?.let { versionCode = it }
+        overrideVersionName?.let { versionName = it }
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -90,6 +72,9 @@ android {
 
     testOptions {
         unitTests.isIncludeAndroidResources = true
+        // Permite ejercitar clases que tocan APIs de Android en tests de JVM: los métodos del
+        // stub devuelven valores por defecto en lugar de lanzar "not mocked".
+        unitTests.isReturnDefaultValues = true
     }
 
     // Signing config for Release using environment variables provided by CI

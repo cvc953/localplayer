@@ -92,3 +92,63 @@ Evidence:
 - `-PappVersionName=1.2.0`: `1.2.0` / `10200`, so the property still wins.
 
 Pending: an F-Droid rebuild to confirm it picks up 1.1.4. That happens on their schedule.
+
+## Revision 2026-11-18: the premise was wrong, superseded by literals
+
+### What the first attempt got wrong
+
+F-Droid did not pick up 1.1.4 or 1.1.5, and the evidence showed why: the tag resolution fixed
+what the APK declares, not what F-Droid reads to detect a release. The updater never parsed an
+APK.
+
+`UpdateCheckMode: Tags` runs fdroidserver's `check_tags`. It clones the repository, walks the
+tags matching the pattern, and for each one runs `common.parse_androidmanifests`, which parses
+`app/build.gradle.kts` with static regexes:
+
+```python
+vcsearch_g = r'''\b[Vv]ersionCode\s*=?\s*["'(]*([0-9][0-9_]*)["')]*'''
+vnsearch_g = r'''\b[Vv]ersionName\s*=?\s*\(?(["'])((?:(?=(\\?))\3.)*?)\1'''
+```
+
+They require a numeric `versionCode` and a quoted `versionName`. Since 1.1.4 the file had
+`versionCode = appVersionCode` and `versionName = appVersionName`, so both regexes matched
+nothing. Reproduced against the real tag content of `v1.1.5`: `[]` and `[]`. With no `vercode`,
+`check_tags` aborts with "Couldn't find any version information" and the bot never writes the
+metadata. That is why `CurrentVersion` stayed at `1.1.3` / `14` with a last bot commit on
+2026-10-28.
+
+Two side findings that were previously misjudged:
+
+- The build clone runs `git fetch --prune --tags --force origin`, so the tags are there and
+  `git describe` would resolve `1.1.5` / `10105` if the build ever ran. The tag resolution was
+  not useless; it was simply never reached.
+- The lowercase `Binaries:` URL is fine. GitHub resolves release assets case-insensitively and
+  redirects to `LocalPlayer-1.1.5.apk` with HTTP 200.
+
+1.1.5 cannot be repaired retroactively: the tag content is frozen without literals. F-Droid
+skips it and 1.1.6 carries everything.
+
+### What replaced it
+
+Literal values, overrides applied after them:
+
+```kotlin
+versionCode = 10106
+versionName = "1.1.6"
+
+overrideVersionCode?.let { versionCode = it }
+overrideVersionName?.let { versionName = it }
+```
+
+`release.yml` gained a "Verify version literals for F-Droid" step that fails when the literals
+do not match the tag, so a release cannot ship with them stale.
+
+Tasks:
+
+- [x] T4 `app/build.gradle.kts`: literals in `defaultConfig`, remove the tag-resolution chain.
+- [x] T5 `release.yml`: fail the release when the literals disagree with the tag.
+- [x] T6 `RELEASE_SETUP.md`: the bump is now part of the release PR.
+- [x] T7 Verification: exact fdroidserver regexes on the edited file, overrides, tests, build.
+
+Acceptance criteria that still hold: `-PappVersionName` wins over the literal, and the build
+stays reproducible with no properties.

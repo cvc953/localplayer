@@ -1,0 +1,2 @@
+- F-Droid torna a rilevare gli aggiornamenti: i metadati di versione sono ora leggibili dal suo verificatore, quindi questa versione porta nello store le correzioni di 1.1.4 e 1.1.5
+- Trascinare nella coda di riproduzione ora applica il nuovo ordine al lettore, così il brano successivo lo rispetta

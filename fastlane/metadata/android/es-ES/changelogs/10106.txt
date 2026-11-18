@@ -1,0 +1,2 @@
+- F-Droid vuelve a detectar las actualizaciones: sus metadatos de versión ahora son legibles por su verificador, así que esta versión lleva a la tienda las correcciones de 1.1.4 y 1.1.5
+- Arrastrar en la cola de reproducción ahora aplica el orden nuevo al reproductor, así el siguiente tema lo respeta
