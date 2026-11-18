@@ -9,6 +9,17 @@ Este documento explica cómo configurar el workflow de GitHub Actions para crear
 
 ## 🚀 Uso básico
 
+### Antes de crear el tag
+
+El PR de release debe actualizar, en el mismo commit que se va a taggear:
+
+1. `versionCode` y `versionName` en `app/build.gradle.kts`.
+2. La sección de la versión en los tres `CHANGELOG*.md`.
+3. El archivo `fastlane/metadata/android/<locale>/changelogs/<versionCode>.txt`.
+
+El workflow verifica el punto 1 y falla si no coincide con el tag. Los puntos 2 y 3 son los
+que muestran F-Droid y GitHub.
+
 ### Crear un release automáticamente
 
 1. **Crear un tag con formato de versión**:
@@ -33,12 +44,23 @@ Este documento explica cómo configurar el workflow de GitHub Actions para crear
 
 El workflow crea el tag y el release con esa versión.
 
-## 🏷️ El tag es la única fuente de verdad
+## 🏷️ La versión se escribe en dos lugares y el workflow los verifica
 
-No hace falta editar `app/build.gradle.kts` para publicar. La versión se resuelve del tag por
-dos caminos: el workflow la inyecta con `-PappVersionName`, y cualquier otro build —F-Droid,
-IzzyOnDroid, un clon local parado sobre el tag— la lee con `git describe`. Así el `versionName`
-que queda dentro del APK coincide con el tag sin importar quién compile.
+El checker de actualizaciones de F-Droid (`UpdateCheckMode: Tags`) no compila nada: parsea
+`app/build.gradle.kts` con regex estáticos y necesita leer `versionCode = <número>` y
+`versionName = "<entre comillas>"`. No evalúa variables, tags ni propiedades de Gradle. Si
+esos valores son expresiones, F-Droid no detecta la actualización.
+
+Por eso el PR de release actualiza ambos literales en `defaultConfig`:
+
+```kotlin
+versionCode = 10106
+versionName = "1.1.6"
+```
+
+El workflow verifica que coincidan con el tag antes de construir y falla con un mensaje claro
+si están desactualizados. `-PappVersionName` sigue inyectando el nombre completo en el APK
+(útil para pre-releases) y `-PappVersionCode` puede sobrescribir el código.
 
 ### Formato aceptado
 
@@ -46,9 +68,9 @@ que queda dentro del APK coincide con el tag sin importar quién compile.
 
 | Tag | Tipo | `versionName` en el APK | `versionCode` |
 |-----|------|-------------------------|---------------|
-| `v1.1.4` | Estable | `1.1.4` | `10104` |
-| `v1.1.4-beta.1` | Pre-release | `1.1.4-beta.1` | `10104` |
-| `v1.1.4-rc.2` | Pre-release | `1.1.4-rc.2` | `10104` |
+| `v1.1.6` | Estable | `1.1.6` | `10106` |
+| `v1.1.6-beta.1` | Pre-release | `1.1.6-beta.1` | `10106` |
+| `v1.1.6-rc.2` | Pre-release | `1.1.6-rc.2` | `10106` |
 | `v2.0.0` | Estable | `2.0.0` | `20000` |
 
 Cualquier sufijo después del guion convierte el release en pre-release. Sin sufijo, es
@@ -60,11 +82,12 @@ un release estable.
 versionCode = MAJOR * 10000 + MINOR * 100 + PATCH
 ```
 
-`minor` y `patch` deben estar entre 0 y 99; fuera de ese rango el build falla con un
+`minor` y `patch` deben estar entre 0 y 99; fuera de ese rango el workflow falla con un
 mensaje explícito.
 
-Esto reemplaza el contador manual que se llevaba en `build.gradle.kts` (14, 15, 16...).
-El salto no rompe nada: `10104` es mayor que `14`, así que la actualización se instala
+El valor se escribe como literal en `app/build.gradle.kts` (no se calcula en runtime) porque
+F-Droid lo lee con un regex. Esto reemplaza el contador manual que se llevaba antes (14, 15,
+16...). El salto no rompe nada: `10106` es mayor que `14`, así que la actualización se instala
 normalmente sobre cualquier versión anterior.
 
 Una pre-release comparte el `versionCode` de su versión base. Android acepta una
