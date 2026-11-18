@@ -1119,6 +1119,10 @@ fun PlayerScreen(
                                                             dragList.toList()
                                                         }
                                                     playbackViewModel.updateDisplayOrder(newOrder)
+                                                    // El arrastre no llama a play(), así que hay que empujar
+                                                    // el nuevo orden al reproductor: si no, next() y el
+                                                    // avance automático siguen usando la cola anterior.
+                                                    playbackViewModel.syncControllerQueue()
                                                 },
                                                 onDragCancel = {
                                                     draggingIndex =
